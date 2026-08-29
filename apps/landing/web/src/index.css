@@ -44,6 +44,16 @@ h4,
 h5,
 h6 {
   font-family: var(--font-display);
+  text-wrap: balance;
+}
+
+:is(h1, h2, h3, h4, h5, h6)[id] {
+  scroll-margin-top: 5rem;
+}
+
+:is(a, button, input, select, textarea) {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: color-mix(in oklab, var(--foreground) 12%, transparent);
 }
 
 ::selection {

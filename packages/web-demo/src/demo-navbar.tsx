@@ -70,7 +70,7 @@ export function DemoNavbar(props: DemoNavbarProps) {
                   <Select<string>
                     disabled={props.loading}
                     options={sampleImages().map((sample) => sample.id)}
-                    placeholder="Sample image"
+                    placeholder="Select a sample image…"
                     placement="bottom-start"
                     value={selectedSampleId() ?? undefined}
                     onChange={(value) => {
@@ -104,6 +104,8 @@ export function DemoNavbar(props: DemoNavbarProps) {
             <input
               ref={inputRef}
               accept={imageAccept}
+              aria-label="Choose image file"
+              name="image"
               style={{ display: "none" }}
               tabIndex={-1}
               type="file"

@@ -41,14 +41,18 @@ export function FolderSourceParseModal(props: FolderSourceParseModalProps) {
           </div>
 
           <div class="flex flex-col gap-4 px-5 py-4">
-            <p class="text-muted-foreground text-sm">{modal.statusMessage()}</p>
+            <p aria-live="polite" class="text-muted-foreground text-sm" role="status">
+              {modal.statusMessage()}
+            </p>
 
             <Field class="gap-2">
               <FieldLabel for="folder-subfolder-template">Subfolder template</FieldLabel>
               <Input
                 autocomplete="off"
                 id="folder-subfolder-template"
-                placeholder="Pos{p}"
+                name="subfolder-template"
+                placeholder="e.g. Pos{p}…"
+                spellcheck={false}
                 type="text"
                 value={modal.subfolderTemplate()}
                 onInput={(event) => {
@@ -64,7 +68,9 @@ export function FolderSourceParseModal(props: FolderSourceParseModalProps) {
                 autocomplete="off"
                 aria-invalid={Boolean(modal.error())}
                 id="folder-filename-template"
-                placeholder="img_{t}_{c}_{z}.jpg"
+                name="filename-template"
+                placeholder="e.g. img_{t}_{c}_{z}.jpg…"
+                spellcheck={false}
                 type="text"
                 value={modal.filenameTemplate()}
                 onInput={(event) => {
@@ -73,7 +79,9 @@ export function FolderSourceParseModal(props: FolderSourceParseModalProps) {
                 }}
               />
               <Show when={modal.error()}>
-                <p class="text-destructive text-sm">{modal.error()}</p>
+                <p class="text-destructive text-sm" role="alert">
+                  {modal.error()}
+                </p>
               </Show>
             </Field>
           </div>

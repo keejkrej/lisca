@@ -51,9 +51,11 @@ function AlignNumberInput(props: {
 
   return (
     <Input
+      autocomplete="off"
       aria-label={props.label}
       disabled={props.disabled}
       min={props.min}
+      name={props.label.toLowerCase().replaceAll(" ", "-")}
       size="sm"
       step={props.step ?? "any"}
       type="number"

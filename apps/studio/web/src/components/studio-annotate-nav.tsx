@@ -9,7 +9,11 @@ export function StudioAnnotateNav() {
   return (
     <Show
       when={!nav.workspaceMissing}
-      fallback={<p class="text-destructive text-sm">Choose a workspace on the Info step first.</p>}
+      fallback={
+        <p class="text-destructive text-sm" role="alert">
+          Choose a workspace on the Info step first.
+        </p>
+      }
     >
       <>
         <RoiFrameNavigation

@@ -68,7 +68,8 @@ export function BasicInfoStep1(props: { hostPort: HostFilePickerOperations }) {
     studioWizardActions.setAnalysis(setWizard, p);
   const setDataSourceKind = (kind: StudioDataSourceKind) =>
     studioWizardActions.setDataSourceKind(setWizard, kind);
-  const intervalPlaceholder = () => String(defaultIntervalMinutesForAssay(wizard().assayId) ?? 10);
+  const intervalPlaceholder = () =>
+    `e.g. ${defaultIntervalMinutesForAssay(wizard().assayId) ?? 10}…`;
   const [openDataModalOpen, setOpenDataModalOpen] = createSignal(false);
   const [pathPicker, setPathPicker] = createSignal<StudioPathPickerState>(null);
   const [folderSourcePath, setFolderSourcePath] = createSignal<string | null>(null);
@@ -129,7 +130,8 @@ export function BasicInfoStep1(props: { hostPort: HostFilePickerOperations }) {
             autocomplete="off"
             class="h-8 w-full rounded-full px-3 text-[13px]"
             id="studio-name"
-            placeholder="My assay"
+            name="assay-name"
+            placeholder="e.g. My assay…"
             value={wizard().name}
             onChange={(event) => patch({ name: event.target.value })}
           />
@@ -155,9 +157,11 @@ export function BasicInfoStep1(props: { hostPort: HostFilePickerOperations }) {
             </FieldLabel>
             <div class="flex w-full min-w-0 items-stretch gap-2">
               <Input
+                autocomplete="off"
                 aria-labelledby="studio-timelapse-label"
                 class="h-8 w-20 shrink-0 rounded-full px-3 font-mono text-[13px]"
                 min={1}
+                name="timelapse-interval"
                 placeholder={intervalPlaceholder()}
                 step={1}
                 type="number"
@@ -201,12 +205,12 @@ export function BasicInfoStep1(props: { hostPort: HostFilePickerOperations }) {
               </FieldLabel>
               <div class="relative">
                 <Input
+                  autocomplete="off"
                   aria-labelledby="studio-max-onset-label"
                   class="h-8 w-full rounded-full px-3 pr-12 font-mono text-[13px]"
                   min={0}
-                  placeholder={String(
-                    defaultMaxOnsetMinutesForAssay(ASSAY_TYPE.TRANSFECTION) ?? 120,
-                  )}
+                  name="max-onset-minutes"
+                  placeholder={`e.g. ${defaultMaxOnsetMinutesForAssay(ASSAY_TYPE.TRANSFECTION) ?? 120}…`}
                   step={1}
                   title="Latest time expression may start; 0 means the first frame."
                   type="number"
@@ -242,6 +246,7 @@ export function BasicInfoStep1(props: { hostPort: HostFilePickerOperations }) {
                 checked={wizard().analysis?.skipSegment ?? false}
                 class="size-4 shrink-0"
                 id="studio-skip-segment"
+                name="skip-segmentation"
                 type="checkbox"
                 onChange={(event) => setAnalysis({ skipSegment: event.currentTarget.checked })}
               />

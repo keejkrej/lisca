@@ -94,8 +94,10 @@ export function LabelCreationDialog(props: LabelCreationDialogProps) {
               {(draft, index) => (
                 <div class="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_4rem_2rem] items-center gap-2">
                   <Input
+                    autocomplete="off"
                     aria-label={`Label ${index + 1} name`}
                     disabled={props.saving}
+                    name={`labels.${index}.name`}
                     value={draft().name}
                     onInput={(event) => {
                       const name = event.currentTarget.value;
@@ -103,14 +105,19 @@ export function LabelCreationDialog(props: LabelCreationDialogProps) {
                     }}
                   />
                   <Input
+                    autocomplete="off"
                     aria-label={`Label ${index + 1} id`}
                     disabled={props.saving}
+                    name={`labels.${index}.id`}
+                    spellcheck={false}
                     value={draft().id}
                     onInput={(event) => form.updateDraft(index, { id: event.currentTarget.value })}
                   />
                   <Input
+                    autocomplete="off"
                     aria-label={`Label ${index + 1} color`}
                     disabled={props.saving}
+                    name={`labels.${index}.color`}
                     type="color"
                     value={draft().color}
                     onInput={(event) =>
@@ -142,7 +149,9 @@ export function LabelCreationDialog(props: LabelCreationDialogProps) {
               Add label
             </Button>
             <Show when={form.activeError()}>
-              <p class="text-destructive text-sm">{form.activeError()}</p>
+              <p class="text-destructive text-sm" role="alert">
+                {form.activeError()}
+              </p>
             </Show>
           </div>
 

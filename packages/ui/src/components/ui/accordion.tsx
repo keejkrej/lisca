@@ -52,7 +52,7 @@ const AccordionTrigger = <T extends ValidComponent = "button">(props: AccordionT
     <AccordionPrimitive.Header class="flex" data-slot="accordion-header">
       <AccordionPrimitive.Trigger
         class={cn(
-          "group/accordion-trigger relative z-accordion-trigger flex flex-1 items-start justify-between border border-transparent outline-none transition-all disabled:pointer-events-none disabled:opacity-50",
+          "group/accordion-trigger relative z-accordion-trigger flex flex-1 items-start justify-between border border-transparent outline-none transition-[color,background-color,border-color,box-shadow,opacity] disabled:pointer-events-none disabled:opacity-50",
           local.class,
         )}
         data-slot="accordion-trigger"

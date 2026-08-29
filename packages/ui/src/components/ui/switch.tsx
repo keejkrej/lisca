@@ -20,7 +20,7 @@ const Switch = <T extends ValidComponent = "div">(props: SwitchProps<T>) => {
       data-slot="switch"
       data-size={local.size}
       class={cn(
-        "peer group/switch relative z-switch inline-flex items-center outline-none transition-all data-disabled:cursor-not-allowed data-disabled:opacity-50",
+        "peer group/switch relative z-switch inline-flex items-center outline-none transition-[color,box-shadow,opacity] data-disabled:cursor-not-allowed data-disabled:opacity-50",
         local.class,
       )}
       {...others}

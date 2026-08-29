@@ -62,7 +62,7 @@ export function useFolderSourceParseModal(options: () => UseFolderSourceParseMod
 
   const statusMessage = createMemo(() =>
     detecting()
-      ? "Detecting image naming pattern..."
+      ? "Detecting image naming pattern…"
       : detected()
         ? "Detected image naming pattern."
         : "Using default image naming pattern.",

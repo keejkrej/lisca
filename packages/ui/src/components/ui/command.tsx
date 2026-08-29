@@ -26,7 +26,7 @@ function CommandDialog(props: CommandDialogProps) {
   const mergedProps = mergeProps(
     {
       title: "Command Palette",
-      description: "Search for a command to run...",
+      description: "Search for a command to run…",
       showCloseButton: false,
     },
     props,

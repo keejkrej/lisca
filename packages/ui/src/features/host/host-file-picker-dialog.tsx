@@ -314,7 +314,8 @@ export function HostFilePickerDialog(props: HostFilePickerDialogProps) {
                   autofocus
                   disabled={creating()}
                   id="new-folder-name"
-                  placeholder="Folder name"
+                  name="new-folder-name"
+                  placeholder="e.g. experiment-01…"
                   type="text"
                   value={folderName()}
                   onInput={(event) => {
@@ -323,7 +324,9 @@ export function HostFilePickerDialog(props: HostFilePickerDialogProps) {
                   }}
                 />
                 <Show when={folderError()}>
-                  <p class="text-destructive text-sm">{folderError()}</p>
+                  <p class="text-destructive text-sm" role="alert">
+                    {folderError()}
+                  </p>
                 </Show>
               </Field>
             </form>

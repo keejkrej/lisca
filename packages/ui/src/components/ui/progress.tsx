@@ -65,7 +65,7 @@ const ProgressIndicator = <T extends ValidComponent = "div">(props: ProgressIndi
     <Fill
       data-slot="progress-indicator"
       class={cn(
-        "z-progress-indicator h-full w-(--kb-progress-fill-width) transition-all",
+        "z-progress-indicator h-full w-(--kb-progress-fill-width) transition-[width]",
         local.class,
       )}
       {...others}

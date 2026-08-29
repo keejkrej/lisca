@@ -25,7 +25,7 @@
 }
 
 .z-alert-dialog-content {
-  @apply data-expanded:animate-in data-closed:animate-out data-closed:fade-out-0 data-expanded:fade-in-0 data-closed:zoom-out-95 data-expanded:zoom-in-95 bg-popover text-popover-foreground ring-foreground/5 gap-6 rounded-4xl p-6 ring-1 duration-100 data-[size=default]:max-w-xs data-[size=sm]:max-w-xs data-[size=default]:sm:max-w-md;
+  @apply data-expanded:animate-in data-closed:animate-out data-closed:fade-out-0 data-expanded:fade-in-0 data-closed:zoom-out-95 data-expanded:zoom-in-95 bg-popover text-popover-foreground ring-foreground/5 gap-6 overscroll-contain rounded-4xl p-6 ring-1 duration-100 data-[size=default]:max-w-xs data-[size=sm]:max-w-xs data-[size=default]:sm:max-w-md;
 }
 
 .z-alert-dialog-header {
@@ -92,7 +92,7 @@
 
 /* MARK: Badge */
 .z-badge {
-  @apply h-5 gap-1 rounded-4xl border border-transparent px-2 py-0.5 text-xs font-medium transition-all has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&>svg]:size-3!;
+  @apply h-5 gap-1 rounded-4xl border border-transparent px-2 py-0.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow] has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&>svg]:size-3!;
 }
 
 .z-badge-variant-default {
@@ -572,7 +572,7 @@
 }
 
 .z-dialog-content {
-  @apply bg-popover text-popover-foreground data-expanded:animate-in data-closed:animate-out data-closed:fade-out-0 data-expanded:fade-in-0 data-closed:zoom-out-95 data-expanded:zoom-in-95 ring-foreground/5 grid max-w-[calc(100%-2rem)] gap-6 rounded-4xl p-6 text-sm ring-1 duration-100 sm:max-w-md;
+  @apply bg-popover text-popover-foreground data-expanded:animate-in data-closed:animate-out data-closed:fade-out-0 data-expanded:fade-in-0 data-closed:zoom-out-95 data-expanded:zoom-in-95 ring-foreground/5 grid max-w-[calc(100%-2rem)] gap-6 overscroll-contain rounded-4xl p-6 text-sm ring-1 duration-100 sm:max-w-md;
 }
 
 .z-dialog-close {
@@ -601,7 +601,7 @@
 }
 
 .z-drawer-content {
-  @apply data-transitioning:transition-transform data-transitioning:duration-400 before:bg-background relative flex h-auto flex-col bg-transparent p-4 text-sm before:absolute before:inset-2 before:-z-10 before:rounded-4xl data-[side=bottom]:inset-x-0 data-[side=bottom]:bottom-0 data-[side=bottom]:mt-24 data-[side=bottom]:max-h-[80vh] data-[side=left]:inset-y-0 data-[side=left]:left-0 data-[side=left]:w-3/4 data-[side=right]:inset-y-0 data-[side=right]:right-0 data-[side=right]:w-3/4 data-[side=top]:inset-x-0 data-[side=top]:top-0 data-[side=top]:mb-24 data-[side=top]:max-h-[80vh] data-[side=left]:sm:max-w-sm data-[side=right]:sm:max-w-sm;
+  @apply data-transitioning:transition-transform data-transitioning:duration-400 before:bg-background relative flex h-auto flex-col overscroll-contain bg-transparent p-4 text-sm before:absolute before:inset-2 before:-z-10 before:rounded-4xl data-[side=bottom]:inset-x-0 data-[side=bottom]:bottom-0 data-[side=bottom]:mt-24 data-[side=bottom]:max-h-[80vh] data-[side=left]:inset-y-0 data-[side=left]:left-0 data-[side=left]:w-3/4 data-[side=right]:inset-y-0 data-[side=right]:right-0 data-[side=right]:w-3/4 data-[side=top]:inset-x-0 data-[side=top]:top-0 data-[side=top]:mb-24 data-[side=top]:max-h-[80vh] data-[side=left]:sm:max-w-sm data-[side=right]:sm:max-w-sm;
 }
 
 .z-drawer-handle {
@@ -771,7 +771,7 @@
 }
 
 .z-input-otp-slot {
-  @apply bg-input/30 border-input data-[active=true]:border-ring data-[active=true]:ring-ring/50 data-[active=true]:aria-invalid:ring-destructive/20 dark:data-[active=true]:aria-invalid:ring-destructive/40 aria-invalid:border-destructive data-[active=true]:aria-invalid:border-destructive size-9 border-y border-r text-sm transition-all outline-none first:rounded-l-4xl first:border-l last:rounded-r-4xl data-[active=true]:ring-[3px];
+  @apply bg-input/30 border-input data-[active=true]:border-ring data-[active=true]:ring-ring/50 data-[active=true]:aria-invalid:ring-destructive/20 dark:data-[active=true]:aria-invalid:ring-destructive/40 aria-invalid:border-destructive data-[active=true]:aria-invalid:border-destructive size-9 border-y border-r text-sm transition-[color,background-color,border-color,box-shadow] outline-none first:rounded-l-4xl first:border-l last:rounded-r-4xl data-[active=true]:ring-[3px];
 }
 
 .z-input-otp-caret-line {
@@ -938,11 +938,11 @@
 }
 
 .z-navigation-menu-trigger {
-  @apply hover:bg-muted focus:bg-muted data-open:hover:bg-muted data-open:focus:bg-muted data-open:bg-muted/50 focus-visible:ring-ring/50 data-popup-open:bg-muted/50 data-popup-open:hover:bg-muted rounded-2xl px-4.5 py-2.5 text-sm font-medium transition-all focus-visible:ring-[3px] focus-visible:outline-1 disabled:opacity-50;
+  @apply hover:bg-muted focus:bg-muted data-open:hover:bg-muted data-open:focus:bg-muted data-open:bg-muted/50 focus-visible:ring-ring/50 data-popup-open:bg-muted/50 data-popup-open:hover:bg-muted rounded-2xl px-4.5 py-2.5 text-sm font-medium transition-[color,background-color,box-shadow,opacity] focus-visible:ring-[3px] focus-visible:outline-1 disabled:opacity-50;
 }
 
 .z-navigation-menu-link {
-  @apply data-[active=true]:focus:bg-muted data-[active=true]:hover:bg-muted data-[active=true]:bg-muted/50 focus-visible:ring-ring/50 hover:bg-muted focus:bg-muted flex items-center gap-1.5 rounded-2xl p-3 text-sm transition-all outline-none focus-visible:ring-[3px] focus-visible:outline-1 [&_svg:not([class*='size-'])]:size-4 in-data-[slot=navigation-menu-content]:rounded-xl;
+  @apply data-[active=true]:focus:bg-muted data-[active=true]:hover:bg-muted data-[active=true]:bg-muted/50 focus-visible:ring-ring/50 hover:bg-muted focus:bg-muted flex items-center gap-1.5 rounded-2xl p-3 text-sm transition-[color,background-color,box-shadow] outline-none focus-visible:ring-[3px] focus-visible:outline-1 [&_svg:not([class*='size-'])]:size-4 in-data-[slot=navigation-menu-content]:rounded-xl;
 }
 
 .z-navigation-menu-trigger-icon {
@@ -972,7 +972,7 @@
 }
 
 .z-navigation-menu-popup {
-  @apply bg-popover text-popover-foreground ring-foreground/5 rounded-2xl shadow ring-1 transition-all ease-[cubic-bezier(0.22,1,0.36,1)] outline-none data-ending-style:scale-90 data-ending-style:opacity-0 data-ending-style:duration-150 data-starting-style:scale-90 data-starting-style:opacity-0;
+  @apply bg-popover text-popover-foreground ring-foreground/5 rounded-2xl shadow ring-1 transition-[opacity,transform] ease-[cubic-bezier(0.22,1,0.36,1)] outline-none data-ending-style:scale-90 data-ending-style:opacity-0 data-ending-style:duration-150 data-starting-style:scale-90 data-starting-style:opacity-0;
 }
 
 /* MARK: Native Select */
@@ -1208,7 +1208,7 @@
 }
 
 .z-sheet-content {
-  @apply bg-popover text-popover-foreground fixed z-50 flex flex-col bg-clip-padding text-sm shadow-lg transition duration-200 ease-in-out data-[side=bottom]:inset-x-0 data-[side=bottom]:bottom-0 data-[side=bottom]:h-auto data-[side=bottom]:border-t data-[side=left]:inset-y-0 data-[side=left]:left-0 data-[side=left]:h-full data-[side=left]:w-3/4 data-[side=left]:border-r data-[side=right]:inset-y-0 data-[side=right]:right-0 data-[side=right]:h-full data-[side=right]:w-3/4 data-[side=right]:border-l data-[side=top]:inset-x-0 data-[side=top]:top-0 data-[side=top]:h-auto data-[side=top]:border-b data-[side=left]:sm:max-w-sm data-[side=right]:sm:max-w-sm data-expanded:animate-in data-closed:animate-out data-expanded:fade-in-0 data-closed:fade-out-0 data-[side=bottom]:data-expanded:slide-in-from-bottom-10 data-[side=bottom]:data-closed:slide-out-to-bottom-10 data-[side=left]:data-expanded:slide-in-from-left-10 data-[side=left]:data-closed:slide-out-to-left-10 data-[side=right]:data-expanded:slide-in-from-right-10 data-[side=right]:data-closed:slide-out-to-right-10 data-[side=top]:data-expanded:slide-in-from-top-10 data-[side=top]:data-closed:slide-out-to-top-10;
+  @apply bg-popover text-popover-foreground fixed z-50 flex flex-col overscroll-contain bg-clip-padding text-sm shadow-lg transition duration-200 ease-in-out data-[side=bottom]:inset-x-0 data-[side=bottom]:bottom-0 data-[side=bottom]:h-auto data-[side=bottom]:border-t data-[side=left]:inset-y-0 data-[side=left]:left-0 data-[side=left]:h-full data-[side=left]:w-3/4 data-[side=left]:border-r data-[side=right]:inset-y-0 data-[side=right]:right-0 data-[side=right]:h-full data-[side=right]:w-3/4 data-[side=right]:border-l data-[side=top]:inset-x-0 data-[side=top]:top-0 data-[side=top]:h-auto data-[side=top]:border-b data-[side=left]:sm:max-w-sm data-[side=right]:sm:max-w-sm data-expanded:animate-in data-closed:animate-out data-expanded:fade-in-0 data-closed:fade-out-0 data-[side=bottom]:data-expanded:slide-in-from-bottom-10 data-[side=bottom]:data-closed:slide-out-to-bottom-10 data-[side=left]:data-expanded:slide-in-from-left-10 data-[side=left]:data-closed:slide-out-to-left-10 data-[side=right]:data-expanded:slide-in-from-right-10 data-[side=right]:data-closed:slide-out-to-right-10 data-[side=top]:data-expanded:slide-in-from-top-10 data-[side=top]:data-closed:slide-out-to-top-10;
 }
 
 .z-sheet-close {

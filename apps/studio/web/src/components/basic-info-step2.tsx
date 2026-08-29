@@ -85,10 +85,12 @@ function SampleCard(props: {
             Slide
           </span>
           <Input
+            autocomplete="off"
             aria-label="Slide channel"
             class="h-8 w-full rounded-full px-2 text-center font-mono text-[13px]"
             inputMode="numeric"
-            placeholder="0"
+            name={`samples.${props.index}.slide-channel`}
+            placeholder="e.g. 0…"
             value={props.row.slideChannel}
             onChange={(event) => props.onChange({ slideChannel: event.currentTarget.value })}
           />
@@ -98,9 +100,11 @@ function SampleCard(props: {
             Name
           </span>
           <Input
+            autocomplete="off"
             aria-label="Name"
             class="h-8 min-w-0 rounded-full px-3 text-[13px]"
-            placeholder="Sample name (e.g. eGFP, 100nM STS)"
+            name={`samples.${props.index}.name`}
+            placeholder="e.g. eGFP, 100 nM STS…"
             value={props.row.name}
             onChange={(event) => props.onChange({ name: event.currentTarget.value })}
           />
@@ -119,39 +123,47 @@ function SampleCard(props: {
       <div class="grid min-w-0 grid-cols-2 gap-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_5rem_minmax(0,1fr)]">
         <SampleField label="Position start">
           <Input
+            autocomplete="off"
             aria-label="Position start"
             class="h-8 w-full rounded-full px-3 text-center font-mono text-[13px]"
             inputMode="numeric"
-            placeholder="start"
+            name={`samples.${props.index}.position-start`}
+            placeholder="e.g. 0…"
             value={props.row.positionStart}
             onChange={(event) => props.onChange({ positionStart: event.currentTarget.value })}
           />
         </SampleField>
         <SampleField label="Position end">
           <Input
+            autocomplete="off"
             aria-label="Position finish"
             class="h-8 w-full rounded-full px-3 text-center font-mono text-[13px]"
             inputMode="numeric"
-            placeholder="end"
+            name={`samples.${props.index}.position-finish`}
+            placeholder="e.g. 10…"
             value={props.row.positionFinish}
             onChange={(event) => props.onChange({ positionFinish: event.currentTarget.value })}
           />
         </SampleField>
         <SampleField label="Mask">
           <Input
+            autocomplete="off"
             aria-label="Mask channel"
             class="h-8 w-full rounded-full px-2 text-center font-mono text-[13px]"
             inputMode="numeric"
-            placeholder="0"
+            name={`samples.${props.index}.mask-channel`}
+            placeholder="e.g. 0…"
             value={props.row.mask}
             onChange={(event) => props.onChange({ mask: event.currentTarget.value })}
           />
         </SampleField>
         <SampleField label="Signal">
           <Input
+            autocomplete="off"
             aria-label="Signal channels"
             class="h-8 w-full rounded-full px-3 text-center font-mono text-[13px]"
-            placeholder="1 or 1,2"
+            name={`samples.${props.index}.signal-channels`}
+            placeholder="e.g. 1 or 1,2…"
             value={props.row.signal}
             onChange={(event) => props.onChange({ signal: event.currentTarget.value })}
           />

@@ -123,7 +123,9 @@ export function AnnotationControlRail(props: AnnotationControlRailProps) {
         <p class="col-span-full text-xs text-muted-foreground">Loading…</p>
       </Show>
       <Show when={activeError()}>
-        <p class="col-span-full text-xs text-destructive">{activeError()}</p>
+        <p class="col-span-full text-xs text-destructive" role="alert">
+          {activeError()}
+        </p>
       </Show>
     </>
   );

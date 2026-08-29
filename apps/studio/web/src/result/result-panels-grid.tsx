@@ -57,7 +57,7 @@ export function ResultPlotGallery(props: {
         </Show>
         <div class={props.exportMode ? "flex flex-col gap-6 p-4" : "flex flex-col gap-8 pb-8"}>
           <For each={props.plots}>
-            {(plot) => (
+            {(plot, index) => (
               <figure class="flex flex-col gap-2">
                 <figcaption
                   class={
@@ -83,7 +83,11 @@ export function ResultPlotGallery(props: {
                         ? "w-full rounded-md border bg-white object-contain"
                         : "w-full bg-white object-contain"
                     }
+                    decoding="async"
+                    height="800"
+                    loading={index() === 0 ? "eager" : "lazy"}
                     src={plot.src}
+                    width="1200"
                   />
                 </Show>
               </figure>
