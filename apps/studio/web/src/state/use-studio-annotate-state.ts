@@ -2,7 +2,7 @@ import type { AnalysisProgress, StudioAnalysisCsvFile } from "@lisca/contracts";
 import { useAnnotateStateCore } from "@lisca/client/use-annotate-state-core";
 import { useCanvasResourceTransaction, useCanvasTransientStatus } from "@lisca/ui/features";
 import { useAtom } from "@effect/atom-solid";
-import { createEffect } from "solid-js";
+import { createEffect, onCleanup } from "solid-js";
 import { useNavigate } from "@tanstack/solid-router";
 import { runClientEffect } from "@lisca/client/runtime";
 
@@ -24,6 +24,8 @@ import {
 } from "./studio-store";
 import { setStudioAnnotateDirty } from "./studio-annotate-guard";
 import { nextStudioAnnotateSite } from "./studio-annotate-navigation";
+
+const noop = () => {};
 
 function useStudioWorkspaceSync(activeWorkspacePath: () => string | null) {
   const [ui, setUi] = useAtom(() => studioAnnotateUiAtom);
@@ -93,6 +95,12 @@ export function useStudioAnnotateState(): StudioAnnotateState {
   const setAnalysisResultFiles = (files: StudioAnalysisCsvFile[]) =>
     studioAnnotateUiActions.setAnalysisResultFiles(setUi, files);
   const setStatus = (status: string | null) => studioAnnotateUiActions.setStatus(setUi, status);
+  let analysisGeneration = 0;
+  let stopAnalysisProgress = noop;
+  onCleanup(() => {
+    analysisGeneration += 1;
+    stopAnalysisProgress();
+  });
   const shuffleSelection = () => {
     const current = annotate();
     if (!current.scan?.positions.length) return;
@@ -138,6 +146,10 @@ export function useStudioAnnotateState(): StudioAnnotateState {
     setAnalysisStartConfirm(false);
     setStatus("Saving assay.json");
     const requestId = `studio-analysis-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const generation = analysisGeneration + 1;
+    analysisGeneration = generation;
+    stopAnalysisProgress();
+    stopAnalysisProgress = noop;
     setAnalysisRequestId(requestId);
     setAnalysisResultFiles([]);
     setAnalysisProgress({
@@ -149,21 +161,24 @@ export function useStudioAnnotateState(): StudioAnnotateState {
       resultFiles: [],
       error: null,
     });
-    let stop: (() => void) | null = null;
+    const isCurrentRun = () => analysisGeneration === generation;
     const onProgress = (progress: AnalysisProgress) => {
+      if (!isCurrentRun()) return;
       setAnalysisProgress(progress);
       if (progress.resultFiles?.length) {
         setAnalysisResultFiles(progress.resultFiles);
       }
       if (progress.status === "completed") {
-        stop?.();
-        stop = null;
+        analysisGeneration += 1;
+        stopAnalysisProgress();
+        stopAnalysisProgress = noop;
         setStatus("Analysis completed");
         studioNavigate(navigate, "/result");
       }
       if (progress.status === "error") {
-        stop?.();
-        stop = null;
+        analysisGeneration += 1;
+        stopAnalysisProgress();
+        stopAnalysisProgress = noop;
         setStatus(progress.error ?? "Analysis failed");
       }
     };
@@ -173,6 +188,7 @@ export function useStudioAnnotateState(): StudioAnnotateState {
         await runClientEffect(
           studioClient.saveAssayJson(workspacePath, JSON.stringify(assayJson, null, 2)),
         );
+        if (!isCurrentRun()) return;
         setBasicInfoSavedSnapshot()(serializeBasicInfoSnapshot(wizard()));
         setStatus("Starting analysis");
         setAnalysisProgress({
@@ -190,11 +206,18 @@ export function useStudioAnnotateState(): StudioAnnotateState {
             requestId,
           }),
         );
+        if (!isCurrentRun()) return;
         setAnalysisProgress(initialProgress);
-        stop = studioClient.onAnalysisProgress(requestId, onProgress);
+        const stop = studioClient.onAnalysisProgress(requestId, onProgress);
+        if (isCurrentRun()) {
+          stopAnalysisProgress = stop;
+        } else {
+          stop();
+        }
       } catch (cause) {
-        stop?.();
-        stop = null;
+        if (!isCurrentRun()) return;
+        stopAnalysisProgress();
+        stopAnalysisProgress = noop;
         setAnalysisProgress({
           requestId,
           status: "error",

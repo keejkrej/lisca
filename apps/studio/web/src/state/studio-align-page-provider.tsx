@@ -23,35 +23,19 @@ export function StudioAlignPageProvider(props: { children?: JSX.Element }) {
   });
   const smartExclude = useSmartExclude({
     provider: smartExcludeProvider,
-    get frame() {
-      return state.frame;
-    },
-    get grid() {
-      return state.grid;
-    },
-    get currentExcludedCells() {
-      return state.currentExcludedCells;
-    },
-    get enabled() {
-      return Boolean(state.frame) && !state.saving;
-    },
+    frame: () => state.frame,
+    grid: () => state.grid,
+    currentExcludedCells: () => state.currentExcludedCells,
+    enabled: () => Boolean(state.frame) && !state.saving,
     onComplete: state.applySmartExclusion,
     onError: state.reportError,
   });
   const varExclude = useVarExclude({
     provider: createStudioVarExcludeProvider(),
-    get frame() {
-      return state.frame;
-    },
-    get grid() {
-      return state.grid;
-    },
-    get currentExcludedCells() {
-      return state.currentExcludedCells;
-    },
-    get enabled() {
-      return Boolean(state.frame) && !state.saving;
-    },
+    frame: () => state.frame,
+    grid: () => state.grid,
+    currentExcludedCells: () => state.currentExcludedCells,
+    enabled: () => Boolean(state.frame) && !state.saving,
     onPreview: state.showVariationExcludePreview,
     onStatus: state.reportStatus,
     onError: state.reportError,

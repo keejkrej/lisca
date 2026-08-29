@@ -1,5 +1,5 @@
 import type { Component } from "solid-js";
-import { createEffect, createSignal, For, onCleanup } from "solid-js";
+import { createEffect, createSignal, For, onCleanup, Show } from "solid-js";
 import { Button } from "@lisca/ui/components";
 import {
   ANNOTATION_TOOL_DEFINITIONS,
@@ -134,8 +134,55 @@ export function AnnotationToolGrid(props: {
     }),
   );
 
-  if (props.layout === "rail") {
-    return (
+  return (
+    <Show
+      when={props.layout === "rail"}
+      fallback={
+        <div
+          aria-label="Annotation tool"
+          class={props.class ?? "flex w-full flex-col gap-2"}
+          role="toolbar"
+        >
+          <For each={ANNOTATION_TOOL_GRID_ROWS}>
+            {(row) => (
+              <div class="grid w-full grid-cols-3 gap-2">
+                <For each={row}>
+                  {(buttonIndex) => {
+                    const action = () => props.toolActions[buttonIndex];
+                    const label = () => {
+                      const current = action();
+                      if (!current) return "";
+                      return showShortcutLabels()
+                        ? dockToolLabel(current.label, buttonIndex)
+                        : current.label;
+                    };
+                    return (
+                      <div class="min-w-0">
+                        {action() ? (
+                          <AnnotationToolButton action={action()!} label={label()} />
+                        ) : null}
+                      </div>
+                    );
+                  }}
+                </For>
+              </div>
+            )}
+          </For>
+          {props.toolActions[6] ? (
+            <div class="w-full">
+              <AnnotationToolButton
+                action={props.toolActions[6]!}
+                label={
+                  showShortcutLabels()
+                    ? dockToolLabel(props.toolActions[6]!.label, 6)
+                    : props.toolActions[6]!.label
+                }
+              />
+            </div>
+          ) : null}
+        </div>
+      }
+    >
       <RailControlStack aria-label="Annotation tool" class={props.class} role="toolbar">
         <For each={railActions()}>
           {(action, index) => {
@@ -163,50 +210,6 @@ export function AnnotationToolGrid(props: {
           }}
         </For>
       </RailControlStack>
-    );
-  }
-
-  return (
-    <div
-      aria-label="Annotation tool"
-      class={props.class ?? "flex w-full flex-col gap-2"}
-      role="toolbar"
-    >
-      <For each={ANNOTATION_TOOL_GRID_ROWS}>
-        {(row) => (
-          <div class="grid w-full grid-cols-3 gap-2">
-            <For each={row}>
-              {(buttonIndex) => {
-                const action = () => props.toolActions[buttonIndex];
-                const label = () => {
-                  const current = action();
-                  if (!current) return "";
-                  return showShortcutLabels()
-                    ? dockToolLabel(current.label, buttonIndex)
-                    : current.label;
-                };
-                return (
-                  <div class="min-w-0">
-                    {action() ? <AnnotationToolButton action={action()!} label={label()} /> : null}
-                  </div>
-                );
-              }}
-            </For>
-          </div>
-        )}
-      </For>
-      {props.toolActions[6] ? (
-        <div class="w-full">
-          <AnnotationToolButton
-            action={props.toolActions[6]!}
-            label={
-              showShortcutLabels()
-                ? dockToolLabel(props.toolActions[6]!.label, 6)
-                : props.toolActions[6]!.label
-            }
-          />
-        </div>
-      ) : null}
-    </div>
+    </Show>
   );
 }

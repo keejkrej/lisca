@@ -109,6 +109,7 @@ const Carousel = (props: CarouselRootProps) => {
     emblaApi.on("select", onSelect);
 
     onCleanup(() => {
+      emblaApi.off("reInit", onSelect);
       emblaApi.off("select", onSelect);
     });
   });

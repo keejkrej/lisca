@@ -32,7 +32,11 @@ export function AlignDemo(props: AlignDemoProps) {
 
 function AlignDemoView(props: { embedded: boolean }) {
   const state = useDemoAlignState();
-  useEmbeddedDemoPreset(props.embedded, props.embedded ? "aligner" : null, Boolean(state().frame));
+  useEmbeddedDemoPreset(
+    () => props.embedded,
+    () => (props.embedded ? "aligner" : null),
+    () => Boolean(state().frame),
+  );
 
   const navbar = (
     <DemoNavbar

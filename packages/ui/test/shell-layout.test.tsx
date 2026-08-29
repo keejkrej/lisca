@@ -1,5 +1,5 @@
 import { cleanup, fireEvent, render, screen } from "@solidjs/testing-library";
-import { createEffect, onCleanup } from "solid-js";
+import { createEffect, createSignal, onCleanup } from "solid-js";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { AppShell } from "../src/shell/layout/shell";
@@ -79,6 +79,27 @@ describe("AppShell stage layout", () => {
     hasClass(screen.getByLabelText("Right panel"), "w-56");
     hasClass(main, "overflow-auto");
     hasClass(main.parentElement!, "overflow-hidden");
+  });
+
+  it("updates a sidebar width class passed from reactive state", () => {
+    stubViewport(1200, 800);
+    const [widthClass, setWidthClass] = createSignal("w-56");
+    render(() => (
+      <AppShell>
+        <AppShell.Body>
+          <AppShell.Left widthClass={widthClass()}>Left</AppShell.Left>
+          <AppShell.MainColumn>
+            <AppShell.Main>Main</AppShell.Main>
+          </AppShell.MainColumn>
+        </AppShell.Body>
+      </AppShell>
+    ));
+
+    const sidebar = screen.getByLabelText("Left panel");
+    hasClass(sidebar, "w-56");
+    setWidthClass("w-72");
+    expect(screen.getByLabelText("Left panel")).toBe(sidebar);
+    hasClass(sidebar, "w-72");
   });
 
   it("renders the Paper stage geometry without clipping its central shadows", () => {

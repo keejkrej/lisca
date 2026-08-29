@@ -32,9 +32,9 @@ export function AnnotatorDemo(props: AnnotatorDemoProps) {
 function AnnotatorDemoView(props: { embedded: boolean }) {
   const state = useDemoAnnotatorState();
   useEmbeddedDemoPreset(
-    props.embedded,
-    props.embedded ? "annotator" : null,
-    Boolean(state().frame),
+    () => props.embedded,
+    () => (props.embedded ? "annotator" : null),
+    () => Boolean(state().frame),
   );
 
   const navbar = (

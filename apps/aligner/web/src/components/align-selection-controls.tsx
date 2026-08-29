@@ -24,35 +24,19 @@ export function AlignSelectionControls() {
   const disabled = createMemo(() => !state().frame);
   const varExclude = useVarExclude({
     provider: createLocalVarExcludeProvider(),
-    get frame() {
-      return state().frame;
-    },
-    get grid() {
-      return state().grid;
-    },
-    get currentExcludedCells() {
-      return state().currentExcludedCells;
-    },
-    get enabled() {
-      return !disabled();
-    },
+    frame: () => state().frame,
+    grid: () => state().grid,
+    currentExcludedCells: () => state().currentExcludedCells,
+    enabled: () => !disabled(),
     onPreview: (preview) => state().showVariationExcludePreview(preview),
     onError: (error) => state().reportError(error),
   });
   const smartExclude = useSmartExclude({
     provider: smartExcludeProvider,
-    get frame() {
-      return state().frame;
-    },
-    get grid() {
-      return state().grid;
-    },
-    get currentExcludedCells() {
-      return state().currentExcludedCells;
-    },
-    get enabled() {
-      return !disabled();
-    },
+    frame: () => state().frame,
+    grid: () => state().grid,
+    currentExcludedCells: () => state().currentExcludedCells,
+    enabled: () => !disabled(),
     onComplete: (cells) => state().applySmartExclusion(cells),
     onError: (error) => state().reportError(error),
   });

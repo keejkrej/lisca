@@ -33,21 +33,30 @@ export function useCanvasThemeRerender(rerender: () => void) {
   const theme = useShellTheme();
 
   createEffect(() => {
-    theme.mode;
+    const mode = theme.mode;
     const id = window.requestAnimationFrame(() => {
+      void mode;
       rerender();
     });
     onCleanup(() => window.cancelAnimationFrame(id));
   });
 
   onMount(() => {
+    let observerFrame: number | null = null;
     const observer = new MutationObserver(() => {
-      window.requestAnimationFrame(rerender);
+      if (observerFrame !== null) return;
+      observerFrame = window.requestAnimationFrame(() => {
+        observerFrame = null;
+        rerender();
+      });
     });
     observer.observe(document.documentElement, {
       attributes: true,
       attributeFilter: ["class", "style"],
     });
-    onCleanup(() => observer.disconnect());
+    onCleanup(() => {
+      observer.disconnect();
+      if (observerFrame !== null) window.cancelAnimationFrame(observerFrame);
+    });
   });
 }

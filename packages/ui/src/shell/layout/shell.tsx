@@ -51,13 +51,13 @@ function ShellSidebarInner(props: {
 }) {
   const variant = useAppShellVariant();
   const edge = props.side === "left" ? `border-r ${shellDivider}` : `border-l ${shellDivider}`;
-  const widthClass = props.widthClass ?? (variant === "stage" ? "w-64" : "w-56");
+  const widthClass = () => props.widthClass ?? (variant === "stage" ? "w-64" : "w-56");
   return (
     <aside
       aria-label={props.side === "left" ? "Left panel" : "Right panel"}
       class={cn(
         "flex min-h-0 shrink-0 flex-col",
-        widthClass,
+        widthClass(),
         variant === "stage"
           ? "h-full overflow-hidden bg-muted"
           : `overflow-y-auto ${shellSurface} ${edge}`,

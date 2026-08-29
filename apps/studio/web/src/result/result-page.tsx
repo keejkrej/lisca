@@ -1,7 +1,7 @@
 import { Button, Spinner } from "@lisca/ui/components";
 import { AppShell } from "@lisca/ui/shell";
 import { ResultPlotGallery } from "./result-panels-grid";
-import { createEffect, createMemo, createResource, createSignal } from "solid-js";
+import { createMemo, createResource, createSignal } from "solid-js";
 import { liscaDesktopBridge, resolveLiscaAssetUrl } from "@lisca/client/desktop";
 import { runClientEffect } from "@lisca/client/runtime";
 import { resolveStudioHttpBaseUrl, studioClient, toErrorMessage } from "../api/studio-port";
@@ -27,7 +27,7 @@ import { useStudioResultState } from "../state/use-studio-result-state";
 export default function ResultPage() {
   const { navigateTo } = useStudioNavigate();
   const resultState = useStudioResultState();
-  const [activeSection, setActiveSection] = createSignal<ResultPlotSection>("timeseries");
+  const [selectedSection, setSelectedSection] = createSignal<ResultPlotSection>("timeseries");
   const [isSaving, setIsSaving] = createSignal(false);
   const [saveMessage, setSaveMessage] = createSignal<string | null>(null);
   const [exportCapture, setExportCapture] = createSignal<{
@@ -56,6 +56,13 @@ export default function ResultPage() {
       ),
   );
   const allPlots = () => (isDesktop ? (desktopPlots() ?? []) : plotsWithUrls());
+  const activeSection = createMemo(() => {
+    const plots = allPlots();
+    const selected = selectedSection();
+    return plots.length === 0 || filterResultPlotsBySection(plots, selected).length > 0
+      ? selected
+      : defaultResultPlotSection(plots);
+  });
   const sectionPlots = createMemo(() => filterResultPlotsBySection(allPlots(), activeSection()));
   const timeseriesPlots = createMemo(() => filterResultPlotsBySection(allPlots(), "timeseries"));
   const parameterPlots = createMemo(() => filterResultPlotsBySection(allPlots(), "parameters"));
@@ -110,15 +117,8 @@ export default function ResultPage() {
   };
   const switchSection = (section: ResultPlotSection) => {
     if (section === activeSection() || isSaving()) return;
-    setActiveSection(section);
+    setSelectedSection(section);
   };
-  createEffect(() => {
-    const plots = allPlots();
-    if (plots.length === 0) return;
-    const current = filterResultPlotsBySection(plots, activeSection());
-    if (current.length > 0) return;
-    setActiveSection(defaultResultPlotSection(plots));
-  });
   const defaultInstruction = () => resultSectionInstruction(activeSection(), assayKind());
   const dockInstruction = () => saveMessage() ?? defaultInstruction();
   const sectionToolActions = createMemo(() => [

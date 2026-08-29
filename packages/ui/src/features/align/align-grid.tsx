@@ -386,15 +386,31 @@ export function AlignGrid(props: AlignGridProps) {
       </>
     );
 
-  if (props.sectionAppearance === "rail") {
-    return (
-      <>
+  return (
+    <Show
+      when={props.sectionAppearance === "rail"}
+      fallback={
         <PanelSection
-          appearance="rail"
+          appearance={props.sectionAppearance}
+          class={props.sectionClassName}
           contentClassName={props.sectionContentClassName}
           description={props.sectionDescription}
           title={props.sectionTitle ?? "Grid"}
+        >
+          <div class="min-w-0 space-y-3">
+            <GridControls />
+            <GeometryControls />
+          </div>
+        </PanelSection>
+      }
+    >
+      <>
+        <PanelSection
+          appearance="rail"
           class={props.sectionClassName}
+          contentClassName={props.sectionContentClassName}
+          description={props.sectionDescription}
+          title={props.sectionTitle ?? "Grid"}
         >
           <RailControlStack>
             <GridControls rail />
@@ -402,30 +418,15 @@ export function AlignGrid(props: AlignGridProps) {
         </PanelSection>
         <PanelSection
           appearance="rail"
+          class={props.sectionClassName}
           contentClassName={props.sectionContentClassName}
           title="Geometry"
-          class={props.sectionClassName}
         >
           <RailControlStack>
             <GeometryControls rail toolOrder />
           </RailControlStack>
         </PanelSection>
       </>
-    );
-  }
-
-  return (
-    <PanelSection
-      appearance={props.sectionAppearance}
-      contentClassName={props.sectionContentClassName}
-      description={props.sectionDescription}
-      title={props.sectionTitle ?? "Grid"}
-      class={props.sectionClassName}
-    >
-      <div class="min-w-0 space-y-3">
-        <GridControls />
-        <GeometryControls />
-      </div>
-    </PanelSection>
+    </Show>
   );
 }

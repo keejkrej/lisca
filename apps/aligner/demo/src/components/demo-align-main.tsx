@@ -6,7 +6,7 @@ import {
 } from "@lisca/ui/features";
 import { frameWithContrast, stemName } from "@lisca/web-demo/browser";
 import type { DemoAlignState } from "@lisca/web-demo";
-import type { Accessor } from "solid-js";
+import { Show, type Accessor } from "solid-js";
 
 export function DemoAlignMain(props: { state: Accessor<DemoAlignState>; embedded?: boolean }) {
   const pointer = useAlignCanvasPointerHandlers(() => {
@@ -66,10 +66,6 @@ export function DemoAlignMain(props: { state: Accessor<DemoAlignState>; embedded
     />
   );
 
-  if (props.embedded) {
-    return <ViewportCard>{canvas}</ViewportCard>;
-  }
-
   const captionLeft = () => {
     const fileName = props.state().fileName;
     return fileName ? stemName(fileName) : "Demo";
@@ -80,15 +76,22 @@ export function DemoAlignMain(props: { state: Accessor<DemoAlignState>; embedded
   };
 
   return (
-    <ViewportCard variant="stage">
-      <StageCanvas
-        aspect="wide"
-        captionLeft={captionLeft()}
-        captionRight={captionRight()}
-        class="max-w-[45rem]"
-      >
-        {canvas}
-      </StageCanvas>
-    </ViewportCard>
+    <Show
+      when={props.embedded}
+      fallback={
+        <ViewportCard variant="stage">
+          <StageCanvas
+            aspect="wide"
+            captionLeft={captionLeft()}
+            captionRight={captionRight()}
+            class="max-w-[45rem]"
+          >
+            {canvas}
+          </StageCanvas>
+        </ViewportCard>
+      }
+    >
+      <ViewportCard>{canvas}</ViewportCard>
+    </Show>
   );
 }

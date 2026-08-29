@@ -1,6 +1,7 @@
 import type { ResultPlotSection } from "@lisca/analysis";
 import { Button } from "@lisca/ui/components";
 import { DockSection, DockStrip } from "@lisca/ui/shell";
+import { Show } from "solid-js";
 
 export function DemoAnalysisDock(props: {
   section: ResultPlotSection;
@@ -31,13 +32,16 @@ export function DemoAnalysisDock(props: {
     </div>
   );
 
-  if (props.compact) {
-    return <div class="shrink-0 border-t border-border px-3 py-2">{buttons}</div>;
-  }
-
   return (
-    <DockStrip>
-      <DockSection title="View">{buttons}</DockSection>
-    </DockStrip>
+    <Show
+      when={props.compact}
+      fallback={
+        <DockStrip>
+          <DockSection title="View">{buttons}</DockSection>
+        </DockStrip>
+      }
+    >
+      <div class="shrink-0 border-t border-border px-3 py-2">{buttons}</div>
+    </Show>
   );
 }

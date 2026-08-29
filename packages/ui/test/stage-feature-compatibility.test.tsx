@@ -1,4 +1,5 @@
 import { cleanup, fireEvent, render, screen, within } from "@solidjs/testing-library";
+import { createSignal } from "solid-js";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { AlignToolToolbar } from "../src/features/align/align-tools";
@@ -162,6 +163,30 @@ describe("stage rail tool compatibility", () => {
     expect(onToolChange).toHaveBeenLastCalledWith("magnifier");
     fireEvent.click(magnifier);
     expect(onToolChange).toHaveBeenCalledTimes(2);
+  });
+
+  it("reacts to toolbar layout and mode changes without rebuilding stable grid buttons", () => {
+    const [layout, setLayout] = createSignal<"grid" | "rail">("grid");
+    const [mode, setMode] = createSignal<"pan" | "rotate">("pan");
+    render(() => (
+      <AlignToolToolbar layout={layout()} mode={mode()} onModeChange={() => undefined} />
+    ));
+
+    const panButton = screen.getByRole("button", { name: "Pan (1)" });
+    expect(screen.getByRole("toolbar", { name: "Align canvas tool" }).dataset.railLayout).toBe(
+      undefined,
+    );
+
+    setMode("rotate");
+    expect(screen.getByRole("button", { name: "Pan (1)" })).toBe(panButton);
+    expect(screen.getByRole("button", { name: "Rotate (2)" }).className).toContain(
+      "z-button-variant-default",
+    );
+
+    setLayout("rail");
+    expect(screen.getByRole("toolbar", { name: "Align canvas tool" }).dataset.railLayout).toBe(
+      "stack",
+    );
   });
 });
 

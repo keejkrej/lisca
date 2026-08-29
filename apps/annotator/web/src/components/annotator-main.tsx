@@ -39,21 +39,11 @@ export function AnnotatorMain() {
   };
   const smartSegment = useSmartSegment({
     provider: smartSegmentProvider,
-    get frame() {
-      return canvas.frame;
-    },
-    get tool() {
-      return canvas.tool;
-    },
-    get activeLabelValue() {
-      return activeLabelValue();
-    },
-    get mask() {
-      return canvas.annotation.current.mask;
-    },
-    get enabled() {
-      return canvas.canEditSegmentation;
-    },
+    frame: () => canvas.frame,
+    tool: () => canvas.tool,
+    activeLabelValue,
+    mask: () => canvas.annotation.current.mask,
+    enabled: () => canvas.canEditSegmentation,
     onCommit: onMaskCommit,
     onStatus: setSmartSegmentStatus,
     onError: setSmartSegmentError,

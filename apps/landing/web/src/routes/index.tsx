@@ -359,8 +359,25 @@ function AssayCard(props: { assay: (typeof landingAssays)[number] }) {
 }
 
 function AssayVisual(props: { kind: (typeof landingAssays)[number]["visual"] }) {
-  if (props.kind === "transfection") {
-    return (
+  return (
+    <Show
+      when={props.kind === "transfection"}
+      fallback={
+        <div aria-hidden class="relative aspect-[16/10] border-b border-border bg-muted/20 p-5">
+          <svg viewBox="0 0 320 180" class="h-full w-full" role="presentation">
+            <path
+              d="M 10 40 C 80 40, 100 150, 170 150 S 260 150, 310 150"
+              fill="none"
+              stroke="var(--accent-glow)"
+              stroke-width="2.5"
+            />
+          </svg>
+          <p class="absolute bottom-3 left-5 font-mono text-[0.65rem] uppercase tracking-wider text-muted-foreground">
+            Kill curve
+          </p>
+        </div>
+      }
+    >
       <div aria-hidden class="relative aspect-[16/10] border-b border-border bg-muted/20 p-5">
         <svg viewBox="0 0 320 180" class="h-full w-full" role="presentation">
           <polyline
@@ -380,23 +397,7 @@ function AssayVisual(props: { kind: (typeof landingAssays)[number]["visual"] }) 
           Fluorescence traces
         </p>
       </div>
-    );
-  }
-
-  return (
-    <div aria-hidden class="relative aspect-[16/10] border-b border-border bg-muted/20 p-5">
-      <svg viewBox="0 0 320 180" class="h-full w-full" role="presentation">
-        <path
-          d="M 10 40 C 80 40, 100 150, 170 150 S 260 150, 310 150"
-          fill="none"
-          stroke="var(--accent-glow)"
-          stroke-width="2.5"
-        />
-      </svg>
-      <p class="absolute bottom-3 left-5 font-mono text-[0.65rem] uppercase tracking-wider text-muted-foreground">
-        Kill curve
-      </p>
-    </div>
+    </Show>
   );
 }
 

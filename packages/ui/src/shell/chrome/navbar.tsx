@@ -36,8 +36,8 @@ function ShellNavbarRoot(props: ShellNavbarProps) {
   const server = useShellServer();
   const workspace = useShellWorkspace();
 
-  const handleSource = props.onPickSource ?? (() => workspace.pickSource());
-  const handleWorkspace = props.onPickWorkspace ?? (() => workspace.pickWorkspace());
+  const handleSource = () => (props.onPickSource ?? workspace.pickSource)();
+  const handleWorkspace = () => (props.onPickWorkspace ?? workspace.pickWorkspace)();
 
   return (
     <header class={cn("h-full", props.appearance !== "stage" && "px-6")}>

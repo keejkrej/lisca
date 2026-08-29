@@ -11,10 +11,10 @@ export function DemoAlignSelectionControls(props: { state: Accessor<DemoAlignSta
   const smartExclude = useSmartExclude({
     provider: browserSmartExclude.provider,
     model: browserSmartExclude.model,
-    frame: props.state().frame,
-    grid: props.state().grid,
-    currentExcludedCells: props.state().excludedCells,
-    enabled: !disabled(),
+    frame: () => props.state().frame,
+    grid: () => props.state().grid,
+    currentExcludedCells: () => props.state().excludedCells,
+    enabled: () => !disabled(),
     onComplete: props.state().applySmartExclusion,
     onError: props.state().reportError,
   });

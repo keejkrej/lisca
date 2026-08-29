@@ -1,17 +1,17 @@
 import { cleanup, render, screen } from "@solidjs/testing-library";
 import type { AnnotationLabel } from "@lisca/contracts";
 import type { FrameResult } from "@lisca/utils";
-import { createSignal } from "solid-js";
+import { createSignal, type Accessor } from "solid-js";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 type Toast = { text: string; tone?: "error" };
 
 type SmartSegmentOptions = {
-  frame: FrameResult | null;
-  tool: string;
-  activeLabelValue: number;
-  mask: Uint8Array;
-  enabled: boolean;
+  frame: Accessor<FrameResult | null>;
+  tool: Accessor<string>;
+  activeLabelValue: Accessor<number>;
+  mask: Accessor<Uint8Array>;
+  enabled: Accessor<boolean>;
   onCommit: (mask: Uint8Array) => void;
   onStatus?: (status: string | null) => void;
   onError?: (error: string | null) => void;
@@ -158,11 +158,11 @@ describe("Annotator live component state", () => {
     expect(canvasProps).not.toBeNull();
     if (!options || !canvasProps) throw new Error("Annotator component mocks were not captured");
 
-    expect(options.frame).toBe(firstFrame);
-    expect(options.tool).toBe("brush");
-    expect(options.activeLabelValue).toBe(1);
-    expect(options.mask).toEqual(new Uint8Array([0, 0, 0, 0]));
-    expect(options.enabled).toBe(false);
+    expect(options.frame()).toBe(firstFrame);
+    expect(options.tool()).toBe("brush");
+    expect(options.activeLabelValue()).toBe(1);
+    expect(options.mask()).toEqual(new Uint8Array([0, 0, 0, 0]));
+    expect(options.enabled()).toBe(false);
     expect(canvasProps.toasts).toEqual([{ text: "Loading ROI frame" }]);
 
     setFrame(secondFrame);
@@ -172,11 +172,11 @@ describe("Annotator live component state", () => {
     setCanEditSegmentation(true);
     setCanvasToasts([{ text: "Frame ready" }]);
 
-    expect(options.frame).toBe(secondFrame);
-    expect(options.tool).toBe("smart");
-    expect(options.activeLabelValue).toBe(2);
-    expect(options.mask).toEqual(new Uint8Array([2, 0, 2]));
-    expect(options.enabled).toBe(true);
+    expect(options.frame()).toBe(secondFrame);
+    expect(options.tool()).toBe("smart");
+    expect(options.activeLabelValue()).toBe(2);
+    expect(options.mask()).toEqual(new Uint8Array([2, 0, 2]));
+    expect(options.enabled()).toBe(true);
     expect(canvasProps.toasts).toEqual([{ text: "Frame ready" }]);
 
     options.onStatus?.("Segmenting…");
@@ -194,7 +194,7 @@ describe("Annotator live component state", () => {
 
     setLabels([{ id: "background", name: "Background", color: "#171717" }]);
     setActiveLabelId("background");
-    expect(options.activeLabelValue).toBe(1);
+    expect(options.activeLabelValue()).toBe(1);
   });
 
   it("keeps the Action rail focused on the live save action", () => {

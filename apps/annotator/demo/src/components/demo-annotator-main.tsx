@@ -7,7 +7,7 @@ import {
 import { createBrowserSmartSegmentSetup } from "@lisca/smart/segment/browser";
 import { useSmartSegment } from "@lisca/smart/segment";
 import { stemName, toDisplayFrame } from "@lisca/web-demo/browser";
-import { createSignal, type Accessor } from "solid-js";
+import { createSignal, Show, type Accessor } from "solid-js";
 import type { DemoAnnotatorState } from "@lisca/web-demo";
 
 const browserSmartSegment = createBrowserSmartSegmentSetup();
@@ -30,11 +30,11 @@ export function DemoAnnotatorMain(props: {
   const smartSegment = useSmartSegment({
     provider: browserSmartSegment.provider,
     model: browserSmartSegment.model,
-    frame: displayFrame(),
-    tool: props.state().tool,
-    activeLabelValue: activeLabelValue(),
-    mask: props.state().annotation.current.mask,
-    enabled: props.state().canEditSegmentation,
+    frame: displayFrame,
+    tool: () => props.state().tool,
+    activeLabelValue,
+    mask: () => props.state().annotation.current.mask,
+    enabled: () => props.state().canEditSegmentation,
     onCommit: (mask) => {
       const state = props.state();
       state.annotation.commit({
@@ -92,20 +92,6 @@ export function DemoAnnotatorMain(props: {
     />
   );
 
-  if (props.embedded) {
-    return (
-      <ViewportCard>
-        <SmartSegmentModelDialog
-          busy={smartSegment.busy()}
-          state={smartSegment.downloadState()}
-          onCancel={smartSegment.cancelDownload}
-          onConfirm={() => void smartSegment.confirmDownload()}
-        />
-        {canvas}
-      </ViewportCard>
-    );
-  }
-
   const captionLeft = () => {
     const fileName = props.state().fileName;
     return fileName ? stemName(fileName) : "Demo";
@@ -116,21 +102,36 @@ export function DemoAnnotatorMain(props: {
   };
 
   return (
-    <ViewportCard variant="stage">
-      <SmartSegmentModelDialog
-        busy={smartSegment.busy()}
-        state={smartSegment.downloadState()}
-        onCancel={smartSegment.cancelDownload}
-        onConfirm={() => void smartSegment.confirmDownload()}
-      />
-      <StageCanvas
-        aspect="square"
-        captionLeft={captionLeft()}
-        captionRight={captionRight()}
-        class="max-w-[30rem]"
-      >
+    <Show
+      when={props.embedded}
+      fallback={
+        <ViewportCard variant="stage">
+          <SmartSegmentModelDialog
+            busy={smartSegment.busy()}
+            state={smartSegment.downloadState()}
+            onCancel={smartSegment.cancelDownload}
+            onConfirm={() => void smartSegment.confirmDownload()}
+          />
+          <StageCanvas
+            aspect="square"
+            captionLeft={captionLeft()}
+            captionRight={captionRight()}
+            class="max-w-[30rem]"
+          >
+            {canvas}
+          </StageCanvas>
+        </ViewportCard>
+      }
+    >
+      <ViewportCard>
+        <SmartSegmentModelDialog
+          busy={smartSegment.busy()}
+          state={smartSegment.downloadState()}
+          onCancel={smartSegment.cancelDownload}
+          onConfirm={() => void smartSegment.confirmDownload()}
+        />
         {canvas}
-      </StageCanvas>
-    </ViewportCard>
+      </ViewportCard>
+    </Show>
   );
 }

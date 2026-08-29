@@ -1,6 +1,6 @@
 import type { AlignGridCellCoord, AlignGridState } from "@lisca/contracts";
 import type { FrameResult } from "@lisca/utils";
-import { createMemo, createSignal } from "solid-js";
+import { createMemo, createSignal, onCleanup, type Accessor } from "solid-js";
 
 import type { SmartModelDownloadState, SmartModelGate } from "../shared/model-gate";
 import { useLatestRef } from "../shared/use-latest-ref";
@@ -17,10 +17,10 @@ type PendingRun = {
 export function useSmartExclude(options: {
   provider: SmartExcludeProvider;
   model?: SmartModelGate;
-  frame: FrameResult | null;
-  grid: AlignGridState;
-  currentExcludedCells: AlignGridCellCoord[];
-  enabled: boolean;
+  frame: Accessor<FrameResult | null>;
+  grid: Accessor<AlignGridState>;
+  currentExcludedCells: Accessor<AlignGridCellCoord[]>;
+  enabled: Accessor<boolean>;
   onComplete: (modelCells: AlignGridCellCoord[]) => void;
   onStatus?: (status: string | null) => void;
   onError?: (error: string | null) => void;
@@ -35,12 +35,21 @@ export function useSmartExclude(options: {
   const active = createMemo(() => busy() || (options.model ? downloadState().open : false));
 
   let runGeneration = 0;
+  let disposed = false;
   let pendingRun: PendingRun | null = null;
   let consentPromise: Promise<AlignGridCellCoord[]> | null = null;
 
   const onCompleteRef = useLatestRef(() => options.onComplete);
   const onStatusRef = useLatestRef(() => options.onStatus);
   const onErrorRef = useLatestRef(() => options.onError);
+
+  onCleanup(() => {
+    disposed = true;
+    runGeneration += 1;
+    pendingRun?.reject(new Error("Smart exclude cancelled"));
+    pendingRun = null;
+    consentPromise = null;
+  });
 
   const closeDownloadState = () => {
     setDownloadState({ open: false, requiresDownload: false, progress: 0, message: "" });
@@ -61,9 +70,13 @@ export function useSmartExclude(options: {
   };
 
   const runClassify = async (generation: number): Promise<AlignGridCellCoord[]> => {
-    const frame = options.frame;
+    const frame = options.frame();
     if (!frame) return [];
-    const cells = getSmartExcludeCandidateCells(frame, options.grid, options.currentExcludedCells);
+    const cells = getSmartExcludeCandidateCells(
+      frame,
+      options.grid(),
+      options.currentExcludedCells(),
+    );
     if (cells.length === 0) return [];
 
     onErrorRef.current?.(null);
@@ -79,7 +92,13 @@ export function useSmartExclude(options: {
 
     const modelCells = await options.provider.classify(
       { frame, cells },
-      options.model ? { onProgress: updateDownloadProgress } : undefined,
+      options.model
+        ? {
+            onProgress: (progress) => {
+              if (!disposed && runGeneration === generation) updateDownloadProgress(progress);
+            },
+          }
+        : undefined,
     );
     if (runGeneration !== generation) return [];
     closeDownloadState();
@@ -97,6 +116,7 @@ export function useSmartExclude(options: {
     }
 
     const cached = await model.isCached();
+    if (disposed || runGeneration !== generation) return [];
     if (cached) {
       setDownloadState({
         open: true,
@@ -131,8 +151,8 @@ export function useSmartExclude(options: {
   };
 
   const ensureAndClassify = async (): Promise<AlignGridCellCoord[]> => {
-    const frame = options.frame;
-    if (!options.enabled || !frame) return [];
+    const frame = options.frame();
+    if (disposed || !options.enabled() || !frame) return [];
     if (consentPromise) return consentPromise;
 
     const generation = runGeneration + 1;
@@ -142,8 +162,8 @@ export function useSmartExclude(options: {
     try {
       const cells = getSmartExcludeCandidateCells(
         frame,
-        options.grid,
-        options.currentExcludedCells,
+        options.grid(),
+        options.currentExcludedCells(),
       );
       if (cells.length === 0) return [];
 
@@ -167,7 +187,7 @@ export function useSmartExclude(options: {
   };
 
   const confirmDownload = async () => {
-    if (!options.model) return;
+    if (disposed || !options.model) return;
 
     const pending = pendingRun;
     const generation = runGeneration + 1;
@@ -189,6 +209,7 @@ export function useSmartExclude(options: {
         onCompleteRef.current(modelCells);
       }
     } catch (cause) {
+      if (disposed) return;
       const error = cause instanceof Error ? cause : new Error(String(cause));
       if (pending) {
         pending.reject(error);
@@ -214,12 +235,14 @@ export function useSmartExclude(options: {
   };
 
   const request = async () => {
-    if (!options.enabled || !options.frame || busy() || pendingRun) return;
+    if (disposed || !options.enabled() || !options.frame() || busy() || pendingRun) return;
     try {
       const modelCells = await ensureAndClassify();
+      if (disposed) return;
       onCompleteRef.current(modelCells);
       onStatusRef.current?.(null);
     } catch (cause) {
+      if (disposed) return;
       if (cause instanceof Error && cause.message === "Smart exclude cancelled") {
         onStatusRef.current?.("Smart exclude cancelled");
         return;

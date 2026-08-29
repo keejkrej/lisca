@@ -1,5 +1,5 @@
 import { useAtomSet } from "@effect/atom-solid";
-import { createEffect, onCleanup } from "solid-js";
+import { createEffect, onCleanup, type Accessor } from "solid-js";
 
 import { demoAlignUiActions, demoAlignUiAtom } from "../atoms/demo-align-ui";
 import { demoAnnotatorUiActions, demoAnnotatorUiAtom } from "../atoms/demo-annotator-ui";
@@ -9,20 +9,21 @@ export type EmbeddedDemoPreset = "aligner" | "annotator";
 
 /** Loads ibidi sample images — embedded landing previews only. */
 export function useEmbeddedDemoPreset(
-  embedded: boolean,
-  preset: EmbeddedDemoPreset | null,
-  hasFrame: boolean,
+  embedded: Accessor<boolean>,
+  preset: Accessor<EmbeddedDemoPreset | null>,
+  hasFrame: Accessor<boolean>,
 ) {
   const setAlignState = useAtomSet(() => demoAlignUiAtom);
   const setAnnotatorState = useAtomSet(() => demoAnnotatorUiAtom);
 
   createEffect(() => {
-    if (!embedded || !preset || hasFrame) return;
+    const currentPreset = preset();
+    if (!embedded() || !currentPreset || hasFrame()) return;
 
     let cancelled = false;
 
     const load = async () => {
-      if (preset === "aligner") {
+      if (currentPreset === "aligner") {
         demoAlignUiActions.setFrameLoading(setAlignState, true);
         demoAlignUiActions.setError(setAlignState, null);
         demoAlignUiActions.setStatus(setAlignState, "Loading sample image");
