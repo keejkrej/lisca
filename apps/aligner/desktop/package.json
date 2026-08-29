@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "build": "node --experimental-strip-types ../../../scripts/build-tauri-frontend.ts aligner",
-    "dev": "tauri dev",
+    "dev": "vp exec node --experimental-strip-types ../../../scripts/prepare-tauri-resources.ts aligner && tauri dev",
     "dist": "node --experimental-strip-types ../../../scripts/package-tauri.ts aligner",
     "typecheck": "vp exec node --experimental-strip-types ../../../scripts/prepare-tauri-resources.ts aligner && cargo check -p aligner-tauri"
   },

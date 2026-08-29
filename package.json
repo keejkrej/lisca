@@ -4,8 +4,11 @@
   "type": "module",
   "scripts": {
     "dev:aligner": "vp run --parallel --filter @lisca/aligner-server --filter @lisca/aligner-web dev",
+    "dev:aligner-desktop": "vp run --filter @lisca/aligner-desktop dev",
     "dev:annotator": "vp run --parallel --filter @lisca/annotator-server --filter @lisca/annotator-web dev",
+    "dev:annotator-desktop": "vp run --filter @lisca/annotator-desktop dev",
     "dev:studio": "vp run --parallel --filter @lisca/studio-server --filter @lisca/studio-web dev",
+    "dev:studio-desktop": "vp run --filter @lisca/studio-desktop dev",
     "dev:studio-demo": "vp run --filter @lisca/studio-demo dev",
     "fixture:workspace": "vp run --filter @lisca/fixtures fixture",
     "dev:landing": "vp run --filter @lisca/landing-web dev",
