@@ -30,6 +30,8 @@
   "devDependencies": {
     "@types/node": "catalog:",
     "@voidzero-dev/vite-plus-core": "latest",
+    "node-addon-api": "^8.9.2",
+    "node-gyp": "^11.5.0",
     "oxfmt": "^0.48.0",
     "oxlint": "^1.63.0",
     "oxlint-plugin-eslint": "1.68.0",
