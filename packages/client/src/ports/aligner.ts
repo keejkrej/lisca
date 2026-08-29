@@ -3,7 +3,6 @@ import { decodeFramePayload } from "@lisca/utils";
 import { Effect } from "effect";
 
 import { createApiClient, toClientEffect, type LiscaApiClient } from "../infra/api-client";
-import { withClientEffect } from "../infra/with-client-effect";
 import { pollProgressLoop } from "../session/progress-poll";
 import { createHostPort, type HostPortDeps } from "./host";
 import { createTaskPort } from "./tasks";
@@ -26,57 +25,47 @@ export function createAlignerPort(
     ...host,
     ...tasks,
     scanSource(source) {
-      return withClientEffect(client, undefined, (c) =>
-        c.align.scanSource({ payload: { source } }),
-      );
+      return toClientEffect(client.align.scanSource({ payload: { source } }));
     },
-    loadFrame(source, request, contrast, signal) {
-      return withClientEffect(client, signal, (c) =>
-        c.align
+    loadFrame(source, request, contrast) {
+      return toClientEffect(
+        client.align
           .loadFrame({ payload: { source, request, contrast: contrast ?? null } })
           .pipe(Effect.map(decodeFramePayload)),
       );
     },
     loadAlignState(workspacePath, pos) {
-      return withClientEffect(client, undefined, (c) =>
-        c.align.loadAlignState({ urlParams: { workspacePath, pos } }),
-      );
+      return toClientEffect(client.align.loadAlignState({ urlParams: { workspacePath, pos } }));
     },
     saveBbox(workspacePath, pos, csv, alignState) {
-      return withClientEffect(client, undefined, (c) =>
-        c.align.saveBbox({ payload: { workspacePath, pos, csv, alignState } }),
+      return toClientEffect(
+        client.align.saveBbox({ payload: { workspacePath, pos, csv, alignState } }),
       );
     },
     listSavedBboxPositions(workspacePath) {
-      return withClientEffect(client, undefined, (c) =>
-        c.align.listSavedBboxPositions({ urlParams: { workspacePath } }),
-      );
+      return toClientEffect(client.align.listSavedBboxPositions({ urlParams: { workspacePath } }));
     },
     cropRoi(request) {
-      return withClientEffect(client, undefined, (c) => c.align.cropRoi({ payload: request }));
+      return toClientEffect(client.align.cropRoi({ payload: request }));
     },
     getLatestCropProgress(workspacePath) {
-      return withClientEffect(client, undefined, (c) =>
-        c.align.getLatestCropProgress({ urlParams: { workspacePath } }),
-      );
+      return toClientEffect(client.align.getLatestCropProgress({ urlParams: { workspacePath } }));
     },
     cancelCropRoi(requestId) {
-      return withClientEffect(client, undefined, (c) =>
-        c.align.cancelCropRoi({ payload: { requestId } }),
-      );
+      return toClientEffect(client.align.cancelCropRoi({ payload: { requestId } }));
     },
     onCropRoiProgress(requestId, onProgress) {
       return createCropRoiProgressSubscription(client, requestId, onProgress);
     },
     roiPosExists(workspacePath, pos) {
-      return withClientEffect(client, undefined, (c) =>
-        c.align
+      return toClientEffect(
+        client.align
           .roiPosExists({ urlParams: { workspacePath, pos } })
           .pipe(Effect.map((result) => result.exists)),
       );
     },
-    smartExclude(request, signal) {
-      return withClientEffect(client, signal, (c) => c.align.smartExclude({ payload: request }));
+    smartExclude(request) {
+      return toClientEffect(client.align.smartExclude({ payload: request }));
     },
   };
 }

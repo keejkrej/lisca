@@ -2,10 +2,10 @@ import type { AnalysisProgress } from "@lisca/contracts";
 import { Atom, type Result } from "@effect-atom/atom-solid";
 import { Effect } from "effect";
 
+import type { StudioDataPort } from "../../ports/types";
 import type { ClientError } from "../../infra/client-error";
-import { StudioPortService } from "../ports";
 import { ReactivityKeys } from "../reactivity";
-import type { AppRuntime } from "../runtime";
+import { cacheSessionQuery, type AppRuntime } from "../runtime";
 
 export type AnalysisCsvInput = {
   workspacePath: string;
@@ -25,33 +25,28 @@ export type StudioAnalysisAtoms = {
 };
 
 export function createStudioAnalysisAtoms(
-  runtime: AppRuntime<StudioPortService>,
+  runtime: AppRuntime,
+  port: StudioDataPort,
 ): StudioAnalysisAtoms {
   const analysisResultsAtom = Atom.family((workspacePath: string) =>
     runtime
-      .atom(
-        Effect.gen(function* () {
-          const port = yield* StudioPortService;
-          return yield* port.getAnalysisResults(workspacePath);
-        }),
-      )
-      .pipe(Atom.keepAlive, Atom.withReactivity([ReactivityKeys.analysisResults(workspacePath)])),
+      .atom(Effect.suspend(() => port.getAnalysisResults(workspacePath)))
+      .pipe(
+        Atom.withReactivity([ReactivityKeys.analysisResults(workspacePath)]),
+        cacheSessionQuery,
+      ),
   );
 
   const analysisCsvAtom = Atom.family((inputKey: string) => {
     const input = JSON.parse(inputKey) as AnalysisCsvInput;
+    const inline = input.inlineCsv?.trim();
     return runtime
       .atom(
-        Effect.gen(function* () {
-          const inline = input.inlineCsv?.trim();
-          if (inline) return inline;
-          const port = yield* StudioPortService;
-          return yield* port.readTextFile(input.filePath);
-        }),
+        inline ? Effect.succeed(inline) : Effect.suspend(() => port.readTextFile(input.filePath)),
       )
       .pipe(
-        Atom.keepAlive,
         Atom.withReactivity([ReactivityKeys.analysisCsv(input.workspacePath, input.filePath)]),
+        cacheSessionQuery,
       );
   });
 

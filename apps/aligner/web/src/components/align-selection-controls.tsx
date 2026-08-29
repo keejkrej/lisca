@@ -13,10 +13,7 @@ export function AlignSelectionControls() {
   const smartExcludeProvider = createRequestSmartExcludeProvider(
     {
       smartExclude: (request, signal) =>
-        runClientEffect(
-          alignerClient.smartExclude(request, signal),
-          signal ? { signal } : undefined,
-        ),
+        runClientEffect(alignerClient.smartExclude(request), signal ? { signal } : undefined),
     },
     {
       source: () => state().source,

@@ -1,7 +1,6 @@
 import { Effect } from "effect";
 
-import { createApiClient } from "../infra/api-client";
-import { withClientEffect } from "../infra/with-client-effect";
+import { createApiClient, toClientEffect } from "../infra/api-client";
 import { createAlignerPort, type AlignerPortDeps } from "./aligner";
 import { createAnalysisPort } from "./analysis";
 import { createAnnotatorPort } from "./annotator";
@@ -22,29 +21,23 @@ export function createStudioPort(deps: StudioPortDeps): StudioDataPort {
     ...aligner,
     ...annotator,
     ...analysis,
-    readTextFile(path, signal) {
-      return withClientEffect(client, signal, (c) =>
-        c.fs.readTextFile({ urlParams: { path } }).pipe(Effect.map((r) => r.contents)),
+    readTextFile(path) {
+      return toClientEffect(
+        client.fs.readTextFile({ urlParams: { path } }).pipe(Effect.map((r) => r.contents)),
       );
     },
     saveAssayJson(saveTo, contents) {
-      return withClientEffect(client, undefined, (c) =>
-        c.studio.saveAssayJson({ payload: { saveTo, contents } }),
-      );
+      return toClientEffect(client.studio.saveAssayJson({ payload: { saveTo, contents } }));
     },
     saveResultPdf(request) {
-      return withClientEffect(client, undefined, (c) =>
-        c.studio.saveResultPdf({ payload: request }),
-      );
+      return toClientEffect(client.studio.saveResultPdf({ payload: request }));
     },
     getAnalysisResults(workspacePath) {
-      return withClientEffect(client, undefined, (c) =>
-        c.studio.getAnalysisResults({ urlParams: { workspacePath } }),
-      );
+      return toClientEffect(client.studio.getAnalysisResults({ urlParams: { workspacePath } }));
     },
     getLatestAnalysisProgress(workspacePath) {
-      return withClientEffect(client, undefined, (c) =>
-        c.studio.getLatestAnalysisProgress({ urlParams: { workspacePath } }),
+      return toClientEffect(
+        client.studio.getLatestAnalysisProgress({ urlParams: { workspacePath } }),
       );
     },
   };

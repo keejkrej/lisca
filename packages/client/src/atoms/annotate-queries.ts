@@ -6,12 +6,12 @@ import type {
   RoiWorkspaceScan,
 } from "@lisca/contracts";
 import { Atom, type Result } from "@effect-atom/atom-solid";
-import { type Context, Effect } from "effect";
+import { Effect } from "effect";
 
 import type { ClientError } from "../infra/client-error";
 import type { ClientEffect } from "../infra/runtime";
 import { invalidateAfter, ReactivityKeys } from "./reactivity";
-import type { AppRuntime } from "./runtime";
+import { cacheSessionQuery, type AppRuntime } from "./runtime";
 
 /** Port surface shared by the annotator and studio annotation query atoms. */
 export type AnnotateQueryPort = {
@@ -55,53 +55,37 @@ export type AnnotateQueryAtoms = {
   >;
 };
 
-export function createAnnotateQueryAtoms<Id, Port extends AnnotateQueryPort>(
-  runtime: AppRuntime<Id>,
-  PortTag: Context.Tag<Id, Port>,
+export function createAnnotateQueryAtoms(
+  runtime: AppRuntime,
+  port: AnnotateQueryPort,
 ): AnnotateQueryAtoms {
   const roiWorkspaceScanAtom = Atom.family((workspacePath: string) =>
     runtime
-      .atom(
-        Effect.gen(function* () {
-          const port = yield* PortTag;
-          return yield* port.scanRoiWorkspace(workspacePath);
-        }),
-      )
-      .pipe(Atom.keepAlive, Atom.withReactivity([ReactivityKeys.roiWorkspace(workspacePath)])),
+      .atom(Effect.suspend(() => port.scanRoiWorkspace(workspacePath)))
+      .pipe(Atom.withReactivity([ReactivityKeys.roiWorkspace(workspacePath)]), cacheSessionQuery),
   );
 
   const annotationLabelsAtom = Atom.family((workspacePath: string) =>
     runtime
-      .atom(
-        Effect.gen(function* () {
-          const port = yield* PortTag;
-          return yield* port.loadLabels(workspacePath);
-        }),
-      )
-      .pipe(Atom.keepAlive, Atom.withReactivity([ReactivityKeys.annotationLabels(workspacePath)])),
+      .atom(Effect.suspend(() => port.loadLabels(workspacePath)))
+      .pipe(
+        Atom.withReactivity([ReactivityKeys.annotationLabels(workspacePath)]),
+        cacheSessionQuery,
+      ),
   );
 
   const saveAnnotationLabelsAtom = runtime.fn(
-    Effect.fnUntraced(function* ({ workspacePath, labels }: SaveAnnotationLabelsInput) {
-      const port = yield* PortTag;
-      return yield* invalidateAfter(port.saveLabels(workspacePath, labels), [
+    ({ workspacePath, labels }: SaveAnnotationLabelsInput) =>
+      invalidateAfter(port.saveLabels(workspacePath, labels), [
         ReactivityKeys.annotationLabels(workspacePath),
-      ]);
-    }),
+      ]),
   );
 
   const saveRoiFrameAnnotationAtom = runtime.fn(
-    Effect.fnUntraced(function* ({
-      workspacePath,
-      request,
-      annotation,
-    }: SaveRoiFrameAnnotationInput) {
-      const port = yield* PortTag;
-      return yield* invalidateAfter(
-        port.saveRoiFrameAnnotation(workspacePath, request, annotation),
-        [ReactivityKeys.roiWorkspace(workspacePath)],
-      );
-    }),
+    ({ workspacePath, request, annotation }: SaveRoiFrameAnnotationInput) =>
+      invalidateAfter(port.saveRoiFrameAnnotation(workspacePath, request, annotation), [
+        ReactivityKeys.roiWorkspace(workspacePath),
+      ]),
   );
 
   return {

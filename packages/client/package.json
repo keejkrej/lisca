@@ -26,10 +26,6 @@
       "types": "./src/infra/runtime.ts",
       "import": "./src/infra/runtime.ts"
     },
-    "./bootstrap": {
-      "types": "./src/infra/bootstrap.ts",
-      "import": "./src/infra/bootstrap.ts"
-    },
     "./client-error": {
       "types": "./src/infra/client-error.ts",
       "import": "./src/infra/client-error.ts"
@@ -197,7 +193,6 @@
     "@effect-atom/atom-solid": "catalog:",
     "@effect/experimental": "catalog:",
     "@effect/platform": "catalog:",
-    "@effect/platform-browser": "catalog:",
     "@lisca/contracts": "workspace:*",
     "@lisca/utils": "workspace:*",
     "effect": "catalog:"

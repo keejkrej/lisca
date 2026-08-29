@@ -33,64 +33,48 @@ import type { TaskCommandError } from "@lisca/contracts/http-api";
 import type { FrameResult } from "@lisca/utils";
 import type { ClientEffect } from "../infra/runtime";
 
+/** Effect-returning ports use fiber interruption; AbortSignal belongs at Promise execution seams. */
 export type HostPort = {
-  listDirectory(path: string | null, signal?: AbortSignal): ClientEffect<HostListDirectoryResult>;
-  userHomeDirectory(signal?: AbortSignal): ClientEffect<string>;
-  createDirectory(
-    parentPath: string,
-    name: string,
-    signal?: AbortSignal,
-  ): ClientEffect<CreateDirectoryResponse>;
+  listDirectory(path: string | null): ClientEffect<HostListDirectoryResult>;
+  userHomeDirectory(): ClientEffect<string>;
+  createDirectory(parentPath: string, name: string): ClientEffect<CreateDirectoryResponse>;
 };
 
 export type TaskDataPort = {
-  listOperations(signal?: AbortSignal): ClientEffect<OperationSummary[]>;
-  getOperation(operationId: string, signal?: AbortSignal): ClientEffect<OperationDetail>;
-  getTask(taskId: string, signal?: AbortSignal): ClientEffect<TaskDetail>;
-  cancelOperation(
-    operationId: string,
-    signal?: AbortSignal,
-  ): ClientEffect<OperationDetail, TaskCommandError>;
-  cancelTask(taskId: string, signal?: AbortSignal): ClientEffect<OperationDetail, TaskCommandError>;
-  retryTask(taskId: string, signal?: AbortSignal): ClientEffect<OperationDetail, TaskCommandError>;
+  listOperations(): ClientEffect<OperationSummary[]>;
+  getOperation(operationId: string): ClientEffect<OperationDetail>;
+  getTask(taskId: string): ClientEffect<TaskDetail>;
+  cancelOperation(operationId: string): ClientEffect<OperationDetail, TaskCommandError>;
+  cancelTask(taskId: string): ClientEffect<OperationDetail, TaskCommandError>;
+  retryTask(taskId: string): ClientEffect<OperationDetail, TaskCommandError>;
 };
 
 export type StudioHostPort = HostPort & {
-  readTextFile(path: string, signal?: AbortSignal): ClientEffect<string>;
+  readTextFile(path: string): ClientEffect<string>;
   saveAssayJson(saveTo: string, contents: string): ClientEffect<SaveAssayJsonResponse>;
   saveResultPdf(request: SaveResultPdfRequest): ClientEffect<SaveResultPdfResponse>;
 };
 
 export type AnnotatorDataPort = HostPort &
   TaskDataPort & {
-    scanRoiWorkspace(workspacePath: string, signal?: AbortSignal): ClientEffect<RoiWorkspaceScan>;
-    loadLabels(workspacePath: string, signal?: AbortSignal): ClientEffect<AnnotationLabel[]>;
-    saveLabels(
-      workspacePath: string,
-      labels: AnnotationLabel[],
-      signal?: AbortSignal,
-    ): ClientEffect<AnnotationLabel[]>;
+    scanRoiWorkspace(workspacePath: string): ClientEffect<RoiWorkspaceScan>;
+    loadLabels(workspacePath: string): ClientEffect<AnnotationLabel[]>;
+    saveLabels(workspacePath: string, labels: AnnotationLabel[]): ClientEffect<AnnotationLabel[]>;
     loadRoiFrame(
       workspacePath: string,
       request: RoiFrameRequest,
       contrast: ContrastWindow | null,
-      signal?: AbortSignal,
     ): ClientEffect<FrameResult>;
     loadRoiFrameAnnotation(
       workspacePath: string,
       request: RoiFrameRequest,
-      signal?: AbortSignal,
     ): ClientEffect<LoadedRoiFrameAnnotation>;
     saveRoiFrameAnnotation(
       workspacePath: string,
       request: RoiFrameRequest,
       annotation: RoiFrameAnnotationPayload,
-      signal?: AbortSignal,
     ): ClientEffect<RoiFrameAnnotation>;
-    smartSegment(
-      request: SmartSegmentRequest,
-      signal?: AbortSignal,
-    ): ClientEffect<SmartSegmentResponse>;
+    smartSegment(request: SmartSegmentRequest): ClientEffect<SmartSegmentResponse>;
   };
 
 export type AnalysisDataPort = {
@@ -109,7 +93,6 @@ export type AlignerDataPort = HostPort &
       source: AlignerSource,
       request: FrameRequest,
       contrast?: ContrastWindow | null,
-      signal?: AbortSignal,
     ): ClientEffect<FrameResult>;
     loadAlignState(workspacePath: string, pos: number): ClientEffect<SavedAlignState | null>;
     saveBbox(
@@ -127,10 +110,7 @@ export type AlignerDataPort = HostPort &
       onProgress: (progress: CropRoiProgress) => void,
     ): () => void;
     roiPosExists(workspacePath: string, pos: number): ClientEffect<boolean>;
-    smartExclude(
-      request: SmartExcludeRequest,
-      signal?: AbortSignal,
-    ): ClientEffect<SmartExcludeResponse>;
+    smartExclude(request: SmartExcludeRequest): ClientEffect<SmartExcludeResponse>;
   };
 
 export type StudioDataPort = AlignerDataPort &

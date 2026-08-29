@@ -17,10 +17,7 @@ export function AnnotatorMain() {
   const smartSegmentProvider = createRequestSmartSegmentProvider(
     {
       smartSegment: (request, signal) =>
-        runClientEffect(
-          annotatorClient.smartSegment(request, signal),
-          signal ? { signal } : undefined,
-        ),
+        runClientEffect(annotatorClient.smartSegment(request), signal ? { signal } : undefined),
     },
     {
       workspacePath: () => state.workspacePath,

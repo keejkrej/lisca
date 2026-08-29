@@ -24,10 +24,7 @@ export function StudioAnnotateMain() {
   const smartSegmentProvider = createRequestSmartSegmentProvider(
     {
       smartSegment: (request, signal) =>
-        runClientEffect(
-          studioClient.smartSegment(request, signal),
-          signal ? { signal } : undefined,
-        ),
+        runClientEffect(studioClient.smartSegment(request), signal ? { signal } : undefined),
     },
     {
       workspacePath: () => state.workspacePath,

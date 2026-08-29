@@ -1,9 +1,12 @@
 import { Atom } from "@effect-atom/atom-solid";
 import { Reactivity } from "@effect/experimental";
-import { Layer } from "effect";
 
-export function createAppRuntime<R>(portLayer: Layer.Layer<R>) {
-  return Atom.runtime(Layer.mergeAll(Reactivity.layer, portLayer));
+/** Runtime shared by query and mutation atoms. App ports are captured by atom factories. */
+export function createAppRuntime() {
+  return Atom.runtime(Reactivity.layer);
 }
 
-export type AppRuntime<R> = ReturnType<typeof createAppRuntime<R>>;
+export type AppRuntime = ReturnType<typeof createAppRuntime>;
+
+/** Retain inactive query results briefly without leaking every family key for the app lifetime. */
+export const cacheSessionQuery = Atom.setIdleTTL("5 minutes");

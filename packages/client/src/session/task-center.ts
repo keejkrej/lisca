@@ -6,17 +6,17 @@ import type { TaskDataPort } from "../ports/types";
 export function createTaskCenterGateway(port: TaskDataPort): TaskCenterGateway {
   return {
     listOperations: (signal) =>
-      runClientEffect(port.listOperations(signal), signal ? { signal } : undefined),
+      runClientEffect(port.listOperations(), signal ? { signal } : undefined),
     getOperation: (operationId, signal) =>
-      runClientEffect(port.getOperation(operationId, signal), signal ? { signal } : undefined),
+      runClientEffect(port.getOperation(operationId), signal ? { signal } : undefined),
     getTask: (taskId, signal) =>
-      runClientEffect(port.getTask(taskId, signal), signal ? { signal } : undefined),
+      runClientEffect(port.getTask(taskId), signal ? { signal } : undefined),
     cancelOperation: (operationId, signal) =>
-      runClientEffect(port.cancelOperation(operationId, signal), signal ? { signal } : undefined),
+      runClientEffect(port.cancelOperation(operationId), signal ? { signal } : undefined),
     cancelTask: (taskId, signal) =>
-      runClientEffect(port.cancelTask(taskId, signal), signal ? { signal } : undefined),
+      runClientEffect(port.cancelTask(taskId), signal ? { signal } : undefined),
     retryTask: (taskId, signal) =>
-      runClientEffect(port.retryTask(taskId, signal), signal ? { signal } : undefined),
+      runClientEffect(port.retryTask(taskId), signal ? { signal } : undefined),
   };
 }
 

@@ -1,8 +1,7 @@
 import { decodeFramePayload } from "@lisca/utils";
 import { Effect } from "effect";
 
-import { createApiClient, type LiscaApiClient } from "../infra/api-client";
-import { withClientEffect } from "../infra/with-client-effect";
+import { createApiClient, toClientEffect, type LiscaApiClient } from "../infra/api-client";
 import { createHostPort, type HostPortDeps } from "./host";
 import { createTaskPort } from "./tasks";
 import type { AnnotatorDataPort } from "./types";
@@ -21,42 +20,36 @@ export function createAnnotatorPort(
   return {
     ...host,
     ...tasks,
-    scanRoiWorkspace(workspacePath, signal) {
-      return withClientEffect(client, signal, (c) =>
-        c.annotate.scanRoiWorkspace({ payload: { workspacePath } }),
-      );
+    scanRoiWorkspace(workspacePath) {
+      return toClientEffect(client.annotate.scanRoiWorkspace({ payload: { workspacePath } }));
     },
-    loadLabels(workspacePath, signal) {
-      return withClientEffect(client, signal, (c) =>
-        c.annotate.loadLabels({ payload: { workspacePath } }),
-      );
+    loadLabels(workspacePath) {
+      return toClientEffect(client.annotate.loadLabels({ payload: { workspacePath } }));
     },
-    saveLabels(workspacePath, labels, signal) {
-      return withClientEffect(client, signal, (c) =>
-        c.annotate.saveLabels({ payload: { workspacePath, labels } }),
-      );
+    saveLabels(workspacePath, labels) {
+      return toClientEffect(client.annotate.saveLabels({ payload: { workspacePath, labels } }));
     },
-    loadRoiFrame(workspacePath, request, contrast, signal) {
-      return withClientEffect(client, signal, (c) =>
-        c.annotate
+    loadRoiFrame(workspacePath, request, contrast) {
+      return toClientEffect(
+        client.annotate
           .loadRoiFrame({ payload: { workspacePath, request, contrast: contrast ?? null } })
           .pipe(Effect.map(decodeFramePayload)),
       );
     },
-    loadRoiFrameAnnotation(workspacePath, request, signal) {
-      return withClientEffect(client, signal, (c) =>
-        c.annotate.loadRoiFrameAnnotation({ payload: { workspacePath, request } }),
+    loadRoiFrameAnnotation(workspacePath, request) {
+      return toClientEffect(
+        client.annotate.loadRoiFrameAnnotation({ payload: { workspacePath, request } }),
       );
     },
-    saveRoiFrameAnnotation(workspacePath, request, annotation, signal) {
-      return withClientEffect(client, signal, (c) =>
-        c.annotate.saveRoiFrameAnnotation({
+    saveRoiFrameAnnotation(workspacePath, request, annotation) {
+      return toClientEffect(
+        client.annotate.saveRoiFrameAnnotation({
           payload: { workspacePath, request, annotation },
         }),
       );
     },
-    smartSegment(request, signal) {
-      return withClientEffect(client, signal, (c) => c.annotate.smartSegment({ payload: request }));
+    smartSegment(request) {
+      return toClientEffect(client.annotate.smartSegment({ payload: request }));
     },
   };
 }

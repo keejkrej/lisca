@@ -22,11 +22,4 @@ export function runClientEffect<A, E>(
   );
 }
 
-export function clientQueryFn<A, E>(
-  effect: ClientEffect<A, E>,
-  signal?: AbortSignal,
-): () => Promise<A> {
-  return () => runClientEffect(effect, signal ? { signal } : undefined);
-}
-
 export { toClientError };

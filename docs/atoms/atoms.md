@@ -1,78 +1,93 @@
-# Effect Atom patterns (`@lisca/client/atoms`)
+# Effect, Effect Atom, and SolidJS state
 
-Shared query/mutation atoms live here. Each web app adds UI writable atoms and a `RegistryProvider` bootstrap.
+LiSCA uses each reactive tool at a different seam. The goal is not to make every operation an
+Effect or every value an atom; it is to keep ownership and cancellation unambiguous.
+
+## Ownership rules
+
+| Concern                                   | Owner                     | Why                                                             |
+| ----------------------------------------- | ------------------------- | --------------------------------------------------------------- |
+| Wire schemas and HTTP contracts           | Effect Schema / `HttpApi` | Runtime validation and one typed client contract                |
+| Client I/O and multi-step async workflows | Effect                    | Typed failures, interruption, parallelism, retries, and tracing |
+| Shared remote queries and mutations       | Effect Atom               | Registry-scoped caching, result states, and invalidation        |
+| App/session state shared across routes    | Writable Effect Atom      | One registry-owned value with explicit actions and persistence  |
+| Component or hook-local transient state   | Solid `createSignal`      | The owner and lifetime are already the Solid owner              |
+| Derived view state                        | Solid `createMemo`        | It should not become another writable source of truth           |
+
+Use the deletion test: an Effect or atom wrapper should hide real behavior. A wrapper that only
+forwards one concrete dependency is a shallow module and should be removed.
 
 ## Runtime
 
-```typescript
-import { alignerPortLayer, createAlignerQueryAtoms, createAppRuntime } from "@lisca/client/atoms";
+App ports are concrete adapters captured by the atom factories. The Effect Atom runtime only
+provides the Effect reactivity module:
 
-export const runtime = createAppRuntime(alignerPortLayer(port));
-export const { scanSourceAtom } = createAlignerQueryAtoms(runtime);
+```typescript
+import { createAlignerQueryAtoms, createAppRuntime } from "@lisca/client/atoms";
+
+export const runtime = createAppRuntime();
+export const { scanSourceAtom } = createAlignerQueryAtoms(runtime, port);
 ```
 
-`createAppRuntime` merges `Reactivity.layer` with the port layer.
+Do not add a `Context.Tag` and `Layer` for a port unless the Effect program actually has multiple
+adapters selected through its environment. Tests can pass a fake port directly to the factory.
 
 ## Cross-product data access
 
-**Query atoms** cache session-stable reads (`keepAlive` + `ReactivityKeys`). **Mutation atoms** write through the port and call `invalidateAfter` so related queries refresh.
+**Query atoms** cache shared reads and use `ReactivityKeys`. Inactive family members have a
+five-minute idle TTL: this preserves short navigation churn without retaining every source,
+workspace, or CSV key for the lifetime of the app.
 
-**Imperative port calls** (`runClientEffect(client.*)`) handle ephemeral loads, explicit checkpoints, and long-running jobs. Do not add query atoms for these paths.
+**Mutation atoms** write through the port and call `invalidateAfter` so related queries refresh.
 
-| Concern                | Aligner                                      | Annotator                  | Studio                                   |
-| ---------------------- | -------------------------------------------- | -------------------------- | ---------------------------------------- |
-| Source scan            | `scanSourceAtom`                             | —                          | `scanSourceAtom`                         |
-| ROI workspace scan     | —                                            | `roiWorkspaceScanAtom`     | `roiWorkspaceScanAtom`                   |
-| Annotation labels      | —                                            | `annotationLabelsAtom`     | `annotationLabelsAtom`                   |
-| Label/annotation saves | —                                            | `save*Atom` + invalidation | `save*Atom` + invalidation               |
-| Analysis index/CSV     | —                                            | —                          | `analysisResultsAtom`, `analysisCsvAtom` |
-| Frame pixels           | `loadFrameEffect`                            | `loadRoiFrameEffect`       | both (align + annotate)                  |
-| Align checkpoint       | `saveBbox` / `loadAlignState` (port)         | —                          | same in align step                       |
-| Var/auto exclude       | `computeAutoExcludePreview` (`@lisca/utils`) | —                          | same                                     |
+**Imperative port calls** (`runClientEffect(client.*)`) handle ephemeral loads, explicit
+checkpoints, and long-running jobs. Cancellation is attached once, where an Effect is executed as
+a Promise. Effect-returning ports do not also accept `AbortSignal`; fiber interruption propagates
+to the HTTP client.
 
-**Not query-backed (by design):** frame loads, per-navigation align state, bbox save/list, crop jobs, one-off `readTextFile` / assay saves.
+| Concern                | Aligner                    | Annotator                  | Studio                                   |
+| ---------------------- | -------------------------- | -------------------------- | ---------------------------------------- |
+| Source scan            | `scanSourceAtom`           | —                          | `scanSourceAtom`                         |
+| ROI workspace scan     | —                          | `roiWorkspaceScanAtom`     | `roiWorkspaceScanAtom`                   |
+| Annotation labels      | —                          | `annotationLabelsAtom`     | `annotationLabelsAtom`                   |
+| Label/annotation saves | —                          | `save*Atom` + invalidation | `save*Atom` + invalidation               |
+| Analysis index/CSV     | —                          | —                          | `analysisResultsAtom`, `analysisCsvAtom` |
+| Frame pixels           | `loadFrameEffect`          | `loadRoiFrameEffect`       | both                                     |
+| Align checkpoint       | port Effect                | —                          | port Effect                              |
+| Crop/analysis progress | interruptible Effect fiber | —                          | interruptible Effect fiber               |
 
-## Family keys
+Frame loads, per-navigation align state, bbox save/list, crop jobs, and one-off file or assay saves
+are deliberately not query-backed.
 
-Use `Atom.family` for parameterized queries. Serialize composite keys with `JSON.stringify` when the param is an object (e.g. aligner source, analysis CSV input).
+## Family keys and invalidation
 
-## Reactivity invalidation
+Use `Atom.family` for parameterized queries. Serialize composite keys with `JSON.stringify` when
+the parameter is an object. Query atoms use `Atom.withReactivity([ReactivityKeys.…])`; successful
+mutations call `invalidateAfter(effect, [ReactivityKeys.…])`.
 
-Query atoms use `Atom.withReactivity([ReactivityKeys.…])`. Shared key helpers are in `reactivity.ts` (stable string keys). Mutations call `invalidateAfter(effect, [ReactivityKeys.…])` on success so related queries refresh.
+## Effect Atom versus Solid signals
 
-## keepAlive vs default
+Use a writable Effect Atom when state must outlive one Solid owner, be read by unrelated routes,
+or be initialized at the app registry. App/session atoms use `Atom.keepAlive` intentionally because
+the registry, not a route component, owns their lifetime. Persistence still belongs in explicit
+actions or boot hydration.
 
-- **`Atom.keepAlive`**: scan sources, ROI workspace scans, annotation labels, analysis CSV/panels — data that should survive param churn within a session.
-- **Default (no keepAlive)**: ephemeral UI writable atoms unless persisted manually to `sessionStorage`.
+Use a Solid signal for dialog visibility, in-flight UI affordances, draft values, and other state
+owned by one component or session hook. Keep derived values in memos. Do not promote local state to
+an atom merely to avoid prop passing, and do not mirror an atom into a long-lived signal.
 
-## Result handling in SolidJS
+`useSelectedAtomValue` is the narrow adapter for a Solid-reactive family key: it unsubscribes from
+the old Effect Atom and subscribes to the newly selected one under the current registry.
+
+## Result handling
 
 Use helpers from `result-utils.ts`:
 
 ```typescript
-import { resultData, resultFailureMessage, resultLoading } from "@lisca/client/atoms";
-
-const scan = resultData(useAtomValue(scanSourceAtom(key)));
-const loading = resultLoading(useAtomValue(scanSourceAtom(key)));
-const error = resultFailureMessage(useAtomValue(scanSourceAtom(key)));
+const data = resultData(queryResult());
+const loading = resultLoading(queryResult());
+const error = resultFailureMessage(queryResult());
 ```
 
-Mutations: `useAtomSet(mutationAtom, { mode: "promise" })`.
-
-## App UI atoms
-
-Writable session/UI state stays in each app (`*-ui-atoms.ts` or `*-store.ts` atom-backed hooks). Persist workspace/source via `sessionStorage` + `useAtomInitialValues` on boot (aligner); studio wizard uses the same pattern for assay state.
-
-## Modules
-
-| Module                   | Atoms                                                            |
-| ------------------------ | ---------------------------------------------------------------- |
-| `aligner/queries.ts`     | `scanSourceAtom` (via `createSourceQueryAtoms`)                  |
-| `annotator/queries.ts`   | ROI workspace scan, labels, save labels/annotation               |
-| `studio/queries.ts`      | scan source, ROI workspace scan, labels, saves                   |
-| `studio/analysis.ts`     | analysis results, analysis CSV text                              |
-| `selected-atom-value.ts` | `useSelectedAtomValue` — subscribe to a key-selected Effect Atom |
-
-Frame loading uses `createAlignerFrameLoader` / app `roi-loader` effects — not query atoms.
-
-Panel parsing (CSV → plot panels) stays in `studio-web` because it depends on app-local plot parsers.
+Run mutation atoms with `useAtomSet(mutationAtom, { mode: "promise" })` when an event handler needs
+to await the result.

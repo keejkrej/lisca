@@ -1,7 +1,11 @@
 import { Effect } from "effect";
 
-import { createApiClient, type ApiClientDeps, type LiscaApiClient } from "../infra/api-client";
-import { withClientEffect } from "../infra/with-client-effect";
+import {
+  createApiClient,
+  toClientEffect,
+  type ApiClientDeps,
+  type LiscaApiClient,
+} from "../infra/api-client";
 import type { HostPort } from "./types";
 
 export type { HostPort } from "./types";
@@ -13,20 +17,16 @@ export function createHostPort(
   client: LiscaApiClient = createApiClient(deps),
 ): HostPort {
   return {
-    listDirectory(path, signal) {
-      return withClientEffect(client, signal, (c) =>
-        c.fs.listDirectory({ urlParams: { path: path ?? undefined } }),
+    listDirectory(path) {
+      return toClientEffect(client.fs.listDirectory({ urlParams: { path: path ?? undefined } }));
+    },
+    userHomeDirectory() {
+      return toClientEffect(
+        client.fs.userHomeDirectory().pipe(Effect.map((result) => result.path)),
       );
     },
-    userHomeDirectory(signal) {
-      return withClientEffect(client, signal, (c) =>
-        c.fs.userHomeDirectory().pipe(Effect.map((result) => result.path)),
-      );
-    },
-    createDirectory(parentPath, name, signal) {
-      return withClientEffect(client, signal, (c) =>
-        c.fs.createDirectory({ payload: { parentPath, name } }),
-      );
+    createDirectory(parentPath, name) {
+      return toClientEffect(client.fs.createDirectory({ payload: { parentPath, name } }));
     },
   };
 }

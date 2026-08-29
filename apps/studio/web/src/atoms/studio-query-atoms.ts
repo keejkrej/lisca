@@ -1,16 +1,13 @@
 import type { AnnotationLabel, RoiWorkspaceScan, WorkspaceScan } from "@lisca/contracts";
 import { Atom, Result } from "@effect-atom/atom-solid";
 
-import { createStudioQueryAtoms, studioPortLayer } from "@lisca/client/atoms";
-import { createLiscaAppBootstrap } from "@lisca/client/bootstrap";
+import { createAppRuntime, createStudioQueryAtoms } from "@lisca/client/atoms";
 
 import { studioClient } from "../api/studio-port";
 
-const bootstrap = createLiscaAppBootstrap(studioPortLayer(studioClient));
+export const studioRuntime = createAppRuntime();
 
-export const studioRuntime = bootstrap.runtime;
-
-export const studioQueryAtoms = createStudioQueryAtoms(bootstrap.runtime);
+export const studioQueryAtoms = createStudioQueryAtoms(studioRuntime, studioClient);
 
 export const {
   scanSourceAtom,

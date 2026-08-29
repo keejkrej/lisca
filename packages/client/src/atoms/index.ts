@@ -1,6 +1,5 @@
 export * from "./reactivity";
 export * from "./selected-atom-value";
-export * from "./ports";
 export * from "./runtime";
 export * from "./result-utils";
 export * from "./annotate-queries";
