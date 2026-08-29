@@ -14,7 +14,11 @@
           "type": "boolean"
         }
       },
-      "required": ["name", "path", "isDirectory"]
+      "required": [
+        "name",
+        "path",
+        "isDirectory"
+      ]
     },
     "HostListDirectoryResult": {
       "type": "object",
@@ -46,7 +50,11 @@
           }
         }
       },
-      "required": ["path", "parent", "entries"]
+      "required": [
+        "path",
+        "parent",
+        "entries"
+      ]
     },
     "HomeDirectoryResponse": {
       "type": "object",
@@ -55,7 +63,9 @@
           "type": "string"
         }
       },
-      "required": ["path"]
+      "required": [
+        "path"
+      ]
     },
     "ReadTextFileResponse": {
       "type": "object",
@@ -64,7 +74,9 @@
           "type": "string"
         }
       },
-      "required": ["contents"]
+      "required": [
+        "contents"
+      ]
     },
     "CreateDirectoryRequest": {
       "type": "object",
@@ -76,7 +88,10 @@
           "type": "string"
         }
       },
-      "required": ["parentPath", "name"]
+      "required": [
+        "parentPath",
+        "name"
+      ]
     },
     "CreateDirectoryResponse": {
       "type": "object",
@@ -85,14 +100,18 @@
           "type": "string"
         }
       },
-      "required": ["path"]
+      "required": [
+        "path"
+      ]
     },
     "FolderSource": {
       "type": "object",
       "properties": {
         "kind": {
           "type": "string",
-          "enum": ["folder"]
+          "enum": [
+            "folder"
+          ]
         },
         "path": {
           "type": "string"
@@ -104,7 +123,12 @@
           "type": "string"
         }
       },
-      "required": ["kind", "path", "subfolderTemplate", "filenameTemplate"]
+      "required": [
+        "kind",
+        "path",
+        "subfolderTemplate",
+        "filenameTemplate"
+      ]
     },
     "AlignerSource": {
       "oneOf": [
@@ -113,7 +137,9 @@
           "properties": {
             "kind": {
               "type": "string",
-              "enum": ["folder"]
+              "enum": [
+                "folder"
+              ]
             },
             "path": {
               "type": "string"
@@ -125,33 +151,48 @@
               "type": "string"
             }
           },
-          "required": ["kind", "path", "subfolderTemplate", "filenameTemplate"]
+          "required": [
+            "kind",
+            "path",
+            "subfolderTemplate",
+            "filenameTemplate"
+          ]
         },
         {
           "type": "object",
           "properties": {
             "kind": {
               "type": "string",
-              "enum": ["nd2"]
+              "enum": [
+                "nd2"
+              ]
             },
             "path": {
               "type": "string"
             }
           },
-          "required": ["kind", "path"]
+          "required": [
+            "kind",
+            "path"
+          ]
         },
         {
           "type": "object",
           "properties": {
             "kind": {
               "type": "string",
-              "enum": ["czi"]
+              "enum": [
+                "czi"
+              ]
             },
             "path": {
               "type": "string"
             }
           },
-          "required": ["kind", "path"]
+          "required": [
+            "kind",
+            "path"
+          ]
         }
       ]
     },
@@ -162,7 +203,9 @@
           "$ref": "#/definitions/AlignerSource"
         }
       },
-      "required": ["source"]
+      "required": [
+        "source"
+      ]
     },
     "WorkspaceScan": {
       "type": "object",
@@ -224,7 +267,12 @@
           }
         }
       },
-      "required": ["positions", "channels", "times", "zSlices"]
+      "required": [
+        "positions",
+        "channels",
+        "times",
+        "zSlices"
+      ]
     },
     "FrameRequest": {
       "type": "object",
@@ -250,7 +298,12 @@
           "format": "uint32"
         }
       },
-      "required": ["pos", "channel", "time", "z"]
+      "required": [
+        "pos",
+        "channel",
+        "time",
+        "z"
+      ]
     },
     "ContrastWindow": {
       "type": "object",
@@ -266,7 +319,10 @@
           "format": "uint32"
         }
       },
-      "required": ["min", "max"]
+      "required": [
+        "min",
+        "max"
+      ]
     },
     "LoadFrameRequest": {
       "type": "object",
@@ -288,11 +344,23 @@
           ]
         }
       },
-      "required": ["source", "request", "contrast"]
+      "required": [
+        "source",
+        "request",
+        "contrast"
+      ]
     },
     "PixelType": {
       "type": "string",
-      "enum": ["uint8", "uint8clamped", "int8", "uint16", "int16", "uint32", "int32"]
+      "enum": [
+        "uint8",
+        "uint8clamped",
+        "int8",
+        "uint16",
+        "int16",
+        "uint32",
+        "int32"
+      ]
     },
     "FramePayload": {
       "type": "object",
@@ -335,7 +403,11 @@
     },
     "AlignGridShape": {
       "type": "string",
-      "enum": ["rect", "square", "hex"]
+      "enum": [
+        "rect",
+        "square",
+        "hex"
+      ]
     },
     "AlignGridState": {
       "type": "object",
@@ -404,7 +476,10 @@
           "format": "int32"
         }
       },
-      "required": ["i", "j"]
+      "required": [
+        "i",
+        "j"
+      ]
     },
     "SavedAlignState": {
       "type": "object",
@@ -419,7 +494,10 @@
           }
         }
       },
-      "required": ["grid", "excludedCells"]
+      "required": [
+        "grid",
+        "excludedCells"
+      ]
     },
     "SaveBboxRequest": {
       "type": "object",
@@ -439,7 +517,12 @@
           "$ref": "#/definitions/SavedAlignState"
         }
       },
-      "required": ["workspacePath", "pos", "csv", "alignState"]
+      "required": [
+        "workspacePath",
+        "pos",
+        "csv",
+        "alignState"
+      ]
     },
     "SaveBboxResponse": {
       "type": "object",
@@ -458,7 +541,10 @@
           ]
         }
       },
-      "required": ["ok", "error"]
+      "required": [
+        "ok",
+        "error"
+      ]
     },
     "AlignOutputPaths": {
       "type": "object",
@@ -473,7 +559,11 @@
           "type": "string"
         }
       },
-      "required": ["bbox", "align", "roi"]
+      "required": [
+        "bbox",
+        "align",
+        "roi"
+      ]
     },
     "RoiPosExistsResponse": {
       "type": "object",
@@ -482,11 +572,15 @@
           "type": "boolean"
         }
       },
-      "required": ["exists"]
+      "required": [
+        "exists"
+      ]
     },
     "CropOutputFormat": {
       "type": "string",
-      "enum": ["tiff"]
+      "enum": [
+        "tiff"
+      ]
     },
     "CropRoiRequest": {
       "type": "object",
@@ -515,15 +609,30 @@
           "$ref": "#/definitions/CropOutputFormat"
         }
       },
-      "required": ["requestId", "workspacePath", "source", "positions", "overwrite"]
+      "required": [
+        "requestId",
+        "workspacePath",
+        "source",
+        "positions",
+        "overwrite"
+      ]
     },
     "CropRoiStatus": {
       "type": "string",
-      "enum": ["queued", "running", "completed", "cancelled", "error"]
+      "enum": [
+        "queued",
+        "running",
+        "completed",
+        "cancelled",
+        "error"
+      ]
     },
     "CropRoiDisposition": {
       "type": "string",
-      "enum": ["started", "attached"]
+      "enum": [
+        "started",
+        "attached"
+      ]
     },
     "CropRoiResponse": {
       "type": "object",
@@ -538,7 +647,11 @@
           "$ref": "#/definitions/CropRoiDisposition"
         }
       },
-      "required": ["requestId", "status", "disposition"]
+      "required": [
+        "requestId",
+        "status",
+        "disposition"
+      ]
     },
     "CancelCropRoiRequest": {
       "type": "object",
@@ -547,7 +660,9 @@
           "type": "string"
         }
       },
-      "required": ["requestId"]
+      "required": [
+        "requestId"
+      ]
     },
     "CropRoiProgress": {
       "type": "object",
@@ -672,7 +787,14 @@
           "format": "uint32"
         }
       },
-      "required": ["i", "j", "x", "y", "w", "h"]
+      "required": [
+        "i",
+        "j",
+        "x",
+        "y",
+        "w",
+        "h"
+      ]
     },
     "SmartExcludeRequest": {
       "type": "object",
@@ -704,7 +826,12 @@
           "format": "double"
         }
       },
-      "required": ["source", "request", "contrast", "cells"]
+      "required": [
+        "source",
+        "request",
+        "contrast",
+        "cells"
+      ]
     },
     "SmartExcludeResponse": {
       "type": "object",
@@ -716,7 +843,9 @@
           }
         }
       },
-      "required": ["excludedCells"]
+      "required": [
+        "excludedCells"
+      ]
     },
     "ScanRoiWorkspaceRequest": {
       "type": "object",
@@ -725,7 +854,9 @@
           "type": "string"
         }
       },
-      "required": ["workspacePath"]
+      "required": [
+        "workspacePath"
+      ]
     },
     "RoiBbox": {
       "type": "object",
@@ -756,7 +887,13 @@
           "format": "uint32"
         }
       },
-      "required": ["roi", "x", "y", "w", "h"]
+      "required": [
+        "roi",
+        "x",
+        "y",
+        "w",
+        "h"
+      ]
     },
     "RoiIndexEntry": {
       "type": "object",
@@ -773,7 +910,11 @@
           "$ref": "#/definitions/RoiBbox"
         }
       },
-      "required": ["roi", "fileName", "bbox"]
+      "required": [
+        "roi",
+        "fileName",
+        "bbox"
+      ]
     },
     "RoiPositionScan": {
       "type": "object",
@@ -814,7 +955,13 @@
           }
         }
       },
-      "required": ["pos", "channels", "times", "zSlices", "rois"]
+      "required": [
+        "pos",
+        "channels",
+        "times",
+        "zSlices",
+        "rois"
+      ]
     },
     "RoiWorkspaceScan": {
       "type": "object",
@@ -826,7 +973,9 @@
           }
         }
       },
-      "required": ["positions"]
+      "required": [
+        "positions"
+      ]
     },
     "LoadAnnotationLabelsRequest": {
       "type": "object",
@@ -835,7 +984,9 @@
           "type": "string"
         }
       },
-      "required": ["workspacePath"]
+      "required": [
+        "workspacePath"
+      ]
     },
     "AnnotationLabel": {
       "type": "object",
@@ -850,7 +1001,11 @@
           "type": "string"
         }
       },
-      "required": ["id", "name", "color"]
+      "required": [
+        "id",
+        "name",
+        "color"
+      ]
     },
     "SaveAnnotationLabelsRequest": {
       "type": "object",
@@ -865,7 +1020,10 @@
           }
         }
       },
-      "required": ["workspacePath", "labels"]
+      "required": [
+        "workspacePath",
+        "labels"
+      ]
     },
     "RoiFrameRequest": {
       "type": "object",
@@ -896,7 +1054,13 @@
           "format": "uint32"
         }
       },
-      "required": ["pos", "roi", "channel", "time", "z"]
+      "required": [
+        "pos",
+        "roi",
+        "channel",
+        "time",
+        "z"
+      ]
     },
     "LoadRoiFrameRequest": {
       "type": "object",
@@ -918,7 +1082,11 @@
           ]
         }
       },
-      "required": ["workspacePath", "request", "contrast"]
+      "required": [
+        "workspacePath",
+        "request",
+        "contrast"
+      ]
     },
     "LoadRoiFrameAnnotationRequest": {
       "type": "object",
@@ -930,7 +1098,10 @@
           "$ref": "#/definitions/RoiFrameRequest"
         }
       },
-      "required": ["workspacePath", "request"]
+      "required": [
+        "workspacePath",
+        "request"
+      ]
     },
     "RoiFrameAnnotation": {
       "type": "object",
@@ -966,7 +1137,11 @@
           ]
         }
       },
-      "required": ["classificationLabelId", "maskPath", "updatedAt"]
+      "required": [
+        "classificationLabelId",
+        "maskPath",
+        "updatedAt"
+      ]
     },
     "LoadedRoiFrameAnnotation": {
       "type": "object",
@@ -985,7 +1160,10 @@
           ]
         }
       },
-      "required": ["annotation", "maskBase64Png"]
+      "required": [
+        "annotation",
+        "maskBase64Png"
+      ]
     },
     "RoiFrameAnnotationPayload": {
       "type": "object",
@@ -1011,7 +1189,10 @@
           ]
         }
       },
-      "required": ["classificationLabelId", "maskBase64Png"]
+      "required": [
+        "classificationLabelId",
+        "maskBase64Png"
+      ]
     },
     "SaveRoiFrameAnnotationRequest": {
       "type": "object",
@@ -1026,7 +1207,11 @@
           "$ref": "#/definitions/RoiFrameAnnotationPayload"
         }
       },
-      "required": ["workspacePath", "request", "annotation"]
+      "required": [
+        "workspacePath",
+        "request",
+        "annotation"
+      ]
     },
     "SmartSegmentPoint": {
       "type": "object",
@@ -1039,10 +1224,17 @@
         },
         "label": {
           "type": "number",
-          "enum": [0, 1]
+          "enum": [
+            0,
+            1
+          ]
         }
       },
-      "required": ["x", "y", "label"]
+      "required": [
+        "x",
+        "y",
+        "label"
+      ]
     },
     "SmartSegmentRequest": {
       "type": "object",
@@ -1070,7 +1262,12 @@
           }
         }
       },
-      "required": ["workspacePath", "request", "contrast", "points"]
+      "required": [
+        "workspacePath",
+        "request",
+        "contrast",
+        "points"
+      ]
     },
     "SmartSegmentResponse": {
       "type": "object",
@@ -1084,7 +1281,9 @@
           }
         }
       },
-      "required": ["mask"]
+      "required": [
+        "mask"
+      ]
     },
     "ProfileSummary": {
       "type": "object",
@@ -1102,7 +1301,11 @@
           "format": "uint64"
         }
       },
-      "required": ["id", "displayName", "createdAt"]
+      "required": [
+        "id",
+        "displayName",
+        "createdAt"
+      ]
     },
     "ProfileListResponse": {
       "type": "object",
@@ -1114,7 +1317,9 @@
           }
         }
       },
-      "required": ["profiles"]
+      "required": [
+        "profiles"
+      ]
     },
     "ProfileCreateRequest": {
       "type": "object",
@@ -1123,7 +1328,9 @@
           "type": "string"
         }
       },
-      "required": ["displayName"]
+      "required": [
+        "displayName"
+      ]
     },
     "ProfileSessionResponse": {
       "type": "object",
@@ -1138,7 +1345,11 @@
           "type": "string"
         }
       },
-      "required": ["profileId", "displayName", "accessToken"]
+      "required": [
+        "profileId",
+        "displayName",
+        "accessToken"
+      ]
     },
     "ProfileSignInRequest": {
       "type": "object",
@@ -1147,21 +1358,31 @@
           "type": "string"
         }
       },
-      "required": ["displayName"]
+      "required": [
+        "displayName"
+      ]
     },
     "ProfileSignOutResponse": {
       "type": "object",
       "properties": {
         "ok": {
           "type": "boolean",
-          "enum": [true]
+          "enum": [
+            true
+          ]
         }
       },
-      "required": ["ok"]
+      "required": [
+        "ok"
+      ]
     },
     "MemoryKind": {
       "type": "string",
-      "enum": ["workspace", "source", "assay"]
+      "enum": [
+        "workspace",
+        "source",
+        "assay"
+      ]
     },
     "MemoryWorkspaceEntry": {
       "type": "object",
@@ -1179,7 +1400,10 @@
           "format": "uint64"
         }
       },
-      "required": ["path", "lastUsedAt"]
+      "required": [
+        "path",
+        "lastUsedAt"
+      ]
     },
     "MemorySourceEntry": {
       "type": "object",
@@ -1197,7 +1421,10 @@
           "format": "uint64"
         }
       },
-      "required": ["source", "lastUsedAt"]
+      "required": [
+        "source",
+        "lastUsedAt"
+      ]
     },
     "MemoryAssayEntry": {
       "type": "object",
@@ -1218,7 +1445,10 @@
           "format": "uint64"
         }
       },
-      "required": ["path", "lastUsedAt"]
+      "required": [
+        "path",
+        "lastUsedAt"
+      ]
     },
     "MemoryRecentResponse": {
       "type": "object",
@@ -1250,7 +1480,9 @@
           "properties": {
             "kind": {
               "type": "string",
-              "enum": ["workspace"]
+              "enum": [
+                "workspace"
+              ]
             },
             "path": {
               "type": "string"
@@ -1259,14 +1491,19 @@
               "type": "string"
             }
           },
-          "required": ["kind", "path"]
+          "required": [
+            "kind",
+            "path"
+          ]
         },
         {
           "type": "object",
           "properties": {
             "kind": {
               "type": "string",
-              "enum": ["source"]
+              "enum": [
+                "source"
+              ]
             },
             "source": {
               "$ref": "#/definitions/AlignerSource"
@@ -1275,14 +1512,19 @@
               "type": "string"
             }
           },
-          "required": ["kind", "source"]
+          "required": [
+            "kind",
+            "source"
+          ]
         },
         {
           "type": "object",
           "properties": {
             "kind": {
               "type": "string",
-              "enum": ["assay"]
+              "enum": [
+                "assay"
+              ]
             },
             "path": {
               "type": "string"
@@ -1294,7 +1536,10 @@
               "type": "string"
             }
           },
-          "required": ["kind", "path"]
+          "required": [
+            "kind",
+            "path"
+          ]
         }
       ]
     },
@@ -1305,7 +1550,9 @@
           "type": "boolean"
         }
       },
-      "required": ["ok"]
+      "required": [
+        "ok"
+      ]
     },
     "OperationStatus": {
       "type": "string",
@@ -1321,7 +1568,10 @@
     },
     "OperationAttention": {
       "type": "string",
-      "enum": ["none", "error"]
+      "enum": [
+        "none",
+        "error"
+      ]
     },
     "OperationProgress": {
       "type": "object",
@@ -1421,7 +1671,14 @@
           "format": "uint64"
         }
       },
-      "required": ["unit", "completed", "total", "phase", "message", "updatedAtMs"]
+      "required": [
+        "unit",
+        "completed",
+        "total",
+        "phase",
+        "message",
+        "updatedAtMs"
+      ]
     },
     "OperationSummary": {
       "type": "object",
@@ -1524,7 +1781,10 @@
           "type": "string"
         }
       },
-      "required": ["code", "message"]
+      "required": [
+        "code",
+        "message"
+      ]
     },
     "TaskDependencyBlock": {
       "type": "object",
@@ -1549,7 +1809,12 @@
           ]
         }
       },
-      "required": ["taskId", "taskKind", "status", "error"]
+      "required": [
+        "taskId",
+        "taskKind",
+        "status",
+        "error"
+      ]
     },
     "TaskAttempt": {
       "type": "object",
@@ -1697,7 +1962,10 @@
           }
         }
       },
-      "required": ["operation", "tasks"]
+      "required": [
+        "operation",
+        "tasks"
+      ]
     },
     "OperationCancelRequest": {
       "type": "object",
@@ -1706,7 +1974,9 @@
           "type": "string"
         }
       },
-      "required": ["operationId"]
+      "required": [
+        "operationId"
+      ]
     },
     "TaskCancelRequest": {
       "type": "object",
@@ -1715,7 +1985,9 @@
           "type": "string"
         }
       },
-      "required": ["taskId"]
+      "required": [
+        "taskId"
+      ]
     },
     "TaskRetryRequest": {
       "type": "object",
@@ -1724,7 +1996,9 @@
           "type": "string"
         }
       },
-      "required": ["taskId"]
+      "required": [
+        "taskId"
+      ]
     },
     "SaveAssayJsonRequest": {
       "type": "object",
@@ -1736,7 +2010,10 @@
           "type": "string"
         }
       },
-      "required": ["saveTo", "contents"]
+      "required": [
+        "saveTo",
+        "contents"
+      ]
     },
     "SaveAssayJsonResponse": {
       "type": "object",
@@ -1748,7 +2025,10 @@
           "type": "string"
         }
       },
-      "required": ["ok", "path"]
+      "required": [
+        "ok",
+        "path"
+      ]
     },
     "SaveResultPdfRequest": {
       "type": "object",
@@ -1763,7 +2043,11 @@
           "type": "string"
         }
       },
-      "required": ["workspacePath", "fileName", "contentsBase64"]
+      "required": [
+        "workspacePath",
+        "fileName",
+        "contentsBase64"
+      ]
     },
     "SaveResultPdfResponse": {
       "type": "object",
@@ -1778,7 +2062,11 @@
           "type": "string"
         }
       },
-      "required": ["ok", "directory", "path"]
+      "required": [
+        "ok",
+        "directory",
+        "path"
+      ]
     },
     "AnalysisStartRequest": {
       "type": "object",
@@ -1790,15 +2078,31 @@
           "type": "string"
         }
       },
-      "required": ["workspacePath", "requestId"]
+      "required": [
+        "workspacePath",
+        "requestId"
+      ]
     },
     "AnalysisStatus": {
       "type": "string",
-      "enum": ["queued", "running", "completed", "error"]
+      "enum": [
+        "queued",
+        "running",
+        "completed",
+        "error"
+      ]
     },
     "AnalysisStage": {
       "type": "string",
-      "enum": ["queued", "preparing", "segment", "timeseries", "auc", "fit", "completed"]
+      "enum": [
+        "queued",
+        "preparing",
+        "segment",
+        "timeseries",
+        "auc",
+        "fit",
+        "completed"
+      ]
     },
     "AnalysisCsvFile": {
       "type": "object",
@@ -1816,7 +2120,12 @@
           "type": "string"
         }
       },
-      "required": ["kind", "fileName", "path", "csv"]
+      "required": [
+        "kind",
+        "fileName",
+        "path",
+        "csv"
+      ]
     },
     "AnalysisProgress": {
       "type": "object",
@@ -1861,11 +2170,22 @@
           ]
         }
       },
-      "required": ["requestId", "status", "stage", "progress", "message", "error"]
+      "required": [
+        "requestId",
+        "status",
+        "stage",
+        "progress",
+        "message",
+        "error"
+      ]
     },
     "AssayType": {
       "type": "string",
-      "enum": ["transfection", "killing", "lnp-binding"]
+      "enum": [
+        "transfection",
+        "killing",
+        "lnp-binding"
+      ]
     },
     "AssayFolderTemplate": {
       "type": "object",
@@ -1877,14 +2197,19 @@
           "type": "string"
         }
       },
-      "required": ["subfolder", "filename"]
+      "required": [
+        "subfolder",
+        "filename"
+      ]
     },
     "AssayDataFolder": {
       "type": "object",
       "properties": {
         "type": {
           "type": "string",
-          "enum": ["folder"]
+          "enum": [
+            "folder"
+          ]
         },
         "path": {
           "type": "string"
@@ -1893,33 +2218,47 @@
           "$ref": "#/definitions/AssayFolderTemplate"
         }
       },
-      "required": ["type", "path", "template"]
+      "required": [
+        "type",
+        "path",
+        "template"
+      ]
     },
     "AssayDataNd2": {
       "type": "object",
       "properties": {
         "type": {
           "type": "string",
-          "enum": ["nd2"]
+          "enum": [
+            "nd2"
+          ]
         },
         "path": {
           "type": "string"
         }
       },
-      "required": ["type", "path"]
+      "required": [
+        "type",
+        "path"
+      ]
     },
     "AssayDataCzi": {
       "type": "object",
       "properties": {
         "type": {
           "type": "string",
-          "enum": ["czi"]
+          "enum": [
+            "czi"
+          ]
         },
         "path": {
           "type": "string"
         }
       },
-      "required": ["type", "path"]
+      "required": [
+        "type",
+        "path"
+      ]
     },
     "AssayData": {
       "oneOf": [
@@ -1928,7 +2267,9 @@
           "properties": {
             "type": {
               "type": "string",
-              "enum": ["folder"]
+              "enum": [
+                "folder"
+              ]
             },
             "path": {
               "type": "string"
@@ -1937,33 +2278,47 @@
               "$ref": "#/definitions/AssayFolderTemplate"
             }
           },
-          "required": ["type", "path", "template"]
+          "required": [
+            "type",
+            "path",
+            "template"
+          ]
         },
         {
           "type": "object",
           "properties": {
             "type": {
               "type": "string",
-              "enum": ["nd2"]
+              "enum": [
+                "nd2"
+              ]
             },
             "path": {
               "type": "string"
             }
           },
-          "required": ["type", "path"]
+          "required": [
+            "type",
+            "path"
+          ]
         },
         {
           "type": "object",
           "properties": {
             "type": {
               "type": "string",
-              "enum": ["czi"]
+              "enum": [
+                "czi"
+              ]
             },
             "path": {
               "type": "string"
             }
           },
-          "required": ["type", "path"]
+          "required": [
+            "type",
+            "path"
+          ]
         }
       ]
     },
@@ -1974,11 +2329,17 @@
           "type": "string"
         }
       },
-      "required": ["path"]
+      "required": [
+        "path"
+      ]
     },
     "AssayIntervalUnit": {
       "type": "string",
-      "enum": ["second", "minute", "hour"]
+      "enum": [
+        "second",
+        "minute",
+        "hour"
+      ]
     },
     "AssayInterval": {
       "type": "object",
@@ -1998,7 +2359,10 @@
           "$ref": "#/definitions/AssayIntervalUnit"
         }
       },
-      "required": ["value", "unit"]
+      "required": [
+        "value",
+        "unit"
+      ]
     },
     "AssaySampleRow": {
       "type": "object",
@@ -2015,7 +2379,11 @@
           "type": "string"
         }
       },
-      "required": ["slideChannel", "name", "positions"]
+      "required": [
+        "slideChannel",
+        "name",
+        "positions"
+      ]
     },
     "AssaySamples": {
       "type": "array",
@@ -2051,7 +2419,10 @@
           "$ref": "#/definitions/AssaySignalChannels"
         }
       },
-      "required": ["mask", "signal"]
+      "required": [
+        "mask",
+        "signal"
+      ]
     },
     "AssaySampleChannels": {
       "type": "object",
@@ -2070,7 +2441,11 @@
           "$ref": "#/definitions/AssaySignalChannels"
         }
       },
-      "required": ["slideChannel", "mask", "signal"]
+      "required": [
+        "slideChannel",
+        "mask",
+        "signal"
+      ]
     },
     "AssayAnalysisConfig": {
       "type": "object",
@@ -2118,11 +2493,22 @@
           "$ref": "#/definitions/AssayAnalysisConfig"
         }
       },
-      "required": ["type", "name", "data", "workspace", "interval", "samples"]
+      "required": [
+        "type",
+        "name",
+        "data",
+        "workspace",
+        "interval",
+        "samples"
+      ]
     },
     "AppId": {
       "type": "string",
-      "enum": ["aligner", "annotator", "studio"]
+      "enum": [
+        "aligner",
+        "annotator",
+        "studio"
+      ]
     },
     "RoiIndexFile": {
       "type": "object",
@@ -2134,7 +2520,9 @@
         },
         "axisOrder": {
           "type": "string",
-          "enum": ["TCZYX"]
+          "enum": [
+            "TCZYX"
+          ]
         },
         "timeCount": {
           "type": "integer",
@@ -2166,7 +2554,14 @@
           }
         }
       },
-      "required": ["position", "axisOrder", "timeCount", "channelCount", "zCount", "rois"]
+      "required": [
+        "position",
+        "axisOrder",
+        "timeCount",
+        "channelCount",
+        "zCount",
+        "rois"
+      ]
     },
     "AnalysisProgressQuery": {
       "type": "object",
@@ -2175,7 +2570,9 @@
           "type": "string"
         }
       },
-      "required": ["requestId"]
+      "required": [
+        "requestId"
+      ]
     },
     "CropRoiProgressQuery": {
       "type": "object",
@@ -2184,7 +2581,9 @@
           "type": "string"
         }
       },
-      "required": ["requestId"]
+      "required": [
+        "requestId"
+      ]
     },
     "HostListDirectoryQuery": {
       "type": "object",
@@ -2201,7 +2600,9 @@
           "type": "string"
         }
       },
-      "required": ["workspacePath"]
+      "required": [
+        "workspacePath"
+      ]
     },
     "LatestCropQuery": {
       "type": "object",
@@ -2210,7 +2611,9 @@
           "type": "string"
         }
       },
-      "required": ["workspacePath"]
+      "required": [
+        "workspacePath"
+      ]
     },
     "LoadAlignStateQuery": {
       "type": "object",
@@ -2224,7 +2627,10 @@
           "format": "uint32"
         }
       },
-      "required": ["workspacePath", "pos"]
+      "required": [
+        "workspacePath",
+        "pos"
+      ]
     },
     "MemoryRecentQuery": {
       "type": "object",
@@ -2233,7 +2639,9 @@
           "$ref": "#/definitions/MemoryKind"
         }
       },
-      "required": ["type"]
+      "required": [
+        "type"
+      ]
     },
     "OperationDetailQuery": {
       "type": "object",
@@ -2242,7 +2650,9 @@
           "type": "string"
         }
       },
-      "required": ["operationId"]
+      "required": [
+        "operationId"
+      ]
     },
     "OutputPathsQuery": {
       "type": "object",
@@ -2253,7 +2663,9 @@
           "format": "uint32"
         }
       },
-      "required": ["pos"]
+      "required": [
+        "pos"
+      ]
     },
     "ReadTextFileQuery": {
       "type": "object",
@@ -2262,7 +2674,9 @@
           "type": "string"
         }
       },
-      "required": ["path"]
+      "required": [
+        "path"
+      ]
     },
     "RoiPosExistsQuery": {
       "type": "object",
@@ -2276,7 +2690,10 @@
           "format": "uint32"
         }
       },
-      "required": ["workspacePath", "pos"]
+      "required": [
+        "workspacePath",
+        "pos"
+      ]
     },
     "SavedBboxPositionsQuery": {
       "type": "object",
@@ -2285,7 +2702,9 @@
           "type": "string"
         }
       },
-      "required": ["workspacePath"]
+      "required": [
+        "workspacePath"
+      ]
     },
     "TaskDetailQuery": {
       "type": "object",
@@ -2294,48 +2713,68 @@
           "type": "string"
         }
       },
-      "required": ["taskId"]
+      "required": [
+        "taskId"
+      ]
     },
     "RequestError": {
       "type": "object",
       "properties": {
         "_tag": {
           "type": "string",
-          "enum": ["RequestError"]
+          "enum": [
+            "RequestError"
+          ]
         },
         "message": {
           "type": "string"
         }
       },
-      "required": ["_tag", "message"]
+      "required": [
+        "_tag",
+        "message"
+      ]
     },
     "Unauthorized": {
       "type": "object",
       "properties": {
         "_tag": {
           "type": "string",
-          "enum": ["Unauthorized"]
+          "enum": [
+            "Unauthorized"
+          ]
         },
         "message": {
           "type": "string"
         }
       },
-      "required": ["_tag", "message"]
+      "required": [
+        "_tag",
+        "message"
+      ]
     },
     "TaskCommandError": {
       "type": "object",
       "properties": {
         "_tag": {
           "type": "string",
-          "enum": ["TaskCommandError"]
+          "enum": [
+            "TaskCommandError"
+          ]
         },
         "code": {
           "type": "string",
-          "enum": ["not-found", "invalid-transition"]
+          "enum": [
+            "not-found",
+            "invalid-transition"
+          ]
         },
         "entity": {
           "type": "string",
-          "enum": ["operation", "task"]
+          "enum": [
+            "operation",
+            "task"
+          ]
         },
         "id": {
           "type": "string"
@@ -2354,7 +2793,14 @@
           "type": "string"
         }
       },
-      "required": ["_tag", "code", "entity", "id", "currentStatus", "message"]
+      "required": [
+        "_tag",
+        "code",
+        "entity",
+        "id",
+        "currentStatus",
+        "message"
+      ]
     }
   }
 }
