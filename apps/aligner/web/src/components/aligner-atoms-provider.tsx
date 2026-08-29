@@ -1,4 +1,4 @@
-import { RegistryProvider, useAtomInitialValues } from "@effect-atom/atom-solid";
+import { RegistryProvider, useAtomInitialValues } from "@effect/atom-solid";
 import type { JSX } from "solid-js";
 
 import { createInitialAlignerUiState, alignerUiAtom } from "../atoms/aligner-ui-atoms";

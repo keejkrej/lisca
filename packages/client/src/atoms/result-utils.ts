@@ -1,19 +1,23 @@
-import { Result } from "@effect-atom/atom-solid";
+import { AsyncResult } from "effect/unstable/reactivity";
 import { Cause } from "effect";
 
-export function resultData<A>(result: Result.Result<A, unknown> | undefined): A | undefined {
-  if (!result || !Result.isSuccess(result)) return undefined;
+export function resultData<A>(
+  result: AsyncResult.AsyncResult<A, unknown> | undefined,
+): A | undefined {
+  if (!result || !AsyncResult.isSuccess(result)) return undefined;
   return result.value;
 }
 
-export function resultLoading(result: Result.Result<unknown, unknown> | undefined): boolean {
+export function resultLoading(
+  result: AsyncResult.AsyncResult<unknown, unknown> | undefined,
+): boolean {
   if (!result) return false;
-  return Result.isInitial(result) || Result.isWaiting(result);
+  return AsyncResult.isInitial(result) || AsyncResult.isWaiting(result);
 }
 
 export function resultFailureMessage(
-  result: Result.Result<unknown, unknown> | undefined,
+  result: AsyncResult.AsyncResult<unknown, unknown> | undefined,
 ): string | undefined {
-  if (!result || !Result.isFailure(result)) return undefined;
+  if (!result || !AsyncResult.isFailure(result)) return undefined;
   return Cause.pretty(result.cause);
 }

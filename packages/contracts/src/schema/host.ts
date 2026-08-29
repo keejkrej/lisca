@@ -4,38 +4,38 @@ export const HostFsEntrySchema = Schema.Struct({
   name: Schema.String,
   path: Schema.String,
   isDirectory: Schema.Boolean,
-}).annotations({ identifier: "HostFsEntry" });
+}).annotate({ identifier: "HostFsEntry" });
 
 export const HostListDirectoryResultSchema = Schema.Struct({
   path: Schema.NullOr(Schema.String),
   parent: Schema.NullOr(Schema.String),
   entries: Schema.mutable(Schema.Array(HostFsEntrySchema)),
-}).annotations({ identifier: "HostListDirectoryResult" });
+}).annotate({ identifier: "HostListDirectoryResult" });
 
 export const HomeDirectoryResponseSchema = Schema.Struct({
   path: Schema.String,
-}).annotations({ identifier: "HomeDirectoryResponse" });
+}).annotate({ identifier: "HomeDirectoryResponse" });
 
 export const ReadTextFileResponseSchema = Schema.Struct({
   contents: Schema.String,
-}).annotations({ identifier: "ReadTextFileResponse" });
+}).annotate({ identifier: "ReadTextFileResponse" });
 
 export const CreateDirectoryRequestSchema = Schema.Struct({
   parentPath: Schema.String,
   name: Schema.String,
-}).annotations({ identifier: "CreateDirectoryRequest" });
+}).annotate({ identifier: "CreateDirectoryRequest" });
 
 export const CreateDirectoryResponseSchema = Schema.Struct({
   path: Schema.String,
-}).annotations({ identifier: "CreateDirectoryResponse" });
+}).annotate({ identifier: "CreateDirectoryResponse" });
 
 export const HostListDirectoryQuerySchema = Schema.Struct({
   path: Schema.optional(Schema.String),
-}).annotations({ identifier: "HostListDirectoryQuery" });
+}).annotate({ identifier: "HostListDirectoryQuery" });
 
 export const ReadTextFileQuerySchema = Schema.Struct({
   path: Schema.String,
-}).annotations({ identifier: "ReadTextFileQuery" });
+}).annotate({ identifier: "ReadTextFileQuery" });
 
 export type HostFsEntry = typeof HostFsEntrySchema.Type;
 export type HostListDirectoryResult = typeof HostListDirectoryResultSchema.Type;

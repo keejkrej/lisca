@@ -20,8 +20,8 @@ import {
   mergeExcludedAlignGridCells,
   type AlignGridToolMode,
 } from "@lisca/utils";
-import type { Atom, Result } from "@effect-atom/atom-solid";
-import { useAtom } from "@effect-atom/atom-solid";
+import type { AsyncResult, Atom } from "effect/unstable/reactivity";
+import { useAtom } from "@effect/atom-solid";
 import { Effect } from "effect";
 import {
   createEffect,
@@ -97,8 +97,8 @@ export type AlignWorkspaceSync = {
 };
 
 export type AlignScanSource = {
-  forSource: (sourceKey: string) => Atom.Atom<Result.Result<WorkspaceScan, unknown>>;
-  idle: Atom.Atom<Result.Result<WorkspaceScan, unknown>>;
+  forSource: (sourceKey: string) => Atom.Atom<AsyncResult.AsyncResult<WorkspaceScan, unknown>>;
+  idle: Atom.Atom<AsyncResult.AsyncResult<WorkspaceScan, unknown>>;
 };
 
 export type AlignSessionBackend = {
@@ -153,7 +153,7 @@ export function useAlignSessionCore(options: UseAlignSessionCoreOptions) {
   const { backend, resources, scan, store, workspace } = options;
   const policy = options.policy ?? {};
   const actions = store.actions;
-  const [ui, setUi] = useAtom(store.atom);
+  const [ui, setUi] = useAtom(() => store.atom);
   const [cropConfirm, setCropConfirm] = createSignal<CropConfirmState | null>(null);
   const [variationExcludePreview, setVariationExcludePreview] =
     createSignal<VariationExcludePreview | null>(null);

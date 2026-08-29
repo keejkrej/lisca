@@ -1,95 +1,78 @@
-import * as Either from "effect/Either";
-import * as ParseResult from "effect/ParseResult";
+import * as Result from "effect/Result";
 import * as Schema from "effect/Schema";
+import * as SchemaIssue from "effect/SchemaIssue";
 
-const syncDecoderCache = new WeakMap<object, (input: unknown) => unknown>();
-const eitherDecoderCache = new WeakMap<
-  object,
-  (input: unknown) => Either.Either<unknown, ParseResult.ParseError>
->();
+const formatSchemaIssue = SchemaIssue.makeFormatterDefault();
 
-/** Hoisted sync decoder; compiled once per schema instance. */
-export function schemaDecoder<S extends Schema.Schema.Any>(
+/** Construct a synchronous decoder for unknown input. */
+export function schemaDecoder<S extends Schema.ConstraintDecoder<unknown>>(
   schema: S,
-): (input: unknown) => Schema.Schema.Type<S> {
-  const key = schema as object;
-  let decoder = syncDecoderCache.get(key);
-  if (!decoder) {
-    decoder = Schema.decodeUnknownSync(schema as never);
-    syncDecoderCache.set(key, decoder);
-  }
-  return decoder as (input: unknown) => Schema.Schema.Type<S>;
+): (input: unknown) => S["Type"] {
+  return Schema.decodeUnknownSync(schema);
 }
 
-/** Hoisted either decoder; compiled once per schema instance. */
-export function schemaDecoderEither<S extends Schema.Schema.Any>(
+/** Construct a synchronous Result decoder for unknown input. */
+export function schemaDecoderEither<S extends Schema.ConstraintDecoder<unknown>>(
   schema: S,
-): (input: unknown) => Either.Either<Schema.Schema.Type<S>, ParseResult.ParseError> {
-  const key = schema as object;
-  let decoder = eitherDecoderCache.get(key);
-  if (!decoder) {
-    decoder = Schema.decodeUnknownEither(schema as never);
-    eitherDecoderCache.set(key, decoder);
-  }
-  return decoder as (
-    input: unknown,
-  ) => Either.Either<Schema.Schema.Type<S>, ParseResult.ParseError>;
+): (input: unknown) => Result.Result<S["Type"], Schema.SchemaError> {
+  return Schema.decodeUnknownResult(schema);
 }
 
 export function formatSchemaError(error: unknown): string {
-  if (ParseResult.isParseError(error)) {
-    return ParseResult.TreeFormatter.formatErrorSync(error);
+  if (Schema.isSchemaError(error)) {
+    return error.message;
   }
-  try {
-    return ParseResult.TreeFormatter.formatIssueSync((error as ParseResult.ParseError).issue);
-  } catch {
-    if (error instanceof Error) {
-      return error.message;
-    }
-    return String(error);
+  if (SchemaIssue.isIssue(error)) {
+    return formatSchemaIssue(error);
   }
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return String(error);
 }
 
-/** Decode unknown input; returns `Either` (Effect v3 has no `Result` module). */
-export const decodeUnknownResult = <S extends Schema.Schema.Any>(schema: S) =>
+/** Decode unknown input; returns `Result`. */
+export const decodeUnknownResult = <S extends Schema.ConstraintDecoder<unknown>>(schema: S) =>
   schemaDecoderEither(schema);
 
-/** Decode a JSON string; returns `Either` with parse or schema errors. */
-export const decodeJsonResult = <S extends Schema.Schema.Any>(schema: S) => {
+/** Decode a JSON string; returns `Result` with JSON parse or schema errors. */
+export const decodeJsonResult = <S extends Schema.ConstraintDecoder<unknown>>(schema: S) => {
   const decodeUnknown = schemaDecoderEither(schema);
-  return (input: string): Either.Either<Schema.Schema.Type<S>, ParseResult.ParseError> => {
+  return (input: string): Result.Result<S["Type"], Error> => {
     try {
       return decodeUnknown(JSON.parse(input));
     } catch (cause) {
-      const message = cause instanceof Error ? cause.message : String(cause);
-      return Either.left(ParseResult.parseError(new ParseResult.Unexpected(input, message)));
+      return Result.fail(cause instanceof Error ? cause : new Error(String(cause)));
     }
   };
 };
 
-export function decodeJson<S extends Schema.Schema.Any>(
+export function decodeJson<S extends Schema.ConstraintDecoder<unknown>>(
   schema: S,
   input: unknown,
-): Schema.Schema.Type<S> {
+): S["Type"] {
   return schemaDecoder(schema)(input);
 }
 
-export function decodeJsonEither<S extends Schema.Schema.Any>(schema: S, input: unknown) {
+export function decodeJsonEither<S extends Schema.ConstraintDecoder<unknown>>(
+  schema: S,
+  input: unknown,
+) {
   return schemaDecoderEither(schema)(input);
 }
 
-export async function readJsonResponse<S extends Schema.Schema.Any>(
+export async function readJsonResponse<S extends Schema.ConstraintDecoder<unknown>>(
   response: Response,
   schema: S,
-): Promise<Schema.Schema.Type<S>> {
+): Promise<S["Type"]> {
   if (!response.ok) {
     const text = await response.text();
     throw new Error(text || `Request failed with ${response.status}`);
   }
   const json: unknown = await response.json();
   const result = schemaDecoderEither(schema)(json);
-  if (Either.isLeft(result)) {
-    throw new Error(formatSchemaError(result.left));
+  if (Result.isFailure(result)) {
+    throw new Error(formatSchemaError(result.failure));
   }
-  return result.right;
+  return result.success;
 }

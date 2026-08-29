@@ -190,9 +190,7 @@
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@effect-atom/atom-solid": "catalog:",
-    "@effect/experimental": "catalog:",
-    "@effect/platform": "catalog:",
+    "@effect/atom-solid": "catalog:",
     "@lisca/contracts": "workspace:*",
     "@lisca/utils": "workspace:*",
     "effect": "catalog:"

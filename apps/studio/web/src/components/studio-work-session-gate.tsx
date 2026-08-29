@@ -1,7 +1,7 @@
 import type { StateUpdater } from "@lisca/client/atoms/align-ui";
 import type { StudioWizardData } from "@lisca/client/atoms/studio-ui";
 import type { AnalysisProgress } from "@lisca/contracts";
-import { useAtom } from "@effect-atom/atom-solid";
+import { useAtom } from "@effect/atom-solid";
 import { runClientEffect } from "@lisca/client/runtime";
 import { resumeStudioPendingRuns } from "@lisca/client/session/resume-pending-runs";
 import { currentServerKey } from "@lisca/client/session/work-session";
@@ -27,9 +27,9 @@ import { parseStudioAssayJson, studioWizardActions, studioWizardAtom } from "../
 
 export function StudioWorkSessionGate(props: { children?: JSX.Element }) {
   const workspace = useShellWorkspace();
-  const [, setAlignUi] = useAtom(studioAlignUiAtom);
-  const [, setAnnotateUi] = useAtom(studioAnnotateUiAtom);
-  const [, setWizard] = useAtom(studioWizardAtom);
+  const [, setAlignUi] = useAtom(() => studioAlignUiAtom);
+  const [, setAnnotateUi] = useAtom(() => studioAnnotateUiAtom);
+  const [, setWizard] = useAtom(() => studioWizardAtom);
   const persistedSession = readStudioAlignSession();
   const pendingRunSubscription = createSubscriptionOwner();
 

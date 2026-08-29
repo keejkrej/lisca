@@ -1,4 +1,4 @@
-import { useAtomSet, useAtomValue } from "@effect-atom/atom-solid";
+import { useAtomSet, useAtomValue } from "@effect/atom-solid";
 import { AppShell } from "@lisca/ui/shell";
 import { createFileRoute } from "@tanstack/solid-router";
 import { createMemo, Show } from "solid-js";
@@ -20,8 +20,8 @@ export const Route = createFileRoute("/info")({
 
 function InfoPage() {
   const { navigateTo } = useStudioNavigate();
-  const wizard = useAtomValue(studioWizardAtom);
-  const setWizard = useAtomSet(studioWizardAtom);
+  const wizard = useAtomValue(() => studioWizardAtom);
+  const setWizard = useAtomSet(() => studioWizardAtom);
   const setInfoStep = (step: InfoStep) => studioWizardActions.setInfoStep(setWizard, step);
 
   const infoStep = createMemo(() => wizard().infoStep);

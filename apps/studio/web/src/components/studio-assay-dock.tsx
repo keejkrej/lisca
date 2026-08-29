@@ -1,6 +1,6 @@
 import { Button } from "@lisca/ui/components";
 import { PanelSection, RailControlStack } from "@lisca/ui/shell";
-import { useAtomSet } from "@effect-atom/atom-solid";
+import { useAtomSet } from "@effect/atom-solid";
 
 import { useStudioNavigate } from "../navigation/use-studio-navigate";
 import { studioWizardActions, studioWizardAtom } from "../state/studio-store";
@@ -11,7 +11,7 @@ export function StudioAssayActions(props: {
   onOpenAssay: () => void;
 }) {
   const { navigateTo } = useStudioNavigate();
-  const setWizard = useAtomSet(studioWizardAtom);
+  const setWizard = useAtomSet(() => studioWizardAtom);
   const setInfoStep = (step: Parameters<typeof studioWizardActions.setInfoStep>[1]) =>
     studioWizardActions.setInfoStep(setWizard, step);
 

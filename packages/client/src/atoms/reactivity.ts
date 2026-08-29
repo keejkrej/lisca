@@ -1,4 +1,4 @@
-import { Reactivity } from "@effect/experimental";
+import { Reactivity } from "effect/unstable/reactivity";
 import type { Effect } from "effect";
 
 /** Run an effect and invalidate related query atoms on success. */

@@ -9,7 +9,23 @@
       "get": {
         "tags": ["fs"],
         "operationId": "fs.listDirectory",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "path",
+            "in": "query",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "required": false
+          }
+        ],
         "security": [],
         "responses": {
           "200": {
@@ -23,18 +39,11 @@
             }
           },
           "400": {
-            "description": "The request did not match the expected schema",
+            "description": "RequestError",
             "content": {
               "application/json": {
                 "schema": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/components/schemas/HttpApiDecodeError"
-                    },
-                    {
-                      "$ref": "#/components/schemas/RequestError"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/RequestErrorEncoded"
                 }
               }
             }
@@ -44,7 +53,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Unauthorized"
+                  "$ref": "#/components/schemas/UnauthorizedEncoded"
                 }
               }
             }
@@ -70,18 +79,11 @@
             }
           },
           "400": {
-            "description": "The request did not match the expected schema",
+            "description": "RequestError",
             "content": {
               "application/json": {
                 "schema": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/components/schemas/HttpApiDecodeError"
-                    },
-                    {
-                      "$ref": "#/components/schemas/RequestError"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/RequestErrorEncoded"
                 }
               }
             }
@@ -91,7 +93,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Unauthorized"
+                  "$ref": "#/components/schemas/UnauthorizedEncoded"
                 }
               }
             }
@@ -103,7 +105,16 @@
       "get": {
         "tags": ["fs"],
         "operationId": "fs.readTextFile",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "path",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
         "security": [],
         "responses": {
           "200": {
@@ -117,18 +128,11 @@
             }
           },
           "400": {
-            "description": "The request did not match the expected schema",
+            "description": "RequestError",
             "content": {
               "application/json": {
                 "schema": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/components/schemas/HttpApiDecodeError"
-                    },
-                    {
-                      "$ref": "#/components/schemas/RequestError"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/RequestErrorEncoded"
                 }
               }
             }
@@ -138,7 +142,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Unauthorized"
+                  "$ref": "#/components/schemas/UnauthorizedEncoded"
                 }
               }
             }
@@ -150,7 +154,16 @@
       "get": {
         "tags": ["fs"],
         "operationId": "fs.readFile",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "path",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
         "security": [],
         "responses": {
           "200": {
@@ -164,18 +177,11 @@
             }
           },
           "400": {
-            "description": "The request did not match the expected schema",
+            "description": "RequestError",
             "content": {
               "application/json": {
                 "schema": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/components/schemas/HttpApiDecodeError"
-                    },
-                    {
-                      "$ref": "#/components/schemas/RequestError"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/RequestErrorEncoded"
                 }
               }
             }
@@ -185,7 +191,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Unauthorized"
+                  "$ref": "#/components/schemas/UnauthorizedEncoded"
                 }
               }
             }
@@ -211,18 +217,11 @@
             }
           },
           "400": {
-            "description": "The request did not match the expected schema",
+            "description": "RequestError",
             "content": {
               "application/json": {
                 "schema": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/components/schemas/HttpApiDecodeError"
-                    },
-                    {
-                      "$ref": "#/components/schemas/RequestError"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/RequestErrorEncoded"
                 }
               }
             }
@@ -232,7 +231,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Unauthorized"
+                  "$ref": "#/components/schemas/UnauthorizedEncoded"
                 }
               }
             }
@@ -268,18 +267,11 @@
             }
           },
           "400": {
-            "description": "The request did not match the expected schema",
+            "description": "RequestError",
             "content": {
               "application/json": {
                 "schema": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/components/schemas/HttpApiDecodeError"
-                    },
-                    {
-                      "$ref": "#/components/schemas/RequestError"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/RequestErrorEncoded"
                 }
               }
             }
@@ -289,7 +281,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Unauthorized"
+                  "$ref": "#/components/schemas/UnauthorizedEncoded"
                 }
               }
             }
@@ -325,18 +317,11 @@
             }
           },
           "400": {
-            "description": "The request did not match the expected schema",
+            "description": "RequestError",
             "content": {
               "application/json": {
                 "schema": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/components/schemas/HttpApiDecodeError"
-                    },
-                    {
-                      "$ref": "#/components/schemas/RequestError"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/RequestErrorEncoded"
                 }
               }
             }
@@ -346,7 +331,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Unauthorized"
+                  "$ref": "#/components/schemas/UnauthorizedEncoded"
                 }
               }
             }
@@ -382,18 +367,11 @@
             }
           },
           "400": {
-            "description": "The request did not match the expected schema",
+            "description": "RequestError",
             "content": {
               "application/json": {
                 "schema": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/components/schemas/HttpApiDecodeError"
-                    },
-                    {
-                      "$ref": "#/components/schemas/RequestError"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/RequestErrorEncoded"
                 }
               }
             }
@@ -403,7 +381,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Unauthorized"
+                  "$ref": "#/components/schemas/UnauthorizedEncoded"
                 }
               }
             }
@@ -425,11 +403,28 @@
       "get": {
         "tags": ["align"],
         "operationId": "align.loadAlignState",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "workspacePath",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "pos",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
         "security": [],
         "responses": {
           "200": {
-            "description": "SavedAlignState",
+            "description": "Success",
             "content": {
               "application/json": {
                 "schema": {
@@ -446,18 +441,11 @@
             }
           },
           "400": {
-            "description": "The request did not match the expected schema",
+            "description": "RequestError",
             "content": {
               "application/json": {
                 "schema": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/components/schemas/HttpApiDecodeError"
-                    },
-                    {
-                      "$ref": "#/components/schemas/RequestError"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/RequestErrorEncoded"
                 }
               }
             }
@@ -467,7 +455,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Unauthorized"
+                  "$ref": "#/components/schemas/UnauthorizedEncoded"
                 }
               }
             }
@@ -479,7 +467,16 @@
       "get": {
         "tags": ["align"],
         "operationId": "align.outputPaths",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "pos",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
         "security": [],
         "responses": {
           "200": {
@@ -493,18 +490,11 @@
             }
           },
           "400": {
-            "description": "The request did not match the expected schema",
+            "description": "RequestError",
             "content": {
               "application/json": {
                 "schema": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/components/schemas/HttpApiDecodeError"
-                    },
-                    {
-                      "$ref": "#/components/schemas/RequestError"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/RequestErrorEncoded"
                 }
               }
             }
@@ -514,7 +504,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Unauthorized"
+                  "$ref": "#/components/schemas/UnauthorizedEncoded"
                 }
               }
             }
@@ -526,7 +516,16 @@
       "get": {
         "tags": ["align"],
         "operationId": "align.listSavedBboxPositions",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "workspacePath",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
         "security": [],
         "responses": {
           "200": {
@@ -537,26 +536,23 @@
                   "type": "array",
                   "items": {
                     "type": "integer",
-                    "format": "uint32",
-                    "minimum": 0
+                    "allOf": [
+                      {
+                        "minimum": 0,
+                        "format": "uint32"
+                      }
+                    ]
                   }
                 }
               }
             }
           },
           "400": {
-            "description": "The request did not match the expected schema",
+            "description": "RequestError",
             "content": {
               "application/json": {
                 "schema": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/components/schemas/HttpApiDecodeError"
-                    },
-                    {
-                      "$ref": "#/components/schemas/RequestError"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/RequestErrorEncoded"
                 }
               }
             }
@@ -566,7 +562,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Unauthorized"
+                  "$ref": "#/components/schemas/UnauthorizedEncoded"
                 }
               }
             }
@@ -578,7 +574,24 @@
       "get": {
         "tags": ["align"],
         "operationId": "align.roiPosExists",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "workspacePath",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "pos",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
         "security": [],
         "responses": {
           "200": {
@@ -592,18 +605,11 @@
             }
           },
           "400": {
-            "description": "The request did not match the expected schema",
+            "description": "RequestError",
             "content": {
               "application/json": {
                 "schema": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/components/schemas/HttpApiDecodeError"
-                    },
-                    {
-                      "$ref": "#/components/schemas/RequestError"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/RequestErrorEncoded"
                 }
               }
             }
@@ -613,7 +619,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Unauthorized"
+                  "$ref": "#/components/schemas/UnauthorizedEncoded"
                 }
               }
             }
@@ -639,18 +645,11 @@
             }
           },
           "400": {
-            "description": "The request did not match the expected schema",
+            "description": "RequestError",
             "content": {
               "application/json": {
                 "schema": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/components/schemas/HttpApiDecodeError"
-                    },
-                    {
-                      "$ref": "#/components/schemas/RequestError"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/RequestErrorEncoded"
                 }
               }
             }
@@ -660,7 +659,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Unauthorized"
+                  "$ref": "#/components/schemas/UnauthorizedEncoded"
                 }
               }
             }
@@ -696,18 +695,11 @@
             }
           },
           "400": {
-            "description": "The request did not match the expected schema",
+            "description": "RequestError",
             "content": {
               "application/json": {
                 "schema": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/components/schemas/HttpApiDecodeError"
-                    },
-                    {
-                      "$ref": "#/components/schemas/RequestError"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/RequestErrorEncoded"
                 }
               }
             }
@@ -717,7 +709,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Unauthorized"
+                  "$ref": "#/components/schemas/UnauthorizedEncoded"
                 }
               }
             }
@@ -739,7 +731,16 @@
       "get": {
         "tags": ["align"],
         "operationId": "align.cropRoiProgress",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "requestId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
         "security": [],
         "responses": {
           "200": {
@@ -753,18 +754,11 @@
             }
           },
           "400": {
-            "description": "The request did not match the expected schema",
+            "description": "RequestError",
             "content": {
               "application/json": {
                 "schema": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/components/schemas/HttpApiDecodeError"
-                    },
-                    {
-                      "$ref": "#/components/schemas/RequestError"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/RequestErrorEncoded"
                 }
               }
             }
@@ -774,7 +768,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Unauthorized"
+                  "$ref": "#/components/schemas/UnauthorizedEncoded"
                 }
               }
             }
@@ -786,39 +780,34 @@
       "get": {
         "tags": ["align"],
         "operationId": "align.getLatestCropProgress",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "workspacePath",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
         "security": [],
         "responses": {
           "200": {
-            "description": "CropRoiProgress",
+            "description": "NullableCropRoiProgress",
             "content": {
               "application/json": {
                 "schema": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/components/schemas/CropRoiProgress"
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/NullableCropRoiProgress"
                 }
               }
             }
           },
           "400": {
-            "description": "The request did not match the expected schema",
+            "description": "RequestError",
             "content": {
               "application/json": {
                 "schema": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/components/schemas/HttpApiDecodeError"
-                    },
-                    {
-                      "$ref": "#/components/schemas/RequestError"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/RequestErrorEncoded"
                 }
               }
             }
@@ -828,7 +817,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Unauthorized"
+                  "$ref": "#/components/schemas/UnauthorizedEncoded"
                 }
               }
             }
@@ -854,18 +843,11 @@
             }
           },
           "400": {
-            "description": "The request did not match the expected schema",
+            "description": "RequestError",
             "content": {
               "application/json": {
                 "schema": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/components/schemas/HttpApiDecodeError"
-                    },
-                    {
-                      "$ref": "#/components/schemas/RequestError"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/RequestErrorEncoded"
                 }
               }
             }
@@ -875,7 +857,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Unauthorized"
+                  "$ref": "#/components/schemas/UnauthorizedEncoded"
                 }
               }
             }
@@ -911,18 +893,11 @@
             }
           },
           "400": {
-            "description": "The request did not match the expected schema",
+            "description": "RequestError",
             "content": {
               "application/json": {
                 "schema": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/components/schemas/HttpApiDecodeError"
-                    },
-                    {
-                      "$ref": "#/components/schemas/RequestError"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/RequestErrorEncoded"
                 }
               }
             }
@@ -932,7 +907,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Unauthorized"
+                  "$ref": "#/components/schemas/UnauthorizedEncoded"
                 }
               }
             }
@@ -971,18 +946,11 @@
             }
           },
           "400": {
-            "description": "The request did not match the expected schema",
+            "description": "RequestError",
             "content": {
               "application/json": {
                 "schema": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/components/schemas/HttpApiDecodeError"
-                    },
-                    {
-                      "$ref": "#/components/schemas/RequestError"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/RequestErrorEncoded"
                 }
               }
             }
@@ -992,7 +960,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Unauthorized"
+                  "$ref": "#/components/schemas/UnauthorizedEncoded"
                 }
               }
             }
@@ -1031,18 +999,11 @@
             }
           },
           "400": {
-            "description": "The request did not match the expected schema",
+            "description": "RequestError",
             "content": {
               "application/json": {
                 "schema": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/components/schemas/HttpApiDecodeError"
-                    },
-                    {
-                      "$ref": "#/components/schemas/RequestError"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/RequestErrorEncoded"
                 }
               }
             }
@@ -1052,7 +1013,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Unauthorized"
+                  "$ref": "#/components/schemas/UnauthorizedEncoded"
                 }
               }
             }
@@ -1088,18 +1049,11 @@
             }
           },
           "400": {
-            "description": "The request did not match the expected schema",
+            "description": "RequestError",
             "content": {
               "application/json": {
                 "schema": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/components/schemas/HttpApiDecodeError"
-                    },
-                    {
-                      "$ref": "#/components/schemas/RequestError"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/RequestErrorEncoded"
                 }
               }
             }
@@ -1109,7 +1063,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Unauthorized"
+                  "$ref": "#/components/schemas/UnauthorizedEncoded"
                 }
               }
             }
@@ -1145,18 +1099,11 @@
             }
           },
           "400": {
-            "description": "The request did not match the expected schema",
+            "description": "RequestError",
             "content": {
               "application/json": {
                 "schema": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/components/schemas/HttpApiDecodeError"
-                    },
-                    {
-                      "$ref": "#/components/schemas/RequestError"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/RequestErrorEncoded"
                 }
               }
             }
@@ -1166,7 +1113,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Unauthorized"
+                  "$ref": "#/components/schemas/UnauthorizedEncoded"
                 }
               }
             }
@@ -1202,18 +1149,11 @@
             }
           },
           "400": {
-            "description": "The request did not match the expected schema",
+            "description": "RequestError",
             "content": {
               "application/json": {
                 "schema": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/components/schemas/HttpApiDecodeError"
-                    },
-                    {
-                      "$ref": "#/components/schemas/RequestError"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/RequestErrorEncoded"
                 }
               }
             }
@@ -1223,7 +1163,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Unauthorized"
+                  "$ref": "#/components/schemas/UnauthorizedEncoded"
                 }
               }
             }
@@ -1259,18 +1199,11 @@
             }
           },
           "400": {
-            "description": "The request did not match the expected schema",
+            "description": "RequestError",
             "content": {
               "application/json": {
                 "schema": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/components/schemas/HttpApiDecodeError"
-                    },
-                    {
-                      "$ref": "#/components/schemas/RequestError"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/RequestErrorEncoded"
                 }
               }
             }
@@ -1280,7 +1213,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Unauthorized"
+                  "$ref": "#/components/schemas/UnauthorizedEncoded"
                 }
               }
             }
@@ -1316,18 +1249,11 @@
             }
           },
           "400": {
-            "description": "The request did not match the expected schema",
+            "description": "RequestError",
             "content": {
               "application/json": {
                 "schema": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/components/schemas/HttpApiDecodeError"
-                    },
-                    {
-                      "$ref": "#/components/schemas/RequestError"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/RequestErrorEncoded"
                 }
               }
             }
@@ -1337,7 +1263,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Unauthorized"
+                  "$ref": "#/components/schemas/UnauthorizedEncoded"
                 }
               }
             }
@@ -1363,18 +1289,11 @@
             }
           },
           "400": {
-            "description": "The request did not match the expected schema",
+            "description": "RequestError",
             "content": {
               "application/json": {
                 "schema": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/components/schemas/HttpApiDecodeError"
-                    },
-                    {
-                      "$ref": "#/components/schemas/RequestError"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/RequestErrorEncoded"
                 }
               }
             }
@@ -1384,7 +1303,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Unauthorized"
+                  "$ref": "#/components/schemas/UnauthorizedEncoded"
                 }
               }
             }
@@ -1420,18 +1339,11 @@
             }
           },
           "400": {
-            "description": "The request did not match the expected schema",
+            "description": "RequestError",
             "content": {
               "application/json": {
                 "schema": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/components/schemas/HttpApiDecodeError"
-                    },
-                    {
-                      "$ref": "#/components/schemas/RequestError"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/RequestErrorEncoded"
                 }
               }
             }
@@ -1441,7 +1353,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Unauthorized"
+                  "$ref": "#/components/schemas/UnauthorizedEncoded"
                 }
               }
             }
@@ -1477,18 +1389,11 @@
             }
           },
           "400": {
-            "description": "The request did not match the expected schema",
+            "description": "RequestError",
             "content": {
               "application/json": {
                 "schema": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/components/schemas/HttpApiDecodeError"
-                    },
-                    {
-                      "$ref": "#/components/schemas/RequestError"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/RequestErrorEncoded"
                 }
               }
             }
@@ -1498,7 +1403,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Unauthorized"
+                  "$ref": "#/components/schemas/UnauthorizedEncoded"
                 }
               }
             }
@@ -1510,7 +1415,16 @@
       "get": {
         "tags": ["memory"],
         "operationId": "memory.getRecentMemory",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "type",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/MemoryKind"
+            },
+            "required": true
+          }
+        ],
         "security": [],
         "responses": {
           "200": {
@@ -1524,18 +1438,11 @@
             }
           },
           "400": {
-            "description": "The request did not match the expected schema",
+            "description": "RequestError",
             "content": {
               "application/json": {
                 "schema": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/components/schemas/HttpApiDecodeError"
-                    },
-                    {
-                      "$ref": "#/components/schemas/RequestError"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/RequestErrorEncoded"
                 }
               }
             }
@@ -1545,7 +1452,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Unauthorized"
+                  "$ref": "#/components/schemas/UnauthorizedEncoded"
                 }
               }
             }
@@ -1571,18 +1478,11 @@
             }
           },
           "400": {
-            "description": "The request did not match the expected schema",
+            "description": "RequestError",
             "content": {
               "application/json": {
                 "schema": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/components/schemas/HttpApiDecodeError"
-                    },
-                    {
-                      "$ref": "#/components/schemas/RequestError"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/RequestErrorEncoded"
                 }
               }
             }
@@ -1592,7 +1492,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Unauthorized"
+                  "$ref": "#/components/schemas/UnauthorizedEncoded"
                 }
               }
             }
@@ -1602,66 +1502,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "anyOf": [
-                  {
-                    "anyOf": [
-                      {
-                        "type": "object",
-                        "required": ["kind", "path"],
-                        "properties": {
-                          "kind": {
-                            "type": "string",
-                            "enum": ["workspace"]
-                          },
-                          "path": {
-                            "type": "string"
-                          },
-                          "label": {
-                            "type": "string"
-                          }
-                        },
-                        "additionalProperties": false
-                      },
-                      {
-                        "type": "object",
-                        "required": ["kind", "source"],
-                        "properties": {
-                          "kind": {
-                            "type": "string",
-                            "enum": ["source"]
-                          },
-                          "source": {
-                            "$ref": "#/components/schemas/AlignerSource"
-                          },
-                          "label": {
-                            "type": "string"
-                          }
-                        },
-                        "additionalProperties": false
-                      }
-                    ]
-                  },
-                  {
-                    "type": "object",
-                    "required": ["kind", "path"],
-                    "properties": {
-                      "kind": {
-                        "type": "string",
-                        "enum": ["assay"]
-                      },
-                      "path": {
-                        "type": "string"
-                      },
-                      "assayLabel": {
-                        "type": "string"
-                      },
-                      "workspacePath": {
-                        "type": "string"
-                      }
-                    },
-                    "additionalProperties": false
-                  }
-                ]
+                "$ref": "#/components/schemas/MemoryTouchRequest"
               }
             }
           },
@@ -1687,18 +1528,11 @@
             }
           },
           "400": {
-            "description": "The request did not match the expected schema",
+            "description": "RequestError",
             "content": {
               "application/json": {
                 "schema": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/components/schemas/HttpApiDecodeError"
-                    },
-                    {
-                      "$ref": "#/components/schemas/RequestError"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/RequestErrorEncoded"
                 }
               }
             }
@@ -1708,7 +1542,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Unauthorized"
+                  "$ref": "#/components/schemas/UnauthorizedEncoded"
                 }
               }
             }
@@ -1720,7 +1554,16 @@
       "get": {
         "tags": ["tasks"],
         "operationId": "tasks.getOperation",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "operationId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
         "security": [],
         "responses": {
           "200": {
@@ -1734,18 +1577,11 @@
             }
           },
           "400": {
-            "description": "The request did not match the expected schema",
+            "description": "RequestError",
             "content": {
               "application/json": {
                 "schema": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/components/schemas/HttpApiDecodeError"
-                    },
-                    {
-                      "$ref": "#/components/schemas/RequestError"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/RequestErrorEncoded"
                 }
               }
             }
@@ -1755,7 +1591,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Unauthorized"
+                  "$ref": "#/components/schemas/UnauthorizedEncoded"
                 }
               }
             }
@@ -1767,7 +1603,16 @@
       "get": {
         "tags": ["tasks"],
         "operationId": "tasks.getTask",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "taskId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
         "security": [],
         "responses": {
           "200": {
@@ -1781,18 +1626,11 @@
             }
           },
           "400": {
-            "description": "The request did not match the expected schema",
+            "description": "RequestError",
             "content": {
               "application/json": {
                 "schema": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/components/schemas/HttpApiDecodeError"
-                    },
-                    {
-                      "$ref": "#/components/schemas/RequestError"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/RequestErrorEncoded"
                 }
               }
             }
@@ -1802,7 +1640,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Unauthorized"
+                  "$ref": "#/components/schemas/UnauthorizedEncoded"
                 }
               }
             }
@@ -1828,18 +1666,11 @@
             }
           },
           "400": {
-            "description": "The request did not match the expected schema",
+            "description": "RequestError",
             "content": {
               "application/json": {
                 "schema": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/components/schemas/HttpApiDecodeError"
-                    },
-                    {
-                      "$ref": "#/components/schemas/RequestError"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/RequestErrorEncoded"
                 }
               }
             }
@@ -1849,7 +1680,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Unauthorized"
+                  "$ref": "#/components/schemas/UnauthorizedEncoded"
                 }
               }
             }
@@ -1859,7 +1690,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/TaskCommandError"
+                  "$ref": "#/components/schemas/TaskCommandErrorEncoded"
                 }
               }
             }
@@ -1895,18 +1726,11 @@
             }
           },
           "400": {
-            "description": "The request did not match the expected schema",
+            "description": "RequestError",
             "content": {
               "application/json": {
                 "schema": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/components/schemas/HttpApiDecodeError"
-                    },
-                    {
-                      "$ref": "#/components/schemas/RequestError"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/RequestErrorEncoded"
                 }
               }
             }
@@ -1916,7 +1740,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Unauthorized"
+                  "$ref": "#/components/schemas/UnauthorizedEncoded"
                 }
               }
             }
@@ -1926,7 +1750,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/TaskCommandError"
+                  "$ref": "#/components/schemas/TaskCommandErrorEncoded"
                 }
               }
             }
@@ -1962,18 +1786,11 @@
             }
           },
           "400": {
-            "description": "The request did not match the expected schema",
+            "description": "RequestError",
             "content": {
               "application/json": {
                 "schema": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/components/schemas/HttpApiDecodeError"
-                    },
-                    {
-                      "$ref": "#/components/schemas/RequestError"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/RequestErrorEncoded"
                 }
               }
             }
@@ -1983,7 +1800,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Unauthorized"
+                  "$ref": "#/components/schemas/UnauthorizedEncoded"
                 }
               }
             }
@@ -1993,7 +1810,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/TaskCommandError"
+                  "$ref": "#/components/schemas/TaskCommandErrorEncoded"
                 }
               }
             }
@@ -2029,18 +1846,11 @@
             }
           },
           "400": {
-            "description": "The request did not match the expected schema",
+            "description": "RequestError",
             "content": {
               "application/json": {
                 "schema": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/components/schemas/HttpApiDecodeError"
-                    },
-                    {
-                      "$ref": "#/components/schemas/RequestError"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/RequestErrorEncoded"
                 }
               }
             }
@@ -2050,7 +1860,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Unauthorized"
+                  "$ref": "#/components/schemas/UnauthorizedEncoded"
                 }
               }
             }
@@ -2086,18 +1896,11 @@
             }
           },
           "400": {
-            "description": "The request did not match the expected schema",
+            "description": "RequestError",
             "content": {
               "application/json": {
                 "schema": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/components/schemas/HttpApiDecodeError"
-                    },
-                    {
-                      "$ref": "#/components/schemas/RequestError"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/RequestErrorEncoded"
                 }
               }
             }
@@ -2107,7 +1910,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Unauthorized"
+                  "$ref": "#/components/schemas/UnauthorizedEncoded"
                 }
               }
             }
@@ -2143,18 +1946,11 @@
             }
           },
           "400": {
-            "description": "The request did not match the expected schema",
+            "description": "RequestError",
             "content": {
               "application/json": {
                 "schema": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/components/schemas/HttpApiDecodeError"
-                    },
-                    {
-                      "$ref": "#/components/schemas/RequestError"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/RequestErrorEncoded"
                 }
               }
             }
@@ -2164,7 +1960,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Unauthorized"
+                  "$ref": "#/components/schemas/UnauthorizedEncoded"
                 }
               }
             }
@@ -2186,7 +1982,16 @@
       "get": {
         "tags": ["studio"],
         "operationId": "studio.getAnalysisProgress",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "requestId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
         "security": [],
         "responses": {
           "200": {
@@ -2200,18 +2005,11 @@
             }
           },
           "400": {
-            "description": "The request did not match the expected schema",
+            "description": "RequestError",
             "content": {
               "application/json": {
                 "schema": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/components/schemas/HttpApiDecodeError"
-                    },
-                    {
-                      "$ref": "#/components/schemas/RequestError"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/RequestErrorEncoded"
                 }
               }
             }
@@ -2221,7 +2019,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Unauthorized"
+                  "$ref": "#/components/schemas/UnauthorizedEncoded"
                 }
               }
             }
@@ -2233,11 +2031,20 @@
       "get": {
         "tags": ["studio"],
         "operationId": "studio.getLatestAnalysisProgress",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "workspacePath",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
         "security": [],
         "responses": {
           "200": {
-            "description": "AnalysisProgress",
+            "description": "Success",
             "content": {
               "application/json": {
                 "schema": {
@@ -2254,18 +2061,11 @@
             }
           },
           "400": {
-            "description": "The request did not match the expected schema",
+            "description": "RequestError",
             "content": {
               "application/json": {
                 "schema": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/components/schemas/HttpApiDecodeError"
-                    },
-                    {
-                      "$ref": "#/components/schemas/RequestError"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/RequestErrorEncoded"
                 }
               }
             }
@@ -2275,7 +2075,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Unauthorized"
+                  "$ref": "#/components/schemas/UnauthorizedEncoded"
                 }
               }
             }
@@ -2287,11 +2087,20 @@
       "get": {
         "tags": ["studio"],
         "operationId": "studio.getAnalysisResults",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "workspacePath",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
         "security": [],
         "responses": {
           "200": {
-            "description": "AnalysisProgress",
+            "description": "Success",
             "content": {
               "application/json": {
                 "schema": {
@@ -2308,18 +2117,11 @@
             }
           },
           "400": {
-            "description": "The request did not match the expected schema",
+            "description": "RequestError",
             "content": {
               "application/json": {
                 "schema": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/components/schemas/HttpApiDecodeError"
-                    },
-                    {
-                      "$ref": "#/components/schemas/RequestError"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/RequestErrorEncoded"
                 }
               }
             }
@@ -2329,7 +2131,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Unauthorized"
+                  "$ref": "#/components/schemas/UnauthorizedEncoded"
                 }
               }
             }
@@ -2340,19 +2142,24 @@
   },
   "components": {
     "schemas": {
-      "HostListDirectoryQuery": {
+      "HostFsEntry": {
         "type": "object",
-        "required": [],
         "properties": {
+          "name": {
+            "type": "string"
+          },
           "path": {
             "type": "string"
+          },
+          "isDirectory": {
+            "type": "boolean"
           }
         },
+        "required": ["name", "path", "isDirectory"],
         "additionalProperties": false
       },
       "HostListDirectoryResult": {
         "type": "object",
-        "required": ["path", "parent", "entries"],
         "properties": {
           "path": {
             "anyOf": [
@@ -2381,164 +2188,59 @@
             }
           }
         },
+        "required": ["path", "parent", "entries"],
         "additionalProperties": false
       },
-      "HostFsEntry": {
+      "RequestErrorEncoded": {
         "type": "object",
-        "required": ["name", "path", "isDirectory"],
         "properties": {
-          "name": {
-            "type": "string"
-          },
-          "path": {
-            "type": "string"
-          },
-          "isDirectory": {
-            "type": "boolean"
-          }
-        },
-        "additionalProperties": false
-      },
-      "HttpApiDecodeError": {
-        "type": "object",
-        "required": ["issues", "message", "_tag"],
-        "properties": {
-          "issues": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Issue"
-            }
-          },
-          "message": {
-            "type": "string"
-          },
-          "_tag": {
-            "type": "string",
-            "enum": ["HttpApiDecodeError"]
-          }
-        },
-        "additionalProperties": false,
-        "description": "The request did not match the expected schema"
-      },
-      "Issue": {
-        "type": "object",
-        "required": ["_tag", "path", "message"],
-        "properties": {
-          "_tag": {
-            "type": "string",
-            "enum": [
-              "Pointer",
-              "Unexpected",
-              "Missing",
-              "Composite",
-              "Refinement",
-              "Transformation",
-              "Type",
-              "Forbidden"
-            ],
-            "description": "The tag identifying the type of parse issue"
-          },
-          "path": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/PropertyKey"
-            },
-            "description": "The path to the property where the issue occurred"
-          },
-          "message": {
-            "type": "string",
-            "description": "A descriptive message explaining the issue"
-          }
-        },
-        "additionalProperties": false,
-        "description": "Represents an error encountered while parsing a value to match the schema"
-      },
-      "PropertyKey": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "number"
-          },
-          {
-            "type": "object",
-            "required": ["_tag", "key"],
-            "properties": {
-              "_tag": {
-                "type": "string",
-                "enum": ["symbol"]
-              },
-              "key": {
-                "type": "string"
-              }
-            },
-            "additionalProperties": false,
-            "description": "an object to be decoded into a globally shared symbol"
-          }
-        ]
-      },
-      "RequestError": {
-        "type": "object",
-        "required": ["message", "_tag"],
-        "properties": {
-          "message": {
-            "type": "string"
-          },
           "_tag": {
             "type": "string",
             "enum": ["RequestError"]
-          }
-        },
-        "additionalProperties": false
-      },
-      "Unauthorized": {
-        "type": "object",
-        "required": ["message", "_tag"],
-        "properties": {
+          },
           "message": {
             "type": "string"
-          },
+          }
+        },
+        "required": ["_tag", "message"],
+        "additionalProperties": false
+      },
+      "UnauthorizedEncoded": {
+        "type": "object",
+        "properties": {
           "_tag": {
             "type": "string",
             "enum": ["Unauthorized"]
+          },
+          "message": {
+            "type": "string"
           }
         },
+        "required": ["_tag", "message"],
         "additionalProperties": false
       },
       "HomeDirectoryResponse": {
         "type": "object",
-        "required": ["path"],
         "properties": {
           "path": {
             "type": "string"
           }
         },
-        "additionalProperties": false
-      },
-      "ReadTextFileQuery": {
-        "type": "object",
         "required": ["path"],
-        "properties": {
-          "path": {
-            "type": "string"
-          }
-        },
         "additionalProperties": false
       },
       "ReadTextFileResponse": {
         "type": "object",
-        "required": ["contents"],
         "properties": {
           "contents": {
             "type": "string"
           }
         },
+        "required": ["contents"],
         "additionalProperties": false
       },
       "CreateDirectoryRequest": {
         "type": "object",
-        "required": ["parentPath", "name"],
         "properties": {
           "parentPath": {
             "type": "string"
@@ -2547,66 +2249,21 @@
             "type": "string"
           }
         },
+        "required": ["parentPath", "name"],
         "additionalProperties": false
       },
       "CreateDirectoryResponse": {
         "type": "object",
-        "required": ["path"],
         "properties": {
           "path": {
             "type": "string"
           }
         },
+        "required": ["path"],
         "additionalProperties": false
-      },
-      "ScanSourceRequest": {
-        "type": "object",
-        "required": ["source"],
-        "properties": {
-          "source": {
-            "$ref": "#/components/schemas/AlignerSource"
-          }
-        },
-        "additionalProperties": false
-      },
-      "AlignerSource": {
-        "anyOf": [
-          {
-            "$ref": "#/components/schemas/FolderSource"
-          },
-          {
-            "type": "object",
-            "required": ["kind", "path"],
-            "properties": {
-              "kind": {
-                "type": "string",
-                "enum": ["nd2"]
-              },
-              "path": {
-                "type": "string"
-              }
-            },
-            "additionalProperties": false
-          },
-          {
-            "type": "object",
-            "required": ["kind", "path"],
-            "properties": {
-              "kind": {
-                "type": "string",
-                "enum": ["czi"]
-              },
-              "path": {
-                "type": "string"
-              }
-            },
-            "additionalProperties": false
-          }
-        ]
       },
       "FolderSource": {
         "type": "object",
-        "required": ["kind", "path", "subfolderTemplate", "filenameTemplate"],
         "properties": {
           "kind": {
             "type": "string",
@@ -2622,74 +2279,231 @@
             "type": "string"
           }
         },
+        "required": ["kind", "path", "subfolderTemplate", "filenameTemplate"],
+        "additionalProperties": false
+      },
+      "AlignerSource": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/FolderSource"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": ["nd2"]
+              },
+              "path": {
+                "type": "string"
+              }
+            },
+            "required": ["kind", "path"],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": ["czi"]
+              },
+              "path": {
+                "type": "string"
+              }
+            },
+            "required": ["kind", "path"],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "ScanSourceRequest": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "$ref": "#/components/schemas/AlignerSource"
+          }
+        },
+        "required": ["source"],
         "additionalProperties": false
       },
       "WorkspaceScan": {
         "type": "object",
-        "required": ["positions", "channels", "times", "zSlices"],
         "properties": {
           "positions": {
             "type": "array",
             "items": {
               "type": "integer",
-              "format": "uint32",
-              "minimum": 0
+              "allOf": [
+                {
+                  "minimum": 0,
+                  "format": "uint32"
+                }
+              ]
             }
           },
           "channels": {
             "type": "array",
             "items": {
               "type": "integer",
-              "format": "uint32",
-              "minimum": 0
+              "allOf": [
+                {
+                  "minimum": 0,
+                  "format": "uint32"
+                }
+              ]
             }
           },
           "times": {
             "type": "array",
             "items": {
               "type": "integer",
-              "format": "uint32",
-              "minimum": 0
+              "allOf": [
+                {
+                  "minimum": 0,
+                  "format": "uint32"
+                }
+              ]
             }
           },
           "zSlices": {
             "type": "array",
             "items": {
               "type": "integer",
-              "format": "uint32",
-              "minimum": 0
+              "allOf": [
+                {
+                  "minimum": 0,
+                  "format": "uint32"
+                }
+              ]
             }
           },
           "positionLabels": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "channelLabels": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "timeLabels": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "zSliceLabels": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
+        "required": ["positions", "channels", "times", "zSlices"],
+        "additionalProperties": false
+      },
+      "FrameRequest": {
+        "type": "object",
+        "properties": {
+          "pos": {
+            "type": "integer",
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          },
+          "channel": {
+            "type": "integer",
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          },
+          "time": {
+            "type": "integer",
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          },
+          "z": {
+            "type": "integer",
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          }
+        },
+        "required": ["pos", "channel", "time", "z"],
+        "additionalProperties": false
+      },
+      "ContrastWindow": {
+        "type": "object",
+        "properties": {
+          "min": {
+            "type": "integer",
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          },
+          "max": {
+            "type": "integer",
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          }
+        },
+        "required": ["min", "max"],
         "additionalProperties": false
       },
       "LoadFrameRequest": {
         "type": "object",
-        "required": ["source", "request", "contrast"],
         "properties": {
           "source": {
             "$ref": "#/components/schemas/AlignerSource"
@@ -2708,73 +2522,33 @@
             ]
           }
         },
+        "required": ["source", "request", "contrast"],
         "additionalProperties": false
       },
-      "FrameRequest": {
-        "type": "object",
-        "required": ["pos", "channel", "time", "z"],
-        "properties": {
-          "pos": {
-            "type": "integer",
-            "format": "uint32",
-            "minimum": 0
-          },
-          "channel": {
-            "type": "integer",
-            "format": "uint32",
-            "minimum": 0
-          },
-          "time": {
-            "type": "integer",
-            "format": "uint32",
-            "minimum": 0
-          },
-          "z": {
-            "type": "integer",
-            "format": "uint32",
-            "minimum": 0
-          }
-        },
-        "additionalProperties": false
-      },
-      "ContrastWindow": {
-        "type": "object",
-        "required": ["min", "max"],
-        "properties": {
-          "min": {
-            "type": "integer",
-            "format": "uint32",
-            "minimum": 0
-          },
-          "max": {
-            "type": "integer",
-            "format": "uint32",
-            "minimum": 0
-          }
-        },
-        "additionalProperties": false
+      "PixelType": {
+        "type": "string",
+        "enum": ["uint8", "uint8clamped", "int8", "uint16", "int16", "uint32", "int32"]
       },
       "FramePayload": {
         "type": "object",
-        "required": [
-          "width",
-          "height",
-          "dataBase64",
-          "pixelType",
-          "contrastDomain",
-          "suggestedContrast",
-          "appliedContrast"
-        ],
         "properties": {
           "width": {
             "type": "integer",
-            "format": "uint32",
-            "minimum": 0
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
           },
           "height": {
             "type": "integer",
-            "format": "uint32",
-            "minimum": 0
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
           },
           "dataBase64": {
             "type": "string"
@@ -2792,51 +2566,95 @@
             "$ref": "#/components/schemas/ContrastWindow"
           }
         },
+        "required": [
+          "width",
+          "height",
+          "dataBase64",
+          "pixelType",
+          "contrastDomain",
+          "suggestedContrast",
+          "appliedContrast"
+        ],
         "additionalProperties": false
       },
-      "PixelType": {
+      "AlignGridShape": {
         "type": "string",
-        "enum": ["uint8", "uint8clamped", "int8", "uint16", "int16", "uint32", "int32"]
-      },
-      "SaveBboxRequest": {
-        "type": "object",
-        "required": ["workspacePath", "pos", "csv", "alignState"],
-        "properties": {
-          "workspacePath": {
-            "type": "string"
-          },
-          "pos": {
-            "type": "integer",
-            "format": "uint32",
-            "minimum": 0
-          },
-          "csv": {
-            "type": "string"
-          },
-          "alignState": {
-            "$ref": "#/components/schemas/SavedAlignState"
-          }
-        },
-        "additionalProperties": false
-      },
-      "SavedAlignState": {
-        "type": "object",
-        "required": ["grid", "excludedCells"],
-        "properties": {
-          "grid": {
-            "$ref": "#/components/schemas/AlignGridState"
-          },
-          "excludedCells": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/AlignGridCellCoord"
-            }
-          }
-        },
-        "additionalProperties": false
+        "enum": ["rect", "square", "hex"]
       },
       "AlignGridState": {
         "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "shape": {
+            "$ref": "#/components/schemas/AlignGridShape"
+          },
+          "tx": {
+            "type": "number",
+            "allOf": [
+              {
+                "format": "double"
+              }
+            ]
+          },
+          "ty": {
+            "type": "number",
+            "allOf": [
+              {
+                "format": "double"
+              }
+            ]
+          },
+          "rotation": {
+            "type": "number",
+            "allOf": [
+              {
+                "format": "double"
+              }
+            ]
+          },
+          "spacingA": {
+            "type": "number",
+            "allOf": [
+              {
+                "format": "double"
+              }
+            ]
+          },
+          "spacingB": {
+            "type": "number",
+            "allOf": [
+              {
+                "format": "double"
+              }
+            ]
+          },
+          "cellWidth": {
+            "type": "number",
+            "allOf": [
+              {
+                "format": "double"
+              }
+            ]
+          },
+          "cellHeight": {
+            "type": "number",
+            "allOf": [
+              {
+                "format": "double"
+              }
+            ]
+          },
+          "opacity": {
+            "type": "number",
+            "allOf": [
+              {
+                "format": "double"
+              }
+            ]
+          }
+        },
         "required": [
           "enabled",
           "shape",
@@ -2849,74 +2667,74 @@
           "cellHeight",
           "opacity"
         ],
-        "properties": {
-          "enabled": {
-            "type": "boolean"
-          },
-          "shape": {
-            "$ref": "#/components/schemas/AlignGridShape"
-          },
-          "tx": {
-            "type": "number",
-            "format": "double"
-          },
-          "ty": {
-            "type": "number",
-            "format": "double"
-          },
-          "rotation": {
-            "type": "number",
-            "format": "double"
-          },
-          "spacingA": {
-            "type": "number",
-            "format": "double"
-          },
-          "spacingB": {
-            "type": "number",
-            "format": "double"
-          },
-          "cellWidth": {
-            "type": "number",
-            "format": "double"
-          },
-          "cellHeight": {
-            "type": "number",
-            "format": "double"
-          },
-          "opacity": {
-            "type": "number",
-            "format": "double"
-          }
-        },
         "additionalProperties": false
-      },
-      "AlignGridShape": {
-        "type": "string",
-        "enum": ["rect", "square", "hex"]
       },
       "AlignGridCellCoord": {
         "type": "object",
-        "required": ["i", "j"],
         "properties": {
           "i": {
             "type": "integer",
-            "description": "an integer",
-            "title": "int",
-            "format": "int32"
+            "allOf": [
+              {
+                "format": "int32"
+              }
+            ]
           },
           "j": {
             "type": "integer",
-            "description": "an integer",
-            "title": "int",
-            "format": "int32"
+            "allOf": [
+              {
+                "format": "int32"
+              }
+            ]
           }
         },
+        "required": ["i", "j"],
+        "additionalProperties": false
+      },
+      "SavedAlignState": {
+        "type": "object",
+        "properties": {
+          "grid": {
+            "$ref": "#/components/schemas/AlignGridState"
+          },
+          "excludedCells": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AlignGridCellCoord"
+            }
+          }
+        },
+        "required": ["grid", "excludedCells"],
+        "additionalProperties": false
+      },
+      "SaveBboxRequest": {
+        "type": "object",
+        "properties": {
+          "workspacePath": {
+            "type": "string"
+          },
+          "pos": {
+            "type": "integer",
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          },
+          "csv": {
+            "type": "string"
+          },
+          "alignState": {
+            "$ref": "#/components/schemas/SavedAlignState"
+          }
+        },
+        "required": ["workspacePath", "pos", "csv", "alignState"],
         "additionalProperties": false
       },
       "SaveBboxResponse": {
         "type": "object",
-        "required": ["ok", "error"],
         "properties": {
           "ok": {
             "type": "boolean"
@@ -2932,38 +2750,11 @@
             ]
           }
         },
-        "additionalProperties": false
-      },
-      "LoadAlignStateQuery": {
-        "type": "object",
-        "required": ["workspacePath", "pos"],
-        "properties": {
-          "workspacePath": {
-            "type": "string"
-          },
-          "pos": {
-            "type": "integer",
-            "format": "uint32",
-            "minimum": 0
-          }
-        },
-        "additionalProperties": false
-      },
-      "OutputPathsQuery": {
-        "type": "object",
-        "required": ["pos"],
-        "properties": {
-          "pos": {
-            "type": "integer",
-            "format": "uint32",
-            "minimum": 0
-          }
-        },
+        "required": ["ok", "error"],
         "additionalProperties": false
       },
       "AlignOutputPaths": {
         "type": "object",
-        "required": ["bbox", "align", "roi"],
         "properties": {
           "bbox": {
             "type": "string"
@@ -2975,46 +2766,25 @@
             "type": "string"
           }
         },
-        "additionalProperties": false
-      },
-      "SavedBboxPositionsQuery": {
-        "type": "object",
-        "required": ["workspacePath"],
-        "properties": {
-          "workspacePath": {
-            "type": "string"
-          }
-        },
-        "additionalProperties": false
-      },
-      "RoiPosExistsQuery": {
-        "type": "object",
-        "required": ["workspacePath", "pos"],
-        "properties": {
-          "workspacePath": {
-            "type": "string"
-          },
-          "pos": {
-            "type": "integer",
-            "format": "uint32",
-            "minimum": 0
-          }
-        },
+        "required": ["bbox", "align", "roi"],
         "additionalProperties": false
       },
       "RoiPosExistsResponse": {
         "type": "object",
-        "required": ["exists"],
         "properties": {
           "exists": {
             "type": "boolean"
           }
         },
+        "required": ["exists"],
         "additionalProperties": false
+      },
+      "CropOutputFormat": {
+        "type": "string",
+        "enum": ["tiff"]
       },
       "CropRoiRequest": {
         "type": "object",
-        "required": ["requestId", "workspacePath", "source", "positions", "overwrite"],
         "properties": {
           "requestId": {
             "type": "string"
@@ -3029,26 +2799,41 @@
             "type": "array",
             "items": {
               "type": "integer",
-              "format": "uint32",
-              "minimum": 0
+              "allOf": [
+                {
+                  "minimum": 0,
+                  "format": "uint32"
+                }
+              ]
             }
           },
           "overwrite": {
             "type": "boolean"
           },
           "outputFormat": {
-            "$ref": "#/components/schemas/CropOutputFormat"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CropOutputFormat"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
+        "required": ["requestId", "workspacePath", "source", "positions", "overwrite"],
         "additionalProperties": false
       },
-      "CropOutputFormat": {
+      "CropRoiStatus": {
         "type": "string",
-        "enum": ["tiff"]
+        "enum": ["queued", "running", "completed", "cancelled", "error"]
+      },
+      "CropRoiDisposition": {
+        "type": "string",
+        "enum": ["started", "attached"]
       },
       "CropRoiResponse": {
         "type": "object",
-        "required": ["requestId", "status", "disposition"],
         "properties": {
           "requestId": {
             "type": "string"
@@ -3060,38 +2845,21 @@
             "$ref": "#/components/schemas/CropRoiDisposition"
           }
         },
+        "required": ["requestId", "status", "disposition"],
         "additionalProperties": false
-      },
-      "CropRoiStatus": {
-        "type": "string",
-        "enum": ["queued", "running", "completed", "cancelled", "error"]
-      },
-      "CropRoiDisposition": {
-        "type": "string",
-        "enum": ["started", "attached"]
       },
       "CancelCropRoiRequest": {
         "type": "object",
-        "required": ["requestId"],
         "properties": {
           "requestId": {
             "type": "string"
           }
         },
+        "required": ["requestId"],
         "additionalProperties": false
       },
       "CropRoiProgress": {
         "type": "object",
-        "required": [
-          "requestId",
-          "status",
-          "position",
-          "completedPositions",
-          "totalPositions",
-          "completedRois",
-          "totalRois",
-          "message"
-        ],
         "properties": {
           "requestId": {
             "type": "string"
@@ -3103,8 +2871,12 @@
             "anyOf": [
               {
                 "type": "integer",
-                "format": "uint32",
-                "minimum": 0
+                "allOf": [
+                  {
+                    "minimum": 0,
+                    "format": "uint32"
+                  }
+                ]
               },
               {
                 "type": "null"
@@ -3113,23 +2885,39 @@
           },
           "completedPositions": {
             "type": "integer",
-            "format": "uint32",
-            "minimum": 0
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
           },
           "totalPositions": {
             "type": "integer",
-            "format": "uint32",
-            "minimum": 0
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
           },
           "completedRois": {
             "type": "integer",
-            "format": "uint32",
-            "minimum": 0
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
           },
           "totalRois": {
             "type": "integer",
-            "format": "uint32",
-            "minimum": 0
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
           },
           "message": {
             "anyOf": [
@@ -3144,7 +2932,14 @@
           "error": {
             "anyOf": [
               {
-                "type": "string"
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
               },
               {
                 "type": "null"
@@ -3152,39 +2947,108 @@
             ]
           },
           "skippedPositions": {
-            "type": "array",
-            "items": {
-              "type": "integer",
-              "format": "uint32",
-              "minimum": 0
-            }
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "allOf": [
+                    {
+                      "minimum": 0,
+                      "format": "uint32"
+                    }
+                  ]
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
+        "required": [
+          "requestId",
+          "status",
+          "position",
+          "completedPositions",
+          "totalPositions",
+          "completedRois",
+          "totalRois",
+          "message"
+        ],
         "additionalProperties": false
       },
-      "CropRoiProgressQuery": {
-        "type": "object",
-        "required": ["requestId"],
-        "properties": {
-          "requestId": {
-            "type": "string"
+      "NullableCropRoiProgress": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/CropRoiProgress"
+          },
+          {
+            "type": "null"
           }
-        },
-        "additionalProperties": false
+        ]
       },
-      "LatestCropQuery": {
+      "AutoExcludePreviewCell": {
         "type": "object",
-        "required": ["workspacePath"],
         "properties": {
-          "workspacePath": {
-            "type": "string"
+          "i": {
+            "type": "integer",
+            "allOf": [
+              {
+                "format": "int32"
+              }
+            ]
+          },
+          "j": {
+            "type": "integer",
+            "allOf": [
+              {
+                "format": "int32"
+              }
+            ]
+          },
+          "x": {
+            "type": "integer",
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          },
+          "y": {
+            "type": "integer",
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          },
+          "w": {
+            "type": "integer",
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          },
+          "h": {
+            "type": "integer",
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
           }
         },
+        "required": ["i", "j", "x", "y", "w", "h"],
         "additionalProperties": false
       },
       "SmartExcludeRequest": {
         "type": "object",
-        "required": ["source", "request", "contrast", "cells"],
         "properties": {
           "source": {
             "$ref": "#/components/schemas/AlignerSource"
@@ -3209,54 +3073,26 @@
             }
           },
           "threshold": {
-            "type": "number",
-            "format": "double"
+            "anyOf": [
+              {
+                "type": "number",
+                "allOf": [
+                  {
+                    "format": "double"
+                  }
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
-        "additionalProperties": false
-      },
-      "AutoExcludePreviewCell": {
-        "type": "object",
-        "required": ["i", "j", "x", "y", "w", "h"],
-        "properties": {
-          "i": {
-            "type": "integer",
-            "description": "an integer",
-            "title": "int",
-            "format": "int32"
-          },
-          "j": {
-            "type": "integer",
-            "description": "an integer",
-            "title": "int",
-            "format": "int32"
-          },
-          "x": {
-            "type": "integer",
-            "format": "uint32",
-            "minimum": 0
-          },
-          "y": {
-            "type": "integer",
-            "format": "uint32",
-            "minimum": 0
-          },
-          "w": {
-            "type": "integer",
-            "format": "uint32",
-            "minimum": 0
-          },
-          "h": {
-            "type": "integer",
-            "format": "uint32",
-            "minimum": 0
-          }
-        },
+        "required": ["source", "request", "contrast", "cells"],
         "additionalProperties": false
       },
       "SmartExcludeResponse": {
         "type": "object",
-        "required": ["excludedCells"],
         "properties": {
           "excludedCells": {
             "type": "array",
@@ -3265,62 +3101,139 @@
             }
           }
         },
+        "required": ["excludedCells"],
         "additionalProperties": false
       },
       "ScanRoiWorkspaceRequest": {
         "type": "object",
-        "required": ["workspacePath"],
         "properties": {
           "workspacePath": {
             "type": "string"
           }
         },
+        "required": ["workspacePath"],
         "additionalProperties": false
       },
-      "RoiWorkspaceScan": {
+      "RoiBbox": {
         "type": "object",
-        "required": ["positions"],
         "properties": {
-          "positions": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/RoiPositionScan"
-            }
+          "roi": {
+            "type": "integer",
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          },
+          "x": {
+            "type": "integer",
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          },
+          "y": {
+            "type": "integer",
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          },
+          "w": {
+            "type": "integer",
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          },
+          "h": {
+            "type": "integer",
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
           }
         },
+        "required": ["roi", "x", "y", "w", "h"],
+        "additionalProperties": false
+      },
+      "RoiIndexEntry": {
+        "type": "object",
+        "properties": {
+          "roi": {
+            "type": "integer",
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          },
+          "fileName": {
+            "type": "string"
+          },
+          "bbox": {
+            "$ref": "#/components/schemas/RoiBbox"
+          }
+        },
+        "required": ["roi", "fileName", "bbox"],
         "additionalProperties": false
       },
       "RoiPositionScan": {
         "type": "object",
-        "required": ["pos", "channels", "times", "zSlices", "rois"],
         "properties": {
           "pos": {
             "type": "integer",
-            "format": "uint32",
-            "minimum": 0
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
           },
           "channels": {
             "type": "array",
             "items": {
               "type": "integer",
-              "format": "uint32",
-              "minimum": 0
+              "allOf": [
+                {
+                  "minimum": 0,
+                  "format": "uint32"
+                }
+              ]
             }
           },
           "times": {
             "type": "array",
             "items": {
               "type": "integer",
-              "format": "uint32",
-              "minimum": 0
+              "allOf": [
+                {
+                  "minimum": 0,
+                  "format": "uint32"
+                }
+              ]
             }
           },
           "zSlices": {
             "type": "array",
             "items": {
               "type": "integer",
-              "format": "uint32",
-              "minimum": 0
+              "allOf": [
+                {
+                  "minimum": 0,
+                  "format": "uint32"
+                }
+              ]
             }
           },
           "rois": {
@@ -3330,71 +3243,34 @@
             }
           }
         },
+        "required": ["pos", "channels", "times", "zSlices", "rois"],
         "additionalProperties": false
       },
-      "RoiIndexEntry": {
+      "RoiWorkspaceScan": {
         "type": "object",
-        "required": ["roi", "fileName", "bbox"],
         "properties": {
-          "roi": {
-            "type": "integer",
-            "format": "uint32",
-            "minimum": 0
-          },
-          "fileName": {
-            "type": "string"
-          },
-          "bbox": {
-            "$ref": "#/components/schemas/RoiBbox"
+          "positions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RoiPositionScan"
+            }
           }
         },
-        "additionalProperties": false
-      },
-      "RoiBbox": {
-        "type": "object",
-        "required": ["roi", "x", "y", "w", "h"],
-        "properties": {
-          "roi": {
-            "type": "integer",
-            "format": "uint32",
-            "minimum": 0
-          },
-          "x": {
-            "type": "integer",
-            "format": "uint32",
-            "minimum": 0
-          },
-          "y": {
-            "type": "integer",
-            "format": "uint32",
-            "minimum": 0
-          },
-          "w": {
-            "type": "integer",
-            "format": "uint32",
-            "minimum": 0
-          },
-          "h": {
-            "type": "integer",
-            "format": "uint32",
-            "minimum": 0
-          }
-        },
+        "required": ["positions"],
         "additionalProperties": false
       },
       "LoadAnnotationLabelsRequest": {
         "type": "object",
-        "required": ["workspacePath"],
         "properties": {
           "workspacePath": {
             "type": "string"
           }
         },
+        "required": ["workspacePath"],
         "additionalProperties": false
       },
       "AnnotationLabel": {
         "type": "object",
-        "required": ["id", "name", "color"],
         "properties": {
           "id": {
             "type": "string"
@@ -3406,11 +3282,11 @@
             "type": "string"
           }
         },
+        "required": ["id", "name", "color"],
         "additionalProperties": false
       },
       "SaveAnnotationLabelsRequest": {
         "type": "object",
-        "required": ["workspacePath", "labels"],
         "properties": {
           "workspacePath": {
             "type": "string"
@@ -3422,11 +3298,63 @@
             }
           }
         },
+        "required": ["workspacePath", "labels"],
+        "additionalProperties": false
+      },
+      "RoiFrameRequest": {
+        "type": "object",
+        "properties": {
+          "pos": {
+            "type": "integer",
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          },
+          "roi": {
+            "type": "integer",
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          },
+          "channel": {
+            "type": "integer",
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          },
+          "time": {
+            "type": "integer",
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          },
+          "z": {
+            "type": "integer",
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          }
+        },
+        "required": ["pos", "roi", "channel", "time", "z"],
         "additionalProperties": false
       },
       "LoadRoiFrameRequest": {
         "type": "object",
-        "required": ["workspacePath", "request", "contrast"],
         "properties": {
           "workspacePath": {
             "type": "string"
@@ -3445,43 +3373,11 @@
             ]
           }
         },
-        "additionalProperties": false
-      },
-      "RoiFrameRequest": {
-        "type": "object",
-        "required": ["pos", "roi", "channel", "time", "z"],
-        "properties": {
-          "pos": {
-            "type": "integer",
-            "format": "uint32",
-            "minimum": 0
-          },
-          "roi": {
-            "type": "integer",
-            "format": "uint32",
-            "minimum": 0
-          },
-          "channel": {
-            "type": "integer",
-            "format": "uint32",
-            "minimum": 0
-          },
-          "time": {
-            "type": "integer",
-            "format": "uint32",
-            "minimum": 0
-          },
-          "z": {
-            "type": "integer",
-            "format": "uint32",
-            "minimum": 0
-          }
-        },
+        "required": ["workspacePath", "request", "contrast"],
         "additionalProperties": false
       },
       "LoadRoiFrameAnnotationRequest": {
         "type": "object",
-        "required": ["workspacePath", "request"],
         "properties": {
           "workspacePath": {
             "type": "string"
@@ -3490,31 +3386,11 @@
             "$ref": "#/components/schemas/RoiFrameRequest"
           }
         },
-        "additionalProperties": false
-      },
-      "LoadedRoiFrameAnnotation": {
-        "type": "object",
-        "required": ["annotation", "maskBase64Png"],
-        "properties": {
-          "annotation": {
-            "$ref": "#/components/schemas/RoiFrameAnnotation"
-          },
-          "maskBase64Png": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
+        "required": ["workspacePath", "request"],
         "additionalProperties": false
       },
       "RoiFrameAnnotation": {
         "type": "object",
-        "required": ["classificationLabelId", "maskPath", "updatedAt"],
         "properties": {
           "classificationLabelId": {
             "anyOf": [
@@ -3547,27 +3423,31 @@
             ]
           }
         },
+        "required": ["classificationLabelId", "maskPath", "updatedAt"],
         "additionalProperties": false
       },
-      "SaveRoiFrameAnnotationRequest": {
+      "LoadedRoiFrameAnnotation": {
         "type": "object",
-        "required": ["workspacePath", "request", "annotation"],
         "properties": {
-          "workspacePath": {
-            "type": "string"
-          },
-          "request": {
-            "$ref": "#/components/schemas/RoiFrameRequest"
-          },
           "annotation": {
-            "$ref": "#/components/schemas/RoiFrameAnnotationPayload"
+            "$ref": "#/components/schemas/RoiFrameAnnotation"
+          },
+          "maskBase64Png": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
+        "required": ["annotation", "maskBase64Png"],
         "additionalProperties": false
       },
       "RoiFrameAnnotationPayload": {
         "type": "object",
-        "required": ["classificationLabelId", "maskBase64Png"],
         "properties": {
           "classificationLabelId": {
             "anyOf": [
@@ -3590,11 +3470,44 @@
             ]
           }
         },
+        "required": ["classificationLabelId", "maskBase64Png"],
+        "additionalProperties": false
+      },
+      "SaveRoiFrameAnnotationRequest": {
+        "type": "object",
+        "properties": {
+          "workspacePath": {
+            "type": "string"
+          },
+          "request": {
+            "$ref": "#/components/schemas/RoiFrameRequest"
+          },
+          "annotation": {
+            "$ref": "#/components/schemas/RoiFrameAnnotationPayload"
+          }
+        },
+        "required": ["workspacePath", "request", "annotation"],
+        "additionalProperties": false
+      },
+      "SmartSegmentPoint": {
+        "type": "object",
+        "properties": {
+          "x": {
+            "type": "number"
+          },
+          "y": {
+            "type": "number"
+          },
+          "label": {
+            "type": "number",
+            "enum": [0, 1]
+          }
+        },
+        "required": ["x", "y", "label"],
         "additionalProperties": false
       },
       "SmartSegmentRequest": {
         "type": "object",
-        "required": ["workspacePath", "request", "contrast", "points"],
         "properties": {
           "workspacePath": {
             "type": "string"
@@ -3619,56 +3532,30 @@
             }
           }
         },
-        "additionalProperties": false
-      },
-      "SmartSegmentPoint": {
-        "type": "object",
-        "required": ["x", "y", "label"],
-        "properties": {
-          "x": {
-            "type": "number"
-          },
-          "y": {
-            "type": "number"
-          },
-          "label": {
-            "type": "number",
-            "enum": [0, 1]
-          }
-        },
+        "required": ["workspacePath", "request", "contrast", "points"],
         "additionalProperties": false
       },
       "SmartSegmentResponse": {
         "type": "object",
-        "required": ["mask"],
         "properties": {
           "mask": {
             "type": "array",
             "items": {
               "type": "integer",
-              "format": "uint32",
-              "minimum": 0
+              "allOf": [
+                {
+                  "minimum": 0,
+                  "format": "uint32"
+                }
+              ]
             }
           }
         },
-        "additionalProperties": false
-      },
-      "ProfileListResponse": {
-        "type": "object",
-        "required": ["profiles"],
-        "properties": {
-          "profiles": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ProfileSummary"
-            }
-          }
-        },
+        "required": ["mask"],
         "additionalProperties": false
       },
       "ProfileSummary": {
         "type": "object",
-        "required": ["id", "displayName", "createdAt"],
         "properties": {
           "id": {
             "type": "string"
@@ -3678,26 +3565,43 @@
           },
           "createdAt": {
             "type": "integer",
-            "format": "uint64",
             "minimum": 0,
-            "maximum": 9007199254740991
+            "allOf": [
+              {
+                "maximum": 9007199254740991,
+                "format": "uint64"
+              }
+            ]
           }
         },
+        "required": ["id", "displayName", "createdAt"],
+        "additionalProperties": false
+      },
+      "ProfileListResponse": {
+        "type": "object",
+        "properties": {
+          "profiles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProfileSummary"
+            }
+          }
+        },
+        "required": ["profiles"],
         "additionalProperties": false
       },
       "ProfileCreateRequest": {
         "type": "object",
-        "required": ["displayName"],
         "properties": {
           "displayName": {
             "type": "string"
           }
         },
+        "required": ["displayName"],
         "additionalProperties": false
       },
       "ProfileSessionResponse": {
         "type": "object",
-        "required": ["profileId", "displayName", "accessToken"],
         "properties": {
           "profileId": {
             "type": "string"
@@ -3709,158 +3613,439 @@
             "type": "string"
           }
         },
+        "required": ["profileId", "displayName", "accessToken"],
         "additionalProperties": false
       },
       "ProfileSignInRequest": {
         "type": "object",
-        "required": ["displayName"],
         "properties": {
           "displayName": {
             "type": "string"
           }
         },
+        "required": ["displayName"],
         "additionalProperties": false
       },
       "ProfileSignOutResponse": {
         "type": "object",
-        "required": ["ok"],
         "properties": {
           "ok": {
             "type": "boolean",
             "enum": [true]
           }
         },
-        "additionalProperties": false
-      },
-      "MemoryRecentQuery": {
-        "type": "object",
-        "required": ["type"],
-        "properties": {
-          "type": {
-            "$ref": "#/components/schemas/MemoryKind"
-          }
-        },
+        "required": ["ok"],
         "additionalProperties": false
       },
       "MemoryKind": {
         "type": "string",
         "enum": ["workspace", "source", "assay"]
       },
-      "MemoryRecentResponse": {
-        "type": "object",
-        "required": [],
-        "properties": {
-          "workspaces": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/MemoryWorkspaceEntry"
-            }
-          },
-          "sources": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/MemorySourceEntry"
-            }
-          },
-          "assays": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/MemoryAssayEntry"
-            }
-          }
-        },
-        "additionalProperties": false
-      },
       "MemoryWorkspaceEntry": {
         "type": "object",
-        "required": ["path", "lastUsedAt"],
         "properties": {
           "path": {
             "type": "string"
           },
           "label": {
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "lastUsedAt": {
             "type": "integer",
-            "format": "uint64",
             "minimum": 0,
-            "maximum": 9007199254740991
+            "allOf": [
+              {
+                "maximum": 9007199254740991,
+                "format": "uint64"
+              }
+            ]
           }
         },
+        "required": ["path", "lastUsedAt"],
         "additionalProperties": false
       },
       "MemorySourceEntry": {
         "type": "object",
-        "required": ["source", "lastUsedAt"],
         "properties": {
           "source": {
             "$ref": "#/components/schemas/AlignerSource"
           },
           "label": {
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "lastUsedAt": {
             "type": "integer",
-            "format": "uint64",
             "minimum": 0,
-            "maximum": 9007199254740991
+            "allOf": [
+              {
+                "maximum": 9007199254740991,
+                "format": "uint64"
+              }
+            ]
           }
         },
+        "required": ["source", "lastUsedAt"],
         "additionalProperties": false
       },
       "MemoryAssayEntry": {
         "type": "object",
-        "required": ["path", "lastUsedAt"],
         "properties": {
           "path": {
             "type": "string"
           },
           "assayLabel": {
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "workspacePath": {
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "lastUsedAt": {
             "type": "integer",
-            "format": "uint64",
             "minimum": 0,
-            "maximum": 9007199254740991
+            "allOf": [
+              {
+                "maximum": 9007199254740991,
+                "format": "uint64"
+              }
+            ]
+          }
+        },
+        "required": ["path", "lastUsedAt"],
+        "additionalProperties": false
+      },
+      "MemoryRecentResponse": {
+        "type": "object",
+        "properties": {
+          "workspaces": {
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/MemoryWorkspaceEntry"
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "sources": {
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/MemorySourceEntry"
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "assays": {
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/MemoryAssayEntry"
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "additionalProperties": false
       },
+      "MemoryTouchRequest": {
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": ["workspace"]
+              },
+              "path": {
+                "type": "string"
+              },
+              "label": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": ["kind", "path"],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": ["source"]
+              },
+              "source": {
+                "$ref": "#/components/schemas/AlignerSource"
+              },
+              "label": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": ["kind", "source"],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": ["assay"]
+              },
+              "path": {
+                "type": "string"
+              },
+              "assayLabel": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "workspacePath": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": ["kind", "path"],
+            "additionalProperties": false
+          }
+        ]
+      },
       "MemoryTouchResponse": {
         "type": "object",
-        "required": ["ok"],
         "properties": {
           "ok": {
             "type": "boolean"
           }
         },
+        "required": ["ok"],
         "additionalProperties": false
       },
-      "OperationList": {
-        "type": "array",
-        "items": {
-          "$ref": "#/components/schemas/OperationSummary"
-        }
+      "OperationStatus": {
+        "type": "string",
+        "enum": [
+          "queued",
+          "running",
+          "partially-complete",
+          "completed",
+          "failed",
+          "cancelled",
+          "cancellation-requested"
+        ]
+      },
+      "OperationAttention": {
+        "type": "string",
+        "enum": ["none", "error"]
+      },
+      "OperationProgress": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "integer",
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          },
+          "queued": {
+            "type": "integer",
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          },
+          "blocked": {
+            "type": "integer",
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          },
+          "running": {
+            "type": "integer",
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          },
+          "completed": {
+            "type": "integer",
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          },
+          "failed": {
+            "type": "integer",
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          },
+          "cancelled": {
+            "type": "integer",
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          },
+          "cancellationRequested": {
+            "type": "integer",
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          }
+        },
+        "required": [
+          "total",
+          "queued",
+          "blocked",
+          "running",
+          "completed",
+          "failed",
+          "cancelled",
+          "cancellationRequested"
+        ],
+        "additionalProperties": false
+      },
+      "TaskWorkProgress": {
+        "type": "object",
+        "properties": {
+          "unit": {
+            "type": "string"
+          },
+          "completed": {
+            "type": "integer",
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          },
+          "total": {
+            "type": "integer",
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          },
+          "phase": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "updatedAtMs": {
+            "type": "integer",
+            "minimum": 0,
+            "allOf": [
+              {
+                "maximum": 9007199254740991,
+                "format": "uint64"
+              }
+            ]
+          }
+        },
+        "required": ["unit", "completed", "total", "phase", "message", "updatedAtMs"],
+        "additionalProperties": false
       },
       "OperationSummary": {
         "type": "object",
-        "required": [
-          "operationId",
-          "kind",
-          "workspaceId",
-          "workspacePath",
-          "mutating",
-          "status",
-          "attention",
-          "progress",
-          "createdAtMs",
-          "updatedAtMs"
-        ],
         "properties": {
           "operationId": {
             "type": "string"
@@ -3889,7 +4074,14 @@
           "activeTaskKind": {
             "anyOf": [
               {
-                "type": "string"
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
               },
               {
                 "type": "null"
@@ -3899,7 +4091,14 @@
           "workProgress": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/TaskWorkProgress"
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/TaskWorkProgress"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
               },
               {
                 "type": "null"
@@ -3908,177 +4107,169 @@
           },
           "createdAtMs": {
             "type": "integer",
-            "format": "uint64",
             "minimum": 0,
-            "maximum": 9007199254740991
+            "allOf": [
+              {
+                "maximum": 9007199254740991,
+                "format": "uint64"
+              }
+            ]
           },
           "updatedAtMs": {
             "type": "integer",
-            "format": "uint64",
             "minimum": 0,
-            "maximum": 9007199254740991
+            "allOf": [
+              {
+                "maximum": 9007199254740991,
+                "format": "uint64"
+              }
+            ]
           }
         },
+        "required": [
+          "operationId",
+          "kind",
+          "workspaceId",
+          "workspacePath",
+          "mutating",
+          "status",
+          "attention",
+          "progress",
+          "createdAtMs",
+          "updatedAtMs"
+        ],
         "additionalProperties": false
       },
-      "OperationStatus": {
+      "OperationList": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/OperationSummary"
+        }
+      },
+      "TaskStatus": {
         "type": "string",
         "enum": [
-          "queued",
-          "running",
-          "partially-complete",
-          "completed",
-          "failed",
-          "cancelled",
-          "cancellation-requested"
-        ]
-      },
-      "OperationAttention": {
-        "type": "string",
-        "enum": ["none", "error"]
-      },
-      "OperationProgress": {
-        "type": "object",
-        "required": [
-          "total",
           "queued",
           "blocked",
           "running",
           "completed",
           "failed",
           "cancelled",
-          "cancellationRequested"
-        ],
-        "properties": {
-          "total": {
-            "type": "integer",
-            "format": "uint32",
-            "minimum": 0
-          },
-          "queued": {
-            "type": "integer",
-            "format": "uint32",
-            "minimum": 0
-          },
-          "blocked": {
-            "type": "integer",
-            "format": "uint32",
-            "minimum": 0
-          },
-          "running": {
-            "type": "integer",
-            "format": "uint32",
-            "minimum": 0
-          },
-          "completed": {
-            "type": "integer",
-            "format": "uint32",
-            "minimum": 0
-          },
-          "failed": {
-            "type": "integer",
-            "format": "uint32",
-            "minimum": 0
-          },
-          "cancelled": {
-            "type": "integer",
-            "format": "uint32",
-            "minimum": 0
-          },
-          "cancellationRequested": {
-            "type": "integer",
-            "format": "uint32",
-            "minimum": 0
-          }
-        },
-        "additionalProperties": false
+          "cancellation-requested"
+        ]
       },
-      "TaskWorkProgress": {
+      "TaskError": {
         "type": "object",
-        "required": ["unit", "completed", "total", "phase", "message", "updatedAtMs"],
         "properties": {
-          "unit": {
+          "code": {
             "type": "string"
-          },
-          "completed": {
-            "type": "integer",
-            "format": "uint32",
-            "minimum": 0
-          },
-          "total": {
-            "type": "integer",
-            "format": "uint32",
-            "minimum": 0
-          },
-          "phase": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ]
           },
           "message": {
+            "type": "string"
+          }
+        },
+        "required": ["code", "message"],
+        "additionalProperties": false
+      },
+      "TaskDependencyBlock": {
+        "type": "object",
+        "properties": {
+          "taskId": {
+            "type": "string"
+          },
+          "taskKind": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/TaskStatus"
+          },
+          "error": {
             "anyOf": [
               {
-                "type": "string"
+                "$ref": "#/components/schemas/TaskError"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": ["taskId", "taskKind", "status", "error"],
+        "additionalProperties": false
+      },
+      "TaskAttempt": {
+        "type": "object",
+        "properties": {
+          "attemptId": {
+            "type": "string"
+          },
+          "operationId": {
+            "type": "string"
+          },
+          "taskId": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/TaskStatus"
+          },
+          "startedAtMs": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "allOf": [
+                  {
+                    "maximum": 9007199254740991,
+                    "format": "uint64"
+                  }
+                ]
               },
               {
                 "type": "null"
               }
             ]
           },
-          "updatedAtMs": {
-            "type": "integer",
-            "format": "uint64",
-            "minimum": 0,
-            "maximum": 9007199254740991
-          }
-        },
-        "additionalProperties": false
-      },
-      "OperationDetailQuery": {
-        "type": "object",
-        "required": ["operationId"],
-        "properties": {
-          "operationId": {
-            "type": "string"
-          }
-        },
-        "additionalProperties": false
-      },
-      "OperationDetail": {
-        "type": "object",
-        "required": ["operation", "tasks"],
-        "properties": {
-          "operation": {
-            "$ref": "#/components/schemas/OperationSummary"
+          "finishedAtMs": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "allOf": [
+                  {
+                    "maximum": 9007199254740991,
+                    "format": "uint64"
+                  }
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
-          "tasks": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/TaskDetail"
-            }
+          "error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TaskError"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
+        "required": [
+          "attemptId",
+          "operationId",
+          "taskId",
+          "status",
+          "startedAtMs",
+          "finishedAtMs",
+          "error"
+        ],
         "additionalProperties": false
       },
       "TaskDetail": {
         "type": "object",
-        "required": [
-          "taskId",
-          "operationId",
-          "taskKind",
-          "workspaceId",
-          "status",
-          "weight",
-          "enqueueOrder",
-          "dependencies",
-          "blockedBy",
-          "attempts"
-        ],
         "properties": {
           "taskId": {
             "type": "string"
@@ -4097,14 +4288,22 @@
           },
           "weight": {
             "type": "integer",
-            "format": "uint32",
-            "minimum": 0
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
           },
           "enqueueOrder": {
             "type": "integer",
-            "format": "uint64",
             "minimum": 0,
-            "maximum": 9007199254740991
+            "allOf": [
+              {
+                "maximum": 9007199254740991,
+                "format": "uint64"
+              }
+            ]
           },
           "dependencies": {
             "type": "array",
@@ -4127,7 +4326,14 @@
           "workProgress": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/TaskWorkProgress"
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/TaskWorkProgress"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
               },
               {
                 "type": "null"
@@ -4135,146 +4341,53 @@
             ]
           }
         },
-        "additionalProperties": false
-      },
-      "TaskStatus": {
-        "type": "string",
-        "enum": [
-          "queued",
-          "blocked",
-          "running",
-          "completed",
-          "failed",
-          "cancelled",
-          "cancellation-requested"
-        ]
-      },
-      "TaskDependencyBlock": {
-        "type": "object",
-        "required": ["taskId", "taskKind", "status", "error"],
-        "properties": {
-          "taskId": {
-            "type": "string"
-          },
-          "taskKind": {
-            "type": "string"
-          },
-          "status": {
-            "$ref": "#/components/schemas/TaskStatus"
-          },
-          "error": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/TaskError"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "additionalProperties": false
-      },
-      "TaskError": {
-        "type": "object",
-        "required": ["code", "message"],
-        "properties": {
-          "code": {
-            "type": "string"
-          },
-          "message": {
-            "type": "string"
-          }
-        },
-        "additionalProperties": false
-      },
-      "TaskAttempt": {
-        "type": "object",
         "required": [
-          "attemptId",
-          "operationId",
           "taskId",
+          "operationId",
+          "taskKind",
+          "workspaceId",
           "status",
-          "startedAtMs",
-          "finishedAtMs",
-          "error"
+          "weight",
+          "enqueueOrder",
+          "dependencies",
+          "blockedBy",
+          "attempts"
         ],
-        "properties": {
-          "attemptId": {
-            "type": "string"
-          },
-          "operationId": {
-            "type": "string"
-          },
-          "taskId": {
-            "type": "string"
-          },
-          "status": {
-            "$ref": "#/components/schemas/TaskStatus"
-          },
-          "startedAtMs": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "uint64",
-                "minimum": 0,
-                "maximum": 9007199254740991
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "finishedAtMs": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "format": "uint64",
-                "minimum": 0,
-                "maximum": 9007199254740991
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "error": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/TaskError"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
         "additionalProperties": false
       },
-      "TaskDetailQuery": {
+      "OperationDetail": {
         "type": "object",
-        "required": ["taskId"],
         "properties": {
-          "taskId": {
-            "type": "string"
+          "operation": {
+            "$ref": "#/components/schemas/OperationSummary"
+          },
+          "tasks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TaskDetail"
+            }
           }
         },
+        "required": ["operation", "tasks"],
         "additionalProperties": false
       },
       "OperationCancelRequest": {
         "type": "object",
-        "required": ["operationId"],
         "properties": {
           "operationId": {
             "type": "string"
           }
         },
+        "required": ["operationId"],
         "additionalProperties": false
       },
-      "TaskCommandError": {
+      "TaskCommandErrorEncoded": {
         "type": "object",
-        "required": ["code", "entity", "id", "currentStatus", "message", "_tag"],
         "properties": {
+          "_tag": {
+            "type": "string",
+            "enum": ["TaskCommandError"]
+          },
           "code": {
             "type": "string",
             "enum": ["not-found", "invalid-transition"]
@@ -4298,37 +4411,33 @@
           },
           "message": {
             "type": "string"
-          },
-          "_tag": {
-            "type": "string",
-            "enum": ["TaskCommandError"]
           }
         },
+        "required": ["_tag", "code", "entity", "id", "currentStatus", "message"],
         "additionalProperties": false
       },
       "TaskCancelRequest": {
         "type": "object",
-        "required": ["taskId"],
         "properties": {
           "taskId": {
             "type": "string"
           }
         },
+        "required": ["taskId"],
         "additionalProperties": false
       },
       "TaskRetryRequest": {
         "type": "object",
-        "required": ["taskId"],
         "properties": {
           "taskId": {
             "type": "string"
           }
         },
+        "required": ["taskId"],
         "additionalProperties": false
       },
       "SaveAssayJsonRequest": {
         "type": "object",
-        "required": ["saveTo", "contents"],
         "properties": {
           "saveTo": {
             "type": "string"
@@ -4337,11 +4446,11 @@
             "type": "string"
           }
         },
+        "required": ["saveTo", "contents"],
         "additionalProperties": false
       },
       "SaveAssayJsonResponse": {
         "type": "object",
-        "required": ["ok", "path"],
         "properties": {
           "ok": {
             "type": "boolean"
@@ -4350,11 +4459,11 @@
             "type": "string"
           }
         },
+        "required": ["ok", "path"],
         "additionalProperties": false
       },
       "SaveResultPdfRequest": {
         "type": "object",
-        "required": ["workspacePath", "fileName", "contentsBase64"],
         "properties": {
           "workspacePath": {
             "type": "string"
@@ -4366,11 +4475,11 @@
             "type": "string"
           }
         },
+        "required": ["workspacePath", "fileName", "contentsBase64"],
         "additionalProperties": false
       },
       "SaveResultPdfResponse": {
         "type": "object",
-        "required": ["ok", "directory", "path"],
         "properties": {
           "ok": {
             "type": "boolean"
@@ -4382,11 +4491,11 @@
             "type": "string"
           }
         },
+        "required": ["ok", "directory", "path"],
         "additionalProperties": false
       },
       "AnalysisStartRequest": {
         "type": "object",
-        "required": ["workspacePath", "requestId"],
         "properties": {
           "workspacePath": {
             "type": "string"
@@ -4395,52 +4504,7 @@
             "type": "string"
           }
         },
-        "additionalProperties": false
-      },
-      "AnalysisProgress": {
-        "type": "object",
-        "required": ["requestId", "status", "stage", "progress", "message", "error"],
-        "properties": {
-          "requestId": {
-            "type": "string"
-          },
-          "status": {
-            "$ref": "#/components/schemas/AnalysisStatus"
-          },
-          "stage": {
-            "$ref": "#/components/schemas/AnalysisStage"
-          },
-          "progress": {
-            "type": "number",
-            "format": "double"
-          },
-          "message": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "resultFiles": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/AnalysisCsvFile"
-            }
-          },
-          "error": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
+        "required": ["workspacePath", "requestId"],
         "additionalProperties": false
       },
       "AnalysisStatus": {
@@ -4453,7 +4517,6 @@
       },
       "AnalysisCsvFile": {
         "type": "object",
-        "required": ["kind", "fileName", "path", "csv"],
         "properties": {
           "kind": {
             "type": "string"
@@ -4468,26 +4531,64 @@
             "type": "string"
           }
         },
+        "required": ["kind", "fileName", "path", "csv"],
         "additionalProperties": false
       },
-      "AnalysisProgressQuery": {
+      "AnalysisProgress": {
         "type": "object",
-        "required": ["requestId"],
         "properties": {
           "requestId": {
             "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/AnalysisStatus"
+          },
+          "stage": {
+            "$ref": "#/components/schemas/AnalysisStage"
+          },
+          "progress": {
+            "type": "number",
+            "allOf": [
+              {
+                "format": "double"
+              }
+            ]
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "resultFiles": {
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/AnalysisCsvFile"
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
-        "additionalProperties": false
-      },
-      "LatestAnalysisQuery": {
-        "type": "object",
-        "required": ["workspacePath"],
-        "properties": {
-          "workspacePath": {
-            "type": "string"
-          }
-        },
+        "required": ["requestId", "status", "stage", "progress", "message", "error"],
         "additionalProperties": false
       }
     },

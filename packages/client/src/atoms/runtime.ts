@@ -1,5 +1,5 @@
-import { Atom } from "@effect-atom/atom-solid";
-import { Reactivity } from "@effect/experimental";
+import { Atom } from "effect/unstable/reactivity";
+import { Reactivity } from "effect/unstable/reactivity";
 
 /** Runtime shared by query and mutation atoms. App ports are captured by atom factories. */
 export function createAppRuntime() {

@@ -1,7 +1,7 @@
 import type { AnalysisProgress, StudioAnalysisCsvFile } from "@lisca/contracts";
 import { useAnnotateStateCore } from "@lisca/client/use-annotate-state-core";
 import { useCanvasResourceTransaction, useCanvasTransientStatus } from "@lisca/ui/features";
-import { useAtom } from "@effect-atom/atom-solid";
+import { useAtom } from "@effect/atom-solid";
 import { createEffect } from "solid-js";
 import { useNavigate } from "@tanstack/solid-router";
 import { runClientEffect } from "@lisca/client/runtime";
@@ -26,7 +26,7 @@ import { setStudioAnnotateDirty } from "./studio-annotate-guard";
 import { nextStudioAnnotateSite } from "./studio-annotate-navigation";
 
 function useStudioWorkspaceSync(activeWorkspacePath: () => string | null) {
-  const [ui, setUi] = useAtom(studioAnnotateUiAtom);
+  const [ui, setUi] = useAtom(() => studioAnnotateUiAtom);
   createEffect(() => {
     const path = activeWorkspacePath();
     if (ui().workspacePath !== path) {
@@ -63,7 +63,7 @@ export function useStudioAnnotateState(): StudioAnnotateState {
   const setBasicInfoSavedSnapshot = useStudioStore((state) => state.setBasicInfoSavedSnapshot);
   const activeWorkspacePath = () => wizard().workspacePath.trim() || null;
   const navigate = useNavigate();
-  const [ui, setUi] = useAtom(studioAnnotateUiAtom);
+  const [ui, setUi] = useAtom(() => studioAnnotateUiAtom);
   const workspace = useStudioWorkspaceSync(activeWorkspacePath);
   const annotate = useAnnotateStateCore({
     annotatorClient: studioClient,

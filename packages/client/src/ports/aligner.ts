@@ -35,7 +35,7 @@ export function createAlignerPort(
       );
     },
     loadAlignState(workspacePath, pos) {
-      return toClientEffect(client.align.loadAlignState({ urlParams: { workspacePath, pos } }));
+      return toClientEffect(client.align.loadAlignState({ query: { workspacePath, pos } }));
     },
     saveBbox(workspacePath, pos, csv, alignState) {
       return toClientEffect(
@@ -43,13 +43,13 @@ export function createAlignerPort(
       );
     },
     listSavedBboxPositions(workspacePath) {
-      return toClientEffect(client.align.listSavedBboxPositions({ urlParams: { workspacePath } }));
+      return toClientEffect(client.align.listSavedBboxPositions({ query: { workspacePath } }));
     },
     cropRoi(request) {
       return toClientEffect(client.align.cropRoi({ payload: request }));
     },
     getLatestCropProgress(workspacePath) {
-      return toClientEffect(client.align.getLatestCropProgress({ urlParams: { workspacePath } }));
+      return toClientEffect(client.align.getLatestCropProgress({ query: { workspacePath } }));
     },
     cancelCropRoi(requestId) {
       return toClientEffect(client.align.cancelCropRoi({ payload: { requestId } }));
@@ -60,7 +60,7 @@ export function createAlignerPort(
     roiPosExists(workspacePath, pos) {
       return toClientEffect(
         client.align
-          .roiPosExists({ urlParams: { workspacePath, pos } })
+          .roiPosExists({ query: { workspacePath, pos } })
           .pipe(Effect.map((result) => result.exists)),
       );
     },
@@ -77,7 +77,7 @@ export function createCropRoiProgressSubscription(
 ) {
   return pollProgressLoop({
     onProgress,
-    pollProgress: () => toClientEffect(client.align.cropRoiProgress({ urlParams: { requestId } })),
+    pollProgress: () => toClientEffect(client.align.cropRoiProgress({ query: { requestId } })),
     isTerminal: (progress) => CROP_ROI_TERMINAL_STATUSES.has(progress.status),
     createErrorProgress: (cause) => ({
       requestId,

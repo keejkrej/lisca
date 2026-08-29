@@ -13,7 +13,7 @@ import {
   studioWizardActions,
   studioWizardAtom,
 } from "@lisca/client/atoms/studio-ui";
-import { useAtom } from "@effect-atom/atom-solid";
+import { useAtom } from "@effect/atom-solid";
 import { createMemo, type Accessor } from "solid-js";
 
 export type {
@@ -57,7 +57,7 @@ type StudioState = StudioWizardData & {
   setBasicInfoSavedSnapshot: (snapshot: string | null) => void;
 };
 function useStudioStoreApi(): Accessor<StudioState> {
-  const [state, setState] = useAtom(studioWizardAtom);
+  const [state, setState] = useAtom(() => studioWizardAtom);
   const setInfoStep = (infoStep: import("@lisca/client/atoms/studio-ui").InfoStep) =>
     studioWizardActions.setInfoStep(setState, infoStep);
   const setDataSourceKind = (dataSourceKind: StudioDataSourceKind) =>

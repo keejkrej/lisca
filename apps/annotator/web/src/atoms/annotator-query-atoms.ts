@@ -1,5 +1,5 @@
 import type { AnnotationLabel, RoiWorkspaceScan } from "@lisca/contracts";
-import { Atom, Result } from "@effect-atom/atom-solid";
+import { Atom, AsyncResult as Result } from "effect/unstable/reactivity";
 
 import { createAnnotatorQueryAtoms, createAppRuntime } from "@lisca/client/atoms";
 

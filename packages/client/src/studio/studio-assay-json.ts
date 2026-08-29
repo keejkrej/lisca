@@ -18,7 +18,7 @@ import {
   TRANSFECTION_DEFAULT_MAX_ONSET_MINUTES,
 } from "@lisca/contracts/assay";
 import type { AssaySampleRow } from "@lisca/contracts";
-import * as Either from "effect/Either";
+import * as Result from "effect/Result";
 
 import { analysisChannelsFromSamples } from "./sample-positions";
 
@@ -171,11 +171,11 @@ export function parseStudioAssayJson(
   sampleRowToDisk: (row: StudioAssaySampleRow) => AssaySampleRow,
 ): StudioAssayJson {
   const decoded = decodeJsonResult(AssayJsonFileSchema)(contents);
-  if (Either.isLeft(decoded)) {
-    throw new Error(`Invalid assay.json: ${formatSchemaError(decoded.left)}`);
+  if (Result.isFailure(decoded)) {
+    throw new Error(`Invalid assay.json: ${formatSchemaError(decoded.failure)}`);
   }
 
-  const root = decoded.right;
+  const root = decoded.success;
   const samples: StudioAssaySampleRow[] = root.samples.map((row, index) => ({
     id: `sample:${index}`,
     ...sampleRowFromDisk(row, root.analysis),

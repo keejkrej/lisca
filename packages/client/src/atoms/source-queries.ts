@@ -1,5 +1,5 @@
 import type { AlignerSource, WorkspaceScan } from "@lisca/contracts";
-import { Atom, type Result } from "@effect-atom/atom-solid";
+import { AsyncResult, Atom } from "effect/unstable/reactivity";
 import { Effect } from "effect";
 
 import type { ClientError } from "../infra/client-error";
@@ -13,7 +13,9 @@ export type SourceQueryPort = {
 };
 
 export type SourceQueryAtoms = {
-  scanSourceAtom: (sourceKey: string) => Atom.Atom<Result.Result<WorkspaceScan, ClientError>>;
+  scanSourceAtom: (
+    sourceKey: string,
+  ) => Atom.Atom<AsyncResult.AsyncResult<WorkspaceScan, ClientError>>;
 };
 
 /** Source-scan query atoms shared by the aligner and studio runtimes. */

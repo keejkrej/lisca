@@ -1,7 +1,8 @@
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import * as Either from "effect/Either";
+import * as Result from "effect/Result";
+import * as Schema from "effect/Schema";
 import { describe, expect, it } from "vitest";
 
 import { decodeJsonEither, formatSchemaError } from "../src/decode";
@@ -24,15 +25,15 @@ function readFixture(name: string): unknown {
   return JSON.parse(readFileSync(join(fixturesDir, name), "utf8"));
 }
 
-function decodeFixture<S extends import("effect/Schema").Schema.Any>(
+function decodeFixture<S extends Schema.ConstraintDecoder<unknown>>(
   schema: S,
   fixtureName: string,
 ) {
   const result = decodeJsonEither(schema, readFixture(fixtureName));
-  if (Either.isLeft(result)) {
-    throw new Error(formatSchemaError(result.left));
+  if (Result.isFailure(result)) {
+    throw new Error(formatSchemaError(result.failure));
   }
-  return result.right;
+  return result.success;
 }
 
 describe("golden wire roundtrip", () => {
@@ -128,8 +129,8 @@ describe("golden wire roundtrip", () => {
         },
       ],
     });
-    if (Either.isLeft(decoded)) throw new Error(formatSchemaError(decoded.left));
-    expect(decoded.right.tasks[0]?.attempts[0]?.attemptId).toBe("attempt-1");
+    if (Result.isFailure(decoded)) throw new Error(formatSchemaError(decoded.failure));
+    expect(decoded.success.tasks[0]?.attempts[0]?.attemptId).toBe("attempt-1");
   });
 
   it("decodes partial operation progress and dependency failure context", () => {
@@ -177,13 +178,13 @@ describe("golden wire roundtrip", () => {
         },
       ],
     });
-    if (Either.isLeft(decoded)) throw new Error(formatSchemaError(decoded.left));
-    expect(decoded.right.operation.progress.blocked).toBe(1);
-    expect(decoded.right.tasks[0]?.blockedBy[0]?.error?.code).toBe("bad_input");
+    if (Result.isFailure(decoded)) throw new Error(formatSchemaError(decoded.failure));
+    expect(decoded.success.operation.progress.blocked).toBe(1);
+    expect(decoded.success.tasks[0]?.blockedBy[0]?.error?.code).toBe("bad_input");
   });
 
   it("rejects u64 wire numbers that JavaScript cannot represent exactly", () => {
-    expect(Either.isRight(decodeJsonEither(U64, Number.MAX_SAFE_INTEGER))).toBe(true);
-    expect(Either.isLeft(decodeJsonEither(U64, Number.MAX_SAFE_INTEGER + 1))).toBe(true);
+    expect(Result.isSuccess(decodeJsonEither(U64, Number.MAX_SAFE_INTEGER))).toBe(true);
+    expect(Result.isFailure(decodeJsonEither(U64, Number.MAX_SAFE_INTEGER + 1))).toBe(true);
   });
 });

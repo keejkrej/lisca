@@ -33,7 +33,6 @@
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@effect/platform": "catalog:",
     "effect": "catalog:"
   },
   "devDependencies": {

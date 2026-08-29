@@ -8,6 +8,6 @@ export const RoiBboxSchema = Schema.Struct({
   y: U32,
   w: U32,
   h: U32,
-}).annotations({ identifier: "RoiBbox" });
+}).annotate({ identifier: "RoiBbox" });
 
 export type RoiBbox = typeof RoiBboxSchema.Type;

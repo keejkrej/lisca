@@ -1,5 +1,5 @@
 import type { AnnotationLabel, RoiWorkspaceScan } from "@lisca/contracts";
-import type { Result } from "@effect-atom/atom-solid";
+import type { AsyncResult } from "effect/unstable/reactivity";
 import { clamp } from "@lisca/utils";
 import { createEffect, type Accessor } from "solid-js";
 import type {
@@ -17,8 +17,8 @@ export type AnnotateWorkspaceSync = {
 };
 
 export type AnnotateScanAtoms = {
-  scanResult: Accessor<Result.Result<RoiWorkspaceScan, unknown> | undefined>;
-  labelsResult: Accessor<Result.Result<readonly AnnotationLabel[], unknown> | undefined>;
+  scanResult: Accessor<AsyncResult.AsyncResult<RoiWorkspaceScan, unknown> | undefined>;
+  labelsResult: Accessor<AsyncResult.AsyncResult<readonly AnnotationLabel[], unknown> | undefined>;
   shellWorkspacePath: Accessor<string | null>;
 };
 

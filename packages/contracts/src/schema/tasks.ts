@@ -2,7 +2,7 @@ import * as Schema from "effect/Schema";
 
 import { U32, U64 } from "./primitives";
 
-export const OperationStatusSchema = Schema.Literal(
+export const OperationStatusSchema = Schema.Literals([
   "queued",
   "running",
   "partially-complete",
@@ -10,9 +10,9 @@ export const OperationStatusSchema = Schema.Literal(
   "failed",
   "cancelled",
   "cancellation-requested",
-).annotations({ identifier: "OperationStatus" });
+]).annotate({ identifier: "OperationStatus" });
 
-export const TaskStatusSchema = Schema.Literal(
+export const TaskStatusSchema = Schema.Literals([
   "queued",
   "blocked",
   "running",
@@ -20,16 +20,16 @@ export const TaskStatusSchema = Schema.Literal(
   "failed",
   "cancelled",
   "cancellation-requested",
-).annotations({ identifier: "TaskStatus" });
+]).annotate({ identifier: "TaskStatus" });
 
-export const OperationAttentionSchema = Schema.Literal("none", "error").annotations({
+export const OperationAttentionSchema = Schema.Literals(["none", "error"]).annotate({
   identifier: "OperationAttention",
 });
 
 export const TaskErrorSchema = Schema.Struct({
   code: Schema.String,
   message: Schema.String,
-}).annotations({ identifier: "TaskError" });
+}).annotate({ identifier: "TaskError" });
 
 export const TaskWorkProgressSchema = Schema.Struct({
   unit: Schema.String,
@@ -38,7 +38,7 @@ export const TaskWorkProgressSchema = Schema.Struct({
   phase: Schema.NullOr(Schema.String),
   message: Schema.NullOr(Schema.String),
   updatedAtMs: U64,
-}).annotations({ identifier: "TaskWorkProgress" });
+}).annotate({ identifier: "TaskWorkProgress" });
 
 export const OperationProgressSchema = Schema.Struct({
   total: U32,
@@ -49,7 +49,7 @@ export const OperationProgressSchema = Schema.Struct({
   failed: U32,
   cancelled: U32,
   cancellationRequested: U32,
-}).annotations({ identifier: "OperationProgress" });
+}).annotate({ identifier: "OperationProgress" });
 
 export const OperationSummarySchema = Schema.Struct({
   operationId: Schema.String,
@@ -64,33 +64,31 @@ export const OperationSummarySchema = Schema.Struct({
   workProgress: Schema.optional(Schema.NullOr(TaskWorkProgressSchema)),
   createdAtMs: U64,
   updatedAtMs: U64,
-}).annotations({ identifier: "OperationSummary" });
+}).annotate({ identifier: "OperationSummary" });
 
-export const OperationListSchema = Schema.mutable(Schema.Array(OperationSummarySchema)).annotations(
-  {
-    identifier: "OperationList",
-  },
-);
+export const OperationListSchema = Schema.mutable(Schema.Array(OperationSummarySchema)).annotate({
+  identifier: "OperationList",
+});
 
 export const OperationDetailQuerySchema = Schema.Struct({
   operationId: Schema.String,
-}).annotations({ identifier: "OperationDetailQuery" });
+}).annotate({ identifier: "OperationDetailQuery" });
 
 export const TaskDetailQuerySchema = Schema.Struct({
   taskId: Schema.String,
-}).annotations({ identifier: "TaskDetailQuery" });
+}).annotate({ identifier: "TaskDetailQuery" });
 
 export const OperationCancelRequestSchema = Schema.Struct({
   operationId: Schema.String,
-}).annotations({ identifier: "OperationCancelRequest" });
+}).annotate({ identifier: "OperationCancelRequest" });
 
 export const TaskCancelRequestSchema = Schema.Struct({
   taskId: Schema.String,
-}).annotations({ identifier: "TaskCancelRequest" });
+}).annotate({ identifier: "TaskCancelRequest" });
 
 export const TaskRetryRequestSchema = Schema.Struct({
   taskId: Schema.String,
-}).annotations({ identifier: "TaskRetryRequest" });
+}).annotate({ identifier: "TaskRetryRequest" });
 
 export const TaskAttemptSchema = Schema.Struct({
   attemptId: Schema.String,
@@ -100,14 +98,14 @@ export const TaskAttemptSchema = Schema.Struct({
   startedAtMs: Schema.NullOr(U64),
   finishedAtMs: Schema.NullOr(U64),
   error: Schema.NullOr(TaskErrorSchema),
-}).annotations({ identifier: "TaskAttempt" });
+}).annotate({ identifier: "TaskAttempt" });
 
 export const TaskDependencyBlockSchema = Schema.Struct({
   taskId: Schema.String,
   taskKind: Schema.String,
   status: TaskStatusSchema,
   error: Schema.NullOr(TaskErrorSchema),
-}).annotations({ identifier: "TaskDependencyBlock" });
+}).annotate({ identifier: "TaskDependencyBlock" });
 
 export const TaskDetailSchema = Schema.Struct({
   taskId: Schema.String,
@@ -121,12 +119,12 @@ export const TaskDetailSchema = Schema.Struct({
   blockedBy: Schema.mutable(Schema.Array(TaskDependencyBlockSchema)),
   attempts: Schema.mutable(Schema.Array(TaskAttemptSchema)),
   workProgress: Schema.optional(Schema.NullOr(TaskWorkProgressSchema)),
-}).annotations({ identifier: "TaskDetail" });
+}).annotate({ identifier: "TaskDetail" });
 
 export const OperationDetailSchema = Schema.Struct({
   operation: OperationSummarySchema,
   tasks: Schema.mutable(Schema.Array(TaskDetailSchema)),
-}).annotations({ identifier: "OperationDetail" });
+}).annotate({ identifier: "OperationDetail" });
 
 export type OperationStatus = typeof OperationStatusSchema.Type;
 export type TaskStatus = typeof TaskStatusSchema.Type;

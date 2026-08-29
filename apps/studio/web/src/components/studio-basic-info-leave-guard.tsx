@@ -3,7 +3,7 @@ import {
   touchStudioWorkSessionFromAssayPath,
 } from "@lisca/client/session/work-session";
 import { useBlocker } from "@tanstack/solid-router";
-import { useAtomSet, useAtomValue } from "@effect-atom/atom-solid";
+import { useAtomSet, useAtomValue } from "@effect/atom-solid";
 import { createMemo, createSignal } from "solid-js";
 
 import {
@@ -20,8 +20,8 @@ import { AssayOverwriteConfirmModal } from "./assay-overwrite-confirm-modal";
 import { AssaySaveConfirmModal } from "./assay-save-confirm-modal";
 
 export function StudioBasicInfoLeaveGuard() {
-  const wizard = useAtomValue(studioWizardAtom);
-  const setWizard = useAtomSet(studioWizardAtom);
+  const wizard = useAtomValue(() => studioWizardAtom);
+  const setWizard = useAtomSet(() => studioWizardAtom);
   const setBasicInfoSavedSnapshot = (snapshot: string | null) =>
     studioWizardActions.setBasicInfoSavedSnapshot(setWizard, snapshot);
 

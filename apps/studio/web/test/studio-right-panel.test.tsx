@@ -1,7 +1,7 @@
 import { cleanup, render, screen } from "@solidjs/testing-library";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("@effect-atom/atom-solid", () => ({
+vi.mock("@effect/atom-solid", () => ({
   useAtomSet: () => vi.fn(),
   useAtomValue: () => () => true,
 }));

@@ -3,7 +3,7 @@ import * as Schema from "effect/Schema";
 import { U64 } from "./primitives";
 import { AlignerSourceSchema } from "./shared";
 
-export const MemoryKindSchema = Schema.Literal("workspace", "source", "assay").annotations({
+export const MemoryKindSchema = Schema.Literals(["workspace", "source", "assay"]).annotate({
   identifier: "MemoryKind",
 });
 
@@ -11,22 +11,22 @@ export const MemoryWorkspaceEntrySchema = Schema.Struct({
   path: Schema.String,
   label: Schema.optional(Schema.String),
   lastUsedAt: U64,
-}).annotations({ identifier: "MemoryWorkspaceEntry" });
+}).annotate({ identifier: "MemoryWorkspaceEntry" });
 
 export const MemorySourceEntrySchema = Schema.Struct({
   source: AlignerSourceSchema,
   label: Schema.optional(Schema.String),
   lastUsedAt: U64,
-}).annotations({ identifier: "MemorySourceEntry" });
+}).annotate({ identifier: "MemorySourceEntry" });
 
 export const MemoryAssayEntrySchema = Schema.Struct({
   path: Schema.String,
   assayLabel: Schema.optional(Schema.String),
   workspacePath: Schema.optional(Schema.String),
   lastUsedAt: U64,
-}).annotations({ identifier: "MemoryAssayEntry" });
+}).annotate({ identifier: "MemoryAssayEntry" });
 
-export const MemoryTouchRequestSchema = Schema.Union(
+export const MemoryTouchRequestSchema = Schema.Union([
   Schema.Struct({
     kind: Schema.Literal("workspace"),
     path: Schema.String,
@@ -43,21 +43,21 @@ export const MemoryTouchRequestSchema = Schema.Union(
     assayLabel: Schema.optional(Schema.String),
     workspacePath: Schema.optional(Schema.String),
   }),
-).annotations({ identifier: "MemoryTouchRequest" });
+]).annotate({ identifier: "MemoryTouchRequest" });
 
 export const MemoryRecentResponseSchema = Schema.Struct({
   workspaces: Schema.optional(Schema.Array(MemoryWorkspaceEntrySchema)),
   sources: Schema.optional(Schema.Array(MemorySourceEntrySchema)),
   assays: Schema.optional(Schema.Array(MemoryAssayEntrySchema)),
-}).annotations({ identifier: "MemoryRecentResponse" });
+}).annotate({ identifier: "MemoryRecentResponse" });
 
 export const MemoryTouchResponseSchema = Schema.Struct({
   ok: Schema.Boolean,
-}).annotations({ identifier: "MemoryTouchResponse" });
+}).annotate({ identifier: "MemoryTouchResponse" });
 
 export const MemoryRecentQuerySchema = Schema.Struct({
   type: MemoryKindSchema,
-}).annotations({ identifier: "MemoryRecentQuery" });
+}).annotate({ identifier: "MemoryRecentQuery" });
 
 export type MemoryKind = typeof MemoryKindSchema.Type;
 export type MemoryWorkspaceEntry = typeof MemoryWorkspaceEntrySchema.Type;

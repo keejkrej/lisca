@@ -23,7 +23,7 @@ export function createStudioPort(deps: StudioPortDeps): StudioDataPort {
     ...analysis,
     readTextFile(path) {
       return toClientEffect(
-        client.fs.readTextFile({ urlParams: { path } }).pipe(Effect.map((r) => r.contents)),
+        client.fs.readTextFile({ query: { path } }).pipe(Effect.map((r) => r.contents)),
       );
     },
     saveAssayJson(saveTo, contents) {
@@ -33,12 +33,10 @@ export function createStudioPort(deps: StudioPortDeps): StudioDataPort {
       return toClientEffect(client.studio.saveResultPdf({ payload: request }));
     },
     getAnalysisResults(workspacePath) {
-      return toClientEffect(client.studio.getAnalysisResults({ urlParams: { workspacePath } }));
+      return toClientEffect(client.studio.getAnalysisResults({ query: { workspacePath } }));
     },
     getLatestAnalysisProgress(workspacePath) {
-      return toClientEffect(
-        client.studio.getLatestAnalysisProgress({ urlParams: { workspacePath } }),
-      );
+      return toClientEffect(client.studio.getLatestAnalysisProgress({ query: { workspacePath } }));
     },
   };
 }

@@ -1,7 +1,7 @@
 import type { AlignGridCellCoord, AlignGridState, ContrastWindow } from "@lisca/contracts";
 import type { VariationExcludePreviewState } from "@lisca/ui/features";
 import type { FrameResult } from "@lisca/utils";
-import { Atom } from "@effect-atom/atom-solid";
+import { Atom } from "effect/unstable/reactivity";
 import { createDefaultAlignGrid, type AlignGridToolMode } from "@lisca/utils";
 
 import type { SourceImageFormat } from "../browser/source-image-format";

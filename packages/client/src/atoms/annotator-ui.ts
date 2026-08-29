@@ -11,7 +11,7 @@ export { ANNOTATION_TOOL_DEFINITIONS, toolCanRunWithoutLabel } from "@lisca/util
 import type { AnnotationTool } from "@lisca/utils";
 import { touchAnnotatorWorkSessionFromState } from "../session/work-session";
 import { liscaSessionStorage, readStorageJson, writeStorageJson } from "@lisca/utils";
-import { Atom } from "@effect-atom/atom-solid";
+import { Atom } from "effect/unstable/reactivity";
 export type AnnotationMode = "classification" | "segmentation";
 
 export type RoiSelection = {

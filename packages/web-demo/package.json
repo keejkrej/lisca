@@ -29,13 +29,14 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@effect-atom/atom-solid": "catalog:",
+    "@effect/atom-solid": "catalog:",
     "@lisca/client": "workspace:*",
     "@lisca/contracts": "workspace:*",
     "@lisca/ui": "workspace:*",
     "@lisca/utils": "workspace:*",
     "@lisca/web-app": "workspace:*",
     "@tailwindcss/vite": "catalog:",
+    "effect": "catalog:",
     "fflate": "^0.8.2",
     "phosphor-icons-solid": "catalog:",
     "solid-js": "catalog:",

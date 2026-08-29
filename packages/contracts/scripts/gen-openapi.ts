@@ -1,4 +1,4 @@
-import { OpenApi } from "@effect/platform";
+import { OpenApi } from "effect/unstable/httpapi";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";

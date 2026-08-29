@@ -3,7 +3,7 @@ import * as Schema from "effect/Schema";
 import { PIXEL_TYPES } from "../constants";
 import { NumArray, StrArray, U32 } from "./primitives";
 
-export const AppIdSchema = Schema.Literal("aligner", "annotator", "studio").annotations({
+export const AppIdSchema = Schema.Literals(["aligner", "annotator", "studio"]).annotate({
   identifier: "AppId",
 });
 
@@ -16,34 +16,34 @@ export const WorkspaceScanSchema = Schema.Struct({
   channelLabels: Schema.optional(StrArray),
   timeLabels: Schema.optional(StrArray),
   zSliceLabels: Schema.optional(StrArray),
-}).annotations({ identifier: "WorkspaceScan" });
+}).annotate({ identifier: "WorkspaceScan" });
 
 export const FolderSourceSchema = Schema.Struct({
   kind: Schema.Literal("folder"),
   path: Schema.String,
   subfolderTemplate: Schema.String,
   filenameTemplate: Schema.String,
-}).annotations({ identifier: "FolderSource" });
+}).annotate({ identifier: "FolderSource" });
 
-export const AlignerSourceSchema = Schema.Union(
+export const AlignerSourceSchema = Schema.Union([
   FolderSourceSchema,
   Schema.Struct({ kind: Schema.Literal("nd2"), path: Schema.String }),
   Schema.Struct({ kind: Schema.Literal("czi"), path: Schema.String }),
-).annotations({ identifier: "AlignerSource" });
+]).annotate({ identifier: "AlignerSource" });
 
 export const FrameRequestSchema = Schema.Struct({
   pos: U32,
   channel: U32,
   time: U32,
   z: U32,
-}).annotations({ identifier: "FrameRequest" });
+}).annotate({ identifier: "FrameRequest" });
 
 export const ContrastWindowSchema = Schema.Struct({
   min: U32,
   max: U32,
-}).annotations({ identifier: "ContrastWindow" });
+}).annotate({ identifier: "ContrastWindow" });
 
-export const PixelTypeSchema = Schema.Literal(...PIXEL_TYPES).annotations({
+export const PixelTypeSchema = Schema.Literals(PIXEL_TYPES).annotate({
   identifier: "PixelType",
 });
 
@@ -55,7 +55,7 @@ export const FramePayloadSchema = Schema.Struct({
   contrastDomain: ContrastWindowSchema,
   suggestedContrast: ContrastWindowSchema,
   appliedContrast: ContrastWindowSchema,
-}).annotations({ identifier: "FramePayload" });
+}).annotate({ identifier: "FramePayload" });
 
 export type AppId = typeof AppIdSchema.Type;
 export type WorkspaceScan = typeof WorkspaceScanSchema.Type;

@@ -24,7 +24,7 @@ function createScheduledDelay(
   clearSchedule: ClearScheduleFn,
   delayMs: number,
 ): Effect.Effect<void> {
-  return Effect.async<void>((resume) => {
+  return Effect.callback<void>((resume) => {
     const handle = schedule(() => resume(Effect.void), delayMs);
     return Effect.sync(() => clearSchedule(handle));
   });

@@ -1,4 +1,4 @@
-import { RegistryProvider, useAtomSet, useAtomValue } from "@effect-atom/atom-solid";
+import { RegistryProvider, useAtomSet, useAtomValue } from "@effect/atom-solid";
 import { createEffect, onCleanup, type JSX } from "solid-js";
 
 import { readDemoSession, writeDemoSession } from "../demo-session-idb";
@@ -24,8 +24,8 @@ export function DemoRegistryProvider(props: { children?: JSX.Element }) {
 }
 
 function DemoAlignSessionSync(props: { persist: boolean }) {
-  const state = useAtomValue(demoAlignUiAtom);
-  const setState = useAtomSet(demoAlignUiAtom);
+  const state = useAtomValue(() => demoAlignUiAtom);
+  const setState = useAtomSet(() => demoAlignUiAtom);
   const persistReadyRef = { current: !props.persist };
 
   createEffect(() => {
@@ -55,8 +55,8 @@ function DemoAlignSessionSync(props: { persist: boolean }) {
 }
 
 function DemoAnnotatorSessionSync(props: { persist: boolean }) {
-  const state = useAtomValue(demoAnnotatorUiAtom);
-  const setState = useAtomSet(demoAnnotatorUiAtom);
+  const state = useAtomValue(() => demoAnnotatorUiAtom);
+  const setState = useAtomSet(() => demoAnnotatorUiAtom);
   const persistReadyRef = { current: !props.persist };
 
   createEffect(() => {
@@ -86,7 +86,7 @@ function DemoAnnotatorSessionSync(props: { persist: boolean }) {
 }
 
 function DemoAlignWorkspaceInit(props: { embedded: boolean }) {
-  const setState = useAtomSet(demoAlignUiAtom);
+  const setState = useAtomSet(() => demoAlignUiAtom);
 
   createEffect(() => {
     if (props.embedded) return;
@@ -97,7 +97,7 @@ function DemoAlignWorkspaceInit(props: { embedded: boolean }) {
 }
 
 function DemoAnnotatorWorkspaceInit(props: { embedded: boolean }) {
-  const setState = useAtomSet(demoAnnotatorUiAtom);
+  const setState = useAtomSet(() => demoAnnotatorUiAtom);
 
   createEffect(() => {
     if (props.embedded) return;

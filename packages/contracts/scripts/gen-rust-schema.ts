@@ -1,12 +1,31 @@
-import { OpenApi } from "@effect/platform";
-import * as JSONSchema from "effect/JSONSchema";
+import * as Predicate from "effect/Predicate";
+import * as Schema from "effect/Schema";
+import * as SchemaRepresentation from "effect/SchemaRepresentation";
+import { OpenApi } from "effect/unstable/httpapi";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { AssayJsonFileSchema } from "../src/assay.schema.ts";
 import { liscaApi } from "../src/http-api.ts";
-import { AppIdSchema, MemoryTouchRequestSchema, RoiIndexFileSchema } from "../src/schema/index.ts";
+import {
+  AnalysisProgressQuerySchema,
+  AppIdSchema,
+  CropRoiProgressQuerySchema,
+  HostListDirectoryQuerySchema,
+  LatestAnalysisQuerySchema,
+  LatestCropQuerySchema,
+  LoadAlignStateQuerySchema,
+  MemoryRecentQuerySchema,
+  MemoryTouchRequestSchema,
+  OperationDetailQuerySchema,
+  OutputPathsQuerySchema,
+  ReadTextFileQuerySchema,
+  RoiIndexFileSchema,
+  RoiPosExistsQuerySchema,
+  SavedBboxPositionsQuerySchema,
+  TaskDetailQuerySchema,
+} from "../src/schema/index.ts";
 
 /**
  * Build the single JSON Schema document consumed by `typify` to generate the
@@ -35,16 +54,22 @@ for (const [name, schema] of Object.entries(openapi.components.schemas)) {
   definitions[name] = schema;
 }
 
-// Non-HTTP contract types via JSON Schema. `JSONSchema.make` emits a `$defs`
-// map plus a `$ref` root; fold the `$defs` into our definitions.
-function foldDefs(schema: Parameters<typeof JSONSchema.make>[0], identifier: string): void {
-  const json = JSONSchema.make(schema) as { $defs?: Record<string, JsonObject> };
-  if (!json.$defs?.[identifier]) {
+// Non-HTTP contract types via JSON Schema. Fold each document's definitions
+// into the combined contract definitions.
+type SchemaWithAst = {
+  readonly ast: Parameters<typeof SchemaRepresentation.toRepresentation>[0];
+};
+
+function foldDefs(schema: SchemaWithAst, identifier: string): void {
+  const document = SchemaRepresentation.toJsonSchemaDocument(
+    SchemaRepresentation.toRepresentation(schema.ast),
+  );
+  if (!document.definitions[identifier]) {
     throw new Error(
       `gen-rust-schema: identifier-annotated schema did not emit $defs.${identifier}`,
     );
   }
-  for (const [name, def] of Object.entries(json.$defs ?? {})) {
+  for (const [name, def] of Object.entries(document.definitions)) {
     definitions[name] = def;
   }
 }
@@ -56,14 +81,28 @@ foldDefs(AppIdSchema, "AppId");
 foldDefs(RoiIndexFileSchema, "RoiIndexFile");
 // HttpApi inlines top-level union payloads, so fold this union explicitly.
 foldDefs(MemoryTouchRequestSchema, "MemoryTouchRequest");
+// HttpApi v4 inlines query schemas instead of adding reusable components.
+foldDefs(Schema.toType(AnalysisProgressQuerySchema), "AnalysisProgressQuery");
+foldDefs(Schema.toType(CropRoiProgressQuerySchema), "CropRoiProgressQuery");
+foldDefs(Schema.toType(HostListDirectoryQuerySchema), "HostListDirectoryQuery");
+foldDefs(Schema.toType(LatestAnalysisQuerySchema), "LatestAnalysisQuery");
+foldDefs(Schema.toType(LatestCropQuerySchema), "LatestCropQuery");
+foldDefs(Schema.toType(LoadAlignStateQuerySchema), "LoadAlignStateQuery");
+foldDefs(Schema.toType(MemoryRecentQuerySchema), "MemoryRecentQuery");
+foldDefs(Schema.toType(OperationDetailQuerySchema), "OperationDetailQuery");
+foldDefs(Schema.toType(OutputPathsQuerySchema), "OutputPathsQuery");
+foldDefs(Schema.toType(ReadTextFileQuerySchema), "ReadTextFileQuery");
+foldDefs(Schema.toType(RoiPosExistsQuerySchema), "RoiPosExistsQuery");
+foldDefs(Schema.toType(SavedBboxPositionsQuerySchema), "SavedBboxPositionsQuery");
+foldDefs(Schema.toType(TaskDetailQuerySchema), "TaskDetailQuery");
 
 // Normalize every `$ref` so they resolve within a single `definitions` map
-// (OpenAPI uses `#/components/schemas/...`, JSONSchema.make uses `#/$defs/...`).
+// (OpenAPI uses `#/components/schemas/...`, SchemaRepresentation uses `#/$defs/...`).
 function rewriteRefs(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(rewriteRefs);
-  if (value && typeof value === "object") {
+  if (Predicate.isObject(value)) {
     const out: JsonObject = {};
-    for (const [key, child] of Object.entries(value as JsonObject)) {
+    for (const [key, child] of Object.entries(value)) {
       // Drop `additionalProperties: false` so generated serde structs stay
       // lenient (matching the pre-migration behaviour of ignoring unknown
       // fields), rather than emitting `#[serde(deny_unknown_fields)]`.
@@ -71,9 +110,48 @@ function rewriteRefs(value: unknown): unknown {
       if (key === "$ref" && typeof child === "string") {
         out.$ref = child
           .replace("#/components/schemas/", "#/definitions/")
-          .replace("#/$defs/", "#/definitions/");
+          .replace("#/$defs/", "#/definitions/")
+          .replace(/Encoded$/, "");
       } else {
         out[key] = rewriteRefs(child);
+      }
+    }
+
+    // Effect v4 emits numeric checks as a single `allOf` constraint. Typify
+    // requires those constraints directly on the numeric schema.
+    const allOf = out.allOf;
+    if (Array.isArray(allOf) && allOf.length === 1) {
+      const constraint = allOf[0];
+      if (
+        Predicate.isObject(constraint) &&
+        Object.keys(constraint).every((key) => ["minimum", "maximum", "format"].includes(key))
+      ) {
+        delete out.allOf;
+        for (const [key, child] of Object.entries(constraint)) {
+          out[key] = child;
+        }
+      }
+    }
+
+    // In v4, `Schema.optional(T)` emits `anyOf: [T, null]`. The missing key
+    // already represents `undefined`; remove only that outer null branch so
+    // typify retains its pre-v4 defaulted-field representation. An explicitly
+    // nullable optional remains nested and keeps its inner null branch.
+    const properties = out.properties;
+    const required = new Set(
+      Array.isArray(out.required) ? out.required.filter(Predicate.isString) : [],
+    );
+    if (Predicate.isObject(properties)) {
+      for (const [name, property] of Object.entries(properties)) {
+        if (required.has(name) || !Predicate.isObject(property)) continue;
+        const anyOf = property.anyOf;
+        if (!Array.isArray(anyOf)) continue;
+        const defined = anyOf.filter(
+          (member) => !(Predicate.isObject(member) && member.type === "null"),
+        );
+        if (defined.length === 1 && defined.length !== anyOf.length) {
+          properties[name] = defined[0];
+        }
       }
     }
     return out;
@@ -110,6 +188,14 @@ function normalizeUnionForTypify(schema: JsonObject, schemaDefinitions: JsonObje
 }
 
 const normalized = rewriteRefs({ definitions }) as { definitions: JsonObject };
+
+// HttpApi v4 names tagged-error wire schemas with an `Encoded` suffix. Rust
+// protocol names are part of the internal API, so retain their stable names.
+for (const name of Object.keys(normalized.definitions)) {
+  if (!name.endsWith("Encoded")) continue;
+  normalized.definitions[name.slice(0, -"Encoded".length)] = normalized.definitions[name];
+  delete normalized.definitions[name];
+}
 
 for (const name of ["AlignerSource", "MemoryTouchRequest", "AssayData"]) {
   const schema = normalized.definitions[name];

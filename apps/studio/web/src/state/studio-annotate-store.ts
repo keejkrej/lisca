@@ -14,7 +14,8 @@ import {
 } from "@lisca/client/atoms/annotator-ui";
 import type { AnalysisProgress, StudioAnalysisCsvFile } from "@lisca/contracts";
 import { liscaSessionStorage, readStorageJson, writeStorageJson } from "@lisca/utils";
-import { Atom, useAtom } from "@effect-atom/atom-solid";
+import { Atom } from "effect/unstable/reactivity";
+import { useAtom } from "@effect/atom-solid";
 
 export type StudioAnnotateSelection = RoiSelection;
 
@@ -130,7 +131,7 @@ export type StudioAnnotateStore = Pick<
 };
 
 export function useStudioAnnotateStore(): StudioAnnotateStore {
-  const [ui, setUi] = useAtom(studioAnnotateUiAtom);
+  const [ui, setUi] = useAtom(() => studioAnnotateUiAtom);
   return {
     get workspacePath() {
       return ui().workspacePath;

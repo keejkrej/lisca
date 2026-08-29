@@ -10,13 +10,13 @@ export const RoiFrameRequestSchema = Schema.Struct({
   channel: U32,
   time: U32,
   z: U32,
-}).annotations({ identifier: "RoiFrameRequest" });
+}).annotate({ identifier: "RoiFrameRequest" });
 
 export const RoiIndexEntrySchema = Schema.Struct({
   roi: U32,
   fileName: Schema.String,
   bbox: RoiBboxSchema,
-}).annotations({ identifier: "RoiIndexEntry" });
+}).annotate({ identifier: "RoiIndexEntry" });
 
 /**
  * On-disk `roi/Pos{n}/index.json`. Always `TCZYX` (use `zCount: 1` when there
@@ -38,7 +38,7 @@ export const RoiIndexFileSchema = Schema.Struct({
    */
   timeIndices: Schema.optional(NumArray),
   rois: Schema.mutable(Schema.Array(RoiIndexEntrySchema)),
-}).annotations({ identifier: "RoiIndexFile" });
+}).annotate({ identifier: "RoiIndexFile" });
 
 export const RoiPositionScanSchema = Schema.Struct({
   pos: U32,
@@ -46,17 +46,17 @@ export const RoiPositionScanSchema = Schema.Struct({
   times: NumArray,
   zSlices: NumArray,
   rois: Schema.mutable(Schema.Array(RoiIndexEntrySchema)),
-}).annotations({ identifier: "RoiPositionScan" });
+}).annotate({ identifier: "RoiPositionScan" });
 
 export const RoiWorkspaceScanSchema = Schema.Struct({
   positions: Schema.mutable(Schema.Array(RoiPositionScanSchema)),
-}).annotations({ identifier: "RoiWorkspaceScan" });
+}).annotate({ identifier: "RoiWorkspaceScan" });
 
 export const AnnotationLabelSchema = Schema.Struct({
   id: Schema.String,
   name: Schema.String,
   color: Schema.String,
-}).annotations({ identifier: "AnnotationLabel" });
+}).annotate({ identifier: "AnnotationLabel" });
 
 export const AnnotationLabelArraySchema = Schema.mutable(Schema.Array(AnnotationLabelSchema));
 
@@ -64,47 +64,47 @@ export const RoiFrameAnnotationSchema = Schema.Struct({
   classificationLabelId: Schema.NullOr(Schema.String),
   maskPath: Schema.NullOr(Schema.String),
   updatedAt: Schema.NullOr(Schema.String),
-}).annotations({ identifier: "RoiFrameAnnotation" });
+}).annotate({ identifier: "RoiFrameAnnotation" });
 
 export const RoiFrameAnnotationPayloadSchema = Schema.Struct({
   classificationLabelId: Schema.NullOr(Schema.String),
   maskBase64Png: Schema.NullOr(Schema.String),
-}).annotations({ identifier: "RoiFrameAnnotationPayload" });
+}).annotate({ identifier: "RoiFrameAnnotationPayload" });
 
 export const LoadedRoiFrameAnnotationSchema = Schema.Struct({
   annotation: RoiFrameAnnotationSchema,
   maskBase64Png: Schema.NullOr(Schema.String),
-}).annotations({ identifier: "LoadedRoiFrameAnnotation" });
+}).annotate({ identifier: "LoadedRoiFrameAnnotation" });
 
 export const ScanRoiWorkspaceRequestSchema = Schema.Struct({
   workspacePath: Schema.String,
-}).annotations({ identifier: "ScanRoiWorkspaceRequest" });
+}).annotate({ identifier: "ScanRoiWorkspaceRequest" });
 
 export const LoadAnnotationLabelsRequestSchema = Schema.Struct({
   workspacePath: Schema.String,
-}).annotations({ identifier: "LoadAnnotationLabelsRequest" });
+}).annotate({ identifier: "LoadAnnotationLabelsRequest" });
 
 export const SaveAnnotationLabelsRequestSchema = Schema.Struct({
   workspacePath: Schema.String,
   labels: AnnotationLabelArraySchema,
-}).annotations({ identifier: "SaveAnnotationLabelsRequest" });
+}).annotate({ identifier: "SaveAnnotationLabelsRequest" });
 
 export const LoadRoiFrameRequestSchema = Schema.Struct({
   workspacePath: Schema.String,
   request: RoiFrameRequestSchema,
   contrast: Schema.NullOr(ContrastWindowSchema),
-}).annotations({ identifier: "LoadRoiFrameRequest" });
+}).annotate({ identifier: "LoadRoiFrameRequest" });
 
 export const LoadRoiFrameAnnotationRequestSchema = Schema.Struct({
   workspacePath: Schema.String,
   request: RoiFrameRequestSchema,
-}).annotations({ identifier: "LoadRoiFrameAnnotationRequest" });
+}).annotate({ identifier: "LoadRoiFrameAnnotationRequest" });
 
 export const SaveRoiFrameAnnotationRequestSchema = Schema.Struct({
   workspacePath: Schema.String,
   request: RoiFrameRequestSchema,
   annotation: RoiFrameAnnotationPayloadSchema,
-}).annotations({ identifier: "SaveRoiFrameAnnotationRequest" });
+}).annotate({ identifier: "SaveRoiFrameAnnotationRequest" });
 
 export type RoiFrameRequest = typeof RoiFrameRequestSchema.Type;
 export type RoiIndexEntry = typeof RoiIndexEntrySchema.Type;

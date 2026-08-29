@@ -1,4 +1,4 @@
-import { useAtom } from "@effect-atom/atom-solid";
+import { useAtom } from "@effect/atom-solid";
 import { restoreAnnotatorWorkSession } from "@lisca/client/session/annotator-work-session-restore";
 import { WorkSessionAppGate } from "@lisca/client/session/work-session-app-gate";
 import { useShellWorkspace, WorkSessionPickerDialog } from "@lisca/ui/shell";
@@ -12,7 +12,7 @@ import {
 
 export function AnnotatorWorkSessionGate(props: { children?: JSX.Element }) {
   const workspace = useShellWorkspace();
-  const [, setUi] = useAtom(annotatorUiAtom);
+  const [, setUi] = useAtom(() => annotatorUiAtom);
   const persistedSession = readAnnotatorSession();
 
   onMount(() => {

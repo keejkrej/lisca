@@ -3,7 +3,7 @@ import type { FrameResult } from "@lisca/utils";
 import type { AnnotationMode, AnnotationTool } from "@lisca/ui/features";
 import { toolCanRunWithoutLabel } from "@lisca/ui/features";
 import { maskHasPixels } from "@lisca/utils";
-import { useAtom } from "@effect-atom/atom-solid";
+import { useAtom } from "@effect/atom-solid";
 import { createMemo, type Accessor } from "solid-js";
 
 import type { AnnotationValue } from "../annotation-value";
@@ -70,7 +70,7 @@ export type DemoAnnotatorState = {
 };
 
 export function useDemoAnnotatorState(): Accessor<DemoAnnotatorState> {
-  const [state, setState] = useAtom(demoAnnotatorUiAtom);
+  const [state, setState] = useAtom(() => demoAnnotatorUiAtom);
 
   return createMemo<DemoAnnotatorState>(() => {
     const {

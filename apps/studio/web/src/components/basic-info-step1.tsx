@@ -22,7 +22,7 @@ import {
   defaultIntervalMinutesForAssay,
   defaultMaxOnsetMinutesForAssay,
 } from "@lisca/client/studio-assay-json";
-import { useAtomSet, useAtomValue } from "@effect-atom/atom-solid";
+import { useAtomSet, useAtomValue } from "@effect/atom-solid";
 import { createMemo, createSignal, Show } from "solid-js";
 
 import { useStudioMemoryRecent } from "../hooks/use-studio-memory-recent";
@@ -60,8 +60,8 @@ function kindFromMode(mode: HostFilePickerMode): StudioDataSourceKind {
 }
 
 export function BasicInfoStep1(props: { hostPort: HostFilePickerOperations }) {
-  const wizard = useAtomValue(studioWizardAtom);
-  const setWizard = useAtomSet(studioWizardAtom);
+  const wizard = useAtomValue(() => studioWizardAtom);
+  const setWizard = useAtomSet(() => studioWizardAtom);
   const patch = (p: Parameters<typeof studioWizardActions.patchWizard>[1]) =>
     studioWizardActions.patchWizard(setWizard, p);
   const setAnalysis = (p: Parameters<typeof studioWizardActions.setAnalysis>[1]) =>

@@ -29,10 +29,10 @@ export function createTaskPort(
       return toClientEffect(client.tasks.listOperations());
     },
     getOperation(operationId) {
-      return toClientEffect(client.tasks.getOperation({ urlParams: { operationId } }));
+      return toClientEffect(client.tasks.getOperation({ query: { operationId } }));
     },
     getTask(taskId) {
-      return toClientEffect(client.tasks.getTask({ urlParams: { taskId } }));
+      return toClientEffect(client.tasks.getTask({ query: { taskId } }));
     },
     cancelOperation(operationId) {
       return toTaskCommandEffect(client.tasks.cancelOperation({ payload: { operationId } }));

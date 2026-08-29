@@ -1,4 +1,4 @@
-import { useAtomSet } from "@effect-atom/atom-solid";
+import { useAtomSet } from "@effect/atom-solid";
 import { createEffect, onCleanup } from "solid-js";
 
 import { demoAlignUiActions, demoAlignUiAtom } from "../atoms/demo-align-ui";
@@ -13,8 +13,8 @@ export function useEmbeddedDemoPreset(
   preset: EmbeddedDemoPreset | null,
   hasFrame: boolean,
 ) {
-  const setAlignState = useAtomSet(demoAlignUiAtom);
-  const setAnnotatorState = useAtomSet(demoAnnotatorUiAtom);
+  const setAlignState = useAtomSet(() => demoAlignUiAtom);
+  const setAnnotatorState = useAtomSet(() => demoAnnotatorUiAtom);
 
   createEffect(() => {
     if (!embedded || !preset || hasFrame) return;

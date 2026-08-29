@@ -1,6 +1,6 @@
 import { ENABLED_STUDIO_ASSAY_IDS } from "@lisca/contracts/assay";
 import { Button } from "@lisca/ui/components";
-import { useAtomSet, useAtomValue } from "@effect-atom/atom-solid";
+import { useAtomSet, useAtomValue } from "@effect/atom-solid";
 import { For } from "solid-js";
 
 import {
@@ -28,8 +28,8 @@ const ASSAY_CHOICE_DETAIL: Record<AssayId, { description: string; readout: strin
 };
 
 export function ChooseAssay() {
-  const wizard = useAtomValue(studioWizardAtom);
-  const setWizard = useAtomSet(studioWizardAtom);
+  const wizard = useAtomValue(() => studioWizardAtom);
+  const setWizard = useAtomSet(() => studioWizardAtom);
   const setAssayId = (id: AssayId) => studioWizardActions.setAssayId(setWizard, id);
 
   return (

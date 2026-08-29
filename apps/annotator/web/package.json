@@ -10,7 +10,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@effect-atom/atom-solid": "catalog:",
+    "@effect/atom-solid": "catalog:",
     "@lisca/client": "workspace:*",
     "@lisca/contracts": "workspace:*",
     "@lisca/smart": "workspace:*",

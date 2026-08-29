@@ -14,7 +14,7 @@ import {
   DEFAULT_FOLDER_SOURCE_TEMPLATE,
 } from "@lisca/contracts/assay";
 import { liscaSessionStorage, readStorageJson, writeStorageJson } from "@lisca/utils";
-import { Atom } from "@effect-atom/atom-solid";
+import { Atom } from "effect/unstable/reactivity";
 
 import {
   ASSAY_CHOICE_LABEL,

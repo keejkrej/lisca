@@ -1,5 +1,5 @@
 import type { AnalysisProgress } from "@lisca/contracts";
-import { Atom, type Result } from "@effect-atom/atom-solid";
+import { AsyncResult, Atom } from "effect/unstable/reactivity";
 import { Effect } from "effect";
 
 import type { StudioDataPort } from "../../ports/types";
@@ -20,8 +20,8 @@ export function analysisCsvInputKey(input: AnalysisCsvInput): string {
 export type StudioAnalysisAtoms = {
   analysisResultsAtom: (
     workspacePath: string,
-  ) => Atom.Atom<Result.Result<AnalysisProgress | null, ClientError>>;
-  analysisCsvAtom: (inputKey: string) => Atom.Atom<Result.Result<string, ClientError>>;
+  ) => Atom.Atom<AsyncResult.AsyncResult<AnalysisProgress | null, ClientError>>;
+  analysisCsvAtom: (inputKey: string) => Atom.Atom<AsyncResult.AsyncResult<string, ClientError>>;
 };
 
 export function createStudioAnalysisAtoms(

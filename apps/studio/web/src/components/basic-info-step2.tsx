@@ -1,13 +1,13 @@
 import { Button, Input } from "@lisca/ui/components";
-import { useAtomSet, useAtomValue } from "@effect-atom/atom-solid";
+import { useAtomSet, useAtomValue } from "@effect/atom-solid";
 import { For } from "solid-js";
 import IconTrashRegular from "phosphor-icons-solid/IconTrashRegular";
 
 import { studioWizardActions, studioWizardAtom } from "../state/studio-store";
 
 export function BasicInfoStep2() {
-  const wizard = useAtomValue(studioWizardAtom);
-  const setWizard = useAtomSet(studioWizardAtom);
+  const wizard = useAtomValue(() => studioWizardAtom);
+  const setWizard = useAtomSet(() => studioWizardAtom);
   const updateSample = (
     index: number,
     patch: Parameters<typeof studioWizardActions.updateSample>[2],

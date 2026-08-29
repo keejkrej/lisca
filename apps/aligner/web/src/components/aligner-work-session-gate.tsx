@@ -1,4 +1,4 @@
-import { useAtom } from "@effect-atom/atom-solid";
+import { useAtom } from "@effect/atom-solid";
 import { restoreAlignerWorkSession } from "@lisca/client/session/aligner-work-session-restore";
 import { WorkSessionAppGate } from "@lisca/client/session/work-session-app-gate";
 import { useShellWorkspace, WorkSessionPickerDialog } from "@lisca/ui/shell";
@@ -9,7 +9,7 @@ import { alignerUiActions, alignerUiAtom, readAlignerSession } from "../atoms/al
 /** Aligner work-session gate — no crop recovery (crop is Studio/CLI only). */
 export function AlignerWorkSessionGate(props: { children?: JSX.Element }) {
   const workspace = useShellWorkspace();
-  const [, setUi] = useAtom(alignerUiAtom);
+  const [, setUi] = useAtom(() => alignerUiAtom);
   const persistedSession = readAlignerSession();
 
   onMount(() => {

@@ -1,5 +1,5 @@
-import type { Atom } from "@effect-atom/atom-solid";
-import { RegistryContext } from "@effect-atom/atom-solid";
+import type { Atom } from "effect/unstable/reactivity";
+import { RegistryContext } from "@effect/atom-solid";
 import { createEffect, createSignal, onCleanup, useContext, type Accessor } from "solid-js";
 
 /** Subscribe to the currently selected Effect Atom without pinning its key. */
@@ -9,7 +9,7 @@ export function useSelectedAtomValue<A>(selectAtom: () => Atom.Atom<A>): Accesso
   createEffect(() => {
     const atom = selectAtom();
     setValue(() => registry.get(atom));
-    onCleanup(registry.subscribe(atom, setValue as (next: A) => void));
+    onCleanup(registry.subscribe(atom, (next) => setValue(() => next)));
   });
   return value;
 }

@@ -42,14 +42,10 @@ pub mod error {
 #[doc = "  ],"]
 #[doc = "  \"properties\": {"]
 #[doc = "    \"i\": {"]
-#[doc = "      \"title\": \"int\","]
-#[doc = "      \"description\": \"an integer\","]
 #[doc = "      \"type\": \"integer\","]
 #[doc = "      \"format\": \"int32\""]
 #[doc = "    },"]
 #[doc = "    \"j\": {"]
-#[doc = "      \"title\": \"int\","]
-#[doc = "      \"description\": \"an integer\","]
 #[doc = "      \"type\": \"integer\","]
 #[doc = "      \"format\": \"int32\""]
 #[doc = "    }"]
@@ -59,9 +55,7 @@ pub mod error {
 #[doc = r" </details>"]
 #[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
 pub struct AlignGridCellCoord {
-    #[doc = "an integer"]
     pub i: i32,
-    #[doc = "an integer"]
     pub j: i32,
 }
 impl AlignGridCellCoord {
@@ -1663,7 +1657,14 @@ impl ::std::convert::From<::std::vec::Vec<AssaySampleRow>> for AssaySamples {
 #[doc = "    \"format\": \"uint32\","]
 #[doc = "    \"minimum\": 0.0"]
 #[doc = "  },"]
-#[doc = "  \"minItems\": 1"]
+#[doc = "  \"minItems\": 1,"]
+#[doc = "  \"prefixItems\": ["]
+#[doc = "    {"]
+#[doc = "      \"format\": \"uint32\","]
+#[doc = "      \"minimum\": 0,"]
+#[doc = "      \"type\": \"integer\""]
+#[doc = "    }"]
+#[doc = "  ]"]
 #[doc = "}"]
 #[doc = r" ```"]
 #[doc = r" </details>"]
@@ -1812,14 +1813,10 @@ impl AssayWorkspace {
 #[doc = "      \"minimum\": 0.0"]
 #[doc = "    },"]
 #[doc = "    \"i\": {"]
-#[doc = "      \"title\": \"int\","]
-#[doc = "      \"description\": \"an integer\","]
 #[doc = "      \"type\": \"integer\","]
 #[doc = "      \"format\": \"int32\""]
 #[doc = "    },"]
 #[doc = "    \"j\": {"]
-#[doc = "      \"title\": \"int\","]
-#[doc = "      \"description\": \"an integer\","]
 #[doc = "      \"type\": \"integer\","]
 #[doc = "      \"format\": \"int32\""]
 #[doc = "    },"]
@@ -1845,9 +1842,7 @@ impl AssayWorkspace {
 #[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
 pub struct AutoExcludePreviewCell {
     pub h: u32,
-    #[doc = "an integer"]
     pub i: i32,
-    #[doc = "an integer"]
     pub j: i32,
     pub w: u32,
     pub x: u32,
@@ -3544,6 +3539,42 @@ pub struct MemoryWorkspaceEntry {
 impl MemoryWorkspaceEntry {
     pub fn builder() -> builder::MemoryWorkspaceEntry {
         Default::default()
+    }
+}
+#[doc = "`NullableCropRoiProgress`"]
+#[doc = r""]
+#[doc = r" <details><summary>JSON schema</summary>"]
+#[doc = r""]
+#[doc = r" ```json"]
+#[doc = "{"]
+#[doc = "  \"anyOf\": ["]
+#[doc = "    {"]
+#[doc = "      \"$ref\": \"#/definitions/CropRoiProgress\""]
+#[doc = "    },"]
+#[doc = "    {"]
+#[doc = "      \"type\": \"null\""]
+#[doc = "    }"]
+#[doc = "  ]"]
+#[doc = "}"]
+#[doc = r" ```"]
+#[doc = r" </details>"]
+#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
+#[serde(transparent)]
+pub struct NullableCropRoiProgress(pub ::std::option::Option<CropRoiProgress>);
+impl ::std::ops::Deref for NullableCropRoiProgress {
+    type Target = ::std::option::Option<CropRoiProgress>;
+    fn deref(&self) -> &::std::option::Option<CropRoiProgress> {
+        &self.0
+    }
+}
+impl ::std::convert::From<NullableCropRoiProgress> for ::std::option::Option<CropRoiProgress> {
+    fn from(value: NullableCropRoiProgress) -> Self {
+        value.0
+    }
+}
+impl ::std::convert::From<::std::option::Option<CropRoiProgress>> for NullableCropRoiProgress {
+    fn from(value: ::std::option::Option<CropRoiProgress>) -> Self {
+        Self(value)
     }
 }
 #[doc = "`OperationAttention`"]

@@ -11,51 +11,51 @@ import { F64, U32 } from "./schema/primitives";
  */
 
 /** Assay kind (root `type`). Distinct from `data.type` (source kind). */
-export const AssayTypeSchema = Schema.Literal("transfection", "killing", "lnp-binding").annotations(
+export const AssayTypeSchema = Schema.Literals(["transfection", "killing", "lnp-binding"]).annotate(
   {
     identifier: "AssayType",
   },
 );
 
-export const AssayIntervalUnitSchema = Schema.Literal("second", "minute", "hour").annotations({
+export const AssayIntervalUnitSchema = Schema.Literals(["second", "minute", "hour"]).annotate({
   identifier: "AssayIntervalUnit",
 });
 
 export const AssayFolderTemplateSchema = Schema.Struct({
   subfolder: Schema.String,
   filename: Schema.String,
-}).annotations({ identifier: "AssayFolderTemplate" });
+}).annotate({ identifier: "AssayFolderTemplate" });
 
 export const AssayDataFolderSchema = Schema.Struct({
   type: Schema.Literal("folder"),
   path: Schema.String,
   template: AssayFolderTemplateSchema,
-}).annotations({ identifier: "AssayDataFolder" });
+}).annotate({ identifier: "AssayDataFolder" });
 
 export const AssayDataNd2Schema = Schema.Struct({
   type: Schema.Literal("nd2"),
   path: Schema.String,
-}).annotations({ identifier: "AssayDataNd2" });
+}).annotate({ identifier: "AssayDataNd2" });
 
 export const AssayDataCziSchema = Schema.Struct({
   type: Schema.Literal("czi"),
   path: Schema.String,
-}).annotations({ identifier: "AssayDataCzi" });
+}).annotate({ identifier: "AssayDataCzi" });
 
-export const AssayDataSchema = Schema.Union(
+export const AssayDataSchema = Schema.Union([
   AssayDataFolderSchema,
   AssayDataNd2Schema,
   AssayDataCziSchema,
-).annotations({ identifier: "AssayData" });
+]).annotate({ identifier: "AssayData" });
 
 export const AssayWorkspaceSchema = Schema.Struct({
   path: Schema.String,
-}).annotations({ identifier: "AssayWorkspace" });
+}).annotate({ identifier: "AssayWorkspace" });
 
 export const AssayIntervalSchema = Schema.Struct({
   value: Schema.NullOr(F64),
   unit: AssayIntervalUnitSchema,
-}).annotations({ identifier: "AssayInterval" });
+}).annotate({ identifier: "AssayInterval" });
 
 /** Sample identity / layout only — intensity/mask channels live under `analysis`. */
 export const AssaySampleRowSchema = Schema.Struct({
@@ -63,14 +63,14 @@ export const AssaySampleRowSchema = Schema.Struct({
   slideChannel: U32,
   name: Schema.String,
   positions: Schema.String,
-}).annotations({ identifier: "AssaySampleRow" });
+}).annotate({ identifier: "AssaySampleRow" });
 
-export const AssaySamplesSchema = Schema.mutable(Schema.Array(AssaySampleRowSchema)).annotations({
+export const AssaySamplesSchema = Schema.mutable(Schema.Array(AssaySampleRowSchema)).annotate({
   identifier: "AssaySamples",
 });
 
 /** Non-empty list of signal (intensity) channel indices. */
-export const AssaySignalChannelsSchema = Schema.mutable(Schema.NonEmptyArray(U32)).annotations({
+export const AssaySignalChannelsSchema = Schema.mutable(Schema.NonEmptyArray(U32)).annotate({
   identifier: "AssaySignalChannels",
 });
 
@@ -78,14 +78,14 @@ export const AssaySignalChannelsSchema = Schema.mutable(Schema.NonEmptyArray(U32
 export const AssayChannelsSchema = Schema.Struct({
   mask: U32,
   signal: AssaySignalChannelsSchema,
-}).annotations({ identifier: "AssayChannels" });
+}).annotate({ identifier: "AssayChannels" });
 
 /** Per-sample channel override; `slideChannel` matches `samples[].slideChannel`. */
 export const AssaySampleChannelsSchema = Schema.Struct({
   slideChannel: U32,
   mask: U32,
   signal: AssaySignalChannelsSchema,
-}).annotations({ identifier: "AssaySampleChannels" });
+}).annotate({ identifier: "AssaySampleChannels" });
 
 /**
  * Assay-dependent analysis options on assay.json.
@@ -98,7 +98,7 @@ export const AssayAnalysisConfigSchema = Schema.Struct({
   skipSegment: Schema.optional(Schema.Boolean),
   channels: Schema.optional(AssayChannelsSchema),
   sampleChannels: Schema.optional(Schema.mutable(Schema.Array(AssaySampleChannelsSchema))),
-}).annotations({ identifier: "AssayAnalysisConfig" });
+}).annotate({ identifier: "AssayAnalysisConfig" });
 
 export const AssayJsonFileSchema = Schema.Struct({
   type: AssayTypeSchema,
@@ -108,7 +108,7 @@ export const AssayJsonFileSchema = Schema.Struct({
   interval: AssayIntervalSchema,
   samples: AssaySamplesSchema,
   analysis: Schema.optional(AssayAnalysisConfigSchema),
-}).annotations({ identifier: "AssayJsonFile" });
+}).annotate({ identifier: "AssayJsonFile" });
 
 export type AssayType = typeof AssayTypeSchema.Type;
 export type AssayIntervalUnit = typeof AssayIntervalUnitSchema.Type;

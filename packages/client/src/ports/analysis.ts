@@ -21,7 +21,7 @@ export function createAnalysisPort(
       return toClientEffect(client.studio.startAnalysis({ payload: request }));
     },
     getAnalysisProgress(requestId: string) {
-      return toClientEffect(client.studio.getAnalysisProgress({ urlParams: { requestId } }));
+      return toClientEffect(client.studio.getAnalysisProgress({ query: { requestId } }));
     },
     onAnalysisProgress(requestId: string, onProgress: (progress: AnalysisProgress) => void) {
       return createAnalysisProgressSubscription(client, requestId, onProgress);
@@ -36,8 +36,7 @@ export function createAnalysisProgressSubscription(
 ) {
   return pollProgressLoop({
     onProgress,
-    pollProgress: () =>
-      toClientEffect(client.studio.getAnalysisProgress({ urlParams: { requestId } })),
+    pollProgress: () => toClientEffect(client.studio.getAnalysisProgress({ query: { requestId } })),
     isTerminal: (progress) => ANALYSIS_TERMINAL_STATUSES.has(progress.status),
     createErrorProgress: (cause) => ({
       requestId,

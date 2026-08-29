@@ -1,4 +1,4 @@
-import { Atom } from "@effect-atom/atom-solid";
+import { Atom } from "effect/unstable/reactivity";
 import { liscaSessionStorage, readStorageJson, writeStorageJson } from "@lisca/utils";
 
 const EXPERT_MODE_KEY = "lisca-studio-expert-mode";

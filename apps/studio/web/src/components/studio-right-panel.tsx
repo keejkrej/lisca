@@ -1,6 +1,6 @@
 import type { JSX } from "solid-js";
 import { Show, createMemo } from "solid-js";
-import { useAtomValue } from "@effect-atom/atom-solid";
+import { useAtomValue } from "@effect/atom-solid";
 import { RailSidebar } from "@lisca/ui/shell";
 
 import { studioExpertModeAtom } from "../atoms/studio-expert-atoms";
@@ -14,7 +14,7 @@ export function StudioRightPanel(props: {
   /** Step guidance shown in both expert and default modes. */
   instruction?: string | (() => string | undefined);
 }) {
-  const expertMode = useAtomValue(studioExpertModeAtom);
+  const expertMode = useAtomValue(() => studioExpertModeAtom);
   const instruction = createMemo(() => {
     const value = typeof props.instruction === "function" ? props.instruction() : props.instruction;
     const trimmed = value?.trim();

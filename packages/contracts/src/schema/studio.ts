@@ -5,33 +5,33 @@ import { F64 } from "./primitives";
 export const SaveAssayJsonRequestSchema = Schema.Struct({
   saveTo: Schema.String,
   contents: Schema.String,
-}).annotations({ identifier: "SaveAssayJsonRequest" });
+}).annotate({ identifier: "SaveAssayJsonRequest" });
 
 export const SaveAssayJsonResponseSchema = Schema.Struct({
   ok: Schema.Boolean,
   path: Schema.String,
-}).annotations({ identifier: "SaveAssayJsonResponse" });
+}).annotate({ identifier: "SaveAssayJsonResponse" });
 
 export const SaveResultPdfRequestSchema = Schema.Struct({
   workspacePath: Schema.String,
   fileName: Schema.String,
   contentsBase64: Schema.String,
-}).annotations({ identifier: "SaveResultPdfRequest" });
+}).annotate({ identifier: "SaveResultPdfRequest" });
 
 export const SaveResultPdfResponseSchema = Schema.Struct({
   ok: Schema.Boolean,
   directory: Schema.String,
   path: Schema.String,
-}).annotations({ identifier: "SaveResultPdfResponse" });
+}).annotate({ identifier: "SaveResultPdfResponse" });
 
-export const AnalysisStatusSchema = Schema.Literal(
+export const AnalysisStatusSchema = Schema.Literals([
   "queued",
   "running",
   "completed",
   "error",
-).annotations({ identifier: "AnalysisStatus" });
+]).annotate({ identifier: "AnalysisStatus" });
 
-export const AnalysisStageSchema = Schema.Literal(
+export const AnalysisStageSchema = Schema.Literals([
   "queued",
   "preparing",
   "segment",
@@ -39,14 +39,14 @@ export const AnalysisStageSchema = Schema.Literal(
   "auc",
   "fit",
   "completed",
-).annotations({ identifier: "AnalysisStage" });
+]).annotate({ identifier: "AnalysisStage" });
 
 export const StudioAnalysisCsvFileSchema = Schema.Struct({
   kind: Schema.String,
   fileName: Schema.String,
   path: Schema.String,
   csv: Schema.String,
-}).annotations({ identifier: "AnalysisCsvFile" });
+}).annotate({ identifier: "AnalysisCsvFile" });
 
 export const AnalysisProgressSchema = Schema.Struct({
   requestId: Schema.String,
@@ -56,22 +56,22 @@ export const AnalysisProgressSchema = Schema.Struct({
   message: Schema.NullOr(Schema.String),
   resultFiles: Schema.optional(Schema.mutable(Schema.Array(StudioAnalysisCsvFileSchema))),
   error: Schema.NullOr(Schema.String),
-}).annotations({ identifier: "AnalysisProgress" });
+}).annotate({ identifier: "AnalysisProgress" });
 
 export const NullableAnalysisProgressSchema = Schema.NullOr(AnalysisProgressSchema);
 
 export const AnalysisStartRequestSchema = Schema.Struct({
   workspacePath: Schema.String,
   requestId: Schema.String,
-}).annotations({ identifier: "AnalysisStartRequest" });
+}).annotate({ identifier: "AnalysisStartRequest" });
 
 export const AnalysisProgressQuerySchema = Schema.Struct({
   requestId: Schema.String,
-}).annotations({ identifier: "AnalysisProgressQuery" });
+}).annotate({ identifier: "AnalysisProgressQuery" });
 
 export const LatestAnalysisQuerySchema = Schema.Struct({
   workspacePath: Schema.String,
-}).annotations({ identifier: "LatestAnalysisQuery" });
+}).annotate({ identifier: "LatestAnalysisQuery" });
 
 export type SaveAssayJsonRequest = typeof SaveAssayJsonRequestSchema.Type;
 export type SaveAssayJsonResponse = typeof SaveAssayJsonResponseSchema.Type;

@@ -3,7 +3,7 @@ import * as Schema from "effect/Schema";
 import { AlignerSourceSchema, ContrastWindowSchema, FrameRequestSchema } from "./shared";
 import { F64, I32, NumArray, U32, U32FromString } from "./primitives";
 
-export const AlignGridShapeSchema = Schema.Literal("rect", "square", "hex").annotations({
+export const AlignGridShapeSchema = Schema.Literals(["rect", "square", "hex"]).annotate({
   identifier: "AlignGridShape",
 });
 
@@ -18,17 +18,17 @@ export const AlignGridStateSchema = Schema.Struct({
   cellWidth: F64,
   cellHeight: F64,
   opacity: F64,
-}).annotations({ identifier: "AlignGridState" });
+}).annotate({ identifier: "AlignGridState" });
 
 export const AlignGridCellCoordSchema = Schema.Struct({
   i: I32,
   j: I32,
-}).annotations({ identifier: "AlignGridCellCoord" });
+}).annotate({ identifier: "AlignGridCellCoord" });
 
 export const SavedAlignStateSchema = Schema.Struct({
   grid: AlignGridStateSchema,
   excludedCells: Schema.mutable(Schema.Array(AlignGridCellCoordSchema)),
-}).annotations({ identifier: "SavedAlignState" });
+}).annotate({ identifier: "SavedAlignState" });
 
 export const NullableSavedAlignStateSchema = Schema.NullOr(SavedAlignStateSchema);
 
@@ -41,19 +41,19 @@ export const AutoExcludePreviewCellSchema = Schema.Struct({
   y: U32,
   w: U32,
   h: U32,
-}).annotations({ identifier: "AutoExcludePreviewCell" });
+}).annotate({ identifier: "AutoExcludePreviewCell" });
 
 export const AutoExcludePreviewCellScoreSchema = Schema.Struct({
   i: I32,
   j: I32,
   score: F64,
-}).annotations({ identifier: "AutoExcludePreviewCellScore" });
+}).annotate({ identifier: "AutoExcludePreviewCellScore" });
 
 export const AutoExcludeHistogramBinSchema = Schema.Struct({
   start: F64,
   end: F64,
   count: U32,
-}).annotations({ identifier: "AutoExcludeHistogramBin" });
+}).annotate({ identifier: "AutoExcludeHistogramBin" });
 
 export const AutoExcludePreviewResponseSchema = Schema.Struct({
   eligibleCellCount: U32,
@@ -62,32 +62,32 @@ export const AutoExcludePreviewResponseSchema = Schema.Struct({
   scoreMin: F64,
   scoreMax: F64,
   threshold: F64,
-}).annotations({ identifier: "AutoExcludePreviewResponse" });
+}).annotate({ identifier: "AutoExcludePreviewResponse" });
 
 export const SaveBboxResponseSchema = Schema.Struct({
   ok: Schema.Boolean,
   error: Schema.NullOr(Schema.String),
-}).annotations({ identifier: "SaveBboxResponse" });
+}).annotate({ identifier: "SaveBboxResponse" });
 
 export const AlignOutputPathsSchema = Schema.Struct({
   bbox: Schema.String,
   align: Schema.String,
   roi: Schema.String,
-}).annotations({ identifier: "AlignOutputPaths" });
+}).annotate({ identifier: "AlignOutputPaths" });
 
-export const CropOutputFormatSchema = Schema.Literal("tiff").annotations({
+export const CropOutputFormatSchema = Schema.Literal("tiff").annotate({
   identifier: "CropOutputFormat",
 });
 
-export const CropRoiStatusSchema = Schema.Literal(
+export const CropRoiStatusSchema = Schema.Literals([
   "queued",
   "running",
   "completed",
   "cancelled",
   "error",
-).annotations({ identifier: "CropRoiStatus" });
+]).annotate({ identifier: "CropRoiStatus" });
 
-export const CropRoiDispositionSchema = Schema.Literal("started", "attached").annotations({
+export const CropRoiDispositionSchema = Schema.Literals(["started", "attached"]).annotate({
   identifier: "CropRoiDisposition",
 });
 
@@ -98,13 +98,13 @@ export const CropRoiRequestSchema = Schema.Struct({
   positions: NumArray,
   overwrite: Schema.Boolean,
   outputFormat: Schema.optional(CropOutputFormatSchema),
-}).annotations({ identifier: "CropRoiRequest" });
+}).annotate({ identifier: "CropRoiRequest" });
 
 export const CropRoiResponseSchema = Schema.Struct({
   requestId: Schema.String,
   status: CropRoiStatusSchema,
   disposition: CropRoiDispositionSchema,
-}).annotations({ identifier: "CropRoiResponse" });
+}).annotate({ identifier: "CropRoiResponse" });
 
 export const CropRoiProgressSchema = Schema.Struct({
   requestId: Schema.String,
@@ -117,27 +117,27 @@ export const CropRoiProgressSchema = Schema.Struct({
   message: Schema.NullOr(Schema.String),
   error: Schema.optional(Schema.NullOr(Schema.String)),
   skippedPositions: Schema.optional(Schema.mutable(Schema.Array(U32))),
-}).annotations({ identifier: "CropRoiProgress" });
+}).annotate({ identifier: "CropRoiProgress" });
 
-export const NullableCropRoiProgressSchema = Schema.NullOr(CropRoiProgressSchema).annotations({
+export const NullableCropRoiProgressSchema = Schema.NullOr(CropRoiProgressSchema).annotate({
   identifier: "NullableCropRoiProgress",
 });
 
 export const RoiPosExistsResponseSchema = Schema.Struct({
   exists: Schema.Boolean,
-}).annotations({ identifier: "RoiPosExistsResponse" });
+}).annotate({ identifier: "RoiPosExistsResponse" });
 
 /** POST /align/scan-source request body. */
 export const ScanSourceRequestSchema = Schema.Struct({
   source: AlignerSourceSchema,
-}).annotations({ identifier: "ScanSourceRequest" });
+}).annotate({ identifier: "ScanSourceRequest" });
 
 /** POST /align/load-frame request body. */
 export const LoadFrameRequestSchema = Schema.Struct({
   source: AlignerSourceSchema,
   request: FrameRequestSchema,
   contrast: Schema.NullOr(ContrastWindowSchema),
-}).annotations({ identifier: "LoadFrameRequest" });
+}).annotate({ identifier: "LoadFrameRequest" });
 
 /** POST /align/save-bbox request body. */
 export const SaveBboxRequestSchema = Schema.Struct({
@@ -145,37 +145,37 @@ export const SaveBboxRequestSchema = Schema.Struct({
   pos: U32,
   csv: Schema.String,
   alignState: SavedAlignStateSchema,
-}).annotations({ identifier: "SaveBboxRequest" });
+}).annotate({ identifier: "SaveBboxRequest" });
 
 export const LoadAlignStateQuerySchema = Schema.Struct({
   workspacePath: Schema.String,
   pos: U32FromString,
-}).annotations({ identifier: "LoadAlignStateQuery" });
+}).annotate({ identifier: "LoadAlignStateQuery" });
 
 export const OutputPathsQuerySchema = Schema.Struct({
   pos: U32FromString,
-}).annotations({ identifier: "OutputPathsQuery" });
+}).annotate({ identifier: "OutputPathsQuery" });
 
 export const SavedBboxPositionsQuerySchema = Schema.Struct({
   workspacePath: Schema.String,
-}).annotations({ identifier: "SavedBboxPositionsQuery" });
+}).annotate({ identifier: "SavedBboxPositionsQuery" });
 
 export const RoiPosExistsQuerySchema = Schema.Struct({
   workspacePath: Schema.String,
   pos: U32FromString,
-}).annotations({ identifier: "RoiPosExistsQuery" });
+}).annotate({ identifier: "RoiPosExistsQuery" });
 
 export const CancelCropRoiRequestSchema = Schema.Struct({
   requestId: Schema.String,
-}).annotations({ identifier: "CancelCropRoiRequest" });
+}).annotate({ identifier: "CancelCropRoiRequest" });
 
 export const CropRoiProgressQuerySchema = Schema.Struct({
   requestId: Schema.String,
-}).annotations({ identifier: "CropRoiProgressQuery" });
+}).annotate({ identifier: "CropRoiProgressQuery" });
 
 export const LatestCropQuerySchema = Schema.Struct({
   workspacePath: Schema.String,
-}).annotations({ identifier: "LatestCropQuery" });
+}).annotate({ identifier: "LatestCropQuery" });
 
 export type AlignGridShape = typeof AlignGridShapeSchema.Type;
 export type AlignGridState = typeof AlignGridStateSchema.Type;

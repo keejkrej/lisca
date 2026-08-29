@@ -5,7 +5,7 @@ import type {
   RoiFrameRequest,
   RoiWorkspaceScan,
 } from "@lisca/contracts";
-import { Atom, type Result } from "@effect-atom/atom-solid";
+import { AsyncResult, Atom } from "effect/unstable/reactivity";
 import { Effect } from "effect";
 
 import type { ClientError } from "../infra/client-error";
@@ -39,10 +39,10 @@ export type SaveRoiFrameAnnotationInput = {
 export type AnnotateQueryAtoms = {
   roiWorkspaceScanAtom: (
     workspacePath: string,
-  ) => Atom.Atom<Result.Result<RoiWorkspaceScan, ClientError>>;
+  ) => Atom.Atom<AsyncResult.AsyncResult<RoiWorkspaceScan, ClientError>>;
   annotationLabelsAtom: (
     workspacePath: string,
-  ) => Atom.Atom<Result.Result<AnnotationLabel[], ClientError>>;
+  ) => Atom.Atom<AsyncResult.AsyncResult<AnnotationLabel[], ClientError>>;
   saveAnnotationLabelsAtom: Atom.AtomResultFn<
     SaveAnnotationLabelsInput,
     AnnotationLabel[],

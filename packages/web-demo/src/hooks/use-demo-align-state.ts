@@ -11,7 +11,7 @@ import {
   mergeExcludedAlignGridCells,
   type AlignGridToolMode,
 } from "@lisca/utils";
-import { useAtom } from "@effect-atom/atom-solid";
+import { useAtom } from "@effect/atom-solid";
 import { createMemo, type Accessor } from "solid-js";
 
 import {
@@ -68,7 +68,7 @@ export type DemoAlignState = {
 };
 
 export function useDemoAlignState(): Accessor<DemoAlignState> {
-  const [state, setState] = useAtom(demoAlignUiAtom);
+  const [state, setState] = useAtom(() => demoAlignUiAtom);
 
   const previewVariationExclude = (): AutoExcludePreviewResponse | null => {
     const current = state();

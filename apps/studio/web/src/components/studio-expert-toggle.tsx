@@ -1,12 +1,12 @@
 import { Toggle } from "@lisca/ui/components";
 import { AlignStateToggleIndicator } from "@lisca/ui/features";
-import { useAtomSet, useAtomValue } from "@effect-atom/atom-solid";
+import { useAtomSet, useAtomValue } from "@effect/atom-solid";
 
 import { setStudioExpertMode, studioExpertModeAtom } from "../atoms/studio-expert-atoms";
 
 export function StudioExpertToggle() {
-  const expertMode = useAtomValue(studioExpertModeAtom);
-  const setExpertMode = useAtomSet(studioExpertModeAtom);
+  const expertMode = useAtomValue(() => studioExpertModeAtom);
+  const setExpertMode = useAtomSet(() => studioExpertModeAtom);
 
   const setPressed = (pressed: boolean) => {
     setExpertMode(pressed);

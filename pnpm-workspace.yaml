@@ -3,11 +3,8 @@ packages:
   - "packages/*"
 
 catalog:
-  effect: "^3.21.2"
-  "@effect-atom/atom-solid": "^0.1.0"
-  "@effect/experimental": "^0.60.0"
-  "@effect/platform": "^0.96.1"
-  "@effect/platform-browser": "^0.60.0"
+  effect: "4.0.0-rc.112"
+  "@effect/atom-solid": "4.0.0-rc.112"
   "@types/node": "^22.15.21"
   typescript: "^5.9.2"
   vitest: "^3.2.4"

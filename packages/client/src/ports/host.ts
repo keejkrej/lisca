@@ -18,7 +18,7 @@ export function createHostPort(
 ): HostPort {
   return {
     listDirectory(path) {
-      return toClientEffect(client.fs.listDirectory({ urlParams: { path: path ?? undefined } }));
+      return toClientEffect(client.fs.listDirectory({ query: { path: path ?? undefined } }));
     },
     userHomeDirectory() {
       return toClientEffect(

@@ -11,28 +11,28 @@ export const SmartExcludeRequestSchema = Schema.Struct({
   contrast: Schema.NullOr(ContrastWindowSchema),
   cells: Schema.mutable(Schema.Array(AutoExcludePreviewCellSchema)),
   threshold: Schema.optional(F64),
-}).annotations({ identifier: "SmartExcludeRequest" });
+}).annotate({ identifier: "SmartExcludeRequest" });
 
 export const SmartExcludeResponseSchema = Schema.Struct({
   excludedCells: Schema.mutable(Schema.Array(AlignGridCellCoordSchema)),
-}).annotations({ identifier: "SmartExcludeResponse" });
+}).annotate({ identifier: "SmartExcludeResponse" });
 
 export const SmartSegmentPointSchema = Schema.Struct({
-  x: Schema.Number,
-  y: Schema.Number,
-  label: Schema.Literal(0, 1),
-}).annotations({ identifier: "SmartSegmentPoint" });
+  x: Schema.Finite,
+  y: Schema.Finite,
+  label: Schema.Literals([0, 1]),
+}).annotate({ identifier: "SmartSegmentPoint" });
 
 export const SmartSegmentRequestSchema = Schema.Struct({
   workspacePath: Schema.String,
   request: RoiFrameRequestSchema,
   contrast: Schema.NullOr(ContrastWindowSchema),
   points: Schema.mutable(Schema.Array(SmartSegmentPointSchema)),
-}).annotations({ identifier: "SmartSegmentRequest" });
+}).annotate({ identifier: "SmartSegmentRequest" });
 
 export const SmartSegmentResponseSchema = Schema.Struct({
   mask: NumArray,
-}).annotations({ identifier: "SmartSegmentResponse" });
+}).annotate({ identifier: "SmartSegmentResponse" });
 
 export type SmartExcludeRequest = typeof SmartExcludeRequestSchema.Type;
 export type SmartExcludeResponse = typeof SmartExcludeResponseSchema.Type;

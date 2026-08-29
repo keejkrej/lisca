@@ -1,4 +1,4 @@
-import { Reactivity } from "@effect/experimental";
+import { Reactivity } from "effect/unstable/reactivity";
 import { Effect } from "effect";
 import { describe, expect, it } from "vitest";
 
@@ -9,7 +9,7 @@ describe("invalidateAfter", () => {
     let refreshed = false;
     const program = Effect.gen(function* () {
       const reactivity = yield* Reactivity.Reactivity;
-      const unregister = reactivity.unsafeRegister(
+      const unregister = reactivity.registerUnsafe(
         [ReactivityKeys.annotationLabels("/workspace")],
         () => {
           refreshed = true;

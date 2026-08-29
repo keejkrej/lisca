@@ -1,4 +1,4 @@
-import { HttpApi, HttpApiEndpoint, HttpApiGroup, HttpApiSchema } from "@effect/platform";
+import { HttpApi, HttpApiEndpoint, HttpApiGroup } from "effect/unstable/httpapi";
 import * as Schema from "effect/Schema";
 
 import {
@@ -80,249 +80,336 @@ import {
 export class RequestError extends Schema.TaggedError<RequestError>()(
   "RequestError",
   { message: Schema.String },
-  HttpApiSchema.annotations({ status: 400 }),
+  { httpApiStatus: 400 },
 ) {}
 
 export class Unauthorized extends Schema.TaggedError<Unauthorized>()(
   "Unauthorized",
   { message: Schema.String },
-  HttpApiSchema.annotations({ status: 401 }),
+  { httpApiStatus: 401 },
 ) {}
 
 export class TaskCommandError extends Schema.TaggedError<TaskCommandError>()(
   "TaskCommandError",
   {
-    code: Schema.Literal("not-found", "invalid-transition"),
-    entity: Schema.Literal("operation", "task"),
+    code: Schema.Literals(["not-found", "invalid-transition"]),
+    entity: Schema.Literals(["operation", "task"]),
     id: Schema.String,
     currentStatus: Schema.NullOr(Schema.String),
     message: Schema.String,
   },
-  HttpApiSchema.annotations({ status: 409 }),
+  { httpApiStatus: 409 },
 ) {}
 
 // --- fs group (shared host filesystem) ---------------------------------------
 const fsGroup = HttpApiGroup.make("fs")
   .add(
-    HttpApiEndpoint.get("listDirectory", "/fs/list")
-      .setUrlParams(HostListDirectoryQuerySchema)
-      .addSuccess(HostListDirectoryResultSchema),
-  )
-  .add(HttpApiEndpoint.get("userHomeDirectory", "/fs/home").addSuccess(HomeDirectoryResponseSchema))
-  .add(
-    HttpApiEndpoint.get("readTextFile", "/fs/read-text")
-      .setUrlParams(ReadTextFileQuerySchema)
-      .addSuccess(ReadTextFileResponseSchema),
+    HttpApiEndpoint.get("listDirectory", "/fs/list", {
+      query: HostListDirectoryQuerySchema,
+      success: HostListDirectoryResultSchema,
+      error: [RequestError, Unauthorized],
+    }),
   )
   .add(
-    HttpApiEndpoint.get("readFile", "/fs/file")
-      .setUrlParams(ReadTextFileQuerySchema)
-      .addSuccess(ReadTextFileResponseSchema),
+    HttpApiEndpoint.get("userHomeDirectory", "/fs/home", {
+      success: HomeDirectoryResponseSchema,
+      error: [RequestError, Unauthorized],
+    }),
   )
   .add(
-    HttpApiEndpoint.post("createDirectory", "/fs/create-directory")
-      .setPayload(CreateDirectoryRequestSchema)
-      .addSuccess(CreateDirectoryResponseSchema),
+    HttpApiEndpoint.get("readTextFile", "/fs/read-text", {
+      query: ReadTextFileQuerySchema,
+      success: ReadTextFileResponseSchema,
+      error: [RequestError, Unauthorized],
+    }),
+  )
+  .add(
+    HttpApiEndpoint.get("readFile", "/fs/file", {
+      query: ReadTextFileQuerySchema,
+      success: ReadTextFileResponseSchema,
+      error: [RequestError, Unauthorized],
+    }),
+  )
+  .add(
+    HttpApiEndpoint.post("createDirectory", "/fs/create-directory", {
+      payload: CreateDirectoryRequestSchema,
+      success: CreateDirectoryResponseSchema,
+      error: [RequestError, Unauthorized],
+    }),
   );
 
 // --- align group -------------------------------------------------------------
 const alignGroup = HttpApiGroup.make("align")
   .add(
-    HttpApiEndpoint.post("scanSource", "/align/scan-source")
-      .setPayload(ScanSourceRequestSchema)
-      .addSuccess(WorkspaceScanSchema),
+    HttpApiEndpoint.post("scanSource", "/align/scan-source", {
+      payload: ScanSourceRequestSchema,
+      success: WorkspaceScanSchema,
+      error: [RequestError, Unauthorized],
+    }),
   )
   .add(
-    HttpApiEndpoint.post("loadFrame", "/align/load-frame")
-      .setPayload(LoadFrameRequestSchema)
-      .addSuccess(FramePayloadSchema),
+    HttpApiEndpoint.post("loadFrame", "/align/load-frame", {
+      payload: LoadFrameRequestSchema,
+      success: FramePayloadSchema,
+      error: [RequestError, Unauthorized],
+    }),
   )
   .add(
-    HttpApiEndpoint.post("saveBbox", "/align/save-bbox")
-      .setPayload(SaveBboxRequestSchema)
-      .addSuccess(SaveBboxResponseSchema),
+    HttpApiEndpoint.post("saveBbox", "/align/save-bbox", {
+      payload: SaveBboxRequestSchema,
+      success: SaveBboxResponseSchema,
+      error: [RequestError, Unauthorized],
+    }),
   )
   .add(
-    HttpApiEndpoint.get("loadAlignState", "/align/align-state")
-      .setUrlParams(LoadAlignStateQuerySchema)
-      .addSuccess(NullableSavedAlignStateSchema),
+    HttpApiEndpoint.get("loadAlignState", "/align/align-state", {
+      query: LoadAlignStateQuerySchema,
+      success: NullableSavedAlignStateSchema,
+      error: [RequestError, Unauthorized],
+    }),
   )
   .add(
-    HttpApiEndpoint.get("outputPaths", "/align/output-paths")
-      .setUrlParams(OutputPathsQuerySchema)
-      .addSuccess(AlignOutputPathsSchema),
+    HttpApiEndpoint.get("outputPaths", "/align/output-paths", {
+      query: OutputPathsQuerySchema,
+      success: AlignOutputPathsSchema,
+      error: [RequestError, Unauthorized],
+    }),
   )
   .add(
-    HttpApiEndpoint.get("listSavedBboxPositions", "/align/saved-bbox-positions")
-      .setUrlParams(SavedBboxPositionsQuerySchema)
-      .addSuccess(UIntArraySchema),
+    HttpApiEndpoint.get("listSavedBboxPositions", "/align/saved-bbox-positions", {
+      query: SavedBboxPositionsQuerySchema,
+      success: UIntArraySchema,
+      error: [RequestError, Unauthorized],
+    }),
   )
   .add(
-    HttpApiEndpoint.get("roiPosExists", "/align/roi-pos-exists")
-      .setUrlParams(RoiPosExistsQuerySchema)
-      .addSuccess(RoiPosExistsResponseSchema),
+    HttpApiEndpoint.get("roiPosExists", "/align/roi-pos-exists", {
+      query: RoiPosExistsQuerySchema,
+      success: RoiPosExistsResponseSchema,
+      error: [RequestError, Unauthorized],
+    }),
   )
   .add(
-    HttpApiEndpoint.post("cropRoi", "/align/crop-roi")
-      .setPayload(CropRoiRequestSchema)
-      .addSuccess(CropRoiResponseSchema),
+    HttpApiEndpoint.post("cropRoi", "/align/crop-roi", {
+      payload: CropRoiRequestSchema,
+      success: CropRoiResponseSchema,
+      error: [RequestError, Unauthorized],
+    }),
   )
   .add(
-    HttpApiEndpoint.post("cancelCropRoi", "/align/cancel-crop-roi")
-      .setPayload(CancelCropRoiRequestSchema)
-      .addSuccess(CropRoiProgressSchema),
+    HttpApiEndpoint.post("cancelCropRoi", "/align/cancel-crop-roi", {
+      payload: CancelCropRoiRequestSchema,
+      success: CropRoiProgressSchema,
+      error: [RequestError, Unauthorized],
+    }),
   )
   .add(
-    HttpApiEndpoint.get("cropRoiProgress", "/align/crop-roi-progress")
-      .setUrlParams(CropRoiProgressQuerySchema)
-      .addSuccess(CropRoiProgressSchema),
+    HttpApiEndpoint.get("cropRoiProgress", "/align/crop-roi-progress", {
+      query: CropRoiProgressQuerySchema,
+      success: CropRoiProgressSchema,
+      error: [RequestError, Unauthorized],
+    }),
   )
   .add(
-    HttpApiEndpoint.get("getLatestCropProgress", "/align/crop-latest")
-      .setUrlParams(LatestCropQuerySchema)
-      .addSuccess(NullableCropRoiProgressSchema),
+    HttpApiEndpoint.get("getLatestCropProgress", "/align/crop-latest", {
+      query: LatestCropQuerySchema,
+      success: NullableCropRoiProgressSchema,
+      error: [RequestError, Unauthorized],
+    }),
   )
   .add(
-    HttpApiEndpoint.post("smartExclude", "/align/smart-exclude")
-      .setPayload(SmartExcludeRequestSchema)
-      .addSuccess(SmartExcludeResponseSchema),
+    HttpApiEndpoint.post("smartExclude", "/align/smart-exclude", {
+      payload: SmartExcludeRequestSchema,
+      success: SmartExcludeResponseSchema,
+      error: [RequestError, Unauthorized],
+    }),
   );
 
 // --- annotate group ----------------------------------------------------------
 const annotateGroup = HttpApiGroup.make("annotate")
   .add(
-    HttpApiEndpoint.post("scanRoiWorkspace", "/annotate/scan-roi-workspace")
-      .setPayload(ScanRoiWorkspaceRequestSchema)
-      .addSuccess(RoiWorkspaceScanSchema),
+    HttpApiEndpoint.post("scanRoiWorkspace", "/annotate/scan-roi-workspace", {
+      payload: ScanRoiWorkspaceRequestSchema,
+      success: RoiWorkspaceScanSchema,
+      error: [RequestError, Unauthorized],
+    }),
   )
   .add(
-    HttpApiEndpoint.post("loadLabels", "/annotate/load-labels")
-      .setPayload(LoadAnnotationLabelsRequestSchema)
-      .addSuccess(AnnotationLabelArraySchema),
+    HttpApiEndpoint.post("loadLabels", "/annotate/load-labels", {
+      payload: LoadAnnotationLabelsRequestSchema,
+      success: AnnotationLabelArraySchema,
+      error: [RequestError, Unauthorized],
+    }),
   )
   .add(
-    HttpApiEndpoint.post("saveLabels", "/annotate/save-labels")
-      .setPayload(SaveAnnotationLabelsRequestSchema)
-      .addSuccess(AnnotationLabelArraySchema),
+    HttpApiEndpoint.post("saveLabels", "/annotate/save-labels", {
+      payload: SaveAnnotationLabelsRequestSchema,
+      success: AnnotationLabelArraySchema,
+      error: [RequestError, Unauthorized],
+    }),
   )
   .add(
-    HttpApiEndpoint.post("loadRoiFrame", "/annotate/load-roi-frame")
-      .setPayload(LoadRoiFrameRequestSchema)
-      .addSuccess(FramePayloadSchema),
+    HttpApiEndpoint.post("loadRoiFrame", "/annotate/load-roi-frame", {
+      payload: LoadRoiFrameRequestSchema,
+      success: FramePayloadSchema,
+      error: [RequestError, Unauthorized],
+    }),
   )
   .add(
-    HttpApiEndpoint.post("loadRoiFrameAnnotation", "/annotate/load-roi-frame-annotation")
-      .setPayload(LoadRoiFrameAnnotationRequestSchema)
-      .addSuccess(LoadedRoiFrameAnnotationSchema),
+    HttpApiEndpoint.post("loadRoiFrameAnnotation", "/annotate/load-roi-frame-annotation", {
+      payload: LoadRoiFrameAnnotationRequestSchema,
+      success: LoadedRoiFrameAnnotationSchema,
+      error: [RequestError, Unauthorized],
+    }),
   )
   .add(
-    HttpApiEndpoint.post("saveRoiFrameAnnotation", "/annotate/save-roi-frame-annotation")
-      .setPayload(SaveRoiFrameAnnotationRequestSchema)
-      .addSuccess(RoiFrameAnnotationSchema),
+    HttpApiEndpoint.post("saveRoiFrameAnnotation", "/annotate/save-roi-frame-annotation", {
+      payload: SaveRoiFrameAnnotationRequestSchema,
+      success: RoiFrameAnnotationSchema,
+      error: [RequestError, Unauthorized],
+    }),
   )
   .add(
-    HttpApiEndpoint.post("smartSegment", "/annotate/smart-segment")
-      .setPayload(SmartSegmentRequestSchema)
-      .addSuccess(SmartSegmentResponseSchema),
+    HttpApiEndpoint.post("smartSegment", "/annotate/smart-segment", {
+      payload: SmartSegmentRequestSchema,
+      success: SmartSegmentResponseSchema,
+      error: [RequestError, Unauthorized],
+    }),
   );
 
 // --- profile group (studio server only) --------------------------------------
 const profileGroup = HttpApiGroup.make("profile")
-  .add(HttpApiEndpoint.get("listProfiles", "/profile/list").addSuccess(ProfileListResponseSchema))
   .add(
-    HttpApiEndpoint.post("createProfile", "/profile/create")
-      .setPayload(ProfileCreateRequestSchema)
-      .addSuccess(ProfileSessionResponseSchema),
+    HttpApiEndpoint.get("listProfiles", "/profile/list", {
+      success: ProfileListResponseSchema,
+      error: [RequestError, Unauthorized],
+    }),
   )
   .add(
-    HttpApiEndpoint.post("signInProfile", "/profile/sign-in")
-      .setPayload(ProfileSignInRequestSchema)
-      .addSuccess(ProfileSessionResponseSchema),
+    HttpApiEndpoint.post("createProfile", "/profile/create", {
+      payload: ProfileCreateRequestSchema,
+      success: ProfileSessionResponseSchema,
+      error: [RequestError, Unauthorized],
+    }),
   )
   .add(
-    HttpApiEndpoint.post("signOutProfile", "/profile/sign-out")
-      .addSuccess(ProfileSignOutResponseSchema)
-      .addError(Unauthorized),
+    HttpApiEndpoint.post("signInProfile", "/profile/sign-in", {
+      payload: ProfileSignInRequestSchema,
+      success: ProfileSessionResponseSchema,
+      error: [RequestError, Unauthorized],
+    }),
+  )
+  .add(
+    HttpApiEndpoint.post("signOutProfile", "/profile/sign-out", {
+      success: ProfileSignOutResponseSchema,
+      error: [Unauthorized, RequestError],
+    }),
   );
 
 // --- memory group (studio server only) ---------------------------------------
 const memoryGroup = HttpApiGroup.make("memory")
   .add(
-    HttpApiEndpoint.get("getRecentMemory", "/memory/recent")
-      .setUrlParams(MemoryRecentQuerySchema)
-      .addSuccess(MemoryRecentResponseSchema)
-      .addError(Unauthorized),
+    HttpApiEndpoint.get("getRecentMemory", "/memory/recent", {
+      query: MemoryRecentQuerySchema,
+      success: MemoryRecentResponseSchema,
+      error: [Unauthorized, RequestError],
+    }),
   )
   .add(
-    HttpApiEndpoint.post("touchMemory", "/memory/touch")
-      .setPayload(MemoryTouchRequestSchema)
-      .addSuccess(MemoryTouchResponseSchema)
-      .addError(Unauthorized),
+    HttpApiEndpoint.post("touchMemory", "/memory/touch", {
+      payload: MemoryTouchRequestSchema,
+      success: MemoryTouchResponseSchema,
+      error: [Unauthorized, RequestError],
+    }),
   );
 
 // --- tasks group (shared by every product backend) --------------------------
 const tasksGroup = HttpApiGroup.make("tasks")
-  .add(HttpApiEndpoint.get("listOperations", "/tasks/operations").addSuccess(OperationListSchema))
   .add(
-    HttpApiEndpoint.get("getOperation", "/tasks/operation")
-      .setUrlParams(OperationDetailQuerySchema)
-      .addSuccess(OperationDetailSchema),
+    HttpApiEndpoint.get("listOperations", "/tasks/operations", {
+      success: OperationListSchema,
+      error: [RequestError, Unauthorized],
+    }),
   )
   .add(
-    HttpApiEndpoint.get("getTask", "/tasks/task")
-      .setUrlParams(TaskDetailQuerySchema)
-      .addSuccess(TaskDetailSchema),
+    HttpApiEndpoint.get("getOperation", "/tasks/operation", {
+      query: OperationDetailQuerySchema,
+      success: OperationDetailSchema,
+      error: [RequestError, Unauthorized],
+    }),
   )
   .add(
-    HttpApiEndpoint.post("cancelOperation", "/tasks/operation/cancel")
-      .setPayload(OperationCancelRequestSchema)
-      .addSuccess(OperationDetailSchema)
-      .addError(TaskCommandError),
+    HttpApiEndpoint.get("getTask", "/tasks/task", {
+      query: TaskDetailQuerySchema,
+      success: TaskDetailSchema,
+      error: [RequestError, Unauthorized],
+    }),
   )
   .add(
-    HttpApiEndpoint.post("cancelTask", "/tasks/task/cancel")
-      .setPayload(TaskCancelRequestSchema)
-      .addSuccess(OperationDetailSchema)
-      .addError(TaskCommandError),
+    HttpApiEndpoint.post("cancelOperation", "/tasks/operation/cancel", {
+      payload: OperationCancelRequestSchema,
+      success: OperationDetailSchema,
+      error: [TaskCommandError, RequestError, Unauthorized],
+    }),
   )
   .add(
-    HttpApiEndpoint.post("retryTask", "/tasks/task/retry")
-      .setPayload(TaskRetryRequestSchema)
-      .addSuccess(OperationDetailSchema)
-      .addError(TaskCommandError),
+    HttpApiEndpoint.post("cancelTask", "/tasks/task/cancel", {
+      payload: TaskCancelRequestSchema,
+      success: OperationDetailSchema,
+      error: [TaskCommandError, RequestError, Unauthorized],
+    }),
+  )
+  .add(
+    HttpApiEndpoint.post("retryTask", "/tasks/task/retry", {
+      payload: TaskRetryRequestSchema,
+      success: OperationDetailSchema,
+      error: [TaskCommandError, RequestError, Unauthorized],
+    }),
   );
 
 // --- studio group ------------------------------------------------------------
 const studioGroup = HttpApiGroup.make("studio")
   .add(
-    HttpApiEndpoint.post("saveAssayJson", "/studio/save-assay-json")
-      .setPayload(SaveAssayJsonRequestSchema)
-      .addSuccess(SaveAssayJsonResponseSchema),
+    HttpApiEndpoint.post("saveAssayJson", "/studio/save-assay-json", {
+      payload: SaveAssayJsonRequestSchema,
+      success: SaveAssayJsonResponseSchema,
+      error: [RequestError, Unauthorized],
+    }),
   )
   .add(
-    HttpApiEndpoint.post("saveResultPdf", "/studio/save-result-pdf")
-      .setPayload(SaveResultPdfRequestSchema)
-      .addSuccess(SaveResultPdfResponseSchema),
+    HttpApiEndpoint.post("saveResultPdf", "/studio/save-result-pdf", {
+      payload: SaveResultPdfRequestSchema,
+      success: SaveResultPdfResponseSchema,
+      error: [RequestError, Unauthorized],
+    }),
   )
   .add(
-    HttpApiEndpoint.post("startAnalysis", "/studio/start-analysis")
-      .setPayload(AnalysisStartRequestSchema)
-      .addSuccess(AnalysisProgressSchema),
+    HttpApiEndpoint.post("startAnalysis", "/studio/start-analysis", {
+      payload: AnalysisStartRequestSchema,
+      success: AnalysisProgressSchema,
+      error: [RequestError, Unauthorized],
+    }),
   )
   .add(
-    HttpApiEndpoint.get("getAnalysisProgress", "/studio/analysis-progress")
-      .setUrlParams(AnalysisProgressQuerySchema)
-      .addSuccess(AnalysisProgressSchema),
+    HttpApiEndpoint.get("getAnalysisProgress", "/studio/analysis-progress", {
+      query: AnalysisProgressQuerySchema,
+      success: AnalysisProgressSchema,
+      error: [RequestError, Unauthorized],
+    }),
   )
   .add(
-    HttpApiEndpoint.get("getLatestAnalysisProgress", "/studio/latest-analysis")
-      .setUrlParams(LatestAnalysisQuerySchema)
-      .addSuccess(NullableAnalysisProgressSchema),
+    HttpApiEndpoint.get("getLatestAnalysisProgress", "/studio/latest-analysis", {
+      query: LatestAnalysisQuerySchema,
+      success: NullableAnalysisProgressSchema,
+      error: [RequestError, Unauthorized],
+    }),
   )
   .add(
-    HttpApiEndpoint.get("getAnalysisResults", "/studio/analysis-results")
-      .setUrlParams(LatestAnalysisQuerySchema)
-      .addSuccess(NullableAnalysisProgressSchema),
+    HttpApiEndpoint.get("getAnalysisResults", "/studio/analysis-results", {
+      query: LatestAnalysisQuerySchema,
+      success: NullableAnalysisProgressSchema,
+      error: [RequestError, Unauthorized],
+    }),
   );
 
 /**
@@ -337,6 +424,4 @@ export const liscaApi = HttpApi.make("lisca")
   .add(profileGroup)
   .add(memoryGroup)
   .add(tasksGroup)
-  .add(studioGroup)
-  .addError(RequestError)
-  .addError(Unauthorized);
+  .add(studioGroup);

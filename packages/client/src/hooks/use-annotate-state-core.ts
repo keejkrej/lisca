@@ -18,8 +18,8 @@ import { currentRoi, requestKey } from "../atoms/annotator-ui";
 import { toolCanRunWithoutLabel } from "@lisca/utils";
 import { toClientError } from "../infra/client-error";
 import type { AnnotatorDataPort } from "../ports/types";
-import type { Atom, Result } from "@effect-atom/atom-solid";
-import { useAtom, useAtomSet, useAtomValue } from "@effect-atom/atom-solid";
+import type { AsyncResult, Atom } from "effect/unstable/reactivity";
+import { useAtom, useAtomSet, useAtomValue } from "@effect/atom-solid";
 import { Effect } from "effect";
 import { useSelectedAtomValue } from "../atoms/selected-atom-value";
 import {
@@ -65,12 +65,14 @@ export type UseAnnotateStateCoreDeps<State extends AnnotatorUiState = AnnotatorU
   annotatorUiActions: AnnotatorUiActions<State>;
   roiWorkspaceScanAtom: (
     workspacePath: string,
-  ) => Atom.Atom<Result.Result<import("@lisca/contracts").RoiWorkspaceScan, unknown>>;
-  roiScanIdleAtom: Atom.Atom<Result.Result<import("@lisca/contracts").RoiWorkspaceScan, unknown>>;
+  ) => Atom.Atom<AsyncResult.AsyncResult<import("@lisca/contracts").RoiWorkspaceScan, unknown>>;
+  roiScanIdleAtom: Atom.Atom<
+    AsyncResult.AsyncResult<import("@lisca/contracts").RoiWorkspaceScan, unknown>
+  >;
   annotationLabelsAtom: (
     workspacePath: string,
-  ) => Atom.Atom<Result.Result<readonly AnnotationLabel[], unknown>>;
-  labelsIdleAtom: Atom.Atom<Result.Result<readonly AnnotationLabel[], unknown>>;
+  ) => Atom.Atom<AsyncResult.AsyncResult<readonly AnnotationLabel[], unknown>>;
+  labelsIdleAtom: Atom.Atom<AsyncResult.AsyncResult<readonly AnnotationLabel[], unknown>>;
   saveAnnotationLabelsAtom: Atom.AtomResultFn<
     {
       workspacePath: string;
@@ -105,7 +107,7 @@ export function useAnnotateStateCore<State extends AnnotatorUiState>(
   const workspace = deps.useShellWorkspace();
   const shellWorkspacePath = () => workspace.workspacePath;
   const [filePickerOpen, setFilePickerOpen] = createSignal(false);
-  const [ui, setUi] = useAtom(deps.annotatorUiAtom);
+  const [ui, setUi] = useAtom(() => deps.annotatorUiAtom);
   const scanResult = useSelectedAtomValue(() => {
     const path = shellWorkspacePath();
     return path ? deps.roiWorkspaceScanAtom(path) : deps.roiScanIdleAtom;
@@ -114,11 +116,11 @@ export function useAnnotateStateCore<State extends AnnotatorUiState>(
     const path = shellWorkspacePath();
     return path ? deps.annotationLabelsAtom(path) : deps.labelsIdleAtom;
   });
-  const saveLabelsResult = useAtomValue(deps.saveAnnotationLabelsAtom);
-  const runSaveLabels = useAtomSet(deps.saveAnnotationLabelsAtom, {
+  const saveLabelsResult = useAtomValue(() => deps.saveAnnotationLabelsAtom);
+  const runSaveLabels = useAtomSet(() => deps.saveAnnotationLabelsAtom, {
     mode: "promise",
   });
-  const runSaveAnnotation = useAtomSet(deps.saveRoiFrameAnnotationAtom, {
+  const runSaveAnnotation = useAtomSet(() => deps.saveRoiFrameAnnotationAtom, {
     mode: "promise",
   });
 
