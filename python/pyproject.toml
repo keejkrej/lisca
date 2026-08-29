@@ -23,10 +23,7 @@ lisca = "lisca.main:app"
 
 [dependency-groups]
 dev = ["pytest>=8.3.5,<9", "ruff>=0.9", "ty>=0.0.1"]
-label = [
-  "cellpose>=4.1.0",
-  "torch>=2.6,<3",
-]
+label = ["cellpose>=4.1.0", "torch>=2.6,<3"]
 train = [
   "lightning>=2.5,<3",
   "onnx>=1.17,<2",

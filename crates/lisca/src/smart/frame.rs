@@ -26,7 +26,9 @@ pub fn decode_frame_pixels(payload: &FramePayload) -> Result<Vec<f64>, String> {
                 return Err("uint16 frame payload is shorter than width * height".to_string());
             }
             Ok(bytes
-                .chunks_exact(2)
+                .as_chunks::<2>()
+                .0
+                .iter()
                 .take(pixel_count)
                 .map(|chunk| {
                     let value = u16::from_le_bytes([chunk[0], chunk[1]]);
@@ -34,9 +36,9 @@ pub fn decode_frame_pixels(payload: &FramePayload) -> Result<Vec<f64>, String> {
                 })
                 .collect())
         }
-        PixelType::Int8 | PixelType::Int16 | PixelType::Uint32 | PixelType::Int32 => Err(
-            "smart ML only supports uint8 and uint16 frame payloads".to_string(),
-        ),
+        PixelType::Int8 | PixelType::Int16 | PixelType::Uint32 | PixelType::Int32 => {
+            Err("smart ML only supports uint8 and uint16 frame payloads".to_string())
+        }
     }
 }
 

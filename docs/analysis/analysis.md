@@ -163,15 +163,15 @@ analysis/
     killing.rs + killing/
 ```
 
-| Module                                   | Goal                                                         |
-| ---------------------------------------- | ------------------------------------------------------------ |
-| `assays/transfection/segment.rs`         | Mask per ROI frame (Otsu default; optional ONNX U-Net)       |
-| `assays/transfection/segment_onnx.rs`    | Dense fg/bg ONNX backend (`LISCA_PATTERN_SEG_MODEL`)         |
-| `assays/transfection/timeseries.rs`      | Mask-corrected intensity traces → `timeseries/` CSVs         |
-| `assays/transfection/auc.rs`             | Trapezoidal AUC per trace                                    |
-| `assays/transfection/fit.rs`             | Two-exponential kinetic fit                                  |
-| `assays/transfection/plot/`              | PNGs for traces, AUC, fit parameters                         |
-| `assays/killing/`                        | ResNet presence, monotonicity clean, death times, kill curve |
+| Module                                | Goal                                                         |
+| ------------------------------------- | ------------------------------------------------------------ |
+| `assays/transfection/segment.rs`      | Mask per ROI frame (Otsu default; optional ONNX U-Net)       |
+| `assays/transfection/segment_onnx.rs` | Dense fg/bg ONNX backend (`LISCA_PATTERN_SEG_MODEL`)         |
+| `assays/transfection/timeseries.rs`   | Mask-corrected intensity traces → `timeseries/` CSVs         |
+| `assays/transfection/auc.rs`          | Trapezoidal AUC per trace                                    |
+| `assays/transfection/fit.rs`          | Two-exponential kinetic fit                                  |
+| `assays/transfection/plot/`           | PNGs for traces, AUC, fit parameters                         |
+| `assays/killing/`                     | ResNet presence, monotonicity clean, death times, kill curve |
 
 Adding a new assay type: create `assays/<name>.rs` plus `assays/<name>/`, implement `run` (async) and optionally `run_sync`, then register in `assays.rs`.
 
@@ -204,6 +204,7 @@ Summary — full process, tolerances table, and lifecycle in [`parity.md`](./par
   ```
 
   Default Studio/`pipeline` segment remains **Otsu** until you opt into `--backend onnx`.
+
 - Fit uses the two-pass pooled-protein strategy on the **basic translation–degradation model** (onset time \(t*0\), expression rate \(m_0 k*{TL}\), mRNA/protein lifetimes; **no maturation**). Optional `analysis.maxOnsetMinutes` in `assay.json` is **transfection-only** (default **`120`** when omitted for that assay; set `0` to fix onset at 0). Other assays ignore it. Code, CSV, and UI use one set of names: `onset_time`, `expression_rate`, `baseline_intensity` (no alternate aliases).
 - Frame interval (`interval.value` / `interval.unit`) is **general**. Transfection defaults to **10 minutes** when omitted; other assays require an explicit positive interval. Optional `analysis.skipSegment` skips Otsu and uses full-ROI p10 background.
 - Channel indices live under `analysis`, not on sample rows: `analysis.channels.{mask,signal}` (default) and optional `analysis.sampleChannels[]` overrides keyed by `slideChannel` (int). `signal` is a non-empty int list (one timeseries CSV per channel). Samples keep `slideChannel` (int), `name`, `positions` only.

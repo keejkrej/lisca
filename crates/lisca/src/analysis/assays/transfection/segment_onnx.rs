@@ -40,9 +40,7 @@ impl Default for OnnxSegmentConfig {
     }
 }
 
-pub fn resolve_ge_seg_model_dir(
-    explicit: Option<&Path>,
-) -> Result<PathBuf, String> {
+pub fn resolve_ge_seg_model_dir(explicit: Option<&Path>) -> Result<PathBuf, String> {
     if let Some(path) = explicit {
         if path.join("model.onnx").is_file() {
             return Ok(path.to_path_buf());
@@ -140,7 +138,12 @@ impl OnnxSegmenter {
         for (index, frame) in frames.iter().enumerate() {
             originals.push((frame.width, frame.height));
             let gray_u8 = min_max_to_u8(frame);
-            let resized = resize_gray(&gray_u8, frame.width as u32, frame.height as u32, self.image_size);
+            let resized = resize_gray(
+                &gray_u8,
+                frame.width as u32,
+                frame.height as u32,
+                self.image_size,
+            );
             let nchw = to_nchw_normalized_size(&resized, self.image_size);
             let offset = index * 3 * plane;
             batch_data[offset..offset + nchw.len()].copy_from_slice(&nchw);
@@ -150,10 +153,7 @@ impl OnnxSegmenter {
         let array = Array::from_shape_vec(shape, batch_data).map_err(|error| error.to_string())?;
         let input_tensor = Tensor::from_array(array).map_err(|error| error.to_string())?;
         let input = ort::inputs![&self.input_name => input_tensor];
-        let outputs = self
-            .session
-            .run(input)
-            .map_err(|error| error.to_string())?;
+        let outputs = self.session.run(input).map_err(|error| error.to_string())?;
         let logits = if let Some(output) = outputs.get("logits") {
             output.try_extract_array::<f32>()
         } else {
@@ -162,11 +162,16 @@ impl OnnxSegmenter {
         .map_err(|error| error.to_string())?;
 
         let mut masks = Vec::with_capacity(batch_len);
-        for index in 0..batch_len {
-            let (orig_w, orig_h) = originals[index];
+        for (index, &(orig_w, orig_h)) in originals.iter().enumerate() {
             let logit_plane = extract_logit_plane(&logits, index, size)?;
             let prob_u8 = logits_to_mask_u8(&logit_plane, size, self.threshold);
-            let resized = resize_mask_u8(&prob_u8, size as u32, size as u32, orig_w as u32, orig_h as u32);
+            let resized = resize_mask_u8(
+                &prob_u8,
+                size as u32,
+                size as u32,
+                orig_w as u32,
+                orig_h as u32,
+            );
             let mut mask: Vec<bool> = resized.into_iter().map(|value| value > 0).collect();
             if self.fill_holes {
                 mask = fill_binary_holes_2d(&mask, orig_w, orig_h);
@@ -190,7 +195,9 @@ fn min_max_to_u8(frame: &Frame2D) -> Vec<u8> {
             max_value = max_value.max(value);
         }
     }
-    if !min_value.is_finite() || !max_value.is_finite() || (max_value - min_value).abs() <= f64::EPSILON
+    if !min_value.is_finite()
+        || !max_value.is_finite()
+        || (max_value - min_value).abs() <= f64::EPSILON
     {
         return vec![0; data.len()];
     }
@@ -226,8 +233,7 @@ fn to_nchw_normalized_size(gray: &GrayImage, size: u32) -> Vec<f32> {
         let offset = channel * plane_len;
         for (index, value) in gray.as_raw().iter().enumerate() {
             let normalized = *value as f32 / 255.0;
-            output[offset + index] =
-                (normalized - IMAGENET_MEAN[channel]) / IMAGENET_STD[channel];
+            output[offset + index] = (normalized - IMAGENET_MEAN[channel]) / IMAGENET_STD[channel];
         }
     }
     output

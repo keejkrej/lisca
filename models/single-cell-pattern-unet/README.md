@@ -40,10 +40,10 @@ README.md
 
 ## Metrics (TF84 hold-out positions)
 
-| Split | Samples | Best val Dice |
-|-------|--------:|--------------:|
-| train | 41,548 | — |
-| val   | 6,990  | **0.888** (epoch 18) |
+| Split | Samples |        Best val Dice |
+| ----- | ------: | -------------------: |
+| train |  41,548 |                    — |
+| val   |   6,990 | **0.888** (epoch 18) |
 
 Teacher: Cellpose v4 **cpsam**, time stride 20, empty masks dropped
 (`fg < 0.1%`).
@@ -52,18 +52,18 @@ Teacher: Cellpose v4 **cpsam**, time stride 20, empty masks dropped
 
 Matches `export_meta.json`:
 
-1. Min–max normalize BF crop → uint8  
-2. Resize to 128×128  
-3. Grayscale → RGB, ImageNet mean/std  
-4. ONNX `logits` `(N,1,128,128)` → sigmoid ≥ 0.5  
-5. Nearest resize to original H×W, hole fill  
+1. Min–max normalize BF crop → uint8
+2. Resize to 128×128
+3. Grayscale → RGB, ImageNet mean/std
+4. ONNX `logits` `(N,1,128,128)` → sigmoid ≥ 0.5
+5. Nearest resize to original H×W, hole fill
 
 ### ONNX I/O
 
-| | Name | Shape |
-|--|------|-------|
-| input | `pixel_values` | `(N, 3, 128, 128)` float32 |
-| output | `logits` | `(N, 1, 128, 128)` float32 |
+|        | Name           | Shape                      |
+| ------ | -------------- | -------------------------- |
+| input  | `pixel_values` | `(N, 3, 128, 128)` float32 |
+| output | `logits`       | `(N, 1, 128, 128)` float32 |
 
 ## Download / inference (lisca Rust)
 
@@ -96,7 +96,7 @@ uv run lisca dataset train-gene-expression-seg \
 
 ## Env
 
-| Variable | Meaning |
-|----------|---------|
+| Variable                  | Meaning                                                 |
+| ------------------------- | ------------------------------------------------------- |
 | `LISCA_PATTERN_SEG_MODEL` | Directory containing `model.onnx` (or path to the file) |
-| `LISCA_GE_SEG_MODEL` | Legacy alias for the same |
+| `LISCA_GE_SEG_MODEL`      | Legacy alias for the same                               |
