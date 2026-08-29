@@ -1,9 +1,18 @@
-use std::io;
-use std::path::{Path, PathBuf};
-use std::process::{Child, Command};
-use std::sync::Mutex;
-use std::time::{Duration, Instant};
+use std::{
+    collections::BTreeMap,
+    io,
+    path::{Path, PathBuf},
+};
+
+use axum::{
+    body::{to_bytes, Body},
+    http::{HeaderName, HeaderValue, Method, Request, Uri},
+    Router,
+};
+use base64::{engine::general_purpose::STANDARD as BASE64, Engine as _};
+use serde::{Deserialize, Serialize};
 use tauri::{Manager, WebviewUrl, WebviewWindowBuilder};
+use tower::ServiceExt;
 
 /// Product-specific configuration for a Lisca Tauri desktop shell.
 #[derive(Clone, Debug)]
@@ -12,94 +21,127 @@ pub struct ProductConfig {
     pub product: &'static str,
     /// Human-readable window title.
     pub product_name: &'static str,
-    /// Public port the web UI expects the server to listen on (packaged mode).
-    pub port: u16,
-    /// Backend port used in dev mode (Vite dev server proxies here).
-    pub backend_port: u16,
-    /// Name of the server binary (without extension).
-    pub server_binary: &'static str,
-    /// Cargo package/workspace member name for the server crate.
-    pub cargo_package: &'static str,
 }
 
-/// Run the Tauri desktop shell for a product.
-pub fn run(config: ProductConfig, context: tauri::Context) {
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct IpcRequest {
+    method: String,
+    uri: String,
+    #[serde(default)]
+    headers: BTreeMap<String, String>,
+    body: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct IpcResponse {
+    status: u16,
+    headers: BTreeMap<String, String>,
+    body: Option<String>,
+    body_base64: Option<String>,
+}
+
+#[derive(Clone)]
+struct IpcBackend {
+    router: Router,
+}
+
+/// Run a Tauri shell with the product's Axum application embedded in-process.
+///
+/// Hosted builds run the same router through the standalone server binary. Desktop
+/// builds dispatch renderer requests to it through a Tauri command, without a TCP
+/// listener or a copied sidecar executable.
+pub fn run<F>(config: ProductConfig, context: tauri::Context, backend_factory: F)
+where
+    F: FnOnce() -> Router + Send + 'static,
+{
     tauri::Builder::default()
+        .invoke_handler(tauri::generate_handler![lisca_request])
         .setup(move |app| {
-            let dev_url = std::env::var("VITE_DEV_SERVER_URL").ok();
-            let is_dev = dev_url.is_some();
-            let rust_port = if is_dev {
-                config.backend_port
-            } else {
-                config.port
-            };
+            if config.product == "studio" {
+                if let Some(model) = resolve_kill_model_path(app) {
+                    std::env::set_var("LISCA_KILL_MODEL", model);
+                }
+            }
 
-            let server_path = resolve_server_path(app, &config, is_dev)?;
-            let kill_model = if !is_dev && config.product == "studio" {
-                resolve_kill_model_path(app)
-            } else {
-                None
-            };
-            let child = spawn_server(&server_path, rust_port, &config, kill_model.as_deref())?;
-            app.manage(Mutex::new(Some(child)));
-
-            create_window(app, &config, dev_url.as_deref())?;
+            let router = tauri::async_runtime::block_on(async move { backend_factory() });
+            app.manage(IpcBackend { router });
+            create_window(
+                app,
+                &config,
+                std::env::var("VITE_DEV_SERVER_URL").ok().as_deref(),
+            )?;
             Ok(())
         })
         .build(context)
         .expect("failed to build Tauri application")
-        .run(|app_handle, event| {
-            if let tauri::RunEvent::Exit = event {
-                stop_server(app_handle);
-            }
-        });
+        .run(|_, _| {});
 }
 
-fn resolve_server_path<R: tauri::Runtime, M: Manager<R>>(
-    app: &M,
-    config: &ProductConfig,
-    is_dev: bool,
-) -> io::Result<PathBuf> {
-    let binary_name = if cfg!(target_os = "windows") {
-        format!("{}.exe", config.server_binary)
-    } else {
-        config.server_binary.to_string()
-    };
+#[tauri::command]
+async fn lisca_request(
+    backend: tauri::State<'_, IpcBackend>,
+    request: IpcRequest,
+) -> Result<IpcResponse, String> {
+    dispatch_request(backend.router.clone(), request).await
+}
 
-    if is_dev {
-        let current_dir = std::env::current_dir()?;
-        let repo_root = current_dir.join("../../../");
-        let candidates = [
-            repo_root.join("target/debug").join(&binary_name),
-            repo_root.join("target/release").join(&binary_name),
-        ];
-        for candidate in candidates.iter() {
-            if candidate.exists() {
-                return Ok(candidate.clone());
-            }
-        }
-        // No pre-built binary: fall back to `cargo run` so dev can still start.
-        return Ok(PathBuf::from("cargo"));
+async fn dispatch_request(router: Router, request: IpcRequest) -> Result<IpcResponse, String> {
+    let method = Method::from_bytes(request.method.as_bytes())
+        .map_err(|error| format!("invalid IPC request method: {error}"))?;
+    let uri = request
+        .uri
+        .parse::<Uri>()
+        .map_err(|error| format!("invalid IPC request URI: {error}"))?;
+    let mut builder = Request::builder().method(method).uri(uri);
+    let headers = builder
+        .headers_mut()
+        .ok_or_else(|| "failed to construct IPC request headers".to_string())?;
+    for (name, value) in request.headers {
+        let name = HeaderName::from_bytes(name.as_bytes())
+            .map_err(|error| format!("invalid IPC request header name: {error}"))?;
+        let value = HeaderValue::from_str(&value)
+            .map_err(|error| format!("invalid IPC request header value: {error}"))?;
+        headers.insert(name, value);
     }
+    let request = builder
+        .body(Body::from(request.body.unwrap_or_default()))
+        .map_err(|error| format!("failed to build IPC request: {error}"))?;
 
-    let candidates = bundled_server_candidates(app, &binary_name)?;
-    for candidate in &candidates {
-        if candidate.exists() {
-            return Ok(candidate.clone());
-        }
-    }
-    let candidate_list = candidates
+    let response = router
+        .oneshot(request)
+        .await
+        .map_err(|error| format!("embedded backend request failed: {error}"))?;
+    let status = response.status().as_u16();
+    let headers = response
+        .headers()
         .iter()
-        .map(|p| p.display().to_string())
-        .collect::<Vec<_>>()
-        .join(", ");
-    Err(io::Error::new(
-        io::ErrorKind::NotFound,
-        format!(
-            "bundled server binary '{}' not found; tried: {}",
-            binary_name, candidate_list
-        ),
-    ))
+        .filter_map(|(name, value)| {
+            value
+                .to_str()
+                .ok()
+                .map(|value| (name.as_str().to_string(), value.to_string()))
+        })
+        .collect();
+    let bytes = to_bytes(response.into_body(), usize::MAX)
+        .await
+        .map_err(|error| format!("failed to read embedded backend response: {error}"))?;
+
+    match String::from_utf8(bytes.to_vec()) {
+        Ok(body) => Ok(IpcResponse {
+            status,
+            headers,
+            body: Some(body),
+            body_base64: None,
+        }),
+        Err(error) => Ok(IpcResponse {
+            status,
+            headers,
+            body: None,
+            body_base64: Some(BASE64.encode(error.into_bytes())),
+        }),
+    }
 }
 
 fn bundled_resource_candidates<R: tauri::Runtime, M: Manager<R>>(
@@ -109,14 +151,12 @@ fn bundled_resource_candidates<R: tauri::Runtime, M: Manager<R>>(
     let relative = relative.as_ref();
     let mut candidates = Vec::new();
 
-    // Tauri maps `resources/` into the bundle resource dir (deb: /usr/lib/<product>/).
     if let Ok(resource_dir) = app.path().resource_dir() {
         candidates.push(resource_dir.join(relative));
     }
 
     let exe = std::env::current_exe()?;
     if let Some(exe_dir) = exe.parent() {
-        // Cargo output and some bundle layouts place resources next to the executable.
         candidates.push(exe_dir.join(relative));
         candidates.push(exe_dir.join("resources").join(relative));
     }
@@ -124,67 +164,12 @@ fn bundled_resource_candidates<R: tauri::Runtime, M: Manager<R>>(
     Ok(candidates)
 }
 
-fn bundled_server_candidates<R: tauri::Runtime, M: Manager<R>>(
-    app: &M,
-    binary_name: &str,
-) -> io::Result<Vec<PathBuf>> {
-    bundled_resource_candidates(app, Path::new("server").join(binary_name))
-}
-
 fn resolve_kill_model_path<R: tauri::Runtime, M: Manager<R>>(app: &M) -> Option<PathBuf> {
     let relative = Path::new("models").join("killing-assay-resnet18");
-    let Ok(candidates) = bundled_resource_candidates(app, &relative) else {
-        return None;
-    };
-    candidates
+    bundled_resource_candidates(app, &relative)
+        .ok()?
         .into_iter()
         .find(|path| path.join("model.onnx").is_file())
-}
-
-fn spawn_server(
-    path: &Path,
-    port: u16,
-    config: &ProductConfig,
-    kill_model: Option<&Path>,
-) -> io::Result<Child> {
-    let mut command = if path.as_os_str() == "cargo" {
-        let mut cmd = Command::new("cargo");
-        cmd.args(["run", "-p", config.cargo_package, "--quiet"]);
-        // `cargo run` needs the workspace root as CWD to resolve `-p`.
-        let current_dir = std::env::current_dir()?;
-        cmd.current_dir(current_dir.join("../../../"));
-        cmd
-    } else {
-        Command::new(path)
-    };
-
-    command.env("PORT", port.to_string());
-    if let Some(model) = kill_model {
-        command.env("LISCA_KILL_MODEL", model);
-    }
-    command.stdout(std::process::Stdio::inherit());
-    command.stderr(std::process::Stdio::inherit());
-
-    let child = command.spawn()?;
-    wait_for_port(port, Duration::from_secs(120))?;
-    Ok(child)
-}
-
-fn wait_for_port(port: u16, timeout: Duration) -> io::Result<()> {
-    let address = format!("127.0.0.1:{}", port);
-    let start = Instant::now();
-    loop {
-        if std::net::TcpStream::connect(&address).is_ok() {
-            return Ok(());
-        }
-        if start.elapsed() >= timeout {
-            return Err(io::Error::new(
-                io::ErrorKind::TimedOut,
-                format!("server did not become ready on {} within {:?}", address, timeout),
-            ));
-        }
-        std::thread::sleep(Duration::from_millis(250));
-    }
 }
 
 fn create_window<R: tauri::Runtime, M: Manager<R>>(
@@ -193,13 +178,19 @@ fn create_window<R: tauri::Runtime, M: Manager<R>>(
     dev_url: Option<&str>,
 ) -> tauri::Result<()> {
     let init_script = format!(
-        "window.liscaDesktop = {{ product: \"{}\" }};",
+        r#"window.liscaDesktop = Object.freeze({{
+            product: {:?},
+            request: (request) => window.__TAURI_INTERNALS__.invoke("lisca_request", {{ request }})
+        }});"#,
         config.product
     );
 
     let url = if let Some(url) = dev_url {
-        WebviewUrl::External(url.parse().map_err(|e| {
-            io::Error::new(io::ErrorKind::InvalidInput, format!("invalid dev URL: {}", e))
+        WebviewUrl::External(url.parse().map_err(|error| {
+            io::Error::new(
+                io::ErrorKind::InvalidInput,
+                format!("invalid dev URL: {error}"),
+            )
         })?)
     } else {
         WebviewUrl::App("index.html".parse().expect("index.html is a valid app URL"))
@@ -214,12 +205,64 @@ fn create_window<R: tauri::Runtime, M: Manager<R>>(
     Ok(())
 }
 
-fn stop_server<R: tauri::Runtime>(app_handle: &tauri::AppHandle<R>) {
-    if let Some(state) = app_handle.try_state::<Mutex<Option<Child>>>() {
-        if let Ok(mut guard) = state.lock() {
-            if let Some(mut child) = guard.take() {
-                let _ = child.kill();
-            }
-        }
+#[cfg(test)]
+mod tests {
+    use axum::{
+        body::Body,
+        http::StatusCode,
+        response::Response,
+        routing::{get, post},
+        Json,
+    };
+    use serde_json::json;
+
+    use super::*;
+
+    #[tokio::test]
+    async fn dispatches_json_requests_through_the_embedded_router() {
+        let router = Router::new().route(
+            "/echo",
+            post(|Json(value): Json<serde_json::Value>| async move { Json(value) }),
+        );
+        let response = dispatch_request(
+            router,
+            IpcRequest {
+                method: "POST".to_string(),
+                uri: "/echo".to_string(),
+                headers: BTreeMap::from([(
+                    "content-type".to_string(),
+                    "application/json".to_string(),
+                )]),
+                body: Some(json!({ "transport": "ipc" }).to_string()),
+            },
+        )
+        .await
+        .unwrap();
+
+        assert_eq!(response.status, StatusCode::OK.as_u16());
+        assert_eq!(response.body.as_deref(), Some(r#"{"transport":"ipc"}"#));
+        assert!(response.body_base64.is_none());
+    }
+
+    #[tokio::test]
+    async fn base64_encodes_binary_responses() {
+        let router = Router::new().route(
+            "/binary",
+            get(|| async { Response::new(Body::from(vec![0, 159, 146, 150])) }),
+        );
+        let response = dispatch_request(
+            router,
+            IpcRequest {
+                method: "GET".to_string(),
+                uri: "/binary".to_string(),
+                headers: BTreeMap::new(),
+                body: None,
+            },
+        )
+        .await
+        .unwrap();
+
+        assert!(response.body.is_none());
+        assert_eq!(response.body_base64.as_deref(), Some("AJ+Slg=="));
     }
 }

@@ -4,7 +4,7 @@ version.workspace = true
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
-description = "WebSocket server for the Studio desktop/web stack."
+description = "Transport-neutral Rust backend for Studio hosted and desktop builds."
 
 [lints]
 workspace = true

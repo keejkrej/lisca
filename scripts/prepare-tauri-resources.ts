@@ -3,11 +3,10 @@
  * Create the ignored Tauri resource staging directory before `cargo check`.
  *
  * Tauri validates `bundle.resources` while compiling each desktop crate, even
- * though the server and brand resources are only staged by `package-tauri.ts`
+ * though brand assets and Studio's model are only staged by `package-tauri.ts`
  * for a release build. Keeping the directory ignored avoids committing empty
- * packaging state; the trade-off is that desktop typecheck creates one empty,
- * ignored directory before Cargo runs. Release packaging still replaces the
- * directory with the real resources.
+ * packaging state; desktop typecheck creates one empty, ignored directory before
+ * Cargo runs. Release packaging still replaces it with the real resources.
  */
 import { mkdirSync } from "node:fs";
 import { resolve } from "node:path";

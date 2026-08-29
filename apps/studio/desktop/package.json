@@ -3,14 +3,13 @@
   "version": "0.3.2",
   "private": true,
   "scripts": {
-    "build": "node --experimental-strip-types ../../../scripts/build-tauri-frontend.ts studio && vp run --filter @lisca/studio-server build",
+    "build": "node --experimental-strip-types ../../../scripts/build-tauri-frontend.ts studio",
     "dev": "tauri dev",
     "dist": "node --experimental-strip-types ../../../scripts/package-tauri.ts studio",
     "typecheck": "vp exec node --experimental-strip-types ../../../scripts/prepare-tauri-resources.ts studio && cargo check -p studio-tauri"
   },
   "dependencies": {},
   "devDependencies": {
-    "@lisca/studio-server": "workspace:*",
     "@lisca/studio-web": "workspace:*",
     "@tauri-apps/cli": "catalog:"
   }

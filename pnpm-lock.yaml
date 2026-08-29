@@ -146,9 +146,6 @@ importers:
 
   apps/aligner/desktop:
     devDependencies:
-      '@lisca/aligner-server':
-        specifier: workspace:*
-        version: link:../server
       '@lisca/aligner-web':
         specifier: workspace:*
         version: link:../web
@@ -249,9 +246,6 @@ importers:
 
   apps/annotator/desktop:
     devDependencies:
-      '@lisca/annotator-server':
-        specifier: workspace:*
-        version: link:../server
       '@lisca/annotator-web':
         specifier: workspace:*
         version: link:../web
@@ -404,9 +398,6 @@ importers:
 
   apps/studio/desktop:
     devDependencies:
-      '@lisca/studio-server':
-        specifier: workspace:*
-        version: link:../server
       '@lisca/studio-web':
         specifier: workspace:*
         version: link:../web

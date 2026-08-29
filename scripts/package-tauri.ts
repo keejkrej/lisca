@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 /**
- * Stage web + Rust server artifacts and run Tauri build for a Lisca desktop app.
+ * Build the web frontend and the Tauri app with its embedded Rust backend.
  *
  * Usage:
  *   vp run dist:aligner
  *   vp exec node --experimental-strip-types scripts/package-tauri.ts aligner
  */
-import { chmodSync, copyFileSync, cpSync, existsSync, mkdirSync, rmSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, rmSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { DESKTOP_PRODUCTS } from "./lisca-desktop-products.cjs";
 import { runVpSync } from "./node-run.ts";
@@ -30,22 +30,9 @@ Example:
 function stageArtifacts(product: LiscaProduct, cfg: DesktopProductConfig): string {
   const desktopDir = join(root, "apps", product, "desktop");
   const resourcesDir = join(desktopDir, "src-tauri", "resources");
-  const exeName = process.platform === "win32" ? `${cfg.serverBinary}.exe` : cfg.serverBinary;
-  const serverSrc = join(root, "target", "release", exeName);
-  const serverDest = join(resourcesDir, "server", exeName);
 
   rmSync(resourcesDir, { recursive: true, force: true });
-  mkdirSync(join(resourcesDir, "server"), { recursive: true });
-
-  if (!existsSync(serverSrc)) {
-    console.error(`Missing server binary at ${serverSrc}. Run the server build first.`);
-    process.exit(1);
-  }
-
-  copyFileSync(serverSrc, serverDest);
-  if (process.platform !== "win32") {
-    chmodSync(serverDest, 0o755);
-  }
+  mkdirSync(resourcesDir, { recursive: true });
 
   const brandSrc = join(root, "assets", "brand");
   if (!existsSync(brandSrc)) {
@@ -89,8 +76,6 @@ runVpSync(["run", "--filter", cfg.webPkg, "build"], {
   cwd: root,
   env: { ...process.env, VITE_DESKTOP: "1" },
 });
-
-runVpSync(["run", "--filter", cfg.serverPkg, "build"], { cwd: root });
 
 const desktopDir = stageArtifacts(product, cfg);
 

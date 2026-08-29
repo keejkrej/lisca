@@ -35,6 +35,10 @@
       "types": "./src/infra/client-error.ts",
       "import": "./src/infra/client-error.ts"
     },
+    "./desktop": {
+      "types": "./src/infra/desktop.ts",
+      "import": "./src/infra/desktop.ts"
+    },
     "./crop-status": {
       "types": "./src/session/crop-status.ts",
       "import": "./src/session/crop-status.ts"

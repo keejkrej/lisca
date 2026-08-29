@@ -5,10 +5,15 @@ edition = "2021"
 license = "MIT OR Apache-2.0"
 
 [dependencies]
-tauri = { workspace = true }
+axum = { workspace = true }
+base64 = { workspace = true }
 serde = { workspace = true }
-serde_json = { workspace = true }
+tauri = { workspace = true }
 tokio = { workspace = true }
+tower = { workspace = true }
+
+[dev-dependencies]
+serde_json = { workspace = true }
 
 [features]
 default = []

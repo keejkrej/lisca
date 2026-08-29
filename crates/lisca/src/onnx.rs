@@ -17,6 +17,7 @@ pub(crate) fn workspace_models_dir() -> PathBuf {
 ///
 /// Desktop installers place the server at `<resource_dir>/server/<bin>` and
 /// Studio's killing ONNX at `<resource_dir>/models/killing-assay-resnet18`.
+#[cfg(any(feature = "studio", test))]
 pub(crate) fn models_dirs_near_executable(exe: &Path) -> Vec<PathBuf> {
     let mut dirs = Vec::new();
     if let Some(exe_dir) = exe.parent() {
@@ -29,6 +30,7 @@ pub(crate) fn models_dirs_near_executable(exe: &Path) -> Vec<PathBuf> {
     dirs
 }
 
+#[cfg(feature = "studio")]
 pub(crate) fn bundled_models_dirs() -> Vec<PathBuf> {
     std::env::current_exe()
         .map(|exe| models_dirs_near_executable(&exe))

@@ -15,6 +15,46 @@ body {
   font-family: var(--font-sans);
 }
 
+/* Match the desktop webview's overlay scrollbar treatment in hosted browsers. */
+@supports not selector(::-webkit-scrollbar) {
+  * {
+    scrollbar-color: transparent transparent;
+    scrollbar-width: thin;
+  }
+
+  *[data-lisca-scroll-active] {
+    scrollbar-color: color-mix(in oklab, var(--muted-foreground) 45%, transparent) transparent;
+  }
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-track,
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  min-width: 28px;
+  min-height: 28px;
+  border: 3px solid transparent;
+  border-radius: 999px;
+  background-clip: content-box;
+  background-color: transparent;
+}
+
+*[data-lisca-scroll-active]::-webkit-scrollbar-thumb {
+  background-color: color-mix(in oklab, var(--muted-foreground) 45%, transparent);
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  border-width: 1px;
+  background-color: color-mix(in oklab, var(--muted-foreground) 65%, transparent);
+}
+
 h1,
 h2,
 h3,

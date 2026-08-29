@@ -3,14 +3,13 @@
   "version": "0.3.2",
   "private": true,
   "scripts": {
-    "build": "node --experimental-strip-types ../../../scripts/build-tauri-frontend.ts aligner && vp run --filter @lisca/aligner-server build",
+    "build": "node --experimental-strip-types ../../../scripts/build-tauri-frontend.ts aligner",
     "dev": "tauri dev",
     "dist": "node --experimental-strip-types ../../../scripts/package-tauri.ts aligner",
     "typecheck": "vp exec node --experimental-strip-types ../../../scripts/prepare-tauri-resources.ts aligner && cargo check -p aligner-tauri"
   },
   "dependencies": {},
   "devDependencies": {
-    "@lisca/aligner-server": "workspace:*",
     "@lisca/aligner-web": "workspace:*",
     "@tauri-apps/cli": "catalog:"
   }

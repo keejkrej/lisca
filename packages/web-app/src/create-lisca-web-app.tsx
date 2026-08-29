@@ -2,6 +2,40 @@ import { ShellServerProvider, ShellThemeProvider, ShellWorkspaceProvider } from 
 import { type JSX, type Component } from "solid-js";
 import { render } from "solid-js/web";
 
+const scrollIdleDelayMs = 700;
+const scrollIdleTimers = new WeakMap<HTMLElement, number>();
+let overlayScrollbarStateInstalled = false;
+
+function installOverlayScrollbarState(): void {
+  if (overlayScrollbarStateInstalled) return;
+  overlayScrollbarStateInstalled = true;
+
+  document.addEventListener(
+    "scroll",
+    (event) => {
+      const target =
+        event.target === document
+          ? document.scrollingElement
+          : event.target instanceof HTMLElement
+            ? event.target
+            : null;
+      if (!(target instanceof HTMLElement)) return;
+
+      target.dataset.liscaScrollActive = "";
+      const previousTimer = scrollIdleTimers.get(target);
+      if (previousTimer !== undefined) window.clearTimeout(previousTimer);
+      scrollIdleTimers.set(
+        target,
+        window.setTimeout(() => {
+          delete target.dataset.liscaScrollActive;
+          scrollIdleTimers.delete(target);
+        }, scrollIdleDelayMs),
+      );
+    },
+    { capture: true, passive: true },
+  );
+}
+
 export type LiscaWebAppConfig = {
   /** App-owned root component. */
   App: Component;
@@ -29,6 +63,8 @@ export function createLiscaWebApp(config: LiscaWebAppConfig): void {
   if (!mount) {
     throw new Error(`Lisca web app mount node "#${rootElementId}" was not found`);
   }
+
+  installOverlayScrollbarState();
 
   render(
     () => (

@@ -3,14 +3,13 @@
   "version": "0.3.2",
   "private": true,
   "scripts": {
-    "build": "node --experimental-strip-types ../../../scripts/build-tauri-frontend.ts annotator && vp run --filter @lisca/annotator-server build",
+    "build": "node --experimental-strip-types ../../../scripts/build-tauri-frontend.ts annotator",
     "dev": "tauri dev",
     "dist": "node --experimental-strip-types ../../../scripts/package-tauri.ts annotator",
     "typecheck": "vp exec node --experimental-strip-types ../../../scripts/prepare-tauri-resources.ts annotator && cargo check -p annotator-tauri"
   },
   "dependencies": {},
   "devDependencies": {
-    "@lisca/annotator-server": "workspace:*",
     "@lisca/annotator-web": "workspace:*",
     "@tauri-apps/cli": "catalog:"
   }

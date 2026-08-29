@@ -1,7 +1,8 @@
 import { Button, Spinner } from "@lisca/ui/components";
 import { AppShell } from "@lisca/ui/shell";
 import { ResultPlotGallery } from "./result-panels-grid";
-import { createEffect, createMemo, createSignal } from "solid-js";
+import { createEffect, createMemo, createResource, createSignal } from "solid-js";
+import { liscaDesktopBridge, resolveLiscaAssetUrl } from "@lisca/client/desktop";
 import { runClientEffect } from "@lisca/client/runtime";
 import { resolveStudioHttpBaseUrl, studioClient, toErrorMessage } from "../api/studio-port";
 import { StudioLeft } from "../components/studio-left";
@@ -37,11 +38,24 @@ export default function ResultPage() {
   let exportParametersEl: HTMLDivElement | undefined;
   const analysisResultFiles = () => resultState.analysisResultFiles;
   const assayKind = createMemo(() => inferResultAssayKind(analysisResultFiles()));
-  const allPlots = createMemo(() =>
+  const isDesktop = liscaDesktopBridge() !== null;
+  const plotsWithUrls = createMemo(() =>
     collectResultPlots(analysisResultFiles(), assayKind()).map((plot) =>
       withPlotSrc(plot, resolveStudioHttpBaseUrl()),
     ),
   );
+  const [desktopPlots] = createResource(
+    () => (isDesktop ? plotsWithUrls() : null),
+    async (plots) =>
+      Promise.all(
+        plots.map(async (plot) =>
+          plot.src?.startsWith("http")
+            ? { ...plot, src: await resolveLiscaAssetUrl(plot.src) }
+            : plot,
+        ),
+      ),
+  );
+  const allPlots = () => (isDesktop ? (desktopPlots() ?? []) : plotsWithUrls());
   const sectionPlots = createMemo(() => filterResultPlotsBySection(allPlots(), activeSection()));
   const timeseriesPlots = createMemo(() => filterResultPlotsBySection(allPlots(), "timeseries"));
   const parameterPlots = createMemo(() => filterResultPlotsBySection(allPlots(), "parameters"));

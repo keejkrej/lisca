@@ -6,8 +6,8 @@ license = "MIT OR Apache-2.0"
 
 [dependencies]
 lisca-tauri = { path = "../../../../crates/lisca-tauri" }
+studio-server = { path = "../../server" }
 tauri = { workspace = true }
-serde_json = { workspace = true }
 
 [build-dependencies]
 tauri-build = { workspace = true }

@@ -3,6 +3,7 @@ import { liscaApi } from "@lisca/contracts/http-api";
 import { Effect, Layer } from "effect";
 
 import { toClientError } from "./client-error";
+import { createDesktopFetch, liscaDesktopBridge } from "./desktop";
 import type { ClientEffect } from "./runtime";
 
 export type ApiClientDeps = {
@@ -12,8 +13,12 @@ export type ApiClientDeps = {
 };
 
 function fetchLayerFor(deps: ApiClientDeps) {
-  return deps.fetch
-    ? FetchHttpClient.layer.pipe(Layer.provide(Layer.succeed(FetchHttpClient.Fetch, deps.fetch)))
+  const desktopBridge = liscaDesktopBridge();
+  const transportFetch = deps.fetch ?? (desktopBridge ? createDesktopFetch(desktopBridge) : null);
+  return transportFetch
+    ? FetchHttpClient.layer.pipe(
+        Layer.provide(Layer.succeed(FetchHttpClient.Fetch, transportFetch)),
+      )
     : FetchHttpClient.layer;
 }
 
