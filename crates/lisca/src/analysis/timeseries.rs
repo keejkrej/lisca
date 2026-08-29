@@ -45,7 +45,9 @@ pub(crate) fn discover_timeseries_csvs(timeseries_dir: &Path) -> Result<Vec<Path
                 && path
                     .file_stem()
                     .and_then(|stem| stem.to_str())
-                    .is_some_and(|stem| stem.starts_with("ch") && stem[2..].chars().all(|c| c.is_ascii_digit()))
+                    .is_some_and(|stem| {
+                        stem.starts_with("ch") && stem[2..].chars().all(|c| c.is_ascii_digit())
+                    })
             {
                 csvs.push(path);
             }
@@ -53,11 +55,16 @@ pub(crate) fn discover_timeseries_csvs(timeseries_dir: &Path) -> Result<Vec<Path
     }
     csvs.sort_by(|left, right| {
         (
-            left.parent().and_then(|p| p.file_name()).map(|n| n.to_owned()),
+            left.parent()
+                .and_then(|p| p.file_name())
+                .map(|n| n.to_owned()),
             left.file_name().map(|n| n.to_owned()),
         )
             .cmp(&(
-                right.parent().and_then(|p| p.file_name()).map(|n| n.to_owned()),
+                right
+                    .parent()
+                    .and_then(|p| p.file_name())
+                    .map(|n| n.to_owned()),
                 right.file_name().map(|n| n.to_owned()),
             ))
     });
@@ -89,7 +96,12 @@ pub fn parse_timeseries_path(path: &Path) -> Result<(u32, u32), String> {
         .parent()
         .and_then(|parent| parent.file_name())
         .and_then(|name| name.to_str())
-        .ok_or_else(|| format!("Expected timeseries path Pos{{n}}/ch{{n}}.csv, got {}", path.display()))?;
+        .ok_or_else(|| {
+            format!(
+                "Expected timeseries path Pos{{n}}/ch{{n}}.csv, got {}",
+                path.display()
+            )
+        })?;
     let position = parent
         .strip_prefix("Pos")
         .and_then(|rest| rest.parse::<u32>().ok())

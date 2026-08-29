@@ -8,9 +8,9 @@ use crate::analysis::array::Frame2D;
 const REFLECT_BORDER: BorderMode<f64> = BorderMode::Reflect;
 const GAUSSIAN_TRUNCATE: usize = 4;
 
-pub fn variation_filter_2d(frame: &Frame2D, radius: u32) -> Frame2D {
+pub fn variation_filter_2d(frame: Frame2D, radius: u32) -> Frame2D {
     if radius == 0 {
-        return frame.clone();
+        return frame;
     }
     let mean = uniform_mean_2d(frame.as_view(), radius);
     let squared = frame.as_view().mapv(|value| value * value);
@@ -24,12 +24,9 @@ fn uniform_mean_2d(image: ndarray::ArrayView2<f64>, radius: u32) -> Array2<f64> 
     uniform_filter(&image, size, REFLECT_BORDER)
 }
 
-pub fn gaussian_filter_2d(frame: &Frame2D, sigma: f64) -> Frame2D {
-    if sigma < 0.0 {
-        return frame.clone();
-    }
-    if sigma == 0.0 {
-        return frame.clone();
+pub fn gaussian_filter_2d(frame: Frame2D, sigma: f64) -> Frame2D {
+    if sigma <= 0.0 {
+        return frame;
     }
     let filtered = gaussian_filter(
         &frame.as_view(),
@@ -56,21 +53,22 @@ pub fn otsu_threshold(frame: &Frame2D, _bins: usize) -> f64 {
 }
 
 fn frame_to_gray_u8(frame: &Frame2D) -> (GrayImage, f64, f64) {
-    let finite: Vec<f64> = frame
+    let (min_value, max_value) = frame
         .as_slice()
         .iter()
         .copied()
         .filter(|value| value.is_finite())
-        .collect();
-    if finite.is_empty() {
+        .fold(
+            (f64::INFINITY, f64::NEG_INFINITY),
+            |(min_value, max_value), value| (min_value.min(value), max_value.max(value)),
+        );
+    if !min_value.is_finite() {
         return (
             GrayImage::new(frame.width as u32, frame.height as u32),
             0.0,
             1.0,
         );
     }
-    let min_value = finite.iter().copied().fold(f64::INFINITY, f64::min);
-    let max_value = finite.iter().copied().fold(f64::NEG_INFINITY, f64::max);
     if (max_value - min_value).abs() <= f64::EPSILON {
         return (
             GrayImage::new(frame.width as u32, frame.height as u32),
@@ -97,30 +95,29 @@ fn frame_to_gray_u8(frame: &Frame2D) -> (GrayImage, f64, f64) {
 
 /// Fill interior background holes using exterior flood-fill (scipy `binary_fill_holes` parity).
 pub fn fill_binary_holes_2d(mask: &[bool], width: usize, height: usize) -> Vec<bool> {
-    let background = mask.iter().map(|value| !*value).collect::<Vec<_>>();
     let mut exterior = vec![false; width * height];
     let mut stack = Vec::new();
 
     for x in 0..width {
-        if background[x] {
+        if !mask[x] {
             stack.push((0, x));
         }
-        if height > 1 && background[(height - 1) * width + x] {
+        if height > 1 && !mask[(height - 1) * width + x] {
             stack.push((height - 1, x));
         }
     }
     for y in 0..height {
-        if background[y * width] {
+        if !mask[y * width] {
             stack.push((y, 0));
         }
-        if width > 1 && background[y * width + width - 1] {
+        if width > 1 && !mask[y * width + width - 1] {
             stack.push((y, width - 1));
         }
     }
 
     while let Some((y, x)) = stack.pop() {
         let index = y * width + x;
-        if exterior[index] || !background[index] {
+        if exterior[index] || mask[index] {
             continue;
         }
         exterior[index] = true;
@@ -139,26 +136,22 @@ pub fn fill_binary_holes_2d(mask: &[bool], width: usize, height: usize) -> Vec<b
     }
 
     mask.iter()
-        .zip(background.iter())
         .zip(exterior.iter())
-        .map(|((mask, bg), ext)| *mask || (*bg && !*ext))
+        .map(|(mask, exterior)| *mask || !*exterior)
         .collect()
 }
 
-pub fn segment_frame(
-    frame: &Frame2D,
-    variation_radius: u32,
-    gaussian_sigma: f64,
-) -> Vec<bool> {
+pub fn segment_frame(frame: Frame2D, variation_radius: u32, gaussian_sigma: f64) -> Vec<bool> {
+    let (width, height) = (frame.width, frame.height);
     let varied = variation_filter_2d(frame, variation_radius);
-    let smoothed = gaussian_filter_2d(&varied, gaussian_sigma);
+    let smoothed = gaussian_filter_2d(varied, gaussian_sigma);
     let threshold = otsu_threshold(&smoothed, 256);
     let raw_mask = smoothed
         .as_slice()
         .iter()
         .map(|value| *value > threshold)
         .collect::<Vec<_>>();
-    fill_binary_holes_2d(&raw_mask, frame.width, frame.height)
+    fill_binary_holes_2d(&raw_mask, width, height)
 }
 
 #[cfg(test)]
@@ -169,7 +162,7 @@ mod tests {
         let mut data = vec![0.0; width * height];
         for y in 0..height {
             for x in 0..width {
-                let value = if ((x / block) + (y / block)) % 2 == 0 {
+                let value = if ((x / block) + (y / block)).is_multiple_of(2) {
                     10.0
                 } else {
                     200.0
@@ -191,8 +184,10 @@ mod tests {
         }
         let frame = Frame2D::from_vec(data, 10, 10).unwrap();
         let threshold = otsu_threshold(&frame, 256);
-        assert!(threshold >= 10.0 && threshold <= 200.0);
-        assert!((threshold - 10.0).abs() > f64::EPSILON || (threshold - 200.0).abs() > f64::EPSILON);
+        assert!((10.0..=200.0).contains(&threshold));
+        assert!(
+            (threshold - 10.0).abs() > f64::EPSILON || (threshold - 200.0).abs() > f64::EPSILON
+        );
     }
 
     #[test]
@@ -215,7 +210,7 @@ mod tests {
     #[test]
     fn variation_filter_reduces_checkerboard_contrast() {
         let frame = checkerboard_frame(16, 16, 2);
-        let filtered = variation_filter_2d(&frame, 2);
+        let filtered = variation_filter_2d(frame, 2);
         let center = filtered.as_slice()[8 * 16 + 8];
         assert!(center > 0.0);
         assert!(center < 95.0);
@@ -226,7 +221,7 @@ mod tests {
         let mut data = vec![0.0; 25];
         data[12] = 100.0;
         let frame = Frame2D::from_vec(data, 5, 5).unwrap();
-        let filtered = gaussian_filter_2d(&frame, 1.0);
+        let filtered = gaussian_filter_2d(frame, 1.0);
         let peak = filtered.as_slice().iter().copied().fold(0.0f64, f64::max);
         assert!(peak < 100.0);
         assert!(peak > 1.0);
@@ -241,7 +236,7 @@ mod tests {
             }
         }
         let frame = Frame2D::from_vec(data, 20, 20).unwrap();
-        let mask = segment_frame(&frame, 2, 1.0);
+        let mask = segment_frame(frame, 2, 1.0);
         assert!(mask.iter().filter(|value| **value).count() > 20);
     }
 }

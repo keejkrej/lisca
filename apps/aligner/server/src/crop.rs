@@ -110,7 +110,7 @@ impl CropJobState {
         let record = CropOperationRecord {
             request_id: request_id.to_string(),
             workspace_path: workspace_path.clone(),
-            operation_id: detail.operation.operation_id.clone(),
+            operation_id: detail.operation.operation_id,
             tasks,
         };
         book.latest_by_workspace

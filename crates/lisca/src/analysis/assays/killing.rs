@@ -68,10 +68,20 @@ pub fn merge_prediction_shards(workspace: &Path, shards: &[PathBuf]) -> Result<(
     for shard in shards {
         for relative_dir in ["timeseries", "results"] {
             let directory = shard.join(relative_dir);
-            let Ok(entries) = fs::read_dir(&directory) else {
-                continue;
+            let entries = match fs::read_dir(&directory) {
+                Ok(entries) => entries,
+                Err(error) if error.kind() == std::io::ErrorKind::NotFound => continue,
+                Err(error) => {
+                    return Err(format!("failed to list {}: {error}", directory.display()))
+                }
             };
-            for entry in entries.flatten() {
+            for entry in entries {
+                let entry = entry.map_err(|error| {
+                    format!(
+                        "failed to read an entry in {}: {error}",
+                        directory.display()
+                    )
+                })?;
                 if entry.path().is_file() {
                     files
                         .entry(PathBuf::from(relative_dir).join(entry.file_name()))
@@ -88,9 +98,12 @@ pub fn merge_prediction_shards(workspace: &Path, shards: &[PathBuf]) -> Result<(
         }
         let mut merged = String::new();
         for (index, part) in parts.iter().enumerate() {
-            let contents = fs::read_to_string(part).map_err(|error| error.to_string())?;
+            let contents = fs::read_to_string(part)
+                .map_err(|error| format!("failed to read {}: {error}", part.display()))?;
             let mut lines = contents.lines();
-            let header = lines.next().unwrap_or_default();
+            let header = lines
+                .next()
+                .ok_or_else(|| format!("prediction shard is empty: {}", part.display()))?;
             if index == 0 {
                 merged.push_str(header);
                 merged.push('\n');

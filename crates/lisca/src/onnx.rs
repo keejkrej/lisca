@@ -94,12 +94,24 @@ pub(crate) fn first_class_probability(first_logit: f32, second_logit: f32) -> f6
     f64::from(first_exp / (first_exp + second_exp))
 }
 
-pub(crate) fn resize_to_224(data: &[u8], width: u32, height: u32) -> GrayImage {
+pub(crate) fn resize_to_224(data: &[u8], width: u32, height: u32) -> Result<GrayImage, String> {
+    let expected_len = (width as usize)
+        .checked_mul(height as usize)
+        .ok_or_else(|| format!("image dimensions overflow: {width}x{height}"))?;
+    if data.len() != expected_len {
+        return Err(format!(
+            "image buffer length mismatch for {width}x{height}: expected {expected_len}, got {}",
+            data.len()
+        ));
+    }
     let image = ImageBuffer::<Luma<u8>, Vec<u8>>::from_raw(width, height, data.to_vec())
-        .unwrap_or_else(|| {
-            ImageBuffer::from_raw(width, height, vec![0; (width * height) as usize]).unwrap()
-        });
-    image::imageops::resize(&image, IMAGE_SIZE, IMAGE_SIZE, FilterType::Triangle)
+        .ok_or_else(|| format!("failed to construct image buffer for {width}x{height}"))?;
+    Ok(image::imageops::resize(
+        &image,
+        IMAGE_SIZE,
+        IMAGE_SIZE,
+        FilterType::Triangle,
+    ))
 }
 
 pub(crate) fn to_nchw_normalized(gray: &GrayImage) -> Vec<f32> {
@@ -142,6 +154,12 @@ mod tests {
             resolve_model_path("LISCA_UNSET_KILL_MODEL_FOR_TEST", [root.clone()]).unwrap();
         assert_eq!(resolved, root);
         let _ = std::fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn resize_to_224_rejects_mismatched_buffer_lengths() {
+        let error = resize_to_224(&[0; 3], 2, 2).unwrap_err();
+        assert!(error.contains("expected 4, got 3"));
     }
 
     #[test]

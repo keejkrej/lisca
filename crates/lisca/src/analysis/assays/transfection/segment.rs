@@ -72,7 +72,11 @@ impl Default for SegmentOptions {
     }
 }
 
-pub fn run_segment(workspace: &Path, mapping: &SlideMapping, options: &SegmentOptions) -> Result<(), String> {
+pub fn run_segment(
+    workspace: &Path,
+    mapping: &SlideMapping,
+    options: &SegmentOptions,
+) -> Result<(), String> {
     match options.backend {
         SegmentBackend::Otsu => run_segment_otsu(workspace, mapping, options),
         SegmentBackend::Onnx => run_segment_onnx(workspace, mapping, options),
@@ -236,15 +240,9 @@ fn run_position_segmentation_otsu(
         let height = roi.shape[3] as usize;
         let mut masks = Vec::with_capacity(index.time_count as usize);
         for timepoint in 0..index.time_count {
-            let frame = roi_frame_2d(
-                &stack,
-                &index.axis_order,
-                timepoint,
-                mask_channel,
-                0,
-            )?;
+            let frame = roi_frame_2d(&stack, &index.axis_order, timepoint, mask_channel, 0)?;
             masks.push(segment_frame(
-                &frame,
+                frame,
                 options.variation_radius,
                 options.gaussian_sigma,
             ));
@@ -341,7 +339,12 @@ fn format_skipped_positions(skipped_positions: &BTreeMap<u32, Vec<u32>>) -> Stri
         .join("; ")
 }
 
-fn write_mask_tif(path: &Path, masks: &[Vec<bool>], width: usize, height: usize) -> Result<(), String> {
+fn write_mask_tif(
+    path: &Path,
+    masks: &[Vec<bool>],
+    width: usize,
+    height: usize,
+) -> Result<(), String> {
     // Always write one Gray8 IFD per timepoint with explicit (width, height).
     // Do not collapse singleton spatial dims (W=1 or H=1): loaders match mask
     // page size to the ROI crop size from index.json.
@@ -355,9 +358,9 @@ fn write_mask_tif(path: &Path, masks: &[Vec<bool>], width: usize, height: usize)
     }
     let file = File::create(path).map_err(|error| error.to_string())?;
     let mut encoder = TiffEncoder::new(file).map_err(|error| error.to_string())?;
-    let plane = width.checked_mul(height).ok_or_else(|| {
-        format!("mask plane size overflow for width={width} height={height}")
-    })?;
+    let plane = width
+        .checked_mul(height)
+        .ok_or_else(|| format!("mask plane size overflow for width={width} height={height}"))?;
     for mask in masks {
         if mask.len() != plane {
             return Err(format!(
@@ -365,11 +368,16 @@ fn write_mask_tif(path: &Path, masks: &[Vec<bool>], width: usize, height: usize)
                 mask.len()
             ));
         }
-        let bytes = mask.iter().map(|value| u8::from(*value)).collect::<Vec<_>>();
+        let bytes = mask
+            .iter()
+            .map(|value| u8::from(*value))
+            .collect::<Vec<_>>();
         let image = encoder
             .new_image::<colortype::Gray8>(width as u32, height as u32)
             .map_err(|error| error.to_string())?;
-        image.write_data(&bytes).map_err(|error| error.to_string())?;
+        image
+            .write_data(&bytes)
+            .map_err(|error| error.to_string())?;
     }
     Ok(())
 }
@@ -443,11 +451,7 @@ mod tests {
         let width = 1usize;
         let height = 8usize;
         let masks: Vec<Vec<bool>> = (0..time_count)
-            .map(|t| {
-                (0..height * width)
-                    .map(|i| (i + t) % 2 == 0)
-                    .collect()
-            })
+            .map(|t| (0..height * width).map(|i| (i + t) % 2 == 0).collect())
             .collect();
 
         write_mask_tif(&path, &masks, width, height).expect("write mask");

@@ -87,10 +87,7 @@ fn timeseries_stage_matches_reference_metrics() {
 
     run_timeseries(&fixture.root, &mapping, 1).expect("timeseries");
 
-    let csv_path = fixture
-        .root
-        .join("timeseries")
-        .join("Pos1").join("ch1.csv");
+    let csv_path = fixture.root.join("timeseries").join("Pos1").join("ch1.csv");
     assert!(csv_path.is_file(), "expected {}", csv_path.display());
 
     let (_, rows) = read_results_csv(&csv_path);
@@ -101,9 +98,17 @@ fn timeseries_stage_matches_reference_metrics() {
         assert_eq!(row["roi"], roi.to_string());
         assert_eq!(row["t"], t.to_string());
         assert_eq!(row["area"], area.to_string());
-        assert!(approx_eq(parse_f64(&row["background"]), background, AUC_REL_TOL));
+        assert!(approx_eq(
+            parse_f64(&row["background"]),
+            background,
+            AUC_REL_TOL
+        ));
         assert!(approx_eq(parse_f64(&row["sum"]), sum, AUC_REL_TOL));
-        assert!(approx_eq(parse_f64(&row["corrected"]), corrected, AUC_REL_TOL));
+        assert!(approx_eq(
+            parse_f64(&row["corrected"]),
+            corrected,
+            AUC_REL_TOL
+        ));
     }
 }
 
@@ -160,8 +165,8 @@ fn fit_stage_matches_transfection_reference_fit() {
         trace_times.push(parse_f64(&ts_row["t"]));
         trace_values.push(parse_f64(&ts_row["corrected"]));
     }
-    let reference = fit_trace_table(&trace_times, &trace_values, INTERVAL_MINUTES)
-        .expect("reference fit");
+    let reference =
+        fit_trace_table(&trace_times, &trace_values, INTERVAL_MINUTES).expect("reference fit");
 
     assert!(approx_eq(
         parse_f64(&row["baseline_intensity"]),

@@ -94,44 +94,46 @@ mod tests {
         dir
     }
 
-    #[tokio::test]
-    async fn memory_recent_requires_bearer_token() {
+    #[test]
+    fn memory_recent_requires_bearer_token() {
         let _guard = TEST_CONFIG_LOCK.lock().unwrap();
         let _dir = set_temp_config_dir();
 
         let app = super::router::<()>();
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .uri("/memory/recent?type=workspace")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
+        let request = Request::builder()
+            .uri("/memory/recent?type=workspace")
+            .body(Body::empty())
+            .unwrap();
+        let response = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .unwrap()
+            .block_on(app.oneshot(request))
             .unwrap();
 
         assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
     }
 
-    #[tokio::test]
-    async fn memory_recent_accepts_bearer_token() {
+    #[test]
+    fn memory_recent_accepts_bearer_token() {
         let _guard = TEST_CONFIG_LOCK.lock().unwrap();
         let _dir = set_temp_config_dir();
 
         let created = store::create_profile("http-user").unwrap();
         let app = super::router::<()>();
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .uri("/memory/recent?type=workspace")
-                    .header(
-                        axum::http::header::AUTHORIZATION,
-                        format!("Bearer {}", created.access_token),
-                    )
-                    .body(Body::empty())
-                    .unwrap(),
+        let request = Request::builder()
+            .uri("/memory/recent?type=workspace")
+            .header(
+                axum::http::header::AUTHORIZATION,
+                format!("Bearer {}", created.access_token),
             )
-            .await
+            .body(Body::empty())
+            .unwrap();
+        let response = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .unwrap()
+            .block_on(app.oneshot(request))
             .unwrap();
 
         assert_eq!(response.status(), StatusCode::OK);

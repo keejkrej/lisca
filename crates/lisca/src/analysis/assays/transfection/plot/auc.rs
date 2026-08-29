@@ -67,9 +67,7 @@ fn write_auc_boxplot(
     let tick_labels: Vec<String> = channels
         .iter()
         .enumerate()
-        .map(|(index, channel)| {
-            boxplot_tick_label(*channel, grouped_values[index].len(), labels)
-        })
+        .map(|(index, channel)| boxplot_tick_label(*channel, grouped_values[index].len(), labels))
         .collect();
 
     let figure = figure_builder_single()

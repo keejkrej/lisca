@@ -12,9 +12,7 @@ pub fn write_csv_only(path: &Path, headers: &[&str], rows: &[Vec<String>]) -> Re
         std::fs::create_dir_all(parent).map_err(|error| error.to_string())?;
     }
     let file = File::create(path).map_err(|error| error.to_string())?;
-    let mut writer = WriterBuilder::new()
-        .has_headers(true)
-        .from_writer(file);
+    let mut writer = WriterBuilder::new().has_headers(true).from_writer(file);
     writer
         .write_record(headers)
         .map_err(|error| error.to_string())?;

@@ -1,4 +1,7 @@
-use std::path::{Component, Path, PathBuf};
+use std::{
+    io::{self, ErrorKind},
+    path::{Component, Path, PathBuf},
+};
 
 use axum::{
     body::Body,
@@ -39,10 +42,24 @@ where
         .route("/fs/create-directory", post(create_directory_handler))
 }
 
+async fn run_blocking<T>(
+    operation: &'static str,
+    task: impl FnOnce() -> Result<T, FsError> + Send + 'static,
+) -> Result<T, FsError>
+where
+    T: Send + 'static,
+{
+    tokio::task::spawn_blocking(task)
+        .await
+        .map_err(|error| FsError::internal(format!("{operation} worker failed: {error}")))?
+}
+
 async fn list_directory_handler(
     Query(query): Query<ListDirectoryQuery>,
 ) -> Result<Json<HostListDirectoryResult>, FsError> {
-    list_directory(query.path).map(Json)
+    run_blocking("directory listing", move || list_directory(query.path))
+        .await
+        .map(Json)
 }
 
 async fn home_directory_handler() -> Result<Json<HomeDirectoryResponse>, FsError> {
@@ -53,18 +70,34 @@ async fn home_directory_handler() -> Result<Json<HomeDirectoryResponse>, FsError
 async fn read_text_file_handler(
     Query(query): Query<ReadTextFileQuery>,
 ) -> Result<Json<ReadTextFileResponse>, FsError> {
-    read_text_file(&query.path).map(Json)
+    run_blocking("text file read", move || read_text_file(&query.path))
+        .await
+        .map(Json)
 }
 
 async fn create_directory_handler(
     Json(request): Json<CreateDirectoryRequest>,
 ) -> Result<Json<CreateDirectoryResponse>, FsError> {
-    create_directory(&request.parent_path, &request.name)
-        .map(|path| Json(CreateDirectoryResponse { path }))
+    run_blocking("directory creation", move || {
+        create_directory(&request.parent_path, &request.name)
+    })
+    .await
+    .map(|path| Json(CreateDirectoryResponse { path }))
 }
 
 fn user_home_directory() -> Option<String> {
     platform_user_home()
+}
+
+fn local_io_error(context: &str, error: io::Error) -> FsError {
+    let message = format!("{context}: {error}");
+    match error.kind() {
+        ErrorKind::NotFound
+        | ErrorKind::PermissionDenied
+        | ErrorKind::AlreadyExists
+        | ErrorKind::InvalidInput => FsError::new(message),
+        _ => FsError::internal(message),
+    }
 }
 
 #[cfg(windows)]
@@ -109,27 +142,36 @@ fn entry_is_directory(entry_path: &Path, file_type: std::fs::FileType) -> bool {
 }
 
 fn list_directory(path: Option<String>) -> Result<HostListDirectoryResult, FsError> {
-    if path.as_deref().map(str::is_empty).unwrap_or(true) {
+    let Some(path) = path.filter(|path| !path.is_empty()) else {
         return Ok(list_roots());
-    }
+    };
 
-    let path = PathBuf::from(path.expect("checked above"));
+    let path = PathBuf::from(path);
     ensure_local_path_allowed(&path)?;
     let metadata = std::fs::metadata(&path)
-        .map_err(|error| FsError::new(format!("failed to read directory: {error}")))?;
+        .map_err(|error| local_io_error("failed to read directory", error))?;
     if !metadata.is_dir() {
         return Err(FsError::new("path is not a directory"));
     }
 
     let mut entries = Vec::new();
     let read_dir = std::fs::read_dir(&path)
-        .map_err(|error| FsError::new(format!("failed to list directory: {error}")))?;
+        .map_err(|error| local_io_error("failed to list directory", error))?;
 
-    for entry in read_dir.flatten() {
+    for entry in read_dir {
+        let entry = entry.map_err(|error| {
+            local_io_error(
+                &format!("failed to read an entry in {}", path.display()),
+                error,
+            )
+        })?;
         let entry_path = entry.path();
-        let Ok(entry_type) = entry.file_type() else {
-            continue;
-        };
+        let entry_type = entry.file_type().map_err(|error| {
+            local_io_error(
+                &format!("failed to inspect {}", entry_path.display()),
+                error,
+            )
+        })?;
         let name = entry.file_name().to_string_lossy().to_string();
         entries.push(HostFsEntry {
             name,
@@ -155,7 +197,7 @@ fn list_directory(path: Option<String>) -> Result<HostListDirectoryResult, FsErr
 fn read_text_file(path: &str) -> Result<ReadTextFileResponse, FsError> {
     ensure_local_path_allowed(Path::new(path))?;
     let contents = std::fs::read_to_string(path)
-        .map_err(|error| FsError::new(format!("failed to read text file: {error}")))?;
+        .map_err(|error| local_io_error("failed to read text file", error))?;
     Ok(ReadTextFileResponse { contents })
 }
 
@@ -175,7 +217,7 @@ fn create_directory(parent_path: &str, name: &str) -> Result<String, FsError> {
     let target = parent.join(trimmed_name);
     ensure_local_path_allowed(&target)?;
     std::fs::create_dir(&target)
-        .map_err(|error| FsError::new(format!("failed to create directory: {error}")))?;
+        .map_err(|error| local_io_error("failed to create directory", error))?;
     Ok(target.to_string_lossy().to_string())
 }
 
@@ -321,34 +363,33 @@ fn list_roots() -> HostListDirectoryResult {
     }
 }
 
-async fn read_file_handler(
-    Query(query): Query<ReadTextFileQuery>,
-) -> Result<Response, FsError> {
-    let path = Path::new(&query.path);
-    ensure_local_path_allowed(path)?;
-    let bytes = std::fs::read(path)
-        .map_err(|error| FsError::new(format!("failed to read file: {error}")))?;
-    let content_type = match path
-        .extension()
-        .and_then(|ext| ext.to_str())
-        .unwrap_or("")
-        .to_ascii_lowercase()
-        .as_str()
-    {
-        "png" => "image/png",
-        "jpg" | "jpeg" => "image/jpeg",
-        "gif" => "image/gif",
-        "webp" => "image/webp",
-        "svg" => "image/svg+xml",
-        "pdf" => "application/pdf",
-        _ => "application/octet-stream",
-    };
+async fn read_file_handler(Query(query): Query<ReadTextFileQuery>) -> Result<Response, FsError> {
+    let (bytes, content_type) = run_blocking("file read", move || {
+        let path = PathBuf::from(query.path);
+        ensure_local_path_allowed(&path)?;
+        let bytes =
+            std::fs::read(&path).map_err(|error| local_io_error("failed to read file", error))?;
+        let content_type = match path
+            .extension()
+            .and_then(|ext| ext.to_str())
+            .unwrap_or("")
+            .to_ascii_lowercase()
+            .as_str()
+        {
+            "png" => "image/png",
+            "jpg" | "jpeg" => "image/jpeg",
+            "gif" => "image/gif",
+            "webp" => "image/webp",
+            "svg" => "image/svg+xml",
+            "pdf" => "application/pdf",
+            _ => "application/octet-stream",
+        };
+        Ok((bytes, content_type))
+    })
+    .await?;
     Response::builder()
         .status(StatusCode::OK)
-        .header(
-            header::CONTENT_TYPE,
-            HeaderValue::from_static(content_type),
-        )
+        .header(header::CONTENT_TYPE, HeaderValue::from_static(content_type))
         .header(header::CACHE_CONTROL, HeaderValue::from_static("no-store"))
         .body(Body::from(bytes))
         .map_err(|error| FsError::new(format!("failed to build file response: {error}")))
@@ -356,7 +397,11 @@ async fn read_file_handler(
 
 #[cfg(test)]
 mod tests {
+    use std::sync::Mutex;
+
     use super::*;
+
+    static FS_ROOTS_LOCK: Mutex<()> = Mutex::new(());
 
     #[test]
     fn normalize_local_path_resolves_parent_segments() {
@@ -370,11 +415,15 @@ mod tests {
             Path::new("/root/workspace/run-1"),
             Path::new("/root/workspace")
         ));
-        assert!(!path_is_under_root(Path::new("/etc"), Path::new("/root/workspace")));
+        assert!(!path_is_under_root(
+            Path::new("/etc"),
+            Path::new("/root/workspace")
+        ));
     }
 
     #[test]
     fn list_parent_path_hides_parent_outside_allowed_roots() {
+        let _guard = FS_ROOTS_LOCK.lock().unwrap();
         let parent = list_parent_path(Path::new("/root/workspace/run-1"));
         assert_eq!(parent.as_deref(), Some("/root/workspace"));
 
@@ -389,6 +438,7 @@ mod tests {
 
     #[test]
     fn ensure_local_path_allowed_rejects_paths_outside_roots() {
+        let _guard = FS_ROOTS_LOCK.lock().unwrap();
         std::env::set_var("LISCA_FS_ROOTS", "/root");
         assert!(ensure_local_path_allowed(Path::new("/root/workspace/run-1")).is_ok());
         assert!(ensure_local_path_allowed(Path::new("/etc")).is_err());
@@ -397,6 +447,7 @@ mod tests {
 
     #[test]
     fn entry_is_directory_follows_symlinks_to_directories() {
+        let _guard = FS_ROOTS_LOCK.lock().unwrap();
         let base = std::env::temp_dir().join(format!("lisca-fs-test-{}", uuid::Uuid::new_v4()));
         std::fs::create_dir_all(&base).unwrap();
         let target = base.join("target");

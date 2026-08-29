@@ -65,7 +65,7 @@ impl AnalysisJobState {
             .insert(workspace_path, request_id.to_string());
         book.by_request
             .insert(request_id.to_string(), record.clone());
-        Ok(project_progress(&record, &detail))
+        project_progress(&record, &detail)
     }
 
     pub fn progress(
@@ -84,8 +84,8 @@ impl AnalysisJobState {
             .map(|record| {
                 scheduler
                     .operation(&record.operation_id)
-                    .map(|detail| project_progress(&record, &detail))
                     .map_err(|error| error.to_string())
+                    .and_then(|detail| project_progress(&record, &detail))
             })
             .transpose()
     }
@@ -110,8 +110,8 @@ impl AnalysisJobState {
             .map(|record| {
                 scheduler
                     .operation(&record.operation_id)
-                    .map(|detail| project_progress(&record, &detail))
                     .map_err(|error| error.to_string())
+                    .and_then(|detail| project_progress(&record, &detail))
             })
             .transpose()
     }
@@ -123,7 +123,10 @@ impl Default for AnalysisJobState {
     }
 }
 
-fn project_progress(record: &AnalysisRecord, detail: &OperationDetail) -> AnalysisProgress {
+fn project_progress(
+    record: &AnalysisRecord,
+    detail: &OperationDetail,
+) -> Result<AnalysisProgress, String> {
     let total = detail.operation.progress.total.max(1);
     let settled = detail
         .operation
@@ -158,11 +161,11 @@ fn project_progress(record: &AnalysisRecord, detail: &OperationDetail) -> Analys
     };
     let stage = stage_for_kind(active_kind, status);
     let result_files = if status == AnalysisStatus::Completed {
-        analysis::workspace_analysis_manifest(Path::new(&record.workspace_path)).unwrap_or_default()
+        analysis::workspace_analysis_manifest(Path::new(&record.workspace_path))?
     } else {
         Vec::new()
     };
-    AnalysisProgress {
+    Ok(AnalysisProgress {
         request_id: record.request_id.clone(),
         status,
         stage,
@@ -178,7 +181,7 @@ fn project_progress(record: &AnalysisRecord, detail: &OperationDetail) -> Analys
         ),
         result_files,
         error,
-    }
+    })
 }
 
 fn stage_for_kind(kind: Option<&str>, status: AnalysisStatus) -> AnalysisStage {

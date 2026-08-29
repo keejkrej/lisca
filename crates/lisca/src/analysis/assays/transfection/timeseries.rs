@@ -8,16 +8,10 @@ use crate::analysis::csv_io::{format_float, write_csv};
 use crate::analysis::roi_stack::{position_dir, read_position_index};
 use crate::analysis::slide::SlideMapping;
 
-use super::metrics::{
-    compute_full_frame_roi_metrics, compute_masked_roi_metrics, MetricRow,
-};
+use super::metrics::{compute_full_frame_roi_metrics, compute_masked_roi_metrics, MetricRow};
 use super::segment::default_jobs;
 
-pub fn run_timeseries(
-    workspace: &Path,
-    mapping: &SlideMapping,
-    jobs: usize,
-) -> Result<(), String> {
+pub fn run_timeseries(workspace: &Path, mapping: &SlideMapping, jobs: usize) -> Result<(), String> {
     run_timeseries_with_mode(workspace, mapping, jobs, false)
 }
 
@@ -53,36 +47,38 @@ pub fn run_timeseries_with_mode(
         .map_err(|error| error.to_string())?;
 
     pool.install(|| {
-        tasks.par_iter().try_for_each(|&(slide_channel, signal_channel, position)| {
-            let pos_dir = match position_dir(workspace, position) {
-                Ok(path) => path,
-                Err(_) => {
-                    skipped_positions
-                        .lock()
-                        .map_err(|_| "timeseries skipped_positions lock poisoned".to_string())?
-                        .entry(slide_channel)
-                        .or_default()
-                        .push(position);
-                    return Ok::<(), String>(());
-                }
-            };
-            let index = read_position_index(&pos_dir)?;
-            let mut rows = if full_frame {
-                compute_full_frame_roi_metrics(&pos_dir, &index, signal_channel)?
-            } else {
-                compute_masked_roi_metrics(workspace, &pos_dir, &index, signal_channel)?
-            };
-            rows.sort_by_key(|row| (row.pos, row.roi, row.t));
-            let output = workspace
-                .join("timeseries")
-                .join(format!("Pos{position}"))
-                .join(format!("ch{signal_channel}.csv"));
-            write_metric_csv(&output, &rows)?;
-            *csvs_written
-                .lock()
-                .map_err(|_| "timeseries csvs_written lock poisoned".to_string())? += 1;
-            Ok::<(), String>(())
-        })
+        tasks
+            .par_iter()
+            .try_for_each(|&(slide_channel, signal_channel, position)| {
+                let pos_dir = match position_dir(workspace, position) {
+                    Ok(path) => path,
+                    Err(_) => {
+                        skipped_positions
+                            .lock()
+                            .map_err(|_| "timeseries skipped_positions lock poisoned".to_string())?
+                            .entry(slide_channel)
+                            .or_default()
+                            .push(position);
+                        return Ok::<(), String>(());
+                    }
+                };
+                let index = read_position_index(&pos_dir)?;
+                let mut rows = if full_frame {
+                    compute_full_frame_roi_metrics(&pos_dir, &index, signal_channel)?
+                } else {
+                    compute_masked_roi_metrics(workspace, &pos_dir, &index, signal_channel)?
+                };
+                rows.sort_by_key(|row| (row.pos, row.roi, row.t));
+                let output = workspace
+                    .join("timeseries")
+                    .join(format!("Pos{position}"))
+                    .join(format!("ch{signal_channel}.csv"));
+                write_metric_csv(&output, &rows)?;
+                *csvs_written
+                    .lock()
+                    .map_err(|_| "timeseries csvs_written lock poisoned".to_string())? += 1;
+                Ok::<(), String>(())
+            })
     })?;
 
     let csvs_written = *csvs_written

@@ -33,22 +33,16 @@ where
     F: Fn(AnalysisProgress) + Send + Sync + 'static,
 {
     match dispatch(assay_json.type_)? {
-        SupportedAssay::Transfection => transfection::run(
-            workspace_path,
-            request_id,
-            assay_json,
-            update_progress,
-        )
-        .await
-        .map_err(AnalysisError::Failed),
-        SupportedAssay::Killing => killing::run(
-            workspace_path,
-            request_id,
-            assay_json,
-            update_progress,
-        )
-        .await
-        .map_err(AnalysisError::Failed),
+        SupportedAssay::Transfection => {
+            transfection::run(workspace_path, request_id, assay_json, update_progress)
+                .await
+                .map_err(AnalysisError::Failed)
+        }
+        SupportedAssay::Killing => {
+            killing::run(workspace_path, request_id, assay_json, update_progress)
+                .await
+                .map_err(AnalysisError::Failed)
+        }
     }
 }
 
@@ -58,10 +52,9 @@ mod tests {
 
     #[test]
     fn unsupported_assay_ids_have_typed_errors_that_name_the_id() {
-        for assay_id in [AssayType::LnpBinding] {
-            let error = dispatch(assay_id).unwrap_err();
-            assert_eq!(error, AnalysisError::UnsupportedAssay { assay_id });
-            assert!(error.to_string().contains(assay_id.to_string().as_str()));
-        }
+        let assay_id = AssayType::LnpBinding;
+        let error = dispatch(assay_id).unwrap_err();
+        assert_eq!(error, AnalysisError::UnsupportedAssay { assay_id });
+        assert!(error.to_string().contains(assay_id.to_string().as_str()));
     }
 }

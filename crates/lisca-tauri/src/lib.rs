@@ -56,7 +56,7 @@ pub fn run<F>(config: ProductConfig, context: tauri::Context, backend_factory: F
 where
     F: FnOnce() -> Router + Send + 'static,
 {
-    tauri::Builder::default()
+    let app = tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![lisca_request])
         .setup(move |app| {
             if config.product == "studio" {
@@ -74,9 +74,14 @@ where
             )?;
             Ok(())
         })
-        .build(context)
-        .expect("failed to build Tauri application")
-        .run(|_, _| {});
+        .build(context);
+    match app {
+        Ok(app) => app.run(|_, _| {}),
+        Err(error) => {
+            eprintln!("failed to build Tauri application: {error}");
+            std::process::exit(1);
+        }
+    }
 }
 
 #[tauri::command]
@@ -193,7 +198,12 @@ fn create_window<R: tauri::Runtime, M: Manager<R>>(
             )
         })?)
     } else {
-        WebviewUrl::App("index.html".parse().expect("index.html is a valid app URL"))
+        WebviewUrl::App("index.html".parse().map_err(|error| {
+            io::Error::new(
+                io::ErrorKind::InvalidInput,
+                format!("invalid bundled app URL: {error}"),
+            )
+        })?)
     };
 
     WebviewWindowBuilder::new(app, "main", url)

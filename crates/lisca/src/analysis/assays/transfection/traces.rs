@@ -2,7 +2,9 @@ use std::path::PathBuf;
 
 use crate::analysis::csv_io::read_csv;
 use crate::analysis::slide::SlideMapping;
-use crate::analysis::timeseries::{group_timeseries_rows, parse_timeseries_path, resolve_slide_channel};
+use crate::analysis::timeseries::{
+    group_timeseries_rows, parse_timeseries_path, resolve_slide_channel,
+};
 
 #[derive(Debug, Clone)]
 pub struct FitTraceTask {

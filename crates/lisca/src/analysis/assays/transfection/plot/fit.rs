@@ -119,14 +119,12 @@ fn load_fit_rows(path: &Path) -> Result<Vec<FitPlotRow>, String> {
                 .or_else(|| protein_decay_rate.map(|rate| 1.0 / rate)),
             mrna_lifetime: read_opt(&row, "mrna_lifetime")
                 .or_else(|| mrna_decay_rate.map(|rate| 1.0 / rate)),
-            expression_rate: read_opt(&row, "expression_rate").or(match (
-                expression_amplitude,
-                mrna_decay_rate,
-                protein_decay_rate,
-            ) {
-                (Some(amp), Some(mrna), Some(protein)) => Some(amp * (mrna - protein)),
-                _ => None,
-            }),
+            expression_rate: read_opt(&row, "expression_rate").or(
+                match (expression_amplitude, mrna_decay_rate, protein_decay_rate) {
+                    (Some(amp), Some(mrna), Some(protein)) => Some(amp * (mrna - protein)),
+                    _ => None,
+                },
+            ),
         });
     }
     if parsed.is_empty() {

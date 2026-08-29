@@ -22,9 +22,7 @@ pub use util::{
 use std::collections::BTreeMap;
 use std::path::Path;
 
-use mplot::prelude::{
-    AxesStyle, FillBetweenStyle, GridPos, LegendStyle, LineDash, TickFormat,
-};
+use mplot::prelude::{AxesStyle, FillBetweenStyle, GridPos, LegendStyle, LineDash, TickFormat};
 use mplot::Color;
 
 use super::array::quantile;

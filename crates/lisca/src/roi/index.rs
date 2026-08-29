@@ -18,10 +18,11 @@ pub fn scan_roi_workspace(workspace_path: &str) -> Result<RoiWorkspaceScan, Stri
     }
 
     let mut positions = Vec::new();
-    for entry in fs::read_dir(&root)
-        .map_err(|error| error.to_string())?
-        .flatten()
-    {
+    let entries = fs::read_dir(&root)
+        .map_err(|error| format!("failed to list {}: {error}", root.display()))?;
+    for entry in entries {
+        let entry = entry
+            .map_err(|error| format!("failed to read an entry in {}: {error}", root.display()))?;
         let path = entry.path();
         if !path.is_dir() {
             continue;

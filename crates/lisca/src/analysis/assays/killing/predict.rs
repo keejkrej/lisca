@@ -136,7 +136,7 @@ fn run_batch_inference(
 
     for (index, frame) in batch.iter().enumerate() {
         let normalized = normalize_frame(&frame.pixels);
-        let resized = resize_to_224(&normalized, frame.width as u32, frame.height as u32);
+        let resized = resize_to_224(&normalized, frame.width as u32, frame.height as u32)?;
         let nchw = to_nchw_normalized(&resized);
         let offset = index * 3 * IMAGE_SIZE as usize * IMAGE_SIZE as usize;
         batch_data[offset..offset + nchw.len()].copy_from_slice(&nchw);
@@ -220,12 +220,8 @@ pub fn run_predict_to(
     for (slide_channel, entry) in mapping {
         for &signal_channel in &entry.signal {
             for position in &entry.positions {
-                let frames = collect_position_frames(
-                    workspace,
-                    *slide_channel,
-                    signal_channel,
-                    *position,
-                )?;
+                let frames =
+                    collect_position_frames(workspace, *slide_channel, signal_channel, *position)?;
                 for chunk in frames.chunks(options.batch_size.max(1)) {
                     let probabilities = run_batch_inference(&mut session, &input_name, chunk)?;
                     for (frame, p_dead) in chunk.iter().zip(probabilities) {

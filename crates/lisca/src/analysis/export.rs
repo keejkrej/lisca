@@ -24,8 +24,8 @@ pub fn write_csv_and_xlsx(
         let header_refs: Vec<&str> = headers_owned.iter().map(|header| header.as_str()).collect();
         super::csv_io::write_csv_only(&csv_path, &header_refs, &rows_owned)
     })
-        .join()
-        .map_err(|_| "csv writer thread panicked".to_string())?;
+    .join()
+    .map_err(|_| "csv writer thread panicked".to_string())?;
     let xlsx_result = write_xlsx(&xlsx_path, headers, rows);
 
     csv_result?;

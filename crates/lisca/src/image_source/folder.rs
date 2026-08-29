@@ -201,13 +201,14 @@ impl SeriesDataset {
 
 fn read_dir_entries(dir: &Path) -> Result<Vec<FsDirEntry>, String> {
     let mut entries = Vec::new();
-    for entry in fs::read_dir(dir)
-        .map_err(|error| error.to_string())?
-        .flatten()
-    {
-        let Ok(file_type) = entry.file_type() else {
-            continue;
-        };
+    let read_dir =
+        fs::read_dir(dir).map_err(|error| format!("failed to list {}: {error}", dir.display()))?;
+    for entry in read_dir {
+        let entry = entry
+            .map_err(|error| format!("failed to read an entry in {}: {error}", dir.display()))?;
+        let file_type = entry
+            .file_type()
+            .map_err(|error| format!("failed to inspect {}: {error}", entry.path().display()))?;
         entries.push(FsDirEntry {
             name: entry.file_name().to_string_lossy().to_string(),
             path: entry.path(),

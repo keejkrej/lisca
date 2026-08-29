@@ -43,7 +43,7 @@ pub fn masked_roi_metrics(frame: &[f64], mask: &[bool]) -> (u32, f64, f64, f64) 
         let mut sorted = background_pixels;
         sorted.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
         let mid = sorted.len() / 2;
-        if sorted.len() % 2 == 0 {
+        if sorted.len().is_multiple_of(2) {
             (sorted[mid - 1] + sorted[mid]) * 0.5
         } else {
             sorted[mid]
@@ -167,14 +167,22 @@ fn linspace(start: f64, end: f64, count: usize) -> Vec<f64> {
         .collect()
 }
 
-fn fit_trace_points(times: &[f64], values: &[f64], fixed_protein_decay_rate: Option<f64>) -> Option<FitResult> {
+fn fit_trace_points(
+    times: &[f64],
+    values: &[f64],
+    fixed_protein_decay_rate: Option<f64>,
+) -> Option<FitResult> {
     if times.len() < 3 || values.len() < 3 {
         return None;
     }
-    if !times.iter().all(|value| value.is_finite()) || !values.iter().all(|value| value.is_finite()) {
+    if !times.iter().all(|value| value.is_finite()) || !values.iter().all(|value| value.is_finite())
+    {
         return None;
     }
-    if times.windows(2).all(|pair| (pair[0] - pair[1]).abs() <= 1e-12) {
+    if times
+        .windows(2)
+        .all(|pair| (pair[0] - pair[1]).abs() <= 1e-12)
+    {
         return None;
     }
     let min_value = values.iter().copied().fold(f64::INFINITY, f64::min);
@@ -231,7 +239,11 @@ fn fit_trace_points(times: &[f64], values: &[f64], fixed_protein_decay_rate: Opt
                 if let Some((sse, candidate)) =
                     evaluate_rate_candidate(times, values, protein_decay_rate, mrna_decay_rate, 0.0)
                 {
-                    if stage_best.as_ref().map(|(best, _)| sse < *best).unwrap_or(true) {
+                    if stage_best
+                        .as_ref()
+                        .map(|(best, _)| sse < *best)
+                        .unwrap_or(true)
+                    {
                         stage_best = Some((sse, candidate));
                         best_indices = Some((protein_index, mrna_index));
                     }
@@ -289,10 +301,9 @@ fn fit_with_fixed_protein(
         let mut mrna_upper = max_rate.ln();
         let mut onset_best: Option<(f64, FitResult)> = None;
 
-        for candidate_count in std::iter::once(RATE_COARSE_CANDIDATE_COUNT).chain(std::iter::repeat_n(
-            RATE_REFINE_CANDIDATE_COUNT,
-            RATE_REFINE_PASSES,
-        )) {
+        for candidate_count in std::iter::once(RATE_COARSE_CANDIDATE_COUNT).chain(
+            std::iter::repeat_n(RATE_REFINE_CANDIDATE_COUNT, RATE_REFINE_PASSES),
+        ) {
             let mrna_logs = linspace(mrna_lower, mrna_upper, candidate_count);
             let mut stage_best: Option<(f64, FitResult)> = None;
             let mut best_index: Option<usize> = None;
@@ -304,7 +315,11 @@ fn fit_with_fixed_protein(
                     mrna_log.exp(),
                     t_onset,
                 ) {
-                    if stage_best.as_ref().map(|(best, _)| sse < *best).unwrap_or(true) {
+                    if stage_best
+                        .as_ref()
+                        .map(|(best, _)| sse < *best)
+                        .unwrap_or(true)
+                    {
                         stage_best = Some((sse, candidate));
                         best_index = Some(index);
                     }
@@ -313,7 +328,11 @@ fn fit_with_fixed_protein(
             let Some((stage_sse, stage_result)) = stage_best else {
                 break;
             };
-            if onset_best.as_ref().map(|(best, _)| stage_sse < *best).unwrap_or(true) {
+            if onset_best
+                .as_ref()
+                .map(|(best, _)| stage_sse < *best)
+                .unwrap_or(true)
+            {
                 onset_best = Some((stage_sse, stage_result));
             }
             let Some(best_index) = best_index else {

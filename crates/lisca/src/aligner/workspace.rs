@@ -51,7 +51,10 @@ pub fn list_saved_bbox_positions(workspace_path: &str) -> Result<Vec<u32>, Strin
         Err(error) => return Err(error.to_string()),
     };
     let mut positions = BTreeSet::new();
-    for entry in entries.flatten() {
+    for entry in entries {
+        let entry = entry.map_err(|error| {
+            format!("failed to read an entry in {}: {error}", bbox_dir.display())
+        })?;
         let path = entry.path();
         if !path.is_file() {
             continue;

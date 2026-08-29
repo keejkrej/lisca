@@ -54,8 +54,7 @@ impl SessionStore for FileSessionStore {
         let config = ensure_config_dir()?;
         let mut file = read_sessions(&config)?;
         let token = Uuid::new_v4().to_string();
-        file.sessions
-            .insert(token.clone(), profile_id.to_string());
+        file.sessions.insert(token.clone(), profile_id.to_string());
         write_sessions(&config, &file)?;
         Ok(token)
     }

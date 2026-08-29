@@ -138,11 +138,9 @@ where
 
     let plot_ts_workspace = workspace_path.clone();
     let plot_ts_mapping = mapping.clone();
-    run_blocking(move || {
-        run_plot_timeseries(&plot_ts_workspace, &plot_ts_mapping, interval, None)
-    })
-    .await
-    .map_err(|error| format!("plot-timeseries step failed: {error}"))?;
+    run_blocking(move || run_plot_timeseries(&plot_ts_workspace, &plot_ts_mapping, interval, None))
+        .await
+        .map_err(|error| format!("plot-timeseries step failed: {error}"))?;
 
     run_blocking({
         let workspace = workspace_path.clone();
@@ -179,11 +177,9 @@ where
 
     let plot_fit_workspace = workspace_path.clone();
     let plot_fit_mapping = mapping.clone();
-    run_blocking(move || {
-        run_plot_fit(&plot_fit_workspace, &plot_fit_mapping, interval, None)
-    })
-    .await
-    .map_err(|error| format!("plot-fit step failed: {error}"))?;
+    run_blocking(move || run_plot_fit(&plot_fit_workspace, &plot_fit_mapping, interval, None))
+        .await
+        .map_err(|error| format!("plot-fit step failed: {error}"))?;
 
     let outputs = collect_csv_outputs(&workspace_path)?;
     update_progress(analysis_progress(

@@ -1,4 +1,4 @@
-use std::net::SocketAddr;
+use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 
 use axum::{extract::DefaultBodyLimit, Router};
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
@@ -44,7 +44,8 @@ pub fn resolve_host(default_host: &str) -> std::net::IpAddr {
     std::env::var("HOST")
         .ok()
         .and_then(|value| value.parse().ok())
-        .unwrap_or_else(|| default_host.parse().expect("default host is a valid IP"))
+        .or_else(|| default_host.parse().ok())
+        .unwrap_or(IpAddr::V4(Ipv4Addr::LOCALHOST))
 }
 
 /// Launch a Lisca HTTP server: init tracing, resolve the port, apply
@@ -57,7 +58,13 @@ pub async fn run_server(app_id: AppId, default_port: u16, router: Router<()>) {
     let addr = SocketAddr::from((resolve_host("127.0.0.1"), port));
     info!(%addr, app = app_id.as_str(), "listening");
 
-    let listener = tokio::net::TcpListener::bind(addr).await.expect("bind");
+    let listener = match tokio::net::TcpListener::bind(addr).await {
+        Ok(listener) => listener,
+        Err(error) => {
+            eprintln!("failed to bind {addr}: {error}");
+            std::process::exit(1);
+        }
+    };
     if let Err(error) = axum::serve(listener, with_standard_layers(router)).await {
         eprintln!("server error: {error}");
         std::process::exit(1);

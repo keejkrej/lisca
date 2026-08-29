@@ -5,7 +5,7 @@ use std::path::{Path, PathBuf};
 
 use tiff::encoder::{colortype, TiffEncoder};
 
-use super::transfection_reference::{masked_roi_metrics, FitResult, synthetic_kinetic_trace};
+use super::transfection_reference::{masked_roi_metrics, synthetic_kinetic_trace, FitResult};
 
 const WIDTH: usize = 4;
 const HEIGHT: usize = 4;
@@ -139,8 +139,7 @@ fn quantized_frame_metrics(timepoint: u32) -> (u32, f64, f64, f64) {
             frame[y * WIDTH + x] = f64::from(foreground);
         }
     }
-    let (area, intensity, background, corrected_value) =
-        masked_roi_metrics(&frame, &center_mask());
+    let (area, intensity, background, corrected_value) = masked_roi_metrics(&frame, &center_mask());
     (area, intensity, background, corrected_value)
 }
 
@@ -180,10 +179,7 @@ fn write_mask_stack(root: &Path) {
         .join("mask")
         .join(format!("Pos{POSITION}"))
         .join("roi_001.tif");
-    let page: Vec<u8> = center_mask()
-        .into_iter()
-        .map(|value| u8::from(value))
-        .collect();
+    let page: Vec<u8> = center_mask().into_iter().map(u8::from).collect();
     let pages = std::iter::repeat_n(page, TIME_COUNT as usize).collect();
     write_u8_stack(&path, pages);
 }

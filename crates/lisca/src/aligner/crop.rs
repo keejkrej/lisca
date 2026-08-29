@@ -362,7 +362,9 @@ impl StagingDirectory {
 impl Drop for StagingDirectory {
     fn drop(&mut self) {
         if let Some(path) = self.path.take() {
-            let _ = fs::remove_dir_all(path);
+            if let Err(error) = fs::remove_dir_all(&path) {
+                tracing::warn!(path = %path.display(), %error, "failed to remove crop staging directory");
+            }
         }
     }
 }
@@ -400,7 +402,13 @@ fn publish_staged_directory(
             }
         }));
     }
-    let _ = fs::remove_dir_all(backup_dir);
+    if let Err(error) = fs::remove_dir_all(&backup_dir) {
+        tracing::warn!(
+            path = %backup_dir.display(),
+            %error,
+            "failed to remove previous crop output"
+        );
+    }
     Ok(())
 }
 

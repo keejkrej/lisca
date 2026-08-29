@@ -54,49 +54,70 @@ where
         .route("/align/crop-latest", get(crop_latest_progress_handler::<S>))
 }
 
+async fn run_blocking<T>(
+    operation: &'static str,
+    task: impl FnOnce() -> Result<T, String> + Send + 'static,
+) -> Result<T, FsError>
+where
+    T: Send + 'static,
+{
+    tokio::task::spawn_blocking(task)
+        .await
+        .map_err(|error| FsError::internal(format!("{operation} worker failed: {error}")))?
+        .map_err(FsError::new)
+}
+
 async fn smart_exclude_handler(
     Json(payload): Json<lisca::protocol::SmartExcludeRequest>,
 ) -> Result<Json<lisca::protocol::SmartExcludeResponse>, FsError> {
-    lisca::smart::exclude::classify_exclusion(payload)
-        .map(Json)
-        .map_err(FsError::new)
+    run_blocking("smart exclude", move || {
+        lisca::smart::exclude::classify_exclusion(payload)
+    })
+    .await
+    .map(Json)
 }
 
 async fn scan_source_handler(
     Json(payload): Json<ScanSourceRequest>,
 ) -> Result<Json<lisca::protocol::WorkspaceScan>, FsError> {
-    aligner::scan_source(payload.source)
+    run_blocking("source scan", move || aligner::scan_source(payload.source))
+        .await
         .map(Json)
-        .map_err(FsError::new)
 }
 
 async fn load_frame_handler(
     Json(payload): Json<LoadFrameRequest>,
 ) -> Result<Json<lisca::protocol::FramePayload>, FsError> {
-    aligner::load_frame_payload(payload.source, payload.request, payload.contrast)
-        .map(Json)
-        .map_err(FsError::new)
+    run_blocking("frame load", move || {
+        aligner::load_frame_payload(payload.source, payload.request, payload.contrast)
+    })
+    .await
+    .map(Json)
 }
 
 async fn save_bbox_handler(
     Json(payload): Json<SaveBboxRequest>,
 ) -> Result<Json<lisca::protocol::SaveBboxResponse>, FsError> {
-    aligner::save_bbox(
-        &payload.workspace_path,
-        payload.pos,
-        &payload.csv,
-        &payload.align_state,
-    )
+    run_blocking("bounding-box save", move || {
+        aligner::save_bbox(
+            &payload.workspace_path,
+            payload.pos,
+            &payload.csv,
+            &payload.align_state,
+        )
+    })
+    .await
     .map(Json)
-    .map_err(FsError::new)
 }
 
 async fn load_align_state_handler(
     Query(query): Query<LoadAlignStateQuery>,
 ) -> Result<Json<Option<SavedAlignState>>, FsError> {
-    aligner::load_align_state(&query.workspace_path, query.pos)
-        .map(Json)
-        .map_err(FsError::new)
+    run_blocking("alignment-state load", move || {
+        aligner::load_align_state(&query.workspace_path, query.pos)
+    })
+    .await
+    .map(Json)
 }
 
 async fn output_paths_handler(
@@ -108,17 +129,22 @@ async fn output_paths_handler(
 async fn saved_bbox_positions_handler(
     Query(query): Query<SavedBboxPositionsQuery>,
 ) -> Result<Json<Vec<u32>>, FsError> {
-    aligner::list_saved_bbox_positions(&query.workspace_path)
-        .map(Json)
-        .map_err(FsError::new)
+    run_blocking("saved bounding-box scan", move || {
+        aligner::list_saved_bbox_positions(&query.workspace_path)
+    })
+    .await
+    .map(Json)
 }
 
 async fn roi_pos_exists_handler(
     Query(query): Query<RoiPosExistsQuery>,
-) -> Json<lisca::protocol::RoiPosExistsResponse> {
-    Json(lisca::protocol::RoiPosExistsResponse {
-        exists: aligner::roi_pos_exists(&query.workspace_path, query.pos),
+) -> Result<Json<lisca::protocol::RoiPosExistsResponse>, FsError> {
+    let exists = tokio::task::spawn_blocking(move || {
+        aligner::roi_pos_exists(&query.workspace_path, query.pos)
     })
+    .await
+    .map_err(|error| FsError::internal(format!("ROI existence worker failed: {error}")))?;
+    Ok(Json(lisca::protocol::RoiPosExistsResponse { exists }))
 }
 
 async fn crop_roi_handler<S: HasCropJobs + HasTaskScheduler>(
@@ -132,7 +158,11 @@ async fn crop_roi_handler<S: HasCropJobs + HasTaskScheduler>(
         return Err(FsError::new("crop workspace path is required"));
     }
     let positions = if request.positions.is_empty() {
-        aligner::list_saved_bbox_positions(&request.workspace_path).map_err(FsError::new)?
+        let workspace_path = request.workspace_path.clone();
+        run_blocking("crop position scan", move || {
+            aligner::list_saved_bbox_positions(&workspace_path)
+        })
+        .await?
     } else {
         request.positions.clone()
     };
@@ -152,7 +182,7 @@ async fn crop_roi_handler<S: HasCropJobs + HasTaskScheduler>(
     let scan = Arc::new(
         tokio::task::spawn_blocking(move || aligner::scan_source(source))
             .await
-            .map_err(|error| FsError::new(format!("crop planning worker failed: {error}")))?
+            .map_err(|error| FsError::internal(format!("crop planning worker failed: {error}")))?
             .map_err(FsError::new)?,
     );
 
@@ -168,7 +198,7 @@ async fn crop_roi_handler<S: HasCropJobs + HasTaskScheduler>(
     let progress = crop
         .progress(scheduler, &submission.record.request_id)
         .map_err(crop_state_error)?
-        .expect("submitted crop is indexed");
+        .ok_or_else(|| FsError::internal("submitted crop is missing from the operation index"))?;
 
     Ok(Json(lisca::protocol::CropRoiResponse {
         request_id: submission.record.request_id,
@@ -220,8 +250,8 @@ fn crop_state_error(error: CropJobStateError) -> FsError {
         CropJobStateError::RequestIdConflict => {
             FsError::new("crop request id belongs to another workspace")
         }
-        CropJobStateError::Poisoned => FsError::new("crop operation index is poisoned"),
-        CropJobStateError::Scheduler(error) => FsError::new(error.to_string()),
+        CropJobStateError::Poisoned => FsError::internal("crop operation index is poisoned"),
+        CropJobStateError::Scheduler(error) => FsError::internal(error.to_string()),
     }
 }
 

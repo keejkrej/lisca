@@ -98,7 +98,7 @@ fn classify_cell(
     cell: &AutoExcludePreviewCell,
 ) -> Result<f64, String> {
     let normalized = crop_and_normalize_cell(pixels, frame_width, frame_height, cell)?;
-    let resized = resize_to_224(&normalized, cell.w, cell.h);
+    let resized = resize_to_224(&normalized, cell.w, cell.h)?;
     let nchw = to_nchw_normalized(&resized);
     let shape: Ix4 = ndarray::Dim([1, 3, IMAGE_SIZE as usize, IMAGE_SIZE as usize]);
     let array = Array::from_shape_vec(shape, nchw).map_err(|error| error.to_string())?;

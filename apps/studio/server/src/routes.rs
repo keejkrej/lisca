@@ -71,14 +71,12 @@ async fn save_assay_json_handler(
 async fn save_result_pdf_handler(
     Json(payload): Json<SaveResultPdfRequest>,
 ) -> Result<Json<SaveResultPdfResponse>, FsError> {
-    use base64::Engine;
-
-    let workspace_path = payload.workspace_path.trim();
+    let workspace_path = payload.workspace_path.trim().to_string();
     if workspace_path.is_empty() {
         return Err(FsError::new("workspacePath is required"));
     }
 
-    let file_name = payload.file_name.trim();
+    let file_name = payload.file_name.trim().to_string();
     if file_name.is_empty() {
         return Err(FsError::new("fileName is required"));
     }
@@ -89,17 +87,23 @@ async fn save_result_pdf_handler(
         return Err(FsError::new("fileName must end with .pdf"));
     }
 
-    let bytes = base64::engine::general_purpose::STANDARD
-        .decode(payload.contents_base64.trim())
-        .map_err(|error| FsError::new(format!("failed to decode {file_name}: {error}")))?;
+    let (results_dir, target) = tokio::task::spawn_blocking(move || {
+        use base64::Engine;
 
-    let results_dir = PathBuf::from(workspace_path).join("results");
-    std::fs::create_dir_all(&results_dir)
-        .map_err(|error| FsError::new(format!("failed to create results folder: {error}")))?;
-
-    let target = results_dir.join(file_name);
-    std::fs::write(&target, bytes)
-        .map_err(|error| FsError::new(format!("failed to save {file_name}: {error}")))?;
+        let bytes = base64::engine::general_purpose::STANDARD
+            .decode(payload.contents_base64.trim())
+            .map_err(|error| FsError::new(format!("failed to decode {file_name}: {error}")))?;
+        let results_dir = PathBuf::from(workspace_path).join("results");
+        std::fs::create_dir_all(&results_dir).map_err(|error| {
+            FsError::internal(format!("failed to create results folder: {error}"))
+        })?;
+        let target = results_dir.join(&file_name);
+        std::fs::write(&target, bytes)
+            .map_err(|error| FsError::internal(format!("failed to save {file_name}: {error}")))?;
+        Ok::<_, FsError>((results_dir, target))
+    })
+    .await
+    .map_err(|error| FsError::internal(format!("PDF save worker failed: {error}")))??;
 
     Ok(Json(SaveResultPdfResponse {
         ok: true,
@@ -148,9 +152,7 @@ fn build_analysis_operation(
 ) -> Result<lisca::protocol::OperationDetail, lisca_server::SchedulerError> {
     match assay.type_ {
         AssayType::Transfection => build_transfection_operation(scheduler, workspace, assay),
-        AssayType::Killing => {
-            build_killing_operation(scheduler, workspace, assay, request_id)
-        }
+        AssayType::Killing => build_killing_operation(scheduler, workspace, assay, request_id),
         assay_id => {
             let task = analysis_task(
                 format!("analysis/unsupported/{assay_id}"),
@@ -173,7 +175,7 @@ fn build_transfection_operation(
     assay: AssayJsonFile,
 ) -> Result<lisca::protocol::OperationDetail, lisca_server::SchedulerError> {
     use lisca::analysis::{
-        assays::transfection as transfection,
+        assays::transfection,
         slide::{build_slide_mapping, SlideMapping},
     };
 
@@ -347,7 +349,7 @@ fn build_killing_operation(
     request_id: &str,
 ) -> Result<lisca::protocol::OperationDetail, lisca_server::SchedulerError> {
     use lisca::analysis::{
-        assays::killing as killing,
+        assays::killing,
         slide::{build_slide_mapping, parse_interval_minutes, SlideMapping},
     };
 
@@ -498,7 +500,6 @@ async fn start_analysis_handler<S: HasAnalysisJobs + HasTaskScheduler>(
     State(state): State<S>,
     Json(payload): Json<AnalysisStartRequest>,
 ) -> Result<Json<AnalysisProgress>, FsError> {
-    let analysis = state.analysis_jobs();
     let request_id = payload.request_id.trim();
     if request_id.is_empty() {
         return Err(FsError::new("analysis request id is required"));
@@ -510,10 +511,13 @@ async fn start_analysis_handler<S: HasAnalysisJobs + HasTaskScheduler>(
     }
 
     let request_id = request_id.to_string();
-    let workspace_path = workspace_path.to_string();
     let workspace = PathBuf::from(&workspace_path);
-    let assay_json = load_assay_json(&workspace)?;
-    let initial = analysis
+    let workspace_for_load = workspace.clone();
+    let assay_json = tokio::task::spawn_blocking(move || load_assay_json(&workspace_for_load))
+        .await
+        .map_err(|error| FsError::internal(format!("assay load worker failed: {error}")))??;
+    let initial = state
+        .analysis_jobs()
         .submit(&request_id, &workspace_path, || {
             build_analysis_operation(state.task_scheduler(), workspace, assay_json, &request_id)
         })
@@ -525,10 +529,15 @@ async fn analysis_progress_handler<S: HasAnalysisJobs + HasTaskScheduler>(
     State(state): State<S>,
     Query(query): Query<AnalysisProgressQuery>,
 ) -> Result<Json<AnalysisProgress>, FsError> {
-    let analysis = state.analysis_jobs();
-    analysis
-        .progress(state.task_scheduler(), &query.request_id)
-        .map_err(FsError::new)?
+    let progress = tokio::task::spawn_blocking(move || {
+        state
+            .analysis_jobs()
+            .progress(state.task_scheduler(), &query.request_id)
+    })
+    .await
+    .map_err(|error| FsError::internal(format!("analysis progress worker failed: {error}")))?
+    .map_err(FsError::internal)?;
+    progress
         .map(Json)
         .ok_or_else(|| FsError::new("analysis job not found"))
 }
@@ -537,22 +546,31 @@ async fn analysis_latest_progress_handler<S: HasAnalysisJobs + HasTaskScheduler>
     State(state): State<S>,
     Query(query): Query<LatestAnalysisQuery>,
 ) -> Result<Json<Option<AnalysisProgress>>, FsError> {
-    let analysis = state.analysis_jobs();
     let workspace_path = normalize_workspace_path(&query.workspace_path);
     if workspace_path.is_empty() {
         return Err(FsError::new("analysis workspace path is required"));
     }
 
-    let latest = analysis
-        .latest(state.task_scheduler(), &workspace_path)
-        .map_err(FsError::new)?;
+    let progress_workspace_path = workspace_path.clone();
+    let latest = tokio::task::spawn_blocking(move || {
+        state
+            .analysis_jobs()
+            .latest(state.task_scheduler(), &progress_workspace_path)
+    })
+    .await
+    .map_err(|error| FsError::internal(format!("latest analysis worker failed: {error}")))?
+    .map_err(FsError::internal)?;
     let Some(progress) = latest else {
-        let workspace = Path::new(&workspace_path);
-        let result_files = match analysis::workspace_analysis_manifest(workspace) {
-            Ok(result_files) if !result_files.is_empty() => result_files,
-            Ok(_) => return Ok(Json(None)),
-            Err(_) => return Ok(Json(None)),
-        };
+        let manifest_workspace = PathBuf::from(&workspace_path);
+        let result_files = tokio::task::spawn_blocking(move || {
+            analysis::workspace_analysis_manifest(&manifest_workspace)
+        })
+        .await
+        .map_err(|error| FsError::internal(format!("analysis manifest worker failed: {error}")))?
+        .map_err(FsError::internal)?;
+        if result_files.is_empty() {
+            return Ok(Json(None));
+        }
 
         let synthetic = AnalysisProgress {
             request_id: workspace_path.clone(),
@@ -745,15 +763,15 @@ mod tests {
                 AssayType::Killing => "analysis/killing",
                 _ => unreachable!(),
             };
-            let position_tasks = detail
+            let position_task_count = detail
                 .tasks
                 .iter()
                 .filter(|task| {
                     task.task_kind.starts_with(&format!("{prefix}/segment/Pos"))
                         || task.task_kind.starts_with(&format!("{prefix}/predict/Pos"))
                 })
-                .collect::<Vec<_>>();
-            assert_eq!(position_tasks.len(), 2);
+                .count();
+            assert_eq!(position_task_count, 2);
             let fan_in = detail
                 .tasks
                 .iter()

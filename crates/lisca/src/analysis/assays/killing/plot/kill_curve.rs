@@ -10,7 +10,11 @@ use crate::analysis::plot::{
 };
 use crate::analysis::slide::SlideMapping;
 
-pub fn run_plot_kill(workspace: &Path, mapping: &SlideMapping, interval: f64) -> Result<(), String> {
+pub fn run_plot_kill(
+    workspace: &Path,
+    mapping: &SlideMapping,
+    interval: f64,
+) -> Result<(), String> {
     if interval <= 0.0 {
         return Err(format!("interval must be > 0, got {interval}"));
     }
@@ -18,7 +22,8 @@ pub fn run_plot_kill(workspace: &Path, mapping: &SlideMapping, interval: f64) ->
     let curve_csv = workspace.join("results/kill_curve.csv");
     let (headers, rows) = read_csv(&curve_csv)?;
     let t_index = column_index(&headers, "t").ok_or("missing t in kill_curve.csv")?;
-    let alive_index = column_index(&headers, "n_alive").ok_or("missing n_alive in kill_curve.csv")?;
+    let alive_index =
+        column_index(&headers, "n_alive").ok_or("missing n_alive in kill_curve.csv")?;
     let slide_channel_index =
         column_index(&headers, "slide").ok_or("missing slide in kill_curve.csv")?;
 
@@ -31,7 +36,8 @@ pub fn run_plot_kill(workspace: &Path, mapping: &SlideMapping, interval: f64) ->
         let Some(n_alive) = parse_f64(&row[alive_index]) else {
             continue;
         };
-        let Some(slide_channel) = parse_f64(&row[slide_channel_index]).map(|value| value as u32) else {
+        let Some(slide_channel) = parse_f64(&row[slide_channel_index]).map(|value| value as u32)
+        else {
             continue;
         };
         grouped
@@ -45,7 +51,11 @@ pub fn run_plot_kill(workspace: &Path, mapping: &SlideMapping, interval: f64) ->
     }
 
     for points in grouped.values_mut() {
-        points.sort_by(|left, right| left.0.partial_cmp(&right.0).unwrap_or(std::cmp::Ordering::Equal));
+        points.sort_by(|left, right| {
+            left.0
+                .partial_cmp(&right.0)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
     }
 
     let channels: Vec<u32> = grouped.keys().copied().collect();

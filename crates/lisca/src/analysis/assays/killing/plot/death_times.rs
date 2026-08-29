@@ -38,7 +38,8 @@ pub fn run_plot_death_times(
         if death_time <= 0.0 {
             continue;
         }
-        let Some(slide_channel) = parse_f64(&row[slide_channel_index]).map(|value| value as u32) else {
+        let Some(slide_channel) = parse_f64(&row[slide_channel_index]).map(|value| value as u32)
+        else {
             continue;
         };
         grouped

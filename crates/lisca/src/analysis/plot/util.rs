@@ -213,7 +213,11 @@ pub fn quartile_axis_upper(grouped_values: &[Vec<f64>]) -> f64 {
         .filter_map(|values| quartile(values, 0.75))
         .fold(0.0f64, f64::max);
     let upper = max_q3 * 1.25;
-    if upper > 0.0 { upper } else { 1.0 }
+    if upper > 0.0 {
+        upper
+    } else {
+        1.0
+    }
 }
 
 fn quartile(values: &[f64], q: f64) -> Option<f64> {

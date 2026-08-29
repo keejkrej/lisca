@@ -12,8 +12,8 @@ use std::{
 use lisca::{
     aligner::{crop_roi, list_saved_bbox_positions, scan_source},
     protocol::{
-        AlignerSource, AssayData, AssayJsonFile, CropOutputFormat, CropRoiProgress,
-        CropRoiRequest, CropRoiStatus,
+        AlignerSource, AssayData, AssayJsonFile, CropOutputFormat, CropRoiProgress, CropRoiRequest,
+        CropRoiStatus,
     },
 };
 
@@ -86,7 +86,8 @@ mod monitor {
 
             if let Some(process_ticks) = process_cpu_ticks() {
                 let delta_ticks = process_ticks.saturating_sub(last_process_ticks);
-                let cpu_pct = (delta_ticks as f64 / clock_ticks as f64) / elapsed / cpu_count * 100.0;
+                let cpu_pct =
+                    (delta_ticks as f64 / clock_ticks as f64) / elapsed / cpu_count * 100.0;
                 summary.samples += 1;
                 summary.avg_process_cpu_pct =
                     ((summary.avg_process_cpu_pct * (summary.samples - 1) as f64) + cpu_pct)
@@ -100,14 +101,14 @@ mod monitor {
                 let write_delta = write_bytes.saturating_sub(last_io.1);
                 summary.total_read_mb += bytes_to_mb(read_delta);
                 summary.total_write_mb += bytes_to_mb(write_delta);
-                summary.avg_read_mbps =
-                    ((summary.avg_read_mbps * (summary.samples.saturating_sub(1)) as f64)
-                        + bytes_to_mbps(read_delta, elapsed))
-                        / summary.samples.max(1) as f64;
-                summary.avg_write_mbps =
-                    ((summary.avg_write_mbps * (summary.samples.saturating_sub(1)) as f64)
-                        + bytes_to_mbps(write_delta, elapsed))
-                        / summary.samples.max(1) as f64;
+                summary.avg_read_mbps = ((summary.avg_read_mbps
+                    * (summary.samples.saturating_sub(1)) as f64)
+                    + bytes_to_mbps(read_delta, elapsed))
+                    / summary.samples.max(1) as f64;
+                summary.avg_write_mbps = ((summary.avg_write_mbps
+                    * (summary.samples.saturating_sub(1)) as f64)
+                    + bytes_to_mbps(write_delta, elapsed))
+                    / summary.samples.max(1) as f64;
                 last_io = (read_bytes, write_bytes);
             }
 
@@ -116,14 +117,14 @@ mod monitor {
                 let write_delta = write_sectors.saturating_sub(last_disk_sectors.1);
                 let disk_read_mbps = sectors_to_mbps(read_delta, elapsed);
                 let disk_write_mbps = sectors_to_mbps(write_delta, elapsed);
-                summary.avg_disk_read_mbps =
-                    ((summary.avg_disk_read_mbps * (summary.samples.saturating_sub(1)) as f64)
-                        + disk_read_mbps)
-                        / summary.samples.max(1) as f64;
-                summary.avg_disk_write_mbps =
-                    ((summary.avg_disk_write_mbps * (summary.samples.saturating_sub(1)) as f64)
-                        + disk_write_mbps)
-                        / summary.samples.max(1) as f64;
+                summary.avg_disk_read_mbps = ((summary.avg_disk_read_mbps
+                    * (summary.samples.saturating_sub(1)) as f64)
+                    + disk_read_mbps)
+                    / summary.samples.max(1) as f64;
+                summary.avg_disk_write_mbps = ((summary.avg_disk_write_mbps
+                    * (summary.samples.saturating_sub(1)) as f64)
+                    + disk_write_mbps)
+                    / summary.samples.max(1) as f64;
                 last_disk_sectors = (read_sectors, write_sectors);
             }
 
@@ -274,7 +275,10 @@ fn parse_positions(raw: &str) -> Result<Vec<u32>, String> {
     raw.split(',')
         .map(str::trim)
         .filter(|part| !part.is_empty())
-        .map(|part| part.parse::<u32>().map_err(|error| format!("invalid position {part}: {error}")))
+        .map(|part| {
+            part.parse::<u32>()
+                .map_err(|error| format!("invalid position {part}: {error}"))
+        })
         .collect()
 }
 

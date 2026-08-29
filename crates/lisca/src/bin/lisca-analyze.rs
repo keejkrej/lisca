@@ -146,7 +146,9 @@ fn cmd_timeseries(args: &[String]) -> Result<(), String> {
     let assay = flag_path(args, "--assay");
     let mapping = load_mapping_for_workspace(&workspace, assay.as_deref())?;
     let jobs = default_timeseries_jobs();
-    let full_frame = load_assay_json(&workspace).map(|assay| skip_segment(&assay)).unwrap_or(false);
+    let full_frame = load_assay_json(&workspace)
+        .map(|assay| skip_segment(&assay))
+        .unwrap_or(false);
     eprintln!(
         "timeseries workspace={} assay={} jobs={} full_frame={full_frame}",
         workspace.display(),
@@ -161,10 +163,7 @@ fn cmd_timeseries(args: &[String]) -> Result<(), String> {
 fn cmd_auc(args: &[String]) -> Result<(), String> {
     let workspace = require_workspace(args)?;
     let interval = resolve_interval(&workspace, args)?;
-    eprintln!(
-        "auc workspace={} interval={interval}",
-        workspace.display()
-    );
+    eprintln!("auc workspace={} interval={interval}", workspace.display());
     timed("auc", || {
         run_auc(&workspace, interval)?;
         Ok(())
@@ -249,7 +248,9 @@ fn cmd_pipeline(args: &[String]) -> Result<(), String> {
         workspace.display(),
         assay.type_
     );
-    timed("pipeline", || run_sync_with_mode(&workspace, &assay, full_frame))
+    timed("pipeline", || {
+        run_sync_with_mode(&workspace, &assay, full_frame)
+    })
 }
 
 fn timed(label: &str, work: impl FnOnce() -> Result<(), String>) -> Result<(), String> {
@@ -295,10 +296,12 @@ fn require_workspace_or_timeseries_dir(args: &[String]) -> Result<PathBuf, Strin
 }
 
 /// Accept either `<workspace>` or `<workspace>/results/auc.csv` / `fit.csv`.
-fn require_workspace_or_results_parent(args: &[String], file_name: &str) -> Result<PathBuf, String> {
-    let raw = first_positional(args).ok_or_else(|| {
-        format!("missing WORKSPACE or results/{file_name} path")
-    })?;
+fn require_workspace_or_results_parent(
+    args: &[String],
+    file_name: &str,
+) -> Result<PathBuf, String> {
+    let raw = first_positional(args)
+        .ok_or_else(|| format!("missing WORKSPACE or results/{file_name} path"))?;
     let path = PathBuf::from(raw);
     if path.is_file() {
         let name = path
@@ -306,10 +309,7 @@ fn require_workspace_or_results_parent(args: &[String], file_name: &str) -> Resu
             .and_then(|n| n.to_str())
             .unwrap_or_default();
         if name != file_name {
-            return Err(format!(
-                "expected {file_name}, got {}",
-                path.display()
-            ));
+            return Err(format!("expected {file_name}, got {}", path.display()));
         }
         let results = path
             .parent()
@@ -320,7 +320,10 @@ fn require_workspace_or_results_parent(args: &[String], file_name: &str) -> Resu
         return Ok(workspace.to_path_buf());
     }
     if !path.is_dir() {
-        return Err(format!("path is not a directory or file: {}", path.display()));
+        return Err(format!(
+            "path is not a directory or file: {}",
+            path.display()
+        ));
     }
     Ok(path)
 }

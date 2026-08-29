@@ -62,7 +62,10 @@ struct IndexRoiJson {
 pub fn position_dir(workspace: &Path, pos: u32) -> Result<PathBuf, String> {
     let pos_dir = workspace.join("roi").join(format!("Pos{pos}"));
     if !pos_dir.is_dir() {
-        return Err(format!("No ROI directory found for position {pos}: {}", pos_dir.display()));
+        return Err(format!(
+            "No ROI directory found for position {pos}: {}",
+            pos_dir.display()
+        ));
     }
     Ok(pos_dir)
 }
@@ -190,11 +193,18 @@ impl RoiStack {
             let offset = page_index * plane_size;
             data[offset..offset + plane_size].copy_from_slice(&page);
         }
-        Ok(Self { data, shape: expected })
+        Ok(Self {
+            data,
+            shape: expected,
+        })
     }
 }
 
-fn decode_page_to_f64(data: DecodingResult, width: usize, height: usize) -> Result<Vec<f64>, String> {
+fn decode_page_to_f64(
+    data: DecodingResult,
+    width: usize,
+    height: usize,
+) -> Result<Vec<f64>, String> {
     let expected_len = width * height;
     let to_f64 = |values: Vec<u16>| -> Result<Vec<f64>, String> {
         if values.len() != expected_len {
@@ -360,7 +370,11 @@ impl MaskStack {
     }
 }
 
-fn decode_page_to_bool(data: DecodingResult, width: usize, height: usize) -> Result<Vec<bool>, String> {
+fn decode_page_to_bool(
+    data: DecodingResult,
+    width: usize,
+    height: usize,
+) -> Result<Vec<bool>, String> {
     let expected_len = width * height;
     let to_bool = |values: Vec<u8>| -> Result<Vec<bool>, String> {
         if values.len() != expected_len {

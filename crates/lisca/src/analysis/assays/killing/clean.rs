@@ -29,7 +29,8 @@ fn parse_label(raw: &str) -> bool {
 fn load_predictions(path: &Path) -> Result<Vec<PredictionRow>, String> {
     let (headers, rows) = read_csv(path)?;
     let t_index = column_index(&headers, "t").ok_or("missing t column in predictions.csv")?;
-    let crop_index = column_index(&headers, "crop").ok_or("missing crop column in predictions.csv")?;
+    let crop_index =
+        column_index(&headers, "crop").ok_or("missing crop column in predictions.csv")?;
     let label_index =
         column_index(&headers, "label").ok_or("missing label column in predictions.csv")?;
     let pos_index = column_index(&headers, "pos").unwrap_or(usize::MAX);
@@ -155,10 +156,7 @@ fn compute_death_times(rows: &[PredictionRow]) -> BTreeMap<CropKey, u32> {
     death_times
 }
 
-fn build_kill_curve(
-    death_times: &BTreeMap<CropKey, u32>,
-    slide_channel: u32,
-) -> Vec<(u32, u32)> {
+fn build_kill_curve(death_times: &BTreeMap<CropKey, u32>, slide_channel: u32) -> Vec<(u32, u32)> {
     let channel_deaths: Vec<u32> = death_times
         .iter()
         .filter(|(key, death_time)| key.slide_channel == slide_channel && **death_time > 0)
@@ -178,7 +176,10 @@ fn build_kill_curve(
 
     (0..=max_t)
         .map(|t| {
-            let alive = channel_deaths.iter().filter(|death_time| **death_time >= t).count() as u32;
+            let alive = channel_deaths
+                .iter()
+                .filter(|death_time| **death_time >= t)
+                .count() as u32;
             (t, alive)
         })
         .collect()
@@ -266,8 +267,8 @@ mod tests {
             row(3, 1, true),
         ];
         let cleaned = clean_predictions(&rows);
-        assert_eq!(cleaned[2].label, false);
-        assert_eq!(cleaned[3].label, false);
+        assert!(!cleaned[2].label);
+        assert!(!cleaned[3].label);
     }
 
     #[test]
