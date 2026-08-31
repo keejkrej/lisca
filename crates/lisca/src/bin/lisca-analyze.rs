@@ -80,8 +80,8 @@ Commands (same stage names as `transfection`):
 Common options:
   --assay PATH            assay.json (default: <workspace>/assay.json)
   --interval MINUTES      frame interval (default: assay.json interval.value/unit)
-  --max-onset-minutes N   fit onset search cap (default: assay analysis.maxOnsetMinutes
-                          or 120; 0 = onset fixed at 0)
+  --max-onset-minutes N   fit onset time t0 search cap (default: assay analysis.maxOnsetMinutes
+                          or 120; 0 = onset time t0 fixed at 0)
   (timeseries/pipeline whole-ROI mode is controlled by assay.json
    analysis.skipSegment, not a CLI flag)
   --variation-radius N    segment local-variation radius (default: 2)

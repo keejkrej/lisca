@@ -76,10 +76,10 @@ export function buildTransfectionFixture(): AnalysisFixture {
       "timeseries",
       samplePath("traces_fit"),
     ),
-    plotFile("mrna_lifetime", "mRNA lifetime", "parameters"),
+    plotFile("mrna_lifetime", "mRNA lifetime τ_mRNA", "parameters"),
     plotFile("auc", "AUC", "parameters"),
-    plotFile("expression_rate", "Expression rate", "parameters"),
-    plotFile("onset_time", "Onset time", "parameters"),
+    plotFile("expression_rate", "Expression rate m0 k_TL", "parameters"),
+    plotFile("onset_time", "Onset time t0", "parameters"),
   ];
   return {
     id: "transfection",

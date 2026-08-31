@@ -175,13 +175,13 @@ fn fit_stage_matches_transfection_reference_fit() {
         FIT_REL_TOL
     ));
     assert!(approx_eq(
-        parse_f64(&row["protein_decay_rate"]),
-        reference.protein_decay_rate,
+        parse_f64(&row["protein_degradation_rate"]),
+        reference.protein_degradation_rate,
         FIT_REL_TOL
     ));
     assert!(approx_eq(
-        parse_f64(&row["mrna_decay_rate"]),
-        reference.mrna_decay_rate,
+        parse_f64(&row["mrna_degradation_rate"]),
+        reference.mrna_degradation_rate,
         FIT_REL_TOL
     ));
     assert!(approx_eq(
@@ -295,8 +295,8 @@ fn compare_fit_csvs(lisca_csv: &str, transfection_csv: &str) {
         &tf_path,
         &[
             "baseline_intensity",
-            "protein_decay_rate",
-            "mrna_decay_rate",
+            "protein_degradation_rate",
+            "mrna_degradation_rate",
             "onset_time",
             "expression_amplitude",
         ],
@@ -365,8 +365,8 @@ fn synthetic_frame(timepoint: u32) -> Vec<f64> {
         let frame_indices: Vec<f64> = (0..4).map(f64::from).collect();
         let kinetic_truth = FitResult {
             baseline_intensity: 10.0,
-            protein_decay_rate: 0.1,
-            mrna_decay_rate: 0.5,
+            protein_degradation_rate: 0.1,
+            mrna_degradation_rate: 0.5,
             onset_time: 0.0,
             expression_amplitude: 100.0,
         };

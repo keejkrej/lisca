@@ -76,8 +76,8 @@ pub fn integrate_trace(times: &[f64], corrected: &[f64], interval: f64) -> f64 {
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct FitResult {
     pub baseline_intensity: f64,
-    pub protein_decay_rate: f64,
-    pub mrna_decay_rate: f64,
+    pub protein_degradation_rate: f64,
+    pub mrna_degradation_rate: f64,
     pub onset_time: f64,
     pub expression_amplitude: f64,
 }
@@ -86,12 +86,17 @@ const RATE_COARSE_CANDIDATE_COUNT: usize = 24;
 const RATE_REFINE_CANDIDATE_COUNT: usize = 12;
 const RATE_REFINE_PASSES: usize = 2;
 
-fn kinetic_basis(time: f64, protein_decay_rate: f64, mrna_decay_rate: f64, onset_time: f64) -> f64 {
+fn kinetic_basis(
+    time: f64,
+    protein_degradation_rate: f64,
+    mrna_degradation_rate: f64,
+    onset_time: f64,
+) -> f64 {
     if time < onset_time {
         return 0.0;
     }
     let dt = time - onset_time;
-    (-protein_decay_rate * dt).exp() - (-mrna_decay_rate * dt).exp()
+    (-protein_degradation_rate * dt).exp() - (-mrna_degradation_rate * dt).exp()
 }
 
 fn lstsq_affine(basis: &[f64], values: &[f64]) -> Option<(f64, f64)> {
@@ -116,13 +121,20 @@ fn lstsq_affine(basis: &[f64], values: &[f64]) -> Option<(f64, f64)> {
 fn evaluate_rate_candidate(
     times: &[f64],
     values: &[f64],
-    protein_decay_rate: f64,
-    mrna_decay_rate: f64,
+    protein_degradation_rate: f64,
+    mrna_degradation_rate: f64,
     onset_time: f64,
 ) -> Option<(f64, FitResult)> {
     let basis: Vec<f64> = times
         .iter()
-        .map(|&time| kinetic_basis(time, protein_decay_rate, mrna_decay_rate, onset_time))
+        .map(|&time| {
+            kinetic_basis(
+                time,
+                protein_degradation_rate,
+                mrna_degradation_rate,
+                onset_time,
+            )
+        })
         .collect();
     if !basis.iter().all(|value| value.is_finite()) {
         return None;
@@ -150,8 +162,8 @@ fn evaluate_rate_candidate(
         sse,
         FitResult {
             baseline_intensity,
-            protein_decay_rate,
-            mrna_decay_rate,
+            protein_degradation_rate,
+            mrna_degradation_rate,
             onset_time,
             expression_amplitude,
         },
@@ -170,7 +182,7 @@ fn linspace(start: f64, end: f64, count: usize) -> Vec<f64> {
 fn fit_trace_points(
     times: &[f64],
     values: &[f64],
-    fixed_protein_decay_rate: Option<f64>,
+    fixed_protein_degradation_rate: Option<f64>,
 ) -> Option<FitResult> {
     if times.len() < 3 || values.len() < 3 {
         return None;
@@ -209,7 +221,7 @@ fn fit_trace_points(
     let min_rate = (1e-4 / max_time).max(1e-6);
     let max_rate = (min_rate * 10.0).max(10.0 / min_positive_dt);
 
-    if let Some(fixed) = fixed_protein_decay_rate {
+    if let Some(fixed) = fixed_protein_degradation_rate {
         return fit_with_fixed_protein(times, values, fixed, min_rate, max_rate);
     }
 
@@ -230,15 +242,19 @@ fn fit_trace_points(
         let mut best_indices: Option<(usize, usize)> = None;
 
         for (protein_index, protein_log) in protein_logs.iter().enumerate() {
-            let protein_decay_rate = protein_log.exp();
+            let protein_degradation_rate = protein_log.exp();
             for (mrna_index, mrna_log) in mrna_logs.iter().enumerate() {
-                let mrna_decay_rate = mrna_log.exp();
-                if mrna_decay_rate <= protein_decay_rate {
+                let mrna_degradation_rate = mrna_log.exp();
+                if mrna_degradation_rate <= protein_degradation_rate {
                     continue;
                 }
-                if let Some((sse, candidate)) =
-                    evaluate_rate_candidate(times, values, protein_decay_rate, mrna_decay_rate, 0.0)
-                {
+                if let Some((sse, candidate)) = evaluate_rate_candidate(
+                    times,
+                    values,
+                    protein_degradation_rate,
+                    mrna_degradation_rate,
+                    0.0,
+                ) {
                     if stage_best
                         .as_ref()
                         .map(|(best, _)| sse < *best)
@@ -278,14 +294,14 @@ fn fit_trace_points(
 fn fit_with_fixed_protein(
     times: &[f64],
     values: &[f64],
-    fixed_protein_decay_rate: f64,
+    fixed_protein_degradation_rate: f64,
     min_rate: f64,
     max_rate: f64,
 ) -> Option<FitResult> {
-    if !fixed_protein_decay_rate.is_finite() || fixed_protein_decay_rate <= 0.0 {
+    if !fixed_protein_degradation_rate.is_finite() || fixed_protein_degradation_rate <= 0.0 {
         return None;
     }
-    let mrna_min_rate = min_rate.max(fixed_protein_decay_rate * 1.001);
+    let mrna_min_rate = min_rate.max(fixed_protein_degradation_rate * 1.001);
     if mrna_min_rate >= max_rate {
         return None;
     }
@@ -311,7 +327,7 @@ fn fit_with_fixed_protein(
                 if let Some((sse, candidate)) = evaluate_rate_candidate(
                     times,
                     values,
-                    fixed_protein_decay_rate,
+                    fixed_protein_degradation_rate,
                     mrna_log.exp(),
                     t_onset,
                 ) {
@@ -359,8 +375,11 @@ fn fit_with_fixed_protein(
     best_result
 }
 
-fn pooled_protein_decay_rate(results: &[FitResult]) -> Option<f64> {
-    let mut rates: Vec<f64> = results.iter().map(|row| row.protein_decay_rate).collect();
+fn pooled_protein_degradation_rate(results: &[FitResult]) -> Option<f64> {
+    let mut rates: Vec<f64> = results
+        .iter()
+        .map(|row| row.protein_degradation_rate)
+        .collect();
     if rates.is_empty() {
         return None;
     }
@@ -372,7 +391,7 @@ fn pooled_protein_decay_rate(results: &[FitResult]) -> Option<f64> {
 pub fn fit_trace_table(times: &[f64], values: &[f64], interval: f64) -> Option<FitResult> {
     let times: Vec<f64> = times.iter().map(|value| value * interval).collect();
     let first = fit_trace_points(&times, values, None)?;
-    let pooled = pooled_protein_decay_rate(&[first])?;
+    let pooled = pooled_protein_degradation_rate(&[first])?;
     fit_trace_points(&times, values, Some(pooled))
 }
 
@@ -390,8 +409,8 @@ pub fn synthetic_kinetic_trace(
                 + coeffs.expression_amplitude
                     * kinetic_basis(
                         time,
-                        coeffs.protein_decay_rate,
-                        coeffs.mrna_decay_rate,
+                        coeffs.protein_degradation_rate,
+                        coeffs.mrna_degradation_rate,
                         coeffs.onset_time,
                     )
         })

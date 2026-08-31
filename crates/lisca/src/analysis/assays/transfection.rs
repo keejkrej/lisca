@@ -25,8 +25,8 @@ use crate::protocol::{AnalysisCsvFile, AnalysisProgress, AnalysisStage, AssayJso
 use mapping::to_sidecar_mapping;
 
 /// Default second-pass **onset time** (\(t_0\)) search cap when assay.json
-/// omits `analysis.maxOnsetMinutes` (minutes). `0` still means “onset fixed
-/// at 0” when the field is set explicitly. Fit uses the basic
+/// omits `analysis.maxOnsetMinutes` (minutes). `0` still means “onset time
+/// \(t_0\) fixed at 0” when the field is set explicitly. Fit uses the basic
 /// translation–degradation model (Müller et al. 2024 Eq. 3; no maturation).
 pub const DEFAULT_MAX_ONSET_MINUTES: f64 = lisca_transfection::DEFAULT_MAX_ONSET_MINUTES;
 

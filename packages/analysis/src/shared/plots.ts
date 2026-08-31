@@ -71,7 +71,7 @@ export function resultSectionInstruction(
   }
   return assay === "killing"
     ? "Survival curve and death-time distributions."
-    : "Fitted parameters: mRNA lifetime, AUC, expression rate, and onset time.";
+    : "Fitted parameters: mRNA lifetime τ_mRNA, AUC, expression rate m0 k_TL, and onset time t0.";
 }
 
 function guessPlotSection(fileName: string): ResultPlotSection {

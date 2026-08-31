@@ -201,7 +201,7 @@ export function BasicInfoStep1(props: { hostPort: HostFilePickerOperations }) {
           <Show when={wizard().assayId === ASSAY_TYPE.TRANSFECTION}>
             <Field class="min-w-0 flex-1 gap-2">
               <FieldLabel class="text-sm font-medium leading-[18px]" id="studio-max-onset-label">
-                Max onset
+                Max onset time t0
               </FieldLabel>
               <div class="relative">
                 <Input
@@ -212,7 +212,7 @@ export function BasicInfoStep1(props: { hostPort: HostFilePickerOperations }) {
                   name="max-onset-minutes"
                   placeholder={`e.g. ${defaultMaxOnsetMinutesForAssay(ASSAY_TYPE.TRANSFECTION) ?? 120}…`}
                   step={1}
-                  title="Latest time expression may start; 0 means the first frame."
+                  title="Cap on onset time t0 after acquisition start. 0 fixes onset at 0."
                   type="number"
                   value={wizard().analysis?.maxOnsetMinutes ?? ""}
                   onChange={(event) => {

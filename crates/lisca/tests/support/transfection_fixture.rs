@@ -36,8 +36,8 @@ impl SyntheticWorkspace {
 
         let kinetic_truth = FitResult {
             baseline_intensity: 10.0,
-            protein_decay_rate: 0.1,
-            mrna_decay_rate: 0.5,
+            protein_degradation_rate: 0.1,
+            mrna_degradation_rate: 0.5,
             onset_time: 0.0,
             expression_amplitude: 100.0,
         };
@@ -126,8 +126,8 @@ fn quantized_frame_metrics(timepoint: u32) -> (u32, f64, f64, f64) {
     let frame_indices: Vec<f64> = (0..TIME_COUNT).map(f64::from).collect();
     let kinetic_truth = FitResult {
         baseline_intensity: 10.0,
-        protein_decay_rate: 0.1,
-        mrna_decay_rate: 0.5,
+        protein_degradation_rate: 0.1,
+        mrna_degradation_rate: 0.5,
         onset_time: 0.0,
         expression_amplitude: 100.0,
     };

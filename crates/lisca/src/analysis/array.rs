@@ -194,28 +194,30 @@ pub fn trapezoidal_integral(times: &[f64], values: &[f64]) -> f64 {
 ///
 /// Paper terms: `onset_time` = onset time \(t_0\);
 /// `expression_rate = expression_amplitude * (δ − β)` = \(m_0 k_{TL}\);
-/// `1/δ` = mRNA lifetime; `1/β` = protein lifetime.
+/// \(\tau_{\mathrm{mRNA}}=\ln 2/\delta\); \(\tau_{\mathrm{EGFP}}=\ln 2/\beta\)
+/// (half-lives, not \(1/\mathrm{rate}\)). Rates are `mrna_degradation_rate`
+/// (\(\delta\)) and `protein_degradation_rate` (\(\beta\)).
 /// `baseline_intensity` is a baseline nuisance, not a kinetic rate.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct KineticFitCoeffs {
     pub baseline_intensity: f64,
-    pub protein_decay_rate: f64,
-    pub mrna_decay_rate: f64,
+    pub protein_degradation_rate: f64,
+    pub mrna_degradation_rate: f64,
     pub onset_time: f64,
     pub expression_amplitude: f64,
 }
 
 pub fn kinetic_basis_value(
     time: f64,
-    protein_decay_rate: f64,
-    mrna_decay_rate: f64,
+    protein_degradation_rate: f64,
+    mrna_degradation_rate: f64,
     onset_time: f64,
 ) -> f64 {
     if time < onset_time {
         return 0.0;
     }
     let dt = time - onset_time;
-    (-protein_decay_rate * dt).exp() - (-mrna_decay_rate * dt).exp()
+    (-protein_degradation_rate * dt).exp() - (-mrna_degradation_rate * dt).exp()
 }
 
 pub fn fitted_trace_value(time: f64, coeffs: &KineticFitCoeffs) -> f64 {
@@ -223,8 +225,8 @@ pub fn fitted_trace_value(time: f64, coeffs: &KineticFitCoeffs) -> f64 {
         + coeffs.expression_amplitude
             * kinetic_basis_value(
                 time,
-                coeffs.protein_decay_rate,
-                coeffs.mrna_decay_rate,
+                coeffs.protein_degradation_rate,
+                coeffs.mrna_degradation_rate,
                 coeffs.onset_time,
             )
 }
@@ -232,8 +234,8 @@ pub fn fitted_trace_value(time: f64, coeffs: &KineticFitCoeffs) -> f64 {
 pub fn evaluate_kinetic_candidate(
     times: &[f64],
     values: &[f64],
-    protein_decay_rate: f64,
-    mrna_decay_rate: f64,
+    protein_degradation_rate: f64,
+    mrna_degradation_rate: f64,
     onset_time: f64,
 ) -> Option<(f64, KineticFitCoeffs)> {
     if times.len() != values.len() || times.is_empty() {
@@ -241,8 +243,14 @@ pub fn evaluate_kinetic_candidate(
     }
     let times = Array1::from_iter(times.iter().copied());
     let values = Array1::from_iter(values.iter().copied());
-    let basis = times
-        .mapv(|time| kinetic_basis_value(time, protein_decay_rate, mrna_decay_rate, onset_time));
+    let basis = times.mapv(|time| {
+        kinetic_basis_value(
+            time,
+            protein_degradation_rate,
+            mrna_degradation_rate,
+            onset_time,
+        )
+    });
     if !basis.iter().all(|value| value.is_finite()) {
         return None;
     }
@@ -266,8 +274,8 @@ pub fn evaluate_kinetic_candidate(
         sse,
         KineticFitCoeffs {
             baseline_intensity,
-            protein_decay_rate,
-            mrna_decay_rate,
+            protein_degradation_rate,
+            mrna_degradation_rate,
             onset_time,
             expression_amplitude,
         },

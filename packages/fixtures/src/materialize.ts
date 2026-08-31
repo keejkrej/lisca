@@ -396,7 +396,7 @@ function writeTransfectionAnalysis(write: WriteRel): void {
     write(join("analysis", `Pos${pos}`, "auc.csv"), `${auc.join("\n")}\n`);
 
     const fit = [
-      "roi,baseline_intensity,protein_decay_rate,protein_lifetime,mrna_decay_rate,mrna_lifetime,onset_time,expression_amplitude,expression_rate,success",
+      "roi,baseline_intensity,protein_degradation_rate,protein_lifetime,mrna_degradation_rate,mrna_lifetime,onset_time,expression_amplitude,expression_rate,success",
       ...rois.map((roi) =>
         [
           roi,
