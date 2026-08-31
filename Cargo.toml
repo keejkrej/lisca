@@ -2,6 +2,7 @@
 resolver = "2"
 members = [
   "crates/lisca",
+  "crates/lisca-workspace",
   "crates/lisca-server",
   "crates/lisca-tauri",
   "apps/aligner/server",
@@ -52,6 +53,7 @@ rayon = "1.10"
 mplot = { git = "https://github.com/keejkrej/mplot-rs" }
 rust_xlsxwriter = "0.90"
 lisca = { path = "crates/lisca", default-features = false }
+lisca-workspace = { path = "crates/lisca-workspace" }
 lisca-server = { path = "crates/lisca-server" }
 # Transfection analysis (Otsu segment, timeseries, AUC, fit, plots).
 # ndarray 0.16 / imageproc 0.25 in that crate; this workspace stays on 0.17 / 0.27.

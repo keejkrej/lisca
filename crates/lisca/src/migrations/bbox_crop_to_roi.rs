@@ -4,6 +4,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
+use lisca_workspace::{BBOX_DIR, POS_PREFIX};
 use uuid::Uuid;
 
 const CROP: &str = "crop";
@@ -20,7 +21,7 @@ pub(super) fn apply(workspace: &Path) -> Result<Vec<String>, String> {
 }
 
 fn bbox_csv_paths(workspace: &Path) -> Result<Vec<PathBuf>, String> {
-    let bbox_dir = workspace.join("bbox");
+    let bbox_dir = workspace.join(BBOX_DIR);
     let entries = match fs::read_dir(&bbox_dir) {
         Ok(entries) => entries,
         Err(error) if error.kind() == ErrorKind::NotFound => return Ok(Vec::new()),
@@ -47,7 +48,7 @@ fn bbox_csv_paths(workspace: &Path) -> Result<Vec<PathBuf>, String> {
 }
 
 fn parse_pos_csv_name(name: &str) -> Option<u32> {
-    let rest = name.strip_prefix("Pos")?.strip_suffix(".csv")?;
+    let rest = name.strip_prefix(POS_PREFIX)?.strip_suffix(".csv")?;
     rest.parse().ok()
 }
 

@@ -60,7 +60,7 @@ struct IndexRoiJson {
 }
 
 pub fn position_dir(workspace: &Path, pos: u32) -> Result<PathBuf, String> {
-    let pos_dir = workspace.join("roi").join(format!("Pos{pos}"));
+    let pos_dir = lisca_workspace::roi_pos_dir(workspace, pos);
     if !pos_dir.is_dir() {
         return Err(format!(
             "No ROI directory found for position {pos}: {}",
@@ -71,7 +71,7 @@ pub fn position_dir(workspace: &Path, pos: u32) -> Result<PathBuf, String> {
 }
 
 pub fn read_position_index(pos_dir: &Path) -> Result<PositionIndex, String> {
-    let index_path = pos_dir.join("index.json");
+    let index_path = pos_dir.join(lisca_workspace::INDEX_JSON);
     let bytes = std::fs::read(&index_path)
         .map_err(|error| format!("failed to read {}: {error}", index_path.display()))?;
     let raw: IndexJson = serde_json::from_slice(&bytes)
@@ -310,10 +310,7 @@ fn stack_value(stack: &RoiStack, indices: &[usize]) -> Result<f64, String> {
 }
 
 pub fn default_mask_path(workspace: &Path, position: u32, roi_file_name: &str) -> PathBuf {
-    workspace
-        .join("mask")
-        .join(format!("Pos{position}"))
-        .join(roi_file_name)
+    lisca_workspace::mask_pos_dir(workspace, position).join(roi_file_name)
 }
 
 #[cfg(test)]

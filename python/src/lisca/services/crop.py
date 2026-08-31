@@ -24,6 +24,7 @@ from lisca.core.bbox import (
     workspace_bbox_csv_path,
     workspace_roi_pos_dir,
 )
+from lisca.core.paths import INDEX_JSON
 from lisca.migrations import migrate_workspace
 from lisca.readers import ImageInfo, open_reader
 
@@ -162,7 +163,7 @@ def _write_index(
             for bbox in bboxes
         ],
     }
-    (output_dir / "index.json").write_text(
+    (output_dir / INDEX_JSON).write_text(
         json.dumps(index, indent=2) + "\n", encoding="utf-8"
     )
 

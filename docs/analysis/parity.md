@@ -99,10 +99,12 @@ transfection = { git = "https://github.com/keejkrej/lisca-transfection-assay", r
 Keep Cargo and Python on the **same SHA**. Lock files (`Cargo.lock`,
 `python/uv.lock`) must match. Notebooks vendor sync reads that SHA.
 
-The sidecar crate does **not** depend on this repo (that would cycle). Public
-API is workspace-path based: `run_segment`, `run_timeseries`, `run_auc`,
-`run_fit`, `run_pipeline`, `run_plot_*` (PNG only), `publish_sample_*_xlsx`,
-`load_assay_for_workspace`.
+The sidecar crate must **not** depend on crate `lisca` (that would cycle:
+`lisca` already depends on `lisca-transfection`). It **may** git-depend on
+`lisca-workspace` in this repo for folder names and bbox/ROI path helpers.
+Public analysis API is workspace-path based: `run_segment`, `run_timeseries`,
+`run_auc`, `run_fit`, `run_pipeline`, `run_plot_*` (PNG only),
+`publish_sample_*_xlsx`, `load_assay_for_workspace`.
 
 ### ndarray / imageproc versions
 
@@ -116,9 +118,9 @@ crates); do not silently rewrite the sidecar to match this workspace.
 
 ### Contract parity
 
-- Workspace layout: `assay.json`, `roi/PosN/`, `mask/PosN/`,
-  `analysis/Pos{n}/{ch{n},auc,fit}.csv`, `results/` (no `slide.json`, no
-  `timeseries/` folder, no CSV under `results/`).
+- Workspace layout: folder names + bbox/ROI files owned here
+  ([`schema.md`](./schema.md)). Transfection analysis/results **columns** are
+  owned by the sidecar. Killing tables stay in-tree until that sidecar exists.
 - Timeseries columns: `roi,t,area,background,sum,corrected` (no `pos` /
   `slide_channel`; joined later from path + assay mapping). `background`
   and `sum` are QC columns. `t` uses `index.json` `timeIndices`. Segmented

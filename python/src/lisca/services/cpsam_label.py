@@ -14,7 +14,13 @@ import numpy as np
 from lisca.core.frame_normalize import normalize_frame_to_uint8, save_grayscale_png
 from lisca.core.mask_io import write_mask_png
 from lisca.core.roi_stack import load_roi_stack, roi_frame_2d
-from lisca.core.workspace import list_align_positions, load_position_index, roi_tiff_path
+from lisca.core.workspace import (
+    POS_PREFIX,
+    ROI_DIR,
+    list_align_positions,
+    load_position_index,
+    roi_tiff_path,
+)
 
 
 @dataclass(frozen=True)
@@ -32,14 +38,14 @@ class LabelCpsamOptions:
 
 
 def _list_roi_positions(workspace: Path) -> list[int]:
-    roi_dir = workspace / "roi"
-    if not roi_dir.is_dir():
+    roi_root = workspace / ROI_DIR
+    if not roi_root.is_dir():
         return []
     positions: list[int] = []
-    for path in sorted(roi_dir.glob("Pos*")):
+    for path in sorted(roi_root.glob(f"{POS_PREFIX}*")):
         if not path.is_dir():
             continue
-        suffix = path.name.removeprefix("Pos")
+        suffix = path.name.removeprefix(POS_PREFIX)
         if suffix.isdigit():
             positions.append(int(suffix))
     return positions
@@ -86,7 +92,9 @@ def _ensure_2d_frame(frame: np.ndarray) -> np.ndarray:
     return image
 
 
-def _coerce_labels_to_frame(labels: np.ndarray, frame_shape: tuple[int, int]) -> np.ndarray:
+def _coerce_labels_to_frame(
+    labels: np.ndarray, frame_shape: tuple[int, int]
+) -> np.ndarray:
     """Match cellpose output to (H, W), including singleton axes it may squeeze."""
     label_arr = np.asarray(labels, dtype=np.int32)
     height, width = frame_shape
@@ -101,7 +109,9 @@ def _coerce_labels_to_frame(labels: np.ndarray, frame_shape: tuple[int, int]) ->
     raise ValueError(msg)
 
 
-def _pad_for_cellpose(frame: np.ndarray, min_size: int = 32) -> tuple[np.ndarray, tuple[int, int]]:
+def _pad_for_cellpose(
+    frame: np.ndarray, min_size: int = 32
+) -> tuple[np.ndarray, tuple[int, int]]:
     """Pad tiny/narrow frames so cpsam does not collapse a spatial axis."""
     height, width = frame.shape
     pad_h = max(0, min_size - height)
@@ -121,7 +131,9 @@ def segment_bf_binary(frame: np.ndarray) -> np.ndarray:
     return segment_bf_binary_batch([frame], batch_size=1)[0]
 
 
-def segment_bf_binary_batch(frames: list[np.ndarray], *, batch_size: int = 8) -> list[np.ndarray]:
+def segment_bf_binary_batch(
+    frames: list[np.ndarray], *, batch_size: int = 8
+) -> list[np.ndarray]:
     """Segment a list of BF frames; returns one binary mask per frame."""
     if not frames:
         return []
@@ -295,7 +307,9 @@ def label_cpsam(options: LabelCpsamOptions) -> dict:
     return manifest
 
 
-def _write_preview_overlay(path: Path, image_u8: np.ndarray, binary: np.ndarray) -> None:
+def _write_preview_overlay(
+    path: Path, image_u8: np.ndarray, binary: np.ndarray
+) -> None:
     from PIL import Image
 
     path.parent.mkdir(parents=True, exist_ok=True)

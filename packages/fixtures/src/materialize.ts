@@ -218,10 +218,8 @@ function writeAlignment(write: WriteRel): void {
   };
   decodeJson(SavedAlignStateSchema, align);
 
-  const header = "roi,x,y,w,h,i,j";
-  const rows = FIXTURE_LAYOUT.boxes.map(
-    (box) => `${box.roi},${box.x},${box.y},${box.w},${box.h},${box.i},${box.j}`,
-  );
+  const header = "roi,x,y,w,h";
+  const rows = FIXTURE_LAYOUT.boxes.map((box) => `${box.roi},${box.x},${box.y},${box.w},${box.h}`);
   const csv = `${[header, ...rows].join("\n")}\n`;
 
   for (const pos of FIXTURE_LAYOUT.positions) {

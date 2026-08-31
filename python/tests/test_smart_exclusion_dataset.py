@@ -35,14 +35,16 @@ def _write_align_state(
             "opacity": 0.35,
         },
     }
-    (align_dir / f"Pos{position}.json").write_text(json.dumps(payload), encoding="utf-8")
+    (align_dir / f"Pos{position}.json").write_text(
+        json.dumps(payload), encoding="utf-8"
+    )
 
 
 def _write_bbox(workspace: Path, position: int) -> None:
     bbox_dir = workspace / "bbox"
     bbox_dir.mkdir(parents=True, exist_ok=True)
     (bbox_dir / f"Pos{position}.csv").write_text(
-        "roi,x,y,w,h,i,j\n0,10,10,50,50,0,0\n",
+        "roi,x,y,w,h\n0,10,10,50,50\n",
         encoding="utf-8",
     )
 
@@ -56,12 +58,13 @@ def _write_roi_stack(workspace: Path, position: int) -> None:
         "axisOrder": "TCZYX",
         "channelCount": 1,
         "position": position,
+        "timeCount": 1,
+        "zCount": 1,
         "rois": [
             {
                 "bbox": {"h": 50, "roi": 0, "w": 50, "x": 10, "y": 10},
                 "fileName": "Roi0.tif",
                 "roi": 0,
-                "shape": [1, 1, 1, 50, 50],
             }
         ],
     }
@@ -115,6 +118,8 @@ def test_create_smart_exclusion_dataset_filters_small_excluded_cells(
     assert "exclude/" in metadata
     assert "i-1_j0" not in metadata
 
-    exclude_rows = [line for line in metadata.splitlines() if line.startswith("exclude/")]
+    exclude_rows = [
+        line for line in metadata.splitlines() if line.startswith("exclude/")
+    ]
     assert len(exclude_rows) == 1
     assert ",0," in exclude_rows[0]

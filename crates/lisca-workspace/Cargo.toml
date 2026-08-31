@@ -1,0 +1,15 @@
+[package]
+name = "lisca-workspace"
+version.workspace = true
+publish = false
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Shared workspace folder names, path builders, and bbox CSV parsing."
+
+[lints]
+workspace = true
+
+[dependencies]
+csv.workspace = true
+

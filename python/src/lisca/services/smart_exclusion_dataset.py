@@ -20,7 +20,11 @@ from lisca.core.frame_normalize import (
     save_grayscale_png,
 )
 from lisca.core.roi_stack import load_roi_stack, roi_frame_2d
-from lisca.core.source import SourceFrameRequest, find_source_frame_path, load_source_frame
+from lisca.core.source import (
+    SourceFrameRequest,
+    find_source_frame_path,
+    load_source_frame,
+)
 from lisca.core.workspace import (
     list_align_positions,
     load_bbox_rows,
@@ -87,12 +91,16 @@ def _prepare_image(image: np.ndarray, image_size: int | None) -> np.ndarray:
 
 
 def create_smart_exclusion_dataset(options: CreateSmartExclusionDatasetOptions) -> dict:
-    all_positions = sorted(set(options.positions or list_align_positions(options.workspace)))
+    all_positions = sorted(
+        set(options.positions or list_align_positions(options.workspace))
+    )
     if not all_positions:
         raise ValueError("no align positions found in workspace")
 
     val_positions = set(options.val_positions or [all_positions[-1]])
-    train_positions = {position for position in all_positions if position not in val_positions}
+    train_positions = {
+        position for position in all_positions if position not in val_positions
+    }
 
     output = options.output
     include_dir = output / "include"
@@ -105,7 +113,6 @@ def create_smart_exclusion_dataset(options: CreateSmartExclusionDatasetOptions) 
 
     for position in all_positions:
         align_state = load_saved_align_state(options.workspace, position)
-        grid = align_state.grid
         bbox_rows = load_bbox_rows(options.workspace, position)
         position_index = load_position_index(options.workspace, position)
         roi_by_id = {entry.roi: entry for entry in position_index.rois}
@@ -167,8 +174,8 @@ def create_smart_exclusion_dataset(options: CreateSmartExclusionDatasetOptions) 
                     path=relative_path,
                     label=1,
                     position=position,
-                    i=bbox.i,
-                    j=bbox.j,
+                    i=None,
+                    j=None,
                     roi=bbox.roi,
                     split=split,
                     source_kind="roi_stack",
@@ -206,7 +213,8 @@ def create_smart_exclusion_dataset(options: CreateSmartExclusionDatasetOptions) 
 
     exclude_samples = [sample for sample in samples if sample.label == 0]
     if exclude_samples and any(
-        (sample.area_ratio or 0.0) < options.min_area_ratio for sample in exclude_samples
+        (sample.area_ratio or 0.0) < options.min_area_ratio
+        for sample in exclude_samples
     ):
         raise AssertionError("exclude samples must satisfy min_area_ratio")
 

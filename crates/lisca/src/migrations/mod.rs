@@ -21,7 +21,7 @@ mod tests {
     use std::fs;
 
     fn write_bbox(workspace: &Path, name: &str, contents: &str) {
-        let bbox_dir = workspace.join("bbox");
+        let bbox_dir = workspace.join(lisca_workspace::BBOX_DIR);
         fs::create_dir_all(&bbox_dir).expect("bbox dir");
         fs::write(bbox_dir.join(name), contents).expect("write bbox");
     }
@@ -40,7 +40,7 @@ mod tests {
         assert_eq!(rewritten.len(), 1);
         assert!(rewritten[0].ends_with("Pos0.csv"));
 
-        let text = fs::read_to_string(workspace.join("bbox/Pos0.csv")).expect("read");
+        let text = fs::read_to_string(lisca_workspace::bbox_csv_path(workspace, 0)).expect("read");
         assert_eq!(text, "roi,x,y,w,h,i,j\n5,1,2,3,4,0,1\n1,0,0,1,1,0,0\n");
     }
 
@@ -55,7 +55,7 @@ mod tests {
         assert!(first.is_empty());
         assert!(second.is_empty());
         assert_eq!(
-            fs::read_to_string(workspace.join("bbox/Pos1.csv")).expect("read"),
+            fs::read_to_string(lisca_workspace::bbox_csv_path(workspace, 1)).expect("read"),
             "roi,x,y,w,h,i,j\n0,1,2,3,4,0,0\n"
         );
     }

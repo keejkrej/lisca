@@ -152,8 +152,8 @@ export function buildBboxCsv(
   const excluded = new Set(excludedCells.map((cell) => `${cell.i}:${cell.j}`));
   const rows = enumerateVisibleAlignGridCells(frame, grid)
     .filter((cell) => !excluded.has(`${cell.i}:${cell.j}`))
-    .map((cell, roi) => [roi, cell.x, cell.y, cell.w, cell.h, cell.i, cell.j].join(","));
-  return ["roi,x,y,w,h,i,j", ...rows].join("\n");
+    .map((cell, roi) => [roi, cell.x, cell.y, cell.w, cell.h].join(","));
+  return ["roi,x,y,w,h", ...rows].join("\n");
 }
 
 /** Frame-space radius for a SAM click prompt marker. */

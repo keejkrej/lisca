@@ -1,7 +1,4 @@
-use std::{
-    fs,
-    path::{Path, PathBuf},
-};
+use std::{fs, path::PathBuf};
 
 use crate::{
     image_source::RawFrame,
@@ -132,17 +129,13 @@ fn axis_values(count: u32) -> Vec<u32> {
 }
 
 fn roi_root_path(root: &str) -> PathBuf {
-    Path::new(root).join("roi")
-}
-
-fn roi_pos_dir_path(root: &str, pos: u32) -> PathBuf {
-    roi_root_path(root).join(format!("Pos{pos}"))
+    lisca_workspace::roi_dir(root)
 }
 
 fn roi_tiff_path(root: &str, pos: u32, roi: u32) -> PathBuf {
-    roi_pos_dir_path(root, pos).join(format!("Roi{roi}.tif"))
+    lisca_workspace::roi_tiff_path(root, pos, &lisca_workspace::roi_tiff_name(roi))
 }
 
 fn roi_index_path(root: &str, pos: u32) -> PathBuf {
-    roi_pos_dir_path(root, pos).join("index.json")
+    lisca_workspace::roi_index_path(root, pos)
 }
