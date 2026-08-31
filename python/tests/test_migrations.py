@@ -101,5 +101,7 @@ def test_load_bbox_rows_migrates_crop_header(tmp_path: Path) -> None:
 
     assert path.read_text(encoding="utf-8").startswith("roi,x,y,w,h,i,j")
     assert rows[0].roi == 3
-    assert rows[0].i == 0
-    assert rows[0].j == 1
+    assert rows[0].x == 1
+    assert rows[0].y == 2
+    assert rows[0].w == 3
+    assert rows[0].h == 4

@@ -810,7 +810,8 @@ fn write_roi_index(
         rois: entries,
     };
     let bytes = serde_json::to_vec_pretty(&index).map_err(|error| error.to_string())?;
-    fs::write(output_dir.join("index.json"), bytes).map_err(|error| error.to_string())
+    fs::write(output_dir.join(lisca_workspace::INDEX_JSON), bytes)
+        .map_err(|error| error.to_string())
 }
 
 #[cfg(test)]

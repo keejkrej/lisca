@@ -2323,6 +2323,7 @@ dependencies = [
  "image 0.25.10",
  "libc",
  "lisca-transfection",
+ "lisca-workspace",
  "mplot",
  "nd2-rs",
  "ndarray 0.17.2",
@@ -2386,6 +2387,13 @@ dependencies = [
  "serde",
  "serde_json",
  "tiff",
+]
+
+[[package]]
+name = "lisca-workspace"
+version = "0.1.0"
+dependencies = [
+ "csv",
 ]
 
 [[package]]

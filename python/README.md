@@ -6,6 +6,11 @@ Crop (ND2/CZI → `roi/`) lives here. Transfection analyze/results live in the
 [`lisca-transfection-assay`](https://github.com/keejkrej/lisca-transfection-assay)
 sidecar — do not import a deprecated `pyama*` package.
 
+Workspace folder names, bbox CSV (`roi, x, y, w, h`), and `roi/Pos{n}/index.json`
+are owned by this package (no extras): `lisca.core.paths`,
+`lisca.core.bbox.parse_bbox_csv`, `lisca.core.workspace.load_position_index`.
+See [`docs/analysis/schema.md`](../docs/analysis/schema.md).
+
 ## Setup
 
 ```sh

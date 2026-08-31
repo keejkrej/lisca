@@ -4,6 +4,8 @@ use std::{
     path::{Path, PathBuf},
 };
 
+use lisca_workspace::{ALIGN_DIR, BBOX_DIR, POS_PREFIX, ROI_DIR};
+
 use crate::{
     migrations::migrate_workspace,
     protocol::{AlignOutputPaths, RoiBbox, SaveBboxResponse, SavedAlignState},
@@ -53,7 +55,7 @@ pub fn save_bbox(
 
 pub fn list_saved_bbox_positions(workspace_path: &str) -> Result<Vec<u32>, String> {
     prepare_workspace(workspace_path)?;
-    let bbox_dir = Path::new(workspace_path).join("bbox");
+    let bbox_dir = lisca_workspace::bbox_dir(workspace_path);
     let entries = match fs::read_dir(&bbox_dir) {
         Ok(entries) => entries,
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(Vec::new()),
@@ -84,81 +86,34 @@ pub fn roi_pos_exists(workspace_path: &str, pos: u32) -> bool {
 
 pub fn output_paths(pos: u32) -> AlignOutputPaths {
     AlignOutputPaths {
-        bbox: format!("bbox/Pos{pos}.csv"),
-        align: format!("align/Pos{pos}.json"),
-        roi: format!("roi/Pos{pos}.tif"),
+        bbox: format!("{BBOX_DIR}/Pos{pos}.csv"),
+        align: format!("{ALIGN_DIR}/Pos{pos}.json"),
+        roi: format!("{ROI_DIR}/Pos{pos}.tif"),
     }
 }
 
 pub(super) fn bbox_csv_path(root: &str, pos: u32) -> PathBuf {
-    Path::new(root).join("bbox").join(format!("Pos{pos}.csv"))
+    lisca_workspace::bbox_csv_path(root, pos)
 }
 
 pub(super) fn roi_pos_dir_path(root: &str, pos: u32) -> PathBuf {
-    Path::new(root).join("roi").join(format!("Pos{pos}"))
+    lisca_workspace::roi_pos_dir(root, pos)
 }
 
 pub(super) fn parse_bbox_csv(path: &Path) -> Result<Vec<RoiBbox>, String> {
-    let text = fs::read_to_string(path).map_err(|error| format!("{}: {error}", path.display()))?;
-    let text = text.strip_prefix('\u{feff}').unwrap_or(&text);
-    let mut lines = text
-        .lines()
-        .enumerate()
-        .filter(|(_, line)| !line.trim().is_empty());
-    let Some((header_index, header_line)) = lines.next() else {
-        return Err(format!("{}: empty bbox CSV", path.display()));
-    };
-    let header = header_line
-        .split(',')
-        .map(|cell| cell.trim().to_ascii_lowercase())
-        .collect::<Vec<_>>();
-    if header.iter().any(|name| name == "crop") {
-        return Err(format!(
-            "{}: unsupported bbox column `crop` (not a live header); required: roi, x, y, w, h",
-            path.display()
-        ));
-    }
-    let column_index = |name: &str| {
-        header
-            .iter()
-            .position(|column| column == name)
-            .ok_or_else(|| {
-                format!(
-                    "{}:{} missing required column '{name}' (required: roi, x, y, w, h)",
-                    path.display(),
-                    header_index + 1
-                )
-            })
-    };
-    let roi_idx = column_index("roi")?;
-    let x_idx = column_index("x")?;
-    let y_idx = column_index("y")?;
-    let w_idx = column_index("w")?;
-    let h_idx = column_index("h")?;
-    let required_idx = roi_idx.max(x_idx).max(y_idx).max(w_idx).max(h_idx);
+    lisca_workspace::parse_bbox_csv(path)
+        .map(|bboxes| bboxes.into_iter().map(protocol_bbox).collect())
+        .map_err(|error| error.to_string())
+}
 
-    let mut bboxes = Vec::new();
-    for (line_index, line) in lines {
-        let columns = line.split(',').map(str::trim).collect::<Vec<_>>();
-        if columns.len() <= required_idx {
-            return Err(format!(
-                "{}:{} expected at least {} columns",
-                path.display(),
-                line_index + 1,
-                required_idx + 1
-            ));
-        }
-        let roi = parse_bbox_csv_value(columns[roi_idx], "roi")?;
-        let x = parse_bbox_csv_value(columns[x_idx], "x")?;
-        let y = parse_bbox_csv_value(columns[y_idx], "y")?;
-        let w = parse_bbox_csv_value(columns[w_idx], "w")?;
-        let h = parse_bbox_csv_value(columns[h_idx], "h")?;
-        if w == 0 || h == 0 {
-            continue;
-        }
-        bboxes.push(RoiBbox { roi, x, y, w, h });
+fn protocol_bbox(bbox: lisca_workspace::RoiBbox) -> RoiBbox {
+    RoiBbox {
+        roi: bbox.roi,
+        x: bbox.x,
+        y: bbox.y,
+        w: bbox.w,
+        h: bbox.h,
     }
-    Ok(bboxes)
 }
 
 fn prepare_workspace(workspace_path: &str) -> Result<(), String> {
@@ -175,26 +130,18 @@ fn bbox_csv_header_has_crop(csv: &str) -> bool {
 }
 
 fn align_json_path(root: &str, pos: u32) -> PathBuf {
-    Path::new(root).join("align").join(format!("Pos{pos}.json"))
+    lisca_workspace::align_json_path(root, pos)
 }
 
 fn parse_pos_csv_name(name: &str) -> Option<u32> {
-    let rest = name.strip_prefix("Pos")?.strip_suffix(".csv")?;
+    let rest = name.strip_prefix(POS_PREFIX)?.strip_suffix(".csv")?;
     rest.parse().ok()
-}
-
-fn parse_bbox_csv_value(value: &str, label: &str) -> Result<u32, String> {
-    value
-        .trim()
-        .parse::<u32>()
-        .map_err(|error| format!("invalid bbox {label}: {error}"))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::protocol::SavedAlignState;
-    use std::io::Write;
 
     fn dummy_align_state() -> SavedAlignState {
         serde_json::from_value(serde_json::json!({
@@ -216,38 +163,32 @@ mod tests {
     }
 
     #[test]
-    fn parse_bbox_csv_returns_empty_for_header_only_file() {
-        let path =
-            std::env::temp_dir().join(format!("lisca-empty-bbox-{}.csv", std::process::id()));
-        let mut file = fs::File::create(&path).expect("create csv");
-        writeln!(file, "roi,x,y,w,h,i,j").expect("write header");
-        let bboxes = parse_bbox_csv(&path).expect("parse csv");
-        assert!(bboxes.is_empty());
-        let _ = fs::remove_file(path);
+    fn parse_bbox_csv_rejects_header_only_file() {
+        let root = tempfile::tempdir().expect("tempdir");
+        let path = root.path().join("Pos0.csv");
+        fs::write(&path, "roi,x,y,w,h,i,j\n").expect("write");
+        let error = parse_bbox_csv(&path).expect_err("header only");
+        assert!(error.contains("does not contain any ROI rows"), "{error}");
     }
 
     #[test]
     fn parse_bbox_csv_requires_roi_header() {
-        let path = std::env::temp_dir().join(format!("lisca-crop-bbox-{}.csv", std::process::id()));
-        let mut file = fs::File::create(&path).expect("create csv");
-        writeln!(file, "crop,x,y,w,h").expect("write header");
-        writeln!(file, "1,0,0,2,2").expect("write row");
+        let root = tempfile::tempdir().expect("tempdir");
+        let path = root.path().join("Pos0.csv");
+        fs::write(&path, "crop,x,y,w,h\n1,0,0,2,2\n").expect("write");
         let error = parse_bbox_csv(&path).expect_err("crop is not an alias");
         assert!(error.contains("roi"), "{error}");
         assert!(error.contains("crop"), "{error}");
-        let _ = fs::remove_file(path);
     }
 
     #[test]
     fn parse_bbox_csv_reads_named_roi_columns() {
-        let path = std::env::temp_dir().join(format!("lisca-roi-bbox-{}.csv", std::process::id()));
-        let mut file = fs::File::create(&path).expect("create csv");
-        writeln!(file, "roi,x,y,w,h").expect("write header");
-        writeln!(file, "1,0,0,2,2").expect("write row");
+        let root = tempfile::tempdir().expect("tempdir");
+        let path = root.path().join("Pos0.csv");
+        fs::write(&path, "roi,x,y,w,h\n1,0,0,2,2\n").expect("write");
         let bboxes = parse_bbox_csv(&path).expect("parse csv");
         assert_eq!(bboxes.len(), 1);
         assert_eq!(bboxes[0].roi, 1);
-        let _ = fs::remove_file(path);
     }
 
     #[test]
