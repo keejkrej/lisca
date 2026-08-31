@@ -4,10 +4,10 @@ This repo (`keejkrej/lisca`) owns workspace **folder names**, the **bbox / ROI**
 on-disk formats, and the locked analysis/results **table column names**. Assay
 sidecars import the folder names and bbox/ROI readers; they do not redefine them.
 
-| Language | Import |
-| -------- | ------ |
-| Python (`lisca`, no extras) | `lisca.core.paths` (folder names + path builders), `lisca.core.bbox.parse_bbox_csv`, `lisca.core.workspace.load_bbox_rows` / `load_position_index` |
-| Rust | `lisca-workspace` crate (git-depend on this repo, package `lisca-workspace`). Do **not** depend on crate `lisca` from `lisca-transfection` — that would cycle. |
+| Language                    | Import                                                                                                                                                         |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Python (`lisca`, no extras) | `lisca.core.paths` (folder names + path builders), `lisca.core.bbox.parse_bbox_csv`, `lisca.core.workspace.load_bbox_rows` / `load_position_index`             |
+| Rust                        | `lisca-workspace` crate (git-depend on this repo, package `lisca-workspace`). Do **not** depend on crate `lisca` from `lisca-transfection` — that would cycle. |
 
 A follow-up in the transfection sidecar switches that package onto these imports.
 

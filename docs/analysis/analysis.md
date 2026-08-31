@@ -155,13 +155,13 @@ names from `lisca.core.paths` / crate `lisca-workspace`. Grid `i,j` lives in
 `align/Pos{n}.json`; bbox CSV is an export artifact. `crop` is not a live header
 alias — `migrate_workspace` rewrites it on open.
 
-| Path | Role |
-| ---- | ---- |
-| `assay.json` | Nested domain contract (`type`, `data`, `workspace`, `interval`, `samples`, optional `analysis` with `channels` / `sampleChannels`) |
-| `bbox/PosN.csv` | Site boxes (`roi,x,y,w,h`). See [`schema.md`](./schema.md). |
-| `roi/PosN/` | Cropped ROI stacks + slim `index.json` — see [`schema.md`](./schema.md) |
-| `mask/PosN/` | Per-frame segmentation masks (`uint8` TIFF stacks) |
-| `analysis/` / `results/` | Shared folder names. Table columns: [`schema.md`](./schema.md). Killing tables stay in-tree until that sidecar exists. |
+| Path                     | Role                                                                                                                                |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `assay.json`             | Nested domain contract (`type`, `data`, `workspace`, `interval`, `samples`, optional `analysis` with `channels` / `sampleChannels`) |
+| `bbox/PosN.csv`          | Site boxes (`roi,x,y,w,h`). See [`schema.md`](./schema.md).                                                                         |
+| `roi/PosN/`              | Cropped ROI stacks + slim `index.json` — see [`schema.md`](./schema.md)                                                             |
+| `mask/PosN/`             | Per-frame segmentation masks (`uint8` TIFF stacks)                                                                                  |
+| `analysis/` / `results/` | Shared folder names. Table columns: [`schema.md`](./schema.md). Killing tables stay in-tree until that sidecar exists.              |
 
 There is no `timeseries/` folder for transfection, no combined results tables, and no CSV under `results/` for transfection. Studio results UI displays PNG files; it does not re-render plots from CSVs.
 
