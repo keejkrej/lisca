@@ -67,12 +67,12 @@ Usage:
 
 Commands (same stage names as `transfection`):
   segment           Masks → mask/PosN/ (default Otsu; optional ONNX U-Net)
-  timeseries        Intensity metrics → timeseries/Pos{{n}}/ch{{n}}.csv
-  auc               Trapezoidal AUC → results/auc.csv
-  fit               Two-exponential kinetic fit → results/fit.csv
-  plot-timeseries   Trace / area / summary PNGs under results/
-  plot-auc          AUC boxplots (linear + log)
-  plot-fit          Fit parameter boxplots + traces_fit.png + expression_rate_vs_onset_time.png
+  timeseries        Intensity metrics → analysis/Pos{{n}}/ch{{n}}.csv
+  auc               Trapezoidal AUC → analysis/Pos{{n}}/auc.csv
+  fit               Two-exponential kinetic fit → analysis/Pos{{n}}/fit.csv
+  plot-timeseries   Per-sample traces/area PNGs + xlsx under results/<sample>/
+  plot-auc          Cross-sample AUC boxplot at results/auc.png
+  plot-fit          Parameter boxplots at results/ + per-sample fit/scatter packs
   pipeline          Full Studio order from assay.json
                     (aliases: analyze, all)
 
@@ -272,7 +272,7 @@ fn reject_removed_jobs_flag(args: &[String]) -> Result<(), String> {
 
 fn require_workspace(args: &[String]) -> Result<PathBuf, String> {
     let path = first_positional(args).ok_or_else(|| {
-        "missing WORKSPACE path (directory with assay.json / roi/ / timeseries/)".to_string()
+        "missing WORKSPACE path (directory with assay.json / roi/ / analysis/)".to_string()
     })?;
     let path = PathBuf::from(path);
     if !path.is_dir() {
@@ -281,28 +281,26 @@ fn require_workspace(args: &[String]) -> Result<PathBuf, String> {
     Ok(path)
 }
 
-/// Accept either `<workspace>` or `<workspace>/timeseries` (transfection plot-timeseries shape).
+/// Accept either `<workspace>` or `<workspace>/analysis` (sidecar plot-timeseries shape).
 fn require_workspace_or_timeseries_dir(args: &[String]) -> Result<PathBuf, String> {
     let path = require_workspace(args)?;
-    if path.file_name().and_then(|n| n.to_str()) == Some("timeseries") {
+    let dir_name = path.file_name().and_then(|n| n.to_str());
+    if matches!(dir_name, Some("analysis") | Some("timeseries")) {
         return path
             .parent()
             .map(Path::to_path_buf)
-            .ok_or_else(|| "timeseries path has no parent workspace".to_string());
-    }
-    if path.join("timeseries").is_dir() || path.join("assay.json").is_file() {
-        return Ok(path);
+            .ok_or_else(|| "analysis path has no parent workspace".to_string());
     }
     Ok(path)
 }
 
-/// Accept either `<workspace>` or `<workspace>/results/auc.csv` / `fit.csv`.
+/// Accept a workspace directory or an analysis/results CSV path.
 fn require_workspace_or_results_parent(
     args: &[String],
     file_name: &str,
 ) -> Result<PathBuf, String> {
     let raw = first_positional(args)
-        .ok_or_else(|| format!("missing WORKSPACE or results/{file_name} path"))?;
+        .ok_or_else(|| format!("missing WORKSPACE or analysis/PosN/{file_name} path"))?;
     let path = PathBuf::from(raw);
     if path.is_file() {
         let name = path
@@ -312,13 +310,24 @@ fn require_workspace_or_results_parent(
         if name != file_name {
             return Err(format!("expected {file_name}, got {}", path.display()));
         }
-        let results = path
+        // analysis/PosN/auc.csv → workspace, or legacy results/auc.csv → workspace
+        let parent = path
             .parent()
             .ok_or_else(|| format!("{} has no parent", path.display()))?;
-        let workspace = results
+        let grandparent = parent
             .parent()
             .ok_or_else(|| format!("{} has no workspace parent", path.display()))?;
-        return Ok(workspace.to_path_buf());
+        if parent
+            .file_name()
+            .and_then(|n| n.to_str())
+            .is_some_and(|n| n.starts_with("Pos"))
+        {
+            return grandparent
+                .parent()
+                .map(Path::to_path_buf)
+                .ok_or_else(|| format!("{} has no workspace parent", path.display()));
+        }
+        return Ok(grandparent.to_path_buf());
     }
     if !path.is_dir() {
         return Err(format!(

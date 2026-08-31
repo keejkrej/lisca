@@ -102,19 +102,28 @@ describe("workspace fixture smoke", () => {
     expect(existsSync(join(out, "results"))).toBe(false);
   });
 
-  it("writes transfection analysis CSVs and every catalog PNG name", () => {
+  it("writes transfection analysis CSVs and every catalog PNG in the sidecar tree", () => {
     const out = tempOut("tf-analyzed");
     materializeFixture({ assay: "transfection", stage: "analyzed", out, force: true });
-    const header = read(out, "timeseries/Pos1/ch1.csv").split("\n")[0];
+    const header = read(out, "analysis/Pos1/ch1.csv").split("\n")[0];
     expect(header).toBe("roi,t,area,background,sum,corrected");
-    expect(read(out, "results/fit.csv").split("\n")[0]).toContain(
+    expect(read(out, "analysis/Pos1/fit.csv").split("\n")[0]).toContain(
       "onset_time,expression_amplitude,expression_rate",
     );
-    expect(read(out, "results/auc.csv").startsWith("slide,pos,roi,auc")).toBe(true);
+    expect(read(out, "analysis/Pos1/auc.csv").startsWith("roi,auc")).toBe(true);
+    expect(existsSync(join(out, "results/auc.csv"))).toBe(false);
+    expect(existsSync(join(out, "timeseries"))).toBe(false);
+    const sampleDir = "Mock_(fixture)";
     for (const plot of TRANSFECTION_PLOTS) {
-      const png = readBytes(out, join("results", plot.fileName));
+      const rel =
+        plot.scope === "sample"
+          ? join("results", sampleDir, plot.fileName)
+          : join("results", plot.fileName);
+      const png = readBytes(out, rel);
       expect(png.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))).toBe(true);
     }
+    expect(existsSync(join(out, "results", "auc_log.png"))).toBe(false);
+    expect(existsSync(join(out, "results", sampleDir, "area_summary.png"))).toBe(false);
   });
 
   it("writes killing analysis CSVs and every catalog PNG name", () => {

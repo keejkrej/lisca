@@ -3045,7 +3045,7 @@ wheels = [
 [[package]]
 name = "transfection"
 version = "0.1.3"
-source = { git = "https://github.com/keejkrej/lisca-transfection-assay#e6b396a9f4e4bd75e8367ca8f88d80d68ffeafb0" }
+source = { git = "https://github.com/keejkrej/lisca-transfection-assay#3fbb7793b9907fb4eea98848ad79cc7d573b494b" }
 dependencies = [
     { name = "imageio" },
     { name = "imageio-ffmpeg" },

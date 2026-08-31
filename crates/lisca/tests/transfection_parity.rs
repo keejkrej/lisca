@@ -88,7 +88,7 @@ fn timeseries_stage_matches_reference_metrics() {
 
     run_timeseries(&fixture.root, &mapping, 1).expect("timeseries");
 
-    let csv_path = fixture.root.join("timeseries").join("Pos1").join("ch1.csv");
+    let csv_path = fixture.root.join("analysis").join("Pos1").join("ch1.csv");
     assert!(csv_path.is_file(), "expected {}", csv_path.display());
 
     let (_, rows) = read_results_csv(&csv_path);
@@ -122,11 +122,11 @@ fn auc_stage_matches_reference_trapz() {
     run_timeseries(&fixture.root, &mapping, 1).expect("timeseries");
 
     run_auc(&fixture.root, INTERVAL_MINUTES).expect("auc");
-    let csv_path = fixture.root.join("results").join("auc.csv");
+    let csv_path = fixture.root.join("analysis").join("Pos1").join("auc.csv");
     let (_, rows) = read_results_csv(&csv_path);
     assert_eq!(rows.len(), 1);
 
-    let timeseries_path = fixture.root.join("timeseries").join("Pos1").join("ch1.csv");
+    let timeseries_path = fixture.root.join("analysis").join("Pos1").join("ch1.csv");
     let (_, ts_rows) = read_results_csv(&timeseries_path);
     let mut trace_times = Vec::new();
     let mut trace_values = Vec::new();
@@ -138,9 +138,9 @@ fn auc_stage_matches_reference_trapz() {
 
     let actual_auc = parse_f64(&rows[0]["auc"]);
     assert!(approx_eq(actual_auc, expected_auc, AUC_REL_TOL));
-    assert_eq!(rows[0]["pos"], "1");
     assert_eq!(rows[0]["roi"], "1");
-    assert_eq!(rows[0]["slide_channel"], "0");
+    assert!(!rows[0].contains_key("slide_channel"));
+    assert!(!rows[0].contains_key("pos"));
 }
 
 #[test]
@@ -152,13 +152,13 @@ fn fit_stage_matches_transfection_reference_fit() {
     run_timeseries(&fixture.root, &mapping, 1).expect("timeseries");
 
     run_fit(&fixture.root, INTERVAL_MINUTES, 0.0, 1).expect("fit");
-    let csv_path = fixture.root.join("results").join("fit.csv");
+    let csv_path = fixture.root.join("analysis").join("Pos1").join("fit.csv");
     let (_, rows) = read_results_csv(&csv_path);
     assert_eq!(rows.len(), 1);
     let row = &rows[0];
     assert_eq!(row["success"], "true");
 
-    let timeseries_path = fixture.root.join("timeseries").join("Pos1").join("ch1.csv");
+    let timeseries_path = fixture.root.join("analysis").join("Pos1").join("ch1.csv");
     let (_, ts_rows) = read_results_csv(&timeseries_path);
     let mut trace_times = Vec::new();
     let mut trace_values = Vec::new();
@@ -222,7 +222,7 @@ fn transfection_csvs_match_transfection_cli() {
         &workspace,
         &[("--interval", &interval)],
     );
-    let transfection_auc = fixture.root.join("results").join("auc.csv");
+    let transfection_auc = fixture.root.join("analysis").join("Pos1").join("auc.csv");
     let transfection_auc_golden = fs::read_to_string(&transfection_auc).expect("transfection auc");
 
     fs::remove_file(&transfection_auc).ok();
@@ -234,9 +234,7 @@ fn transfection_csvs_match_transfection_cli() {
     assert_eq!(lisca_rows.len(), tf_rows.len());
     for (lisca_row, tf_row) in lisca_rows.iter().zip(tf_rows.iter()) {
         assert_eq!(lisca_row.0, tf_row.0);
-        assert_eq!(lisca_row.1, tf_row.1);
-        assert_eq!(lisca_row.2, tf_row.2);
-        assert!(approx_eq(lisca_row.3, tf_row.3, AUC_REL_TOL));
+        assert!(approx_eq(lisca_row.1, tf_row.1, AUC_REL_TOL));
     }
 
     run_transfection(
@@ -245,7 +243,7 @@ fn transfection_csvs_match_transfection_cli() {
         &workspace,
         &[("--interval", &interval)],
     );
-    let transfection_fit = fixture.root.join("results").join("fit.csv");
+    let transfection_fit = fixture.root.join("analysis").join("Pos1").join("fit.csv");
     let transfection_fit_golden = fs::read_to_string(&transfection_fit).expect("transfection fit");
 
     fs::remove_file(&transfection_fit).ok();
@@ -306,19 +304,31 @@ fn compare_fit_csvs(lisca_csv: &str, transfection_csv: &str) {
     );
 }
 
-fn normalize_auc_csv(csv: &str) -> Vec<(String, String, String, f64)> {
+fn normalize_auc_csv(csv: &str) -> Vec<(String, f64)> {
     let mut reader = ReaderBuilder::new()
         .has_headers(true)
         .from_reader(csv.as_bytes());
+    let headers: Vec<String> = reader
+        .headers()
+        .expect("headers")
+        .iter()
+        .map(str::to_string)
+        .collect();
+    let roi_index = headers
+        .iter()
+        .position(|header| header == "roi")
+        .expect("roi");
+    let auc_index = headers
+        .iter()
+        .position(|header| header == "auc")
+        .expect("auc");
     reader
         .records()
         .map(|record| {
             let record = record.expect("record");
             (
-                record[1].to_string(),
-                record[2].to_string(),
-                record[0].to_string(),
-                record[3].parse().expect("auc"),
+                record[roi_index].to_string(),
+                record[auc_index].parse().expect("auc"),
             )
         })
         .collect()

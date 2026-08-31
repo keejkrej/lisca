@@ -315,32 +315,8 @@ function writeAnnotations(write: WriteRel, assay: FixtureAssay): void {
 
 function writeAnalysisOutputs(write: WriteRel, assay: FixtureAssay): void {
   const { positions, rois, times, signalChannel, roiWidth, roiHeight } = FIXTURE_LAYOUT;
-  for (const pos of positions) {
-    const rows =
-      assay === "killing"
-        ? [
-            "roi,t,p_dead",
-            ...rois.flatMap((roi) =>
-              times.map((t) => `${roi},${t},${(0.08 * roi + 0.3 * t).toFixed(2)}`),
-            ),
-          ]
-        : [
-            "roi,t,area,background,sum,corrected",
-            ...rois.flatMap((roi) =>
-              times.map((t) => {
-                const area = 4;
-                const background = 10;
-                const sum = 40 + roi * 10 + t * 40;
-                const corrected = sum - area * background;
-                return `${roi},${t},${area},${background.toFixed(1)},${sum.toFixed(1)},${corrected.toFixed(1)}`;
-              }),
-            ),
-          ];
-    write(join("timeseries", `Pos${pos}`, `ch${signalChannel}.csv`), `${rows.join("\n")}\n`);
-  }
-
   if (assay === "transfection") {
-    writeTransfectionResults(write);
+    writeTransfectionAnalysis(write);
     for (const pos of positions) {
       for (const roi of rois) {
         const pages = times.map(() => {
@@ -354,30 +330,75 @@ function writeAnalysisOutputs(write: WriteRel, assay: FixtureAssay): void {
         );
       }
     }
-  } else {
-    writeKillingResults(write);
+    writeTransfectionPlots(write);
+    return;
   }
 
-  const plots = assay === "killing" ? KILLING_PLOTS : TRANSFECTION_PLOTS;
-  for (const plot of plots) {
+  for (const pos of positions) {
+    const rows = [
+      "roi,t,p_dead",
+      ...rois.flatMap((roi) =>
+        times.map((t) => `${roi},${t},${(0.08 * roi + 0.3 * t).toFixed(2)}`),
+      ),
+    ];
+    write(join("timeseries", `Pos${pos}`, `ch${signalChannel}.csv`), `${rows.join("\n")}\n`);
+  }
+  writeKillingResults(write);
+  for (const plot of KILLING_PLOTS) {
     const [r, g, b] = colorFromName(plot.fileName);
     write(join("results", plot.fileName), encodeRgbPng(32, 18, r, g, b));
   }
 }
 
-function writeTransfectionResults(write: WriteRel): void {
-  const { positions, rois } = FIXTURE_LAYOUT;
-  const auc = ["slide,pos,roi,auc"];
-  const fit = [
-    "slide,pos,roi,baseline_intensity,protein_decay_rate,protein_lifetime,mrna_decay_rate,mrna_lifetime,onset_time,expression_amplitude,expression_rate,success",
-  ];
+function transfectionSampleDirname(): string {
+  return filesystemSafeSampleName("Mock (fixture)");
+}
+
+/** Match lisca-transfection `filesystem_safe_sample_name` for `results/<sample>/`. */
+function filesystemSafeSampleName(name: string): string {
+  let text = "";
+  let lastUnderscore = false;
+  for (const ch of name.trim()) {
+    const replace =
+      '<>:"/\\|?*'.includes(ch) || ch.charCodeAt(0) < 32 || /\s/.test(ch) ? "_" : null;
+    if (replace) {
+      if (!lastUnderscore && text.length > 0) {
+        text += replace;
+        lastUnderscore = true;
+      }
+    } else {
+      text += ch;
+      lastUnderscore = false;
+    }
+  }
+  const trimmed = text.replace(/^[._\s]+|[._\s]+$/g, "").replace(/^\.+/, "");
+  return trimmed.length === 0 ? "sample" : trimmed;
+}
+
+function writeTransfectionAnalysis(write: WriteRel): void {
+  const { positions, rois, times, signalChannel } = FIXTURE_LAYOUT;
   for (const pos of positions) {
-    for (const roi of rois) {
-      auc.push(`0,${pos},${roi},${(80 + pos * 5 + roi * 3).toFixed(1)}`);
-      fit.push(
+    const traces = [
+      "roi,t,area,background,sum,corrected",
+      ...rois.flatMap((roi) =>
+        times.map((t) => {
+          const area = 4;
+          const background = 10;
+          const sum = 40 + roi * 10 + t * 40;
+          const corrected = sum - area * background;
+          return `${roi},${t},${area},${background.toFixed(1)},${sum.toFixed(1)},${corrected.toFixed(1)}`;
+        }),
+      ),
+    ];
+    write(join("analysis", `Pos${pos}`, `ch${signalChannel}.csv`), `${traces.join("\n")}\n`);
+
+    const auc = ["roi,auc", ...rois.map((roi) => `${roi},${(80 + pos * 5 + roi * 3).toFixed(1)}`)];
+    write(join("analysis", `Pos${pos}`, "auc.csv"), `${auc.join("\n")}\n`);
+
+    const fit = [
+      "roi,baseline_intensity,protein_decay_rate,protein_lifetime,mrna_decay_rate,mrna_lifetime,onset_time,expression_amplitude,expression_rate,success",
+      ...rois.map((roi) =>
         [
-          0,
-          pos,
           roi,
           (10 + roi).toFixed(1),
           "0.10",
@@ -389,11 +410,22 @@ function writeTransfectionResults(write: WriteRel): void {
           "10.0",
           "true",
         ].join(","),
-      );
-    }
+      ),
+    ];
+    write(join("analysis", `Pos${pos}`, "fit.csv"), `${fit.join("\n")}\n`);
   }
-  write("results/auc.csv", `${auc.join("\n")}\n`);
-  write("results/fit.csv", `${fit.join("\n")}\n`);
+}
+
+function writeTransfectionPlots(write: WriteRel): void {
+  const sampleDir = transfectionSampleDirname();
+  for (const plot of TRANSFECTION_PLOTS) {
+    const [r, g, b] = colorFromName(plot.fileName);
+    const rel =
+      plot.scope === "sample"
+        ? join("results", sampleDir, plot.fileName)
+        : join("results", plot.fileName);
+    write(rel, encodeRgbPng(32, 18, r, g, b));
+  }
 }
 
 function writeKillingResults(write: WriteRel): void {
@@ -465,10 +497,23 @@ export function expectedKeyPaths(assay: FixtureAssay, stage: FixtureStage): stri
     paths.push("annotations/labels.json", "annotations/roi/Pos1/Roi1/C0_T0_Z0.json");
   }
   if (stageAtLeast(stage, "analyzed")) {
-    paths.push(`timeseries/Pos1/ch${FIXTURE_LAYOUT.signalChannel}.csv`, "results/traces.png");
-    if (assay === "transfection")
-      paths.push("results/auc.csv", "results/fit.csv", "results/onset_time.png");
-    else paths.push("results/kill_curve.csv", "results/death_times.png");
+    if (assay === "transfection") {
+      paths.push(
+        `analysis/Pos1/ch${FIXTURE_LAYOUT.signalChannel}.csv`,
+        "analysis/Pos1/auc.csv",
+        "analysis/Pos1/fit.csv",
+        "results/auc.png",
+        "results/onset_time.png",
+        `results/${transfectionSampleDirname()}/traces.png`,
+      );
+    } else {
+      paths.push(
+        `timeseries/Pos1/ch${FIXTURE_LAYOUT.signalChannel}.csv`,
+        "results/traces.png",
+        "results/kill_curve.csv",
+        "results/death_times.png",
+      );
+    }
   }
   return paths.map((path) => path.replaceAll("\\", "/"));
 }

@@ -31,7 +31,7 @@ impl SyntheticWorkspace {
         }
         fs::create_dir_all(root.join("roi").join(format!("Pos{POSITION}"))).expect("roi dir");
         fs::create_dir_all(root.join("mask").join(format!("Pos{POSITION}"))).expect("mask dir");
-        fs::create_dir_all(root.join("timeseries")).expect("timeseries dir");
+        fs::create_dir_all(root.join("analysis")).expect("analysis dir");
         fs::create_dir_all(root.join("results")).expect("results dir");
 
         let kinetic_truth = FitResult {

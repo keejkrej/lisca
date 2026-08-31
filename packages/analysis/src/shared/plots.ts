@@ -30,14 +30,13 @@ const KILLING_MARKERS = new Set([
 ]);
 
 const TRANSFECTION_MARKERS = new Set([
-  "auc.csv",
   "auc.png",
-  "auc_log.png",
-  "fit.csv",
   "traces_fit.png",
   "mrna_lifetime.png",
   "expression_rate.png",
   "onset_time.png",
+  "baseline_intensity.png",
+  "protein_lifetime.png",
 ]);
 
 export function isPlotFile(file: ResultFileRef): boolean {
@@ -92,35 +91,60 @@ function titleFromFileName(fileName: string): string {
   return fileName.replace(/\.png$/i, "").replaceAll("_", " ");
 }
 
+/** `results/<sample>/<file>.png` → sample folder; root plots under `results/` have none. */
+export function sampleFolderFromResultPath(path: string): string | undefined {
+  const parts = path
+    .replaceAll("\\", "/")
+    .split("/")
+    .filter((part) => part.length > 0);
+  const resultsIdx = parts.lastIndexOf("results");
+  if (resultsIdx === -1) return undefined;
+  if (resultsIdx === parts.length - 3) {
+    return parts[resultsIdx + 1];
+  }
+  return undefined;
+}
+
+function titledPlot(baseTitle: string, path: string): string {
+  const sample = sampleFolderFromResultPath(path);
+  return sample ? `${baseTitle} (${sample})` : baseTitle;
+}
+
+function comparePlotFiles(left: ResultFileRef, right: ResultFileRef): number {
+  const leftSample = sampleFolderFromResultPath(left.path) ?? "";
+  const rightSample = sampleFolderFromResultPath(right.path) ?? "";
+  return leftSample.localeCompare(rightSample) || left.path.localeCompare(right.path);
+}
+
 export function collectResultPlots(
   files: ResultFileRef[],
   assay: ResultAssayKind = inferResultAssayKind(files),
 ): ResultPlot[] {
   const pngs = files.filter(isPlotFile);
-  const byName = new Map(pngs.map((file) => [file.fileName, file]));
   const ordered: ResultPlot[] = [];
   const seen = new Set<string>();
 
   for (const spec of catalogForAssay(assay)) {
-    const file = byName.get(spec.fileName);
-    if (!file) continue;
-    ordered.push({
-      fileName: file.fileName,
-      path: file.path,
-      title: spec.title,
-      section: spec.section,
-    });
-    seen.add(file.fileName);
+    const matches = pngs
+      .filter((file) => file.fileName === spec.fileName && !seen.has(file.path))
+      .toSorted(comparePlotFiles);
+    for (const file of matches) {
+      ordered.push({
+        fileName: file.fileName,
+        path: file.path,
+        title: titledPlot(spec.title, file.path),
+        section: spec.section,
+      });
+      seen.add(file.path);
+    }
   }
 
-  const leftovers = pngs
-    .filter((file) => !seen.has(file.fileName))
-    .toSorted((left, right) => left.fileName.localeCompare(right.fileName));
+  const leftovers = pngs.filter((file) => !seen.has(file.path)).toSorted(comparePlotFiles);
   for (const file of leftovers) {
     ordered.push({
       fileName: file.fileName,
       path: file.path,
-      title: titleFromFileName(file.fileName),
+      title: titledPlot(titleFromFileName(file.fileName), file.path),
       section: guessPlotSection(file.fileName),
     });
   }
