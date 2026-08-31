@@ -34,5 +34,6 @@ apps/*/desktop/release/
 mcps/
 .repos/
 
-# ONNX model weights (download via models/*/README.md)
+# ONNX weights are gitignored. Product models (Smart exclude/segment) live
+# under models/; assay brains resolve from HF / LISCA_*_MODEL (see models/README.md).
 models/**/model.onnx

@@ -1,7 +1,9 @@
 //! Transfection segmentation dispatch.
 //!
-//! Otsu (Python-parity default) is implemented in `lisca-transfection`. ONNX /
-//! smart segment stays in this crate so Studio can keep using `ort`.
+//! Otsu (Python-parity default) is implemented in `lisca-transfection`. Studio
+//! ONNX segment may stay here as an `ort` adapter until the sidecar un-stubs
+//! it; weights resolve from `LISCA_PATTERN_SEG_MODEL` / HF, not as a product
+//! `models/` brain. Product Smart segment (SlimSAM) is a separate tool.
 
 use std::collections::BTreeMap;
 use std::fs::File;
@@ -51,7 +53,9 @@ pub struct SegmentOptions {
     pub jobs: usize,
     pub backend: SegmentBackend,
     /// Explicit model directory (or path to model.onnx).
-    /// Falls back to `LISCA_PATTERN_SEG_MODEL` (or legacy `LISCA_GE_SEG_MODEL`).
+    /// Falls back to `LISCA_PATTERN_SEG_MODEL` (or legacy `LISCA_GE_SEG_MODEL`),
+    /// then a local cache under `models/single-cell-pattern-unet` if present.
+    /// Canonical weights: HF `keejkrej/single-cell-pattern-unet`.
     pub model_dir: Option<std::path::PathBuf>,
     pub image_size: u32,
     pub threshold: f32,

@@ -16,7 +16,8 @@ pub(crate) fn workspace_models_dir() -> PathBuf {
 /// Model roots next to a packaged server binary.
 ///
 /// Desktop installers place the server at `<resource_dir>/server/<bin>` and
-/// Studio's killing ONNX at `<resource_dir>/models/killing-assay-resnet18`.
+/// Studio's killing ONNX (HF cache, curl at package time) at
+/// `<resource_dir>/models/killing-assay-resnet18`.
 #[cfg(any(feature = "studio", test))]
 pub(crate) fn models_dirs_near_executable(exe: &Path) -> Vec<PathBuf> {
     let mut dirs = Vec::new();

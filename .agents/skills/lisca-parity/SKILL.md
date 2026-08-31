@@ -96,6 +96,10 @@ passes on a known-good stage (paste invocation + verdict).
 - Implement goals in the **sidecar crate** (transfection) or idiomatic
   ONNX / mplot-rs in this repo (killing, crop).
   **Do not** copy the transfection pipeline back into `crates/lisca`.
+  **Do not** add new assay-specific weights under `models/` (product models
+  only: Smart exclude / Smart segment). Transfection ONNX may stay as a Studio
+  adapter until the sidecar un-stubs it; resolve HF
+  `keejkrej/single-cell-pattern-unet` via `LISCA_PATTERN_SEG_MODEL`.
 - Match **stage order**, **defaults** (e.g. variation radius, Gaussian sigma,
   fit grid sizes), and **edge semantics** (inclusive position ranges, onset
   cap).

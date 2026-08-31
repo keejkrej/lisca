@@ -1,14 +1,17 @@
 # Killing ResNet model
 
-Studio killing analysis expects `model.onnx` in this directory (or `LISCA_KILL_MODEL` pointing elsewhere).
+**Ownership:** killing assay / Hugging Face
+[`keejkrej/killing-assay-resnet18`](https://huggingface.co/keejkrej/killing-assay-resnet18),
+not a lisca-owned analysis brain. This directory is a **package-time cache**
+so Studio installers can curl the ONNX (see `.github/workflows/release.yml`).
+Keep that curl-at-package-time path; do not grow a third copy of training or
+weights logic here. When a killing sidecar exists, it owns the brain.
 
-Export from the Hugging Face checkpoint:
+Studio killing analysis expects `model.onnx` in this **package-time cache**
+(or `LISCA_KILL_MODEL` pointing elsewhere). Do not treat this as a second
+training tree.
 
-```sh
-uv run optimum-cli export onnx --model keejkrej/killing-assay-resnet18 ./models/killing-assay-resnet18
-```
-
-Or download the published ONNX artifact:
+The published ONNX (what release.yml curls):
 
 ```sh
 curl -sL "https://huggingface.co/keejkrej/killing-assay-resnet18/resolve/main/model.onnx" \

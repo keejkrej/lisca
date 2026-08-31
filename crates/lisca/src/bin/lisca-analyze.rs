@@ -86,7 +86,7 @@ Common options:
   --variation-radius N    segment local-variation radius (default: 2)
   --gaussian-sigma F      segment Gaussian sigma (default: 1.0)
   --backend otsu|onnx     segment backend (default: otsu)
-  --model-dir PATH        ONNX model dir (or LISCA_PATTERN_SEG_MODEL)
+  --model-dir PATH        ONNX dir (LISCA_PATTERN_SEG_MODEL / HF pattern U-Net)
   --image-size N          ONNX input size (default: 128)
   --threshold F           ONNX sigmoid threshold (default: 0.5)
   --batch-size N          ONNX frame batch size (default: 32)

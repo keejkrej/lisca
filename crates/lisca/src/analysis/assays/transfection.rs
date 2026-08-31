@@ -1,9 +1,11 @@
 //! Thin dispatch into the `lisca-transfection` git crate.
 //!
 //! Transfection **analysis** (Otsu segment, timeseries, AUC, kinetic fit, plots)
-//! lives in [`lisca_transfection`]. Crop (`lisca-crop`) and Studio ONNX segment
-//! stay in this repo. The on-disk workspace (`assay.json` + `roi/`) is the
-//! contract; ndarray types are not passed across the crate boundary.
+//! lives in [`lisca_transfection`]. Crop (`lisca-crop`) stays in this repo.
+//! Studio ONNX segment may stay as a local adapter until the sidecar un-stubs
+//! it; pattern-U-Net weights come from HF / `LISCA_PATTERN_SEG_MODEL`, not as
+//! a lisca-owned `models/` brain. The on-disk workspace (`assay.json` + `roi/`)
+//! is the contract; ndarray types are not passed across the crate boundary.
 
 mod mapping;
 mod segment;

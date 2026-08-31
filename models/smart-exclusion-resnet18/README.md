@@ -11,6 +11,9 @@ pipeline_tag: image-classification
 
 # Smart exclusion ResNet-18
 
+**Ownership:** this lisca monorepo (product / any-assay). Smart exclude is not
+an assay pipeline.
+
 Binary image classifier for LiSCA **Smart exclude**: predicts whether a micropattern grid cell ROI should be excluded from downstream ROI export.
 
 Trained on user-preference exclusions (edge-clipped sites filtered out). Labels:

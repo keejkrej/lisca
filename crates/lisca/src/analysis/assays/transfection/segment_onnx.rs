@@ -1,4 +1,9 @@
-//! ONNX dense fg/bg segmentation backend for gene-expression masks.
+//! ONNX dense fg/bg segmentation adapter for transfection masks.
+//!
+//! Studio keeps this `ort` adapter until `lisca-transfection` un-stubs ONNX.
+//! The weights are a transfection-assay brain (HF `keejkrej/single-cell-pattern-unet`),
+//! resolved via `LISCA_PATTERN_SEG_MODEL` / `--model-dir`. Do not add new assay
+//! weights under this repo's `models/`.
 //!
 //! Model contract matches Python export from `train-gene-expression-seg`:
 //! - input `pixel_values`: float32 `(N, 3, S, S)` ImageNet-normalized RGB
@@ -58,6 +63,8 @@ pub fn resolve_ge_seg_model_dir(explicit: Option<&Path>) -> Result<PathBuf, Stri
         ));
     }
 
+    // Local `models/single-cell-pattern-unet` is a checkout cache only.
+    // Canonical: LISCA_PATTERN_SEG_MODEL or HF keejkrej/single-cell-pattern-unet.
     let candidates = [
         workspace_models_dir().join("single-cell-pattern-unet/onnx"),
         workspace_models_dir().join("single-cell-pattern-unet"),
@@ -72,7 +79,13 @@ pub fn resolve_ge_seg_model_dir(explicit: Option<&Path>) -> Result<PathBuf, Stri
     } else {
         "LISCA_PATTERN_SEG_MODEL"
     };
-    resolve_model_path(env_var, candidates)
+    resolve_model_path(env_var, candidates).map_err(|err| {
+        format!(
+            "{err}. Transfection pattern U-Net is not a product model: download \
+             keejkrej/single-cell-pattern-unet and set LISCA_PATTERN_SEG_MODEL \
+             (or pass --model-dir)."
+        )
+    })
 }
 
 pub struct OnnxSegmenter {
