@@ -8,9 +8,9 @@
   annotation, assay, and result artifacts.
 - **Align session** — the interactive workflow that registers a frame to the
   micropattern grid, excludes unusable sites, saves site boxes, and starts ROI crop.
-- **ROI crop** — creation of per-site TIFF stacks and an index from saved alignment boxes;
-  runs in Studio or via CLI (`lisca-crop`; Python `lisca.services.crop` in `python/`), not in the light Aligner shell.
-  boxes while preserving position and site identity.
+- **ROI crop** — creation of per-site TIFF stacks and an index from saved alignment boxes,
+  while preserving position and site identity. Runs in Studio, CLI (`lisca-crop`),
+  or the notebooks zip (`lisca.services.crop` in `python/`); not in the light Aligner shell.
 - **Annotation session** — the interactive workflow that loads an ROI frame, edits
   its classification or segmentation mask, tracks history, and saves the annotation.
 - **Assay** — the typed experiment description in `assay.json`, including the assay
