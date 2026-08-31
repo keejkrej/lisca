@@ -1,7 +1,11 @@
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
-use mplot::prelude::{AxesStyle, BoxplotStyle, GridPos, Scale, TickFormat, TickLabelRotation};
+use mplot::prelude::{
+    AxesStyle, BoxplotStyle, GridPos, LegendStyle, LineStyle, Marker, Scale, TextStyle, TickFormat,
+    TickLabelRotation,
+};
+use mplot::Color;
 
 use crate::analysis::array::{fitted_trace_value, KineticFitCoeffs};
 use crate::analysis::csv_io::{column_index, parse_f64, read_csv};
@@ -78,6 +82,11 @@ pub fn run_plot_fit(
         interval,
         columns,
         mapping,
+    )?;
+    write_expression_rate_vs_onset_time(
+        &rows,
+        &results_dir.join("expression_rate_vs_onset_time.png"),
+        &labels,
     )?;
     Ok(())
 }
@@ -199,6 +208,132 @@ fn write_fit_boxplot(
                 axes = axes.y_range(0.0, y_upper);
             }
             p.boxplot(&grouped_values, BoxplotStyle::new()).axes(axes);
+        })
+        .build()
+        .map_err(|error| error.to_string())?;
+
+    save_figure(&figure, output_plot, SAVE_PAD_SINGLE_INCHES)
+}
+
+/// Successful finite `(onset_time, expression_rate)` pairs grouped by slide channel.
+fn successful_rate_onset_points(rows: &[FitPlotRow]) -> BTreeMap<u32, (Vec<f64>, Vec<f64>)> {
+    let mut grouped: BTreeMap<u32, (Vec<f64>, Vec<f64>)> = BTreeMap::new();
+    for row in rows {
+        if !row.success {
+            continue;
+        }
+        let Some(onset) = row.onset_time.filter(|value| value.is_finite()) else {
+            continue;
+        };
+        let Some(rate) = row.expression_rate.filter(|value| value.is_finite()) else {
+            continue;
+        };
+        let entry = grouped.entry(row.slide_channel).or_default();
+        entry.0.push(onset);
+        entry.1.push(rate);
+    }
+    grouped
+}
+
+fn pearson_r(x: &[f64], y: &[f64]) -> Option<f64> {
+    if x.len() != y.len() || x.len() < 2 {
+        return None;
+    }
+    let n = x.len() as f64;
+    let mean_x = x.iter().sum::<f64>() / n;
+    let mean_y = y.iter().sum::<f64>() / n;
+    let mut numerator = 0.0;
+    let mut sum_dx2 = 0.0;
+    let mut sum_dy2 = 0.0;
+    for (xi, yi) in x.iter().zip(y) {
+        let dx = xi - mean_x;
+        let dy = yi - mean_y;
+        numerator += dx * dy;
+        sum_dx2 += dx * dx;
+        sum_dy2 += dy * dy;
+    }
+    let denominator = (sum_dx2 * sum_dy2).sqrt();
+    if denominator == 0.0 || !denominator.is_finite() || !numerator.is_finite() {
+        return None;
+    }
+    Some(numerator / denominator)
+}
+
+fn padded_axis_range(values: &[f64]) -> (f64, f64) {
+    let min = values.iter().copied().fold(f64::INFINITY, f64::min);
+    let max = values.iter().copied().fold(f64::NEG_INFINITY, f64::max);
+    let (low, high) = expand_degenerate_ylim(min, max);
+    let pad = (high - low) * 0.05;
+    (low - pad, high + pad)
+}
+
+fn write_expression_rate_vs_onset_time(
+    rows: &[FitPlotRow],
+    output_plot: &Path,
+    labels: &BTreeMap<u32, String>,
+) -> Result<(), String> {
+    let grouped = successful_rate_onset_points(rows);
+    if grouped.is_empty() {
+        return Err(
+            "No successful finite onset time / expression rate pairs available to plot".to_string(),
+        );
+    }
+
+    let groups: Vec<(String, Color, Vec<f64>, Vec<f64>)> = grouped
+        .into_iter()
+        .enumerate()
+        .map(|(index, (channel, (x, y)))| {
+            (
+                boxplot_tick_label(channel, x.len(), labels),
+                Color::TABLEAU[index % Color::TABLEAU.len()],
+                x,
+                y,
+            )
+        })
+        .collect();
+
+    let all_x: Vec<f64> = groups
+        .iter()
+        .flat_map(|(_, _, x, _)| x.iter().copied())
+        .collect();
+    let all_y: Vec<f64> = groups
+        .iter()
+        .flat_map(|(_, _, _, y)| y.iter().copied())
+        .collect();
+    let n = all_x.len();
+    let (x_low, x_high) = padded_axis_range(&all_x);
+    let (y_low, y_high) = padded_axis_range(&all_y);
+    let annotation = match pearson_r(&all_x, &all_y) {
+        Some(r) => format!("r = {r:.2}, n = {n}"),
+        None => format!("n = {n}"),
+    };
+    let text_x = x_low + 0.05 * (x_high - x_low);
+    let text_y = y_high - 0.08 * (y_high - y_low);
+
+    let figure = figure_builder_single()
+        .panel(GridPos::new(1, 1, 1), move |p| {
+            for (label, color, x, y) in &groups {
+                for (point_index, (xi, yi)) in x.iter().zip(y.iter()).enumerate() {
+                    let mut style = LineStyle::new()
+                        .color(*color)
+                        .width(1.0)
+                        .marker(Marker::Circle)
+                        .alpha(0.8);
+                    if point_index == 0 {
+                        style = style.label(label.clone());
+                    }
+                    p.line(&[*xi], &[*yi], style);
+                }
+            }
+            p.text(text_x, text_y, annotation, TextStyle::new().fontsize(14.0));
+            p.axes(
+                AxesStyle::new()
+                    .x_label("onset time (min)")
+                    .y_label("expression rate")
+                    .x_range(x_low, x_high)
+                    .y_range(y_low, y_high)
+                    .legend(LegendStyle::show()),
+            );
         })
         .build()
         .map_err(|error| error.to_string())?;
@@ -380,5 +515,86 @@ impl FitPlotRow {
             onset_time: self.onset_time.unwrap_or(0.0),
             expression_amplitude: self.expression_amplitude.unwrap_or(0.0),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tempfile::tempdir;
+
+    fn plot_row(
+        slide_channel: u32,
+        success: bool,
+        onset_time: Option<f64>,
+        expression_rate: Option<f64>,
+    ) -> FitPlotRow {
+        FitPlotRow {
+            slide_channel,
+            pos: 1,
+            roi: 1,
+            success,
+            baseline_intensity: None,
+            protein_decay_rate: None,
+            mrna_decay_rate: None,
+            onset_time,
+            expression_amplitude: None,
+            protein_lifetime: None,
+            mrna_lifetime: None,
+            expression_rate,
+        }
+    }
+
+    #[test]
+    fn pearson_r_should_return_one_for_perfect_positive_correlation() {
+        let x = [1.0, 2.0, 3.0, 4.0];
+        let y = [2.0, 4.0, 6.0, 8.0];
+        assert!((pearson_r(&x, &y).unwrap() - 1.0).abs() < 1e-12);
+    }
+
+    #[test]
+    fn pearson_r_should_return_none_when_variance_is_zero() {
+        let x = [1.0, 1.0, 1.0];
+        let y = [2.0, 3.0, 4.0];
+        assert!(pearson_r(&x, &y).is_none());
+    }
+
+    #[test]
+    fn successful_rate_onset_points_should_keep_successful_finite_fits_only() {
+        let rows = [
+            plot_row(0, true, Some(10.0), Some(1.5)),
+            plot_row(0, false, Some(20.0), Some(2.0)),
+            plot_row(1, true, Some(f64::NAN), Some(3.0)),
+            plot_row(1, true, Some(30.0), Some(f64::INFINITY)),
+            plot_row(1, true, None, Some(4.0)),
+            plot_row(2, true, Some(40.0), Some(5.0)),
+        ];
+        let grouped = successful_rate_onset_points(&rows);
+        assert_eq!(grouped.len(), 2);
+        assert_eq!(grouped.get(&0), Some(&(vec![10.0], vec![1.5])));
+        assert_eq!(grouped.get(&2), Some(&(vec![40.0], vec![5.0])));
+        assert!(!grouped.contains_key(&1));
+    }
+
+    #[test]
+    fn write_expression_rate_vs_onset_time_should_write_png_next_to_parameter_boxplots() {
+        let dir = tempdir().expect("tempdir");
+        let output = dir.path().join("expression_rate_vs_onset_time.png");
+        let mut labels = BTreeMap::new();
+        labels.insert(0, "GFP".to_string());
+        labels.insert(1, "mock".to_string());
+        let rows = [
+            plot_row(0, true, Some(10.0), Some(1.0)),
+            plot_row(0, true, Some(20.0), Some(2.0)),
+            plot_row(1, true, Some(15.0), Some(1.5)),
+            plot_row(1, false, Some(50.0), Some(9.0)),
+        ];
+
+        write_expression_rate_vs_onset_time(&rows, &output, &labels).expect("write scatter");
+
+        let bytes = std::fs::read(&output).expect("read png");
+        assert!(output.exists());
+        assert_eq!(&bytes[..8], b"\x89PNG\r\n\x1a\n");
+        assert!(bytes.len() > 256);
     }
 }

@@ -71,7 +71,7 @@ Commands (same stage names as `transfection`):
   fit               Two-exponential kinetic fit → results/fit.csv
   plot-timeseries   Trace / area / summary PNGs under results/
   plot-auc          AUC boxplots (linear + log)
-  plot-fit          Fit parameter boxplots + traces_fit.png
+  plot-fit          Fit parameter boxplots + traces_fit.png + expression_rate_vs_onset_time.png
   pipeline          Full Studio order from assay.json
                     (aliases: analyze, all)
 
