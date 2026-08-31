@@ -140,6 +140,23 @@ pub fn run_plot_fit(
     lisca_transfection::run_plot_fit(workspace, &to_sidecar_mapping(mapping), interval, columns)
 }
 
+/// Per-sample `results/<sample>/traces.xlsx`. Plot stages write PNG only.
+pub fn publish_sample_traces_xlsx(
+    workspace: &Path,
+    mapping: &SlideMapping,
+) -> Result<Vec<PathBuf>, String> {
+    lisca_transfection::publish_sample_traces_xlsx(workspace, &to_sidecar_mapping(mapping))
+}
+
+/// Per-sample `results/<sample>/{auc,fit}.xlsx`. Plot stages write PNG only.
+pub fn publish_sample_tables_xlsx(
+    workspace: &Path,
+    mapping: &SlideMapping,
+    kind: &str,
+) -> Result<Vec<PathBuf>, String> {
+    lisca_transfection::publish_sample_tables_xlsx(workspace, &to_sidecar_mapping(mapping), kind)
+}
+
 pub async fn run<F>(
     workspace_path: PathBuf,
     request_id: String,
@@ -205,9 +222,12 @@ where
 
     let plot_ts_workspace = workspace_path.clone();
     let plot_ts_mapping = mapping.clone();
-    run_blocking(move || run_plot_timeseries(&plot_ts_workspace, &plot_ts_mapping, interval, None))
-        .await
-        .map_err(|error| format!("plot-timeseries step failed: {error}"))?;
+    run_blocking(move || {
+        publish_sample_traces_xlsx(&plot_ts_workspace, &plot_ts_mapping)?;
+        run_plot_timeseries(&plot_ts_workspace, &plot_ts_mapping, interval, None)
+    })
+    .await
+    .map_err(|error| format!("plot-timeseries step failed: {error}"))?;
 
     run_blocking({
         let workspace = workspace_path.clone();
@@ -224,9 +244,12 @@ where
 
     let plot_auc_workspace = workspace_path.clone();
     let plot_auc_mapping = mapping.clone();
-    run_blocking(move || run_plot_auc(&plot_auc_workspace, &plot_auc_mapping))
-        .await
-        .map_err(|error| format!("plot-auc step failed: {error}"))?;
+    run_blocking(move || {
+        publish_sample_tables_xlsx(&plot_auc_workspace, &plot_auc_mapping, "auc")?;
+        run_plot_auc(&plot_auc_workspace, &plot_auc_mapping)
+    })
+    .await
+    .map_err(|error| format!("plot-auc step failed: {error}"))?;
 
     let max_onset = max_onset_minutes(&assay_json);
     run_blocking({
@@ -244,9 +267,12 @@ where
 
     let plot_fit_workspace = workspace_path.clone();
     let plot_fit_mapping = mapping.clone();
-    run_blocking(move || run_plot_fit(&plot_fit_workspace, &plot_fit_mapping, interval, None))
-        .await
-        .map_err(|error| format!("plot-fit step failed: {error}"))?;
+    run_blocking(move || {
+        publish_sample_tables_xlsx(&plot_fit_workspace, &plot_fit_mapping, "fit")?;
+        run_plot_fit(&plot_fit_workspace, &plot_fit_mapping, interval, None)
+    })
+    .await
+    .map_err(|error| format!("plot-fit step failed: {error}"))?;
 
     let outputs = collect_csv_outputs(&workspace_path)?;
     update_progress(analysis_progress(

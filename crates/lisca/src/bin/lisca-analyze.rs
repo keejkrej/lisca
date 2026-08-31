@@ -20,8 +20,9 @@ use std::time::Instant;
 
 use lisca::analysis::assays::transfection::{
     default_fit_jobs, default_jobs, default_timeseries_jobs, interval_minutes, max_onset_minutes,
-    run_auc, run_fit, run_plot_auc, run_plot_fit, run_plot_timeseries, run_segment,
-    run_sync_with_mode, run_timeseries_with_mode, skip_segment, SegmentBackend, SegmentOptions,
+    publish_sample_tables_xlsx, publish_sample_traces_xlsx, run_auc, run_fit, run_plot_auc,
+    run_plot_fit, run_plot_timeseries, run_segment, run_sync_with_mode, run_timeseries_with_mode,
+    skip_segment, SegmentBackend, SegmentOptions,
 };
 use lisca::analysis::slide::{load_mapping_for_workspace, resolve_assay_path};
 use lisca::protocol::AssayJsonFile;
@@ -204,6 +205,7 @@ fn cmd_plot_timeseries(args: &[String]) -> Result<(), String> {
             .unwrap_or_else(|| "auto".to_string())
     );
     timed("plot-timeseries", || {
+        publish_sample_traces_xlsx(&workspace, &mapping)?;
         run_plot_timeseries(&workspace, &mapping, interval, columns)
     })
 }
@@ -213,7 +215,10 @@ fn cmd_plot_auc(args: &[String]) -> Result<(), String> {
     let assay = flag_path(args, "--assay");
     let mapping = load_mapping_for_workspace(&workspace, assay.as_deref())?;
     eprintln!("plot-auc workspace={}", workspace.display());
-    timed("plot-auc", || run_plot_auc(&workspace, &mapping))
+    timed("plot-auc", || {
+        publish_sample_tables_xlsx(&workspace, &mapping, "auc")?;
+        run_plot_auc(&workspace, &mapping)
+    })
 }
 
 fn cmd_plot_fit(args: &[String]) -> Result<(), String> {
@@ -233,6 +238,7 @@ fn cmd_plot_fit(args: &[String]) -> Result<(), String> {
             .unwrap_or_else(|| "auto".to_string())
     );
     timed("plot-fit", || {
+        publish_sample_tables_xlsx(&workspace, &mapping, "fit")?;
         run_plot_fit(&workspace, &mapping, interval, columns)
     })
 }

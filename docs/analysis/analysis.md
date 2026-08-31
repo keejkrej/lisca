@@ -183,18 +183,18 @@ analysis/
     killing.rs + killing/
 ```
 
-| Module                                | Goal                                                            |
-| ------------------------------------- | --------------------------------------------------------------- |
-| `assays/transfection/`                | Dispatch into `lisca-transfection`; Studio ONNX adapter         |
-| `assays/transfection/segment_onnx.rs` | Studio ONNX adapter; weights via `LISCA_PATTERN_SEG_MODEL` / HF |
-| `lisca-transfection` (git)            | Otsu, timeseries, AUC, kinetic fit, plots                       |
-| `assays/killing/`                     | ResNet presence, monotonicity clean, death times, kill curve    |
+| Module                                | Goal                                                                  |
+| ------------------------------------- | --------------------------------------------------------------------- |
+| `assays/transfection/`                | Dispatch into `lisca-transfection`; Studio ONNX adapter               |
+| `assays/transfection/segment_onnx.rs` | Studio ONNX adapter; weights via `LISCA_PATTERN_SEG_MODEL` / HF       |
+| `lisca-transfection` (git)            | Otsu, timeseries, AUC, kinetic fit, PNG plots, sample XLSX publishers |
+| `assays/killing/`                     | ResNet presence, monotonicity clean, death times, kill curve          |
 
 Adding a new assay type: create `assays/<name>.rs` plus `assays/<name>/`, implement `run` (async) and optionally `run_sync`, then register in `assays.rs`.
 
 ## Plot runtime
 
-Plots render natively in Rust (no Python sidecar). Figure layout constants match transfection (`12×8` in, log-scale AUC boxplot, fluor trace colors, etc.).
+Plots render natively in Rust (no Python sidecar). Figure layout constants match transfection (`12×8` in, log-scale AUC boxplot, fluor trace colors, etc.). Transfection `run_plot_*` writes PNG only; `publish_sample_*_xlsx` (Studio/`lisca-analyze` plot commands and pipeline) writes `results/<sample>/{traces,auc,fit}.xlsx`. Per-sample kinetic scatters are log-log joint plots (`expression_rate_vs_onset_time.png`, `expression_rate_vs_mrna_lifetime.png`).
 
 ## Parity expectations (outputs, not code)
 
