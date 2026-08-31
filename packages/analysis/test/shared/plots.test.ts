@@ -38,6 +38,22 @@ describe("collectResultPlots", () => {
     expect(plots[1]?.section).toBe("parameters");
   });
 
+  it("titles the expression-rate vs onset-time scatter from the catalog", () => {
+    const plots = collectResultPlots(
+      [
+        { kind: "plot", fileName: "expression_rate_vs_onset_time.png", path: "/scatter.png" },
+        { kind: "plot", fileName: "onset_time.png", path: "/onset_time.png" },
+      ],
+      "transfection",
+    );
+    expect(plots.map((plot) => plot.fileName)).toEqual([
+      "onset_time.png",
+      "expression_rate_vs_onset_time.png",
+    ]);
+    expect(plots[1]?.title).toBe("Expression rate vs onset time");
+    expect(plots[1]?.section).toBe("parameters");
+  });
+
   it("uses killing titles for shared filenames", () => {
     const plots = collectResultPlots(
       [

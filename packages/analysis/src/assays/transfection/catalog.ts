@@ -30,6 +30,11 @@ export const TRANSFECTION_PLOTS: readonly TransfectionPlotSpec[] = [
   { fileName: "expression_rate.png", title: "Expression rate", section: "parameters" },
   { fileName: "expression_rate_log.png", title: "Expression rate (log)", section: "parameters" },
   { fileName: "onset_time.png", title: "Onset time", section: "parameters" },
+  {
+    fileName: "expression_rate_vs_onset_time.png",
+    title: "Expression rate vs onset time",
+    section: "parameters",
+  },
   { fileName: "baseline_intensity.png", title: "Baseline intensity", section: "parameters" },
   { fileName: "protein_lifetime.png", title: "Protein lifetime", section: "parameters" },
 ] as const;
