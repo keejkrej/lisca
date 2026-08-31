@@ -51,11 +51,11 @@ This starts Jupyter Notebook in the `notebooks/` folder.
 
 Set these in the first code cell of each notebook. Paths are the mounted or local experiment folder, not this zip.
 
-| Notebook | Config |
-| --- | --- |
-| `crop.ipynb` | `WORKSPACE`, `SOURCE` (ND2/CZI), `POSITIONS` (zero-based; `range(0, 159)` is Pos 0..158) |
+| Notebook        | Config                                                                                      |
+| --------------- | ------------------------------------------------------------------------------------------- |
+| `crop.ipynb`    | `WORKSPACE`, `SOURCE` (ND2/CZI), `POSITIONS` (zero-based; `range(0, 159)` is Pos 0..158)    |
 | `analyze.ipynb` | `WORKSPACE`, `INTERVAL_MINUTES`, `MAX_ONSET_MINUTES`, `SIGNAL_CHANNEL` (one int, every Pos) |
-| `results.ipynb` | `WORKSPACE`, `INTERVAL_MINUTES`, `SAMPLES` (names + positions). No `SIGNAL_CHANNEL`. |
+| `results.ipynb` | `WORKSPACE`, `INTERVAL_MINUTES`, `SAMPLES` (names + positions). No `SIGNAL_CHANNEL`.        |
 
 `analyze.ipynb` writes `analysis/` CSVs only. `results.ipynb` packs `results/{sample}/` (XLSX + PNG). Re-run results without repeating analyze.
 
