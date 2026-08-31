@@ -47,14 +47,14 @@ def parse_bbox_csv(path: Path) -> list[RoiBbox]:
     reader = csv.reader(lines)
     header = [cell.strip().lower() for cell in next(reader)]
     try:
-        roi_idx = next(i for i, name in enumerate(header) if name in {"roi", "crop"})
+        roi_idx = header.index("roi")
         x_idx = header.index("x")
         y_idx = header.index("y")
         w_idx = header.index("w")
         h_idx = header.index("h")
-    except (StopIteration, ValueError) as exc:
+    except ValueError as exc:
         raise ValueError(
-            f"BBox CSV is missing required columns (roi/crop, x, y, w, h): {path}"
+            f"BBox CSV is missing required columns (roi, x, y, w, h): {path}"
         ) from exc
 
     required_idx = max(roi_idx, x_idx, y_idx, w_idx, h_idx)

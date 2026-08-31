@@ -2,7 +2,13 @@ import { mkdtempSync, readFileSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { KILLING_PLOTS, TRANSFECTION_PLOTS } from "@lisca/analysis";
+import {
+  KILLING_PLOTS,
+  TRANSFECTION_AUC_CSV_COLUMNS,
+  TRANSFECTION_FIT_CSV_COLUMNS,
+  TRANSFECTION_PLOTS,
+  TRANSFECTION_TRACE_CSV_COLUMNS,
+} from "@lisca/analysis";
 import {
   AssayJsonFileSchema,
   RoiIndexFileSchema,
@@ -106,11 +112,13 @@ describe("workspace fixture smoke", () => {
     const out = tempOut("tf-analyzed");
     materializeFixture({ assay: "transfection", stage: "analyzed", out, force: true });
     const header = read(out, "analysis/Pos1/ch1.csv").split("\n")[0];
-    expect(header).toBe("roi,t,area,background,sum,corrected");
+    expect(header).toBe(TRANSFECTION_TRACE_CSV_COLUMNS.join(","));
     expect(read(out, "analysis/Pos1/fit.csv").split("\n")[0]).toBe(
-      "roi,baseline_intensity,protein_degradation_rate,protein_lifetime,mrna_degradation_rate,mrna_lifetime,onset_time,expression_amplitude,expression_rate,success",
+      TRANSFECTION_FIT_CSV_COLUMNS.join(","),
     );
-    expect(read(out, "analysis/Pos1/auc.csv").startsWith("roi,auc")).toBe(true);
+    expect(
+      read(out, "analysis/Pos1/auc.csv").startsWith(TRANSFECTION_AUC_CSV_COLUMNS.join(",")),
+    ).toBe(true);
     expect(existsSync(join(out, "results/auc.csv"))).toBe(false);
     expect(existsSync(join(out, "timeseries"))).toBe(false);
     const sampleDir = "Mock_(fixture)";
