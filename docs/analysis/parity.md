@@ -175,14 +175,14 @@ cargo build -p lisca --release --bin lisca-analyze
 
 Stage names mirror `transfection`:
 
-| Command                                     | Writes                                                                           |
-| ------------------------------------------- | -------------------------------------------------------------------------------- |
-| `segment`                                   | `mask/PosN/*.tif` (default Otsu via git crate; optional ONNX U-Net in this repo) |
-| `timeseries`                                | `analysis/Pos*/ch*.csv` (CSV only; CLI verb still timeseries)                    |
-| `auc`                                       | `analysis/Pos*/auc.csv`                                                          |
-| `fit`                                       | `analysis/Pos*/fit.csv`                                                          |
+| Command                                     | Writes                                                                                                                                                                                      |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `segment`                                   | `mask/PosN/*.tif` (default Otsu via git crate; optional ONNX U-Net in this repo)                                                                                                            |
+| `timeseries`                                | `analysis/Pos*/ch*.csv` (CSV only; CLI verb still timeseries)                                                                                                                               |
+| `auc`                                       | `analysis/Pos*/auc.csv`                                                                                                                                                                     |
+| `fit`                                       | `analysis/Pos*/fit.csv`                                                                                                                                                                     |
 | `plot-timeseries` / `plot-auc` / `plot-fit` | PNG packs + workspace boxplots. CLI/`pipeline` call `publish_sample_*_xlsx` first so one-shot still writes `results/<sample>/{traces,auc,fit}.xlsx`. Plot services themselves are PNG-only. |
-| `pipeline` (`analyze`, `all`)               | full Studio order from `assay.json`                                              |
+| `pipeline` (`analyze`, `all`)               | full Studio order from `assay.json`                                                                                                                                                         |
 
 Common flags: `--assay` (default `<workspace>/assay.json`), `--interval`,
 `--max-onset-minutes`, segment `--force` / radius / sigma. Parallel stages

@@ -183,12 +183,12 @@ analysis/
     killing.rs + killing/
 ```
 
-| Module                                | Goal                                                            |
-| ------------------------------------- | --------------------------------------------------------------- |
-| `assays/transfection/`                | Dispatch into `lisca-transfection`; Studio ONNX adapter         |
-| `assays/transfection/segment_onnx.rs` | Studio ONNX adapter; weights via `LISCA_PATTERN_SEG_MODEL` / HF |
+| Module                                | Goal                                                                  |
+| ------------------------------------- | --------------------------------------------------------------------- |
+| `assays/transfection/`                | Dispatch into `lisca-transfection`; Studio ONNX adapter               |
+| `assays/transfection/segment_onnx.rs` | Studio ONNX adapter; weights via `LISCA_PATTERN_SEG_MODEL` / HF       |
 | `lisca-transfection` (git)            | Otsu, timeseries, AUC, kinetic fit, PNG plots, sample XLSX publishers |
-| `assays/killing/`                     | ResNet presence, monotonicity clean, death times, kill curve    |
+| `assays/killing/`                     | ResNet presence, monotonicity clean, death times, kill curve          |
 
 Adding a new assay type: create `assays/<name>.rs` plus `assays/<name>/`, implement `run` (async) and optionally `run_sync`, then register in `assays.rs`.
 
