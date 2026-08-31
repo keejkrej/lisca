@@ -1,12 +1,17 @@
 # lisca Python package
 
-Utilities for dataset building and model training used by the Lisca monorepo.
+Utilities for ROI crop, dataset building, and model training used by the Lisca monorepo.
+
+Crop (ND2/CZI → `roi/`) lives here. Transfection analyze/results live in the
+[`lisca-transfection-assay`](https://github.com/keejkrej/lisca-transfection-assay)
+sidecar — do not import a deprecated `pyama*` package.
 
 ## Setup
 
 ```sh
 cd python
 uv sync                 # runtime + dev
+uv sync --extra crop      # ND2/CZI readers for `lisca crop` / notebooks
 uv sync --extra analysis  # + transfection git package (Python 3.12+)
 uv sync --group train   # + torch / lightning / onnx / cellpose
 # or labeling only:
@@ -16,6 +21,16 @@ uv sync --group label
 CLI entry point: `uv run lisca …`
 
 ## Commands
+
+### Crop (ND2/CZI)
+
+One source pass per position: all `Roi{n}.tif` writers stay open until that Pos
+is done. Default is 1 position worker (`LISCA_CROP_WORKERS` to opt into more).
+The FD budget shrinks workers rather than re-scanning the source.
+
+```sh
+uv run lisca crop --workspace … --source …nd2 --positions 0,1,2
+```
 
 ### Smart exclusion (existing)
 

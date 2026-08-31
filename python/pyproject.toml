@@ -23,6 +23,10 @@ lisca = "lisca.main:app"
 
 [project.optional-dependencies]
 analysis = ["transfection; python_version >= '3.12'"]
+crop = [
+  "nd2>=0.10",
+  "pylibCZIrw>=4.1",
+]
 
 [dependency-groups]
 dev = ["pytest>=8.3.5,<9", "ruff>=0.9", "ty>=0.0.1"]
@@ -46,6 +50,9 @@ line-length = 88
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]
+
+[tool.ruff.lint.per-file-ignores]
+"src/lisca/commands/*.py" = ["B008"]
 
 [tool.ty.environment]
 python-version = "3.12"
