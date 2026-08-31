@@ -2,7 +2,7 @@ import * as Schema from "effect/Schema";
 
 import { U32 } from "./primitives";
 
-/** Required `bbox/PosN.csv` columns. Writers use `roi`; parsers accept `crop` as an alias. */
+/** Required `bbox/PosN.csv` columns. Live header is `roi` only. */
 export const BBOX_CSV_COLUMNS = ["roi", "x", "y", "w", "h"] as const;
 
 export const RoiBboxSchema = Schema.Struct({

@@ -78,7 +78,7 @@ const { out } = materializeFixture({
 - 2 positions (`Pos1`, `Pos2`), 2 ROIs, 3 timepoints, 2 channels, 1 Z
 - Folder template: `Pos{p}` / `img_channel{c}_position{p}_time{t}_z{z}`
 - ROI stacks: `roi/PosN/RoiN.tif` + slim `index.json` (`axisOrder: TCZYX`)
-- Alignment: `bbox/PosN.csv` (`roi,x,y,w,h`; optional `i,j`; header `crop` is accepted as an alias for `roi`) and `align/PosN.json`
+- Alignment: `bbox/PosN.csv` (`roi,x,y,w,h`; optional `i,j`) and `align/PosN.json`
 - Transfection analysis CSVs: `analysis/PosN/chC.csv` (`roi,t,area,background,sum,corrected`), `auc.csv` (`roi,auc`), `fit.csv` (`roi,baseline_intensity,onset_time,expression_rate,mrna_lifetime,protein_lifetime,success`)
 - Killing timeseries: `timeseries/PosN/chN.csv` (`roi,t,p_dead`)
 - Transfection plots: workspace boxplots at `results/*.png` and per-sample PNGs

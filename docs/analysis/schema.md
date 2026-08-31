@@ -5,14 +5,14 @@ Canonical on-disk columns for a LISCA workspace. Kinetic ids match
 `mrna_lifetime`, `protein_lifetime`, `baseline_intensity`, `auc`). Times and
 lifetimes are **minutes**. Lifetimes are half-lives ln(2)/δ and ln(2)/β.
 
-Writers use the names below. Header `crop` is accepted as an alias for `roi` on
-bbox CSVs only.
+Writers use the names below.
 
 ## `bbox/Pos{n}.csv` (lisca crop/align)
 
 `roi`, `x`, `y`, `w`, `h` — integers, top-left origin, `w`/`h` > 0.
 
-Header `crop` is accepted as an alias for `roi`.
+Old `crop` headers are rewritten to `roi` by lisca workspace migrations, then
+`roi` is required.
 
 Optional: `i`, `j` (grid indices from Aligner).
 

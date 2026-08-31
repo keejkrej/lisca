@@ -114,17 +114,7 @@ pub(super) fn parse_bbox_csv(path: &Path) -> Result<Vec<RoiBbox>, String> {
                 )
             })
     };
-    let roi_idx = header
-        .iter()
-        .position(|column| column == "roi")
-        .or_else(|| header.iter().position(|column| column == "crop"))
-        .ok_or_else(|| {
-            format!(
-                "{}:{} missing required column 'roi' (or alias 'crop'); required: roi, x, y, w, h",
-                path.display(),
-                header_index + 1
-            )
-        })?;
+    let roi_idx = column_index("roi")?;
     let x_idx = column_index("x")?;
     let y_idx = column_index("y")?;
     let w_idx = column_index("w")?;
@@ -189,14 +179,13 @@ mod tests {
     }
 
     #[test]
-    fn parse_bbox_csv_accepts_crop_header_as_roi_alias() {
+    fn parse_bbox_csv_requires_roi_header() {
         let path = std::env::temp_dir().join(format!("lisca-crop-bbox-{}.csv", std::process::id()));
         let mut file = fs::File::create(&path).expect("create csv");
         writeln!(file, "crop,x,y,w,h").expect("write header");
         writeln!(file, "1,0,0,2,2").expect("write row");
-        let bboxes = parse_bbox_csv(&path).expect("crop alias");
-        assert_eq!(bboxes.len(), 1);
-        assert_eq!(bboxes[0].roi, 1);
+        let error = parse_bbox_csv(&path).expect_err("crop is not an alias");
+        assert!(error.contains("roi"), "{error}");
         let _ = fs::remove_file(path);
     }
 
