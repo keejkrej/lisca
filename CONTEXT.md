@@ -39,20 +39,26 @@
 
 Gene-expression fits (in `lisca-transfection`, imported by this repo) use the **basic translation–degradation model** (Müller et al.
 2024 Eq. 3; **no protein maturation**). Field names are the same in Rust, Python,
-`fit.csv`, and Studio labels:
+`fit.csv`, and Studio labels. One name only — no CSV aliases.
 
-| Code / CSV / id        | Display label         | Paper symbol                           |
-| ---------------------- | --------------------- | -------------------------------------- |
-| `onset_time`           | onset time            | \(t_0\)                                |
-| `expression_rate`      | expression rate       | \(m*0 k*{TL}\)                         |
-| `mrna_lifetime`        | mRNA lifetime         | \(\tau\_\mathrm{mRNA}\)                |
-| `protein_lifetime`     | protein lifetime      | \(\tau\_\mathrm{EGFP}\)                |
-| `expression_amplitude` | (internal fit coeff.) | \(m*0 k*{TL}/(\delta-\beta)\)          |
-| `baseline_intensity`   | baseline intensity    | additive baseline (not a kinetic rate) |
-| `auc`                  | AUC                   | integrated protein output              |
+| Code / CSV / id            | Display label            | Paper symbol                           |
+| -------------------------- | ------------------------ | -------------------------------------- |
+| `onset_time`               | onset time t0            | t0                                     |
+| `expression_rate`          | expression rate m0 k_TL  | m0 k_TL                                |
+| `mrna_lifetime`            | mRNA lifetime τ_mRNA     | τ_mRNA = ln(2)/δ                       |
+| `protein_lifetime`         | protein lifetime τ_EGFP  | τ_EGFP = ln(2)/β                       |
+| `mrna_degradation_rate`    | mRNA degradation rate    | δ                                      |
+| `protein_degradation_rate` | protein degradation rate | β                                      |
+| `expression_amplitude`     | (internal fit coeff.)    | m0 k_TL / (δ − β)                      |
+| `baseline_intensity`       | baseline intensity       | additive baseline (not a kinetic rate) |
+| `auc`                      | AUC                      | integrated protein output              |
 
-Use **expression rate** for \(m*0 k*{TL}\); reserve “efficiency” for delivery/escape
-fractions. One name only — no alternate CSV/API aliases.
+Lifetimes are **half-lives** ln(2)/δ and ln(2)/β, not 1/rate.
+Stored times (`onset_time`, lifetimes) are in **minutes**; plots may show hours.
+
+Use **onset time** for t0 — never “transfection efficiency”, “translation onset”, or
+“transfection onset” as the product name. Use **expression rate** for m0 k_TL;
+reserve “efficiency” for delivery/escape fractions.
 
 ## Models
 

@@ -89,10 +89,12 @@ export const AssaySampleChannelsSchema = Schema.Struct({
 
 /**
  * Assay-dependent analysis options on assay.json.
- * `maxOnsetMinutes` / `skipSegment` are transfection-oriented; other assays ignore them.
+ * `maxOnsetMinutes` (onset time t0 search cap) / `skipSegment` are transfection-oriented;
+ * other assays ignore them.
  * `channels` / `sampleChannels` resolve mask (segmentation) and signal (intensity) indices.
  */
 export const AssayAnalysisConfigSchema = Schema.Struct({
+  /** Cap on onset time t0 search (minutes). Default 120; 0 fixes onset at 0. */
   maxOnsetMinutes: Schema.optional(F64),
   /** When true, skip Otsu segmentation and use full-ROI (10th-percentile bg) timeseries. */
   skipSegment: Schema.optional(Schema.Boolean),

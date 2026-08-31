@@ -117,9 +117,9 @@ describe("collectResultPlots", () => {
       "expression_rate_vs_onset_time.png",
       "expression_rate_vs_mrna_lifetime.png",
     ]);
-    expect(plots[1]?.title).toBe("Expression rate vs onset time (A431_aiLNP)");
+    expect(plots[1]?.title).toBe("Expression rate m0 k_TL vs onset time t0 (A431_aiLNP)");
     expect(plots[1]?.section).toBe("parameters");
-    expect(plots[2]?.title).toBe("Expression rate vs mRNA lifetime (A431_aiLNP)");
+    expect(plots[2]?.title).toBe("Expression rate m0 k_TL vs mRNA lifetime τ_mRNA (A431_aiLNP)");
     expect(plots[2]?.section).toBe("parameters");
   });
 
@@ -172,6 +172,9 @@ describe("resultSectionInstruction", () => {
   it("uses scientist-facing copy without pipeline jargon", () => {
     expect(resultSectionInstruction("timeseries", "transfection")).toBe(
       "Intensity, area, and fitted traces for each sample.",
+    );
+    expect(resultSectionInstruction("parameters", "transfection")).toBe(
+      "Fitted parameters: mRNA lifetime τ_mRNA, AUC, expression rate m0 k_TL, and onset time t0.",
     );
     expect(resultSectionInstruction("parameters", "killing")).toBe(
       "Survival curve and death-time distributions.",

@@ -107,8 +107,8 @@ describe("workspace fixture smoke", () => {
     materializeFixture({ assay: "transfection", stage: "analyzed", out, force: true });
     const header = read(out, "analysis/Pos1/ch1.csv").split("\n")[0];
     expect(header).toBe("roi,t,area,background,sum,corrected");
-    expect(read(out, "analysis/Pos1/fit.csv").split("\n")[0]).toContain(
-      "onset_time,expression_amplitude,expression_rate",
+    expect(read(out, "analysis/Pos1/fit.csv").split("\n")[0]).toBe(
+      "roi,baseline_intensity,protein_degradation_rate,protein_lifetime,mrna_degradation_rate,mrna_lifetime,onset_time,expression_amplitude,expression_rate,success",
     );
     expect(read(out, "analysis/Pos1/auc.csv").startsWith("roi,auc")).toBe(true);
     expect(existsSync(join(out, "results/auc.csv"))).toBe(false);

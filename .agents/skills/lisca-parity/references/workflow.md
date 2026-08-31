@@ -50,7 +50,7 @@ cargo test -p lisca-transfection   # in ../lisca-transfection-assay
 - Wrong time unit (`t` vs `t * interval` minutes).
 - Exclusive vs inclusive position ranges in `assay.json`.
 - Background = mask-complement mean vs quartile hacks (use segment masks).
-- Pooled protein decay median over failed fits.
+- Pooled protein degradation median over failed fits.
 
 ## Expanding the CLI
 

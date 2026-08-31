@@ -68,8 +68,8 @@ export const ASSAY_DEFAULT_INTERVAL_MINUTES: Partial<Record<StudioAssayType, num
 };
 
 /**
- * Transfection-only: default second-pass onset search cap (minutes).
- * Explicit 0 in assay.json still means onset fixed at 0.
+ * Transfection-only: default second-pass onset time t0 search cap (minutes).
+ * Explicit 0 in assay.json still means onset time t0 is fixed at 0.
  */
 export const TRANSFECTION_DEFAULT_MAX_ONSET_MINUTES = 120;
 
