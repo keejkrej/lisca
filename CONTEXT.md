@@ -5,7 +5,9 @@
 - **Image source** — an ND2 file, CZI file, or templated image folder that supplies
   position, channel, time, and Z frames.
 - **Workspace** — the on-disk experiment directory containing alignment, ROI,
-  annotation, assay, and result artifacts.
+  annotation, assay, and result artifacts. BBox CSVs use `roi,x,y,w,h`; a
+  one-shot in-place `crop`→`roi` header migration runs when a tool opens the
+  workspace (`crop` is not a live alias).
 - **Align session** — the interactive workflow that registers a frame to the
   micropattern grid, excludes unusable sites, saves site boxes, and starts ROI crop.
 - **ROI crop** — creation of per-site TIFF stacks and an index from saved alignment boxes,

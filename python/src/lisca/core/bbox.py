@@ -46,6 +46,11 @@ def parse_bbox_csv(path: Path) -> list[RoiBbox]:
 
     reader = csv.reader(lines)
     header = [cell.strip().lower() for cell in next(reader)]
+    if "crop" in header:
+        raise ValueError(
+            f"BBox CSV uses unsupported column `crop` (not a live header); "
+            f"required columns (roi, x, y, w, h): {path}"
+        )
     try:
         roi_idx = header.index("roi")
         x_idx = header.index("x")

@@ -157,6 +157,12 @@ async fn crop_roi_handler<S: HasCropJobs + HasTaskScheduler>(
     if request.workspace_path.trim().is_empty() {
         return Err(FsError::new("crop workspace path is required"));
     }
+    let migrate_workspace_path = request.workspace_path.clone();
+    run_blocking("workspace migration", move || {
+        lisca::migrations::migrate_workspace(std::path::Path::new(&migrate_workspace_path))
+            .map(|_| ())
+    })
+    .await?;
     let positions = if request.positions.is_empty() {
         let workspace_path = request.workspace_path.clone();
         run_blocking("crop position scan", move || {

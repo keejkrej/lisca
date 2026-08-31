@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from lisca.core.align_grid import AlignGridState, CellCoord, align_grid_state_from_json
+from lisca.migrations import migrate_workspace
 
 
 @dataclass(frozen=True)
@@ -68,6 +69,7 @@ def load_saved_align_state(workspace: Path, position: int) -> SavedAlignState:
 
 
 def load_bbox_rows(workspace: Path, position: int) -> list[BboxRow]:
+    migrate_workspace(workspace)
     path = workspace / "bbox" / f"Pos{position}.csv"
     rows: list[BboxRow] = []
     with path.open(encoding="utf-8", newline="") as handle:
@@ -76,8 +78,16 @@ def load_bbox_rows(workspace: Path, position: int) -> list[BboxRow]:
             trimmed = [column.strip() for column in columns]
             if not trimmed or all(not column for column in trimmed):
                 continue
-            if line_index == 0 and trimmed[0] == "roi":
-                continue
+            if line_index == 0:
+                name = trimmed[0].lower()
+                if name == "crop":
+                    msg = (
+                        f"BBox CSV uses unsupported column `crop` "
+                        f"(not a live header): {path}"
+                    )
+                    raise ValueError(msg)
+                if name == "roi":
+                    continue
             if len(trimmed) < 5:
                 msg = f"{path}:{line_index + 1} expected at least 5 columns"
                 raise ValueError(msg)
@@ -94,7 +104,9 @@ def load_bbox_rows(workspace: Path, position: int) -> list[BboxRow]:
     return rows
 
 
-def _axis_count(axis_order: str, shape: tuple[int, int, int, int, int], axis: str) -> int:
+def _axis_count(
+    axis_order: str, shape: tuple[int, int, int, int, int], axis: str
+) -> int:
     try:
         index = axis_order.index(axis)
     except ValueError:

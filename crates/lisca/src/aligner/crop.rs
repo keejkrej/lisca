@@ -14,6 +14,7 @@ use uuid::Uuid;
 
 use crate::{
     image_source::{scan_source, CachedSourceReader, RawFrame},
+    migrations::migrate_workspace,
     protocol::{
         CropRoiProgress, CropRoiRequest, CropRoiStatus, FrameRequest, RoiBbox, RoiIndexEntry,
         RoiIndexFile, WorkspaceScan,
@@ -103,6 +104,7 @@ where
     if is_cancelled() {
         return Err(CropPositionError::Cancelled);
     }
+    migrate_workspace(Path::new(&request.workspace_path))?;
     let summary = inspect_crop_position(&request.workspace_path, scan, pos)?;
     if summary.skipped {
         return Ok(summary);
@@ -143,6 +145,7 @@ where
             workspace.display()
         ));
     }
+    migrate_workspace(workspace)?;
 
     let scan = scan_source(request.source.clone())?;
     let positions = if request.positions.is_empty() {
@@ -1186,5 +1189,24 @@ mod tests {
                 .expect("sibling still remains"),
             sibling_index
         );
+    }
+
+    #[test]
+    fn crop_migrates_crop_header_then_writes_roi_stacks() {
+        let (_root, request, scan) = fixture(1);
+        fs::write(
+            bbox_csv_path(&request.workspace_path, 1),
+            "crop,x,y,w,h\n1,0,0,2,2\n",
+        )
+        .expect("crop header");
+
+        crop_roi_position(&request, &scan, 1, || false).expect("crop");
+
+        let csv = fs::read_to_string(bbox_csv_path(&request.workspace_path, 1)).expect("read");
+        assert!(csv.starts_with("roi,x,y,w,h"), "{csv}");
+        assert!(!csv.contains("crop"));
+        assert!(roi_pos_dir_path(&request.workspace_path, 1)
+            .join("Roi1.tif")
+            .is_file());
     }
 }

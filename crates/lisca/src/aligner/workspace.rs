@@ -4,9 +4,13 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use crate::protocol::{AlignOutputPaths, RoiBbox, SaveBboxResponse, SavedAlignState};
+use crate::{
+    migrations::migrate_workspace,
+    protocol::{AlignOutputPaths, RoiBbox, SaveBboxResponse, SavedAlignState},
+};
 
 pub fn load_align_state(workspace_path: &str, pos: u32) -> Result<Option<SavedAlignState>, String> {
+    prepare_workspace(workspace_path)?;
     let path = align_json_path(workspace_path, pos);
     let bytes = match fs::read(&path) {
         Ok(bytes) => bytes,
@@ -24,6 +28,10 @@ pub fn save_bbox(
     csv: &str,
     align_state: &SavedAlignState,
 ) -> Result<SaveBboxResponse, String> {
+    prepare_workspace(workspace_path)?;
+    if bbox_csv_header_has_crop(csv) {
+        return Err("bbox CSV must use column `roi`, not `crop`".to_string());
+    }
     let bbox_target = bbox_csv_path(workspace_path, pos);
     if let Some(parent) = bbox_target.parent() {
         fs::create_dir_all(parent).map_err(|error| error.to_string())?;
@@ -44,6 +52,7 @@ pub fn save_bbox(
 }
 
 pub fn list_saved_bbox_positions(workspace_path: &str) -> Result<Vec<u32>, String> {
+    prepare_workspace(workspace_path)?;
     let bbox_dir = Path::new(workspace_path).join("bbox");
     let entries = match fs::read_dir(&bbox_dir) {
         Ok(entries) => entries,
@@ -91,6 +100,7 @@ pub(super) fn roi_pos_dir_path(root: &str, pos: u32) -> PathBuf {
 
 pub(super) fn parse_bbox_csv(path: &Path) -> Result<Vec<RoiBbox>, String> {
     let text = fs::read_to_string(path).map_err(|error| format!("{}: {error}", path.display()))?;
+    let text = text.strip_prefix('\u{feff}').unwrap_or(&text);
     let mut lines = text
         .lines()
         .enumerate()
@@ -102,6 +112,12 @@ pub(super) fn parse_bbox_csv(path: &Path) -> Result<Vec<RoiBbox>, String> {
         .split(',')
         .map(|cell| cell.trim().to_ascii_lowercase())
         .collect::<Vec<_>>();
+    if header.iter().any(|name| name == "crop") {
+        return Err(format!(
+            "{}: unsupported bbox column `crop` (not a live header); required: roi, x, y, w, h",
+            path.display()
+        ));
+    }
     let column_index = |name: &str| {
         header
             .iter()
@@ -145,6 +161,19 @@ pub(super) fn parse_bbox_csv(path: &Path) -> Result<Vec<RoiBbox>, String> {
     Ok(bboxes)
 }
 
+fn prepare_workspace(workspace_path: &str) -> Result<(), String> {
+    migrate_workspace(Path::new(workspace_path)).map(|_| ())
+}
+
+fn bbox_csv_header_has_crop(csv: &str) -> bool {
+    let Some(header_line) = csv.lines().find(|line| !line.trim().is_empty()) else {
+        return false;
+    };
+    header_line
+        .split(',')
+        .any(|cell| cell.trim().eq_ignore_ascii_case("crop"))
+}
+
 fn align_json_path(root: &str, pos: u32) -> PathBuf {
     Path::new(root).join("align").join(format!("Pos{pos}.json"))
 }
@@ -163,9 +192,28 @@ fn parse_bbox_csv_value(value: &str, label: &str) -> Result<u32, String> {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+    use crate::protocol::SavedAlignState;
     use std::io::Write;
 
-    use super::*;
+    fn dummy_align_state() -> SavedAlignState {
+        serde_json::from_value(serde_json::json!({
+            "grid": {
+                "enabled": true,
+                "shape": "rect",
+                "tx": 0,
+                "ty": 0,
+                "rotation": 0,
+                "spacingA": 10,
+                "spacingB": 10,
+                "cellWidth": 12,
+                "cellHeight": 20,
+                "opacity": 0.5
+            },
+            "excludedCells": []
+        }))
+        .expect("align state")
+    }
 
     #[test]
     fn parse_bbox_csv_returns_empty_for_header_only_file() {
@@ -186,6 +234,7 @@ mod tests {
         writeln!(file, "1,0,0,2,2").expect("write row");
         let error = parse_bbox_csv(&path).expect_err("crop is not an alias");
         assert!(error.contains("roi"), "{error}");
+        assert!(error.contains("crop"), "{error}");
         let _ = fs::remove_file(path);
     }
 
@@ -199,5 +248,60 @@ mod tests {
         assert_eq!(bboxes.len(), 1);
         assert_eq!(bboxes[0].roi, 1);
         let _ = fs::remove_file(path);
+    }
+
+    #[test]
+    fn parse_bbox_csv_ignores_leftover_extra_columns() {
+        let root = tempfile::tempdir().expect("tempdir");
+        let path = root.path().join("Pos0.csv");
+        fs::write(&path, "roi,x,y,w,h,i,j\n7,1,2,3,4,0,1\n").expect("write");
+        let bboxes = parse_bbox_csv(&path).expect("parse");
+        assert_eq!(bboxes.len(), 1);
+        assert_eq!(bboxes[0].roi, 7);
+        assert_eq!(bboxes[0].x, 1);
+        assert_eq!(bboxes[0].w, 3);
+    }
+
+    #[test]
+    fn save_bbox_rejects_crop_header_and_writes_roi() {
+        let root = tempfile::tempdir().expect("tempdir");
+        let workspace = root.path().to_string_lossy().into_owned();
+        let state = dummy_align_state();
+
+        let error =
+            save_bbox(&workspace, 0, "crop,x,y,w,h\n0,1,2,3,4\n", &state).expect_err("crop save");
+        assert!(error.contains("`roi`"));
+        assert!(!bbox_csv_path(&workspace, 0).exists());
+
+        save_bbox(&workspace, 0, "roi,x,y,w,h\n0,1,2,3,4\n", &state).expect("roi save");
+        let written = fs::read_to_string(bbox_csv_path(&workspace, 0)).expect("read");
+        assert!(written.starts_with("roi,x,y,w,h"));
+        assert!(!written.contains("crop"));
+    }
+
+    #[test]
+    fn list_saved_bbox_positions_migrates_crop_headers() {
+        let root = tempfile::tempdir().expect("tempdir");
+        let workspace = root.path();
+        fs::create_dir_all(workspace.join("bbox")).expect("bbox dir");
+        fs::write(workspace.join("bbox/Pos4.csv"), "crop,x,y,w,h\n0,1,2,3,4\n").expect("write");
+
+        let positions = list_saved_bbox_positions(&workspace.to_string_lossy()).expect("list");
+        assert_eq!(positions, vec![4]);
+        let text = fs::read_to_string(workspace.join("bbox/Pos4.csv")).expect("read");
+        assert!(text.starts_with("roi,x,y,w,h"));
+    }
+
+    #[test]
+    fn load_align_state_migrates_crop_headers() {
+        let root = tempfile::tempdir().expect("tempdir");
+        let workspace = root.path();
+        fs::create_dir_all(workspace.join("bbox")).expect("bbox dir");
+        fs::write(workspace.join("bbox/Pos1.csv"), "crop,x,y,w,h\n0,1,2,3,4\n").expect("write");
+
+        let loaded = load_align_state(&workspace.to_string_lossy(), 1).expect("load");
+        assert!(loaded.is_none());
+        let text = fs::read_to_string(workspace.join("bbox/Pos1.csv")).expect("read");
+        assert!(text.starts_with("roi,x,y,w,h"));
     }
 }
