@@ -7,14 +7,14 @@ is owned by [`lisca-transfection-assay`](https://github.com/keejkrej/lisca-trans
 
 ## Transfection (imported crate)
 
-| Stage      | Python                                           | Rust (`lisca-analyze` → git crate)  |
-| ---------- | ------------------------------------------------ | ----------------------------------- |
-| segment    | `transfection segment WS`                        | `lisca-analyze segment WS` (Otsu via crate; `--backend onnx` is local) |
-| timeseries | `transfection timeseries WS`                     | `lisca-analyze timeseries WS`       |
-| auc        | `transfection auc WS --interval N`               | `lisca-analyze auc WS --interval N` |
-| fit        | `transfection fit WS --interval N`               | `lisca-analyze fit WS --interval N` |
-| plots      | `plot-timeseries` / `plot-auc` / `plot-fit`      | same names on `lisca-analyze`       |
-| full       | `transfection pipeline WS`                       | `lisca-analyze pipeline WS`         |
+| Stage      | Python                                      | Rust (`lisca-analyze` → git crate)                                     |
+| ---------- | ------------------------------------------- | ---------------------------------------------------------------------- |
+| segment    | `transfection segment WS`                   | `lisca-analyze segment WS` (Otsu via crate; `--backend onnx` is local) |
+| timeseries | `transfection timeseries WS`                | `lisca-analyze timeseries WS`                                          |
+| auc        | `transfection auc WS --interval N`          | `lisca-analyze auc WS --interval N`                                    |
+| fit        | `transfection fit WS --interval N`          | `lisca-analyze fit WS --interval N`                                    |
+| plots      | `plot-timeseries` / `plot-auc` / `plot-fit` | same names on `lisca-analyze`                                          |
+| full       | `transfection pipeline WS`                  | `lisca-analyze pipeline WS`                                            |
 
 Build:
 
@@ -37,7 +37,7 @@ cargo test -p lisca-transfection   # in ../lisca-transfection-assay
 
 1. Run Python stage → copy artifact to `/tmp/*-python.csv`.
 2. Run Rust stage (overwrites workspace).
-3. Join on identity keys (`slide_channel,pos,roi` or `pos,roi,t`).
+3. Join on identity keys (`roi` / `pos,roi,t`; XLSX packs prefix `slide_channel,sample,pos`).
 4. Relative error: `|a-b| / max(|a|,|b|,ε)` with stage ε from
    the sidecar `docs/parity.md` / `docs/analysis/parity.md`.
 5. Report p50/p90/p99/max and success-flag mismatches before editing kernels.

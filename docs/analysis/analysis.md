@@ -5,7 +5,7 @@
 Pure **results model** for the Studio web app. Layout mirrors Rust `analysis/assays/<name>/`:
 
 - `shared/plots.ts` — catalog of Rust PNG artifacts, sectioning, assay inference
-- `assays/transfection/catalog.ts` — transfection plot filenames and labels
+- `assays/transfection/catalog.ts` — transfection plot filenames, labels, and workspace vs sample scope
 - `assays/killing/catalog.ts` — killing plot filenames and labels
 - `fixtures/` — placeholder PNGs with the same filenames the Rust pipeline writes
 
@@ -17,8 +17,10 @@ The package is pure model logic. Studio-coupled atoms live in
 
 `apps/studio/web/src/result/result-panels-grid.tsx` shows the PNG files the Rust
 pipeline already wrote via mplot-rs (`ResultPlotGallery`). There is no in-app chart
-renderer. Studio lists `results/*.png` from the analysis manifest and serves them
-at `GET /fs/file?path=`.
+renderer. Studio lists PNGs from the analysis manifest (`results/*.png` workspace
+boxplots and `results/<sample>/*.png` packs) and serves them at `GET /fs/file?path=`.
+Per-sample titles include the sample folder (for example
+`Intensity traces (A431_aiLNP)`).
 
 Sections stay assay-aware: Timeseries / Parameters (transfection) vs Timeseries /
 Survival (killing).
@@ -59,10 +61,10 @@ mature assays. ROI stacks under `roi/` come from **Studio crop**
 or CLI (`lisca-crop`; Python crop in `../pyama-v2`) — not from the light Aligner shell. The running workflow
 depends on `assay.json` → root `type`:
 
-| Assay          | Goal source (not implementation reference)                                                                                  | Pipeline                                                          |
-| -------------- | --------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| Assay          | Goal source (not implementation reference)                                                                                    | Pipeline                                                                                           |
+| -------------- | ----------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
 | `transfection` | [`lisca-transfection-assay`](https://github.com/keejkrej/lisca-transfection-assay) — Python + Rust crate imported via git URL | segment → timeseries → AUC → fit (+ plots) in `lisca-transfection`; Studio ONNX segment stays here |
-| `killing`      | [mupattern](https://github.com/keejkrej/mupattern) / future `lisca-killing-assay` — kill curve semantics, ResNet classifier | predict → plot-timeseries → clean → death times → kill curve plot |
+| `killing`      | [mupattern](https://github.com/keejkrej/mupattern) / future `lisca-killing-assay` — kill curve semantics, ResNet classifier   | predict → plot-timeseries → clean → death times → kill curve plot                                  |
 
 Numeric stages and PNG plots for transfection run in the imported
 [`lisca-transfection`](https://github.com/keejkrej/lisca-transfection-assay) crate
@@ -147,19 +149,18 @@ curl -fL --retry 3 --retry-delay 2 \
 
 ## Workspace I/O
 
-| Path                                                                                                                                                                               | Role                                                                                                                                                                                                                        |
-| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `assay.json`                                                                                                                                                                       | Nested domain contract (`type`, `data`, `workspace`, `interval`, `samples`, optional `analysis` with `channels` / `sampleChannels`)                                                                                         |
-| `roi/PosN/`                                                                                                                                                                        | Cropped ROI stacks + slim `index.json` (always `axisOrder: TCZYX`; keep `zCount`; derive stack shape from counts + `bbox`; optional `timeIndices`)                                                                          |
-| `mask/PosN/`                                                                                                                                                                       | Per-frame segmentation masks (`uint8` TIFF stacks)                                                                                                                                                                          |
-| `timeseries/Pos{n}/ch{n}.csv`                                                                                                                                                      | Per-position intensity metrics (`roi,t,area,background,sum,corrected`; no `pos` / `slide_channel`; `t` from `timeIndices`). Segmented: mask fg + **median** bg; `analysis.skipSegment`: whole ROI + **10th-percentile** bg. |
-| `results/auc.csv`                                                                                                                                                                  | Trapezoidal AUC per `(pos, roi)` trace (+ `.xlsx`)                                                                                                                                                                          |
-| `results/fit.csv`                                                                                                                                                                  | Two-exponential kinetic fit parameters (+ `.xlsx`)                                                                                                                                                                          |
-| `results/traces.png`, `traces_shared_y.png`, `traces_summary.png`, `traces_summary_shared_y.png`, `area.png`, `area_shared_y.png`, `area_summary.png`, `area_summary_shared_y.png` | Timeseries plots (individual + mean/median/IQR summary; per-panel and shared y)                                                                                                                                             |
-| `results/auc.png`, `results/auc_log.png`                                                                                                                                           | AUC boxplots (linear and log y-scale)                                                                                                                                                                                       |
-| `results/{parameter}.png`, `results/traces_fit.png`, `traces_fit_shared_y.png`                                                                                                     | Fit parameter boxplots and fitted trace grids (per-panel + shared y)                                                                                                                                                        |
+| Path                                                                                                                              | Role                                                                                                                                                                                                                                                                                                      |
+| --------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `assay.json`                                                                                                                      | Nested domain contract (`type`, `data`, `workspace`, `interval`, `samples`, optional `analysis` with `channels` / `sampleChannels`)                                                                                                                                                                       |
+| `roi/PosN/`                                                                                                                       | Cropped ROI stacks + slim `index.json` (always `axisOrder: TCZYX`; keep `zCount`; derive stack shape from counts + `bbox`; optional `timeIndices`)                                                                                                                                                        |
+| `mask/PosN/`                                                                                                                      | Per-frame segmentation masks (`uint8` TIFF stacks)                                                                                                                                                                                                                                                        |
+| `analysis/Pos{n}/ch{n}.csv`                                                                                                       | Per-position intensity metrics (`roi,t,area,background,sum,corrected`; no `pos` / `slide_channel`; `t` from `timeIndices`). Segmented: mask fg + **median** bg; `analysis.skipSegment`: whole ROI + **10th-percentile** bg. CSV only.                                                                     |
+| `analysis/Pos{n}/auc.csv`                                                                                                         | Trapezoidal AUC per ROI (`roi,auc`; `channel` only when that Pos has multiple signal CSVs). `pos` is the folder name.                                                                                                                                                                                     |
+| `analysis/Pos{n}/fit.csv`                                                                                                         | Two-exponential kinetic fit parameters (`roi,…`; same channel rule).                                                                                                                                                                                                                                      |
+| `results/<sample>/`                                                                                                               | Per-sample packs: `traces.xlsx` / `auc.xlsx` / `fit.xlsx` plus `traces.png`, `traces_shared_y.png`, `traces_summary.png`, `traces_summary_shared_y.png`, `area.png`, `area_shared_y.png`, `traces_fit.png`, `traces_fit_shared_y.png`, `expression_rate_vs_onset_time.png`. No `*_log` or `area_summary`. |
+| `results/auc.png`, `expression_rate.png`, `onset_time.png`, `baseline_intensity.png`, `protein_lifetime.png`, `mrna_lifetime.png` | Cross-sample parameter boxplots (samples on x)                                                                                                                                                                                                                                                            |
 
-Studio results UI displays these PNG files; it does not re-render plots from CSVs.
+There is no `timeseries/` folder for transfection, no combined results tables, and no CSV under `results/`. Studio results UI displays these PNG files; it does not re-render plots from CSVs.
 
 ## Module map
 
@@ -182,12 +183,12 @@ analysis/
     killing.rs + killing/
 ```
 
-| Module                                | Goal                                                         |
-| ------------------------------------- | ------------------------------------------------------------ |
-| `assays/transfection/`                | Dispatch into `lisca-transfection`; Studio ONNX adapter      |
+| Module                                | Goal                                                            |
+| ------------------------------------- | --------------------------------------------------------------- |
+| `assays/transfection/`                | Dispatch into `lisca-transfection`; Studio ONNX adapter         |
 | `assays/transfection/segment_onnx.rs` | Studio ONNX adapter; weights via `LISCA_PATTERN_SEG_MODEL` / HF |
-| `lisca-transfection` (git)            | Otsu, timeseries, AUC, kinetic fit, plots                    |
-| `assays/killing/`                     | ResNet presence, monotonicity clean, death times, kill curve |
+| `lisca-transfection` (git)            | Otsu, timeseries, AUC, kinetic fit, plots                       |
+| `assays/killing/`                     | ResNet presence, monotonicity clean, death times, kill curve    |
 
 Adding a new assay type: create `assays/<name>.rs` plus `assays/<name>/`, implement `run` (async) and optionally `run_sync`, then register in `assays.rs`.
 
@@ -243,7 +244,7 @@ cargo build -p lisca --release --bin lisca-analyze
 ./target/release/lisca-analyze pipeline ~/data/TF84
 ```
 
-`--interval` / `--max-onset-minutes` may be omitted when `assay.json` has `interval` and optional `analysis.maxOnsetMinutes`. `--assay` defaults to `<workspace>/assay.json`. Plot commands also accept transfection-style paths (`…/timeseries`, `…/results/auc.csv`, `…/results/fit.csv`).
+`--interval` / `--max-onset-minutes` may be omitted when `assay.json` has `interval` and optional `analysis.maxOnsetMinutes`. `--assay` defaults to `<workspace>/assay.json`. Plot commands also accept transfection-style paths (`…/analysis`, `…/analysis/PosN/auc.csv`, `…/analysis/PosN/fit.csv`).
 
 ## Tests
 

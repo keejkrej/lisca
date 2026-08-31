@@ -25,11 +25,12 @@ function plotFile(
   fileName: keyof typeof FIXTURE_PNG_DATA_URLS,
   title: string,
   section: ResultPlotSection,
+  path = `fixture://${fileName}.png`,
 ): ResultPlot {
   const src = FIXTURE_PNG_DATA_URLS[fileName];
   return {
     fileName: `${fileName}.png`,
-    path: `fixture://${fileName}.png`,
+    path,
     title,
     section,
     src,
@@ -45,16 +46,40 @@ function asResultFile(plot: ResultPlot): StudioAnalysisCsvFile {
   };
 }
 
+const TRANSFECTION_FIXTURE_SAMPLE = "Mock_(fixture)";
+
 export function buildTransfectionFixture(): AnalysisFixture {
+  const samplePath = (fileName: keyof typeof FIXTURE_PNG_DATA_URLS) =>
+    `fixture://results/${TRANSFECTION_FIXTURE_SAMPLE}/${fileName}.png`;
   const plots = [
-    plotFile("traces", "Intensity traces", "timeseries"),
-    plotFile("traces_summary", "Intensity summary", "timeseries"),
-    plotFile("area", "Mask area", "timeseries"),
-    plotFile("traces_fit", "Fitted traces", "timeseries"),
+    plotFile(
+      "traces",
+      `Intensity traces (${TRANSFECTION_FIXTURE_SAMPLE})`,
+      "timeseries",
+      samplePath("traces"),
+    ),
+    plotFile(
+      "traces_summary",
+      `Intensity summary (${TRANSFECTION_FIXTURE_SAMPLE})`,
+      "timeseries",
+      samplePath("traces_summary"),
+    ),
+    plotFile(
+      "area",
+      `Mask area (${TRANSFECTION_FIXTURE_SAMPLE})`,
+      "timeseries",
+      samplePath("area"),
+    ),
+    plotFile(
+      "traces_fit",
+      `Fitted traces (${TRANSFECTION_FIXTURE_SAMPLE})`,
+      "timeseries",
+      samplePath("traces_fit"),
+    ),
     plotFile("mrna_lifetime", "mRNA lifetime", "parameters"),
     plotFile("auc", "AUC", "parameters"),
-    plotFile("expression_rate", "expression rate", "parameters"),
-    plotFile("onset_time", "onset time", "parameters"),
+    plotFile("expression_rate", "Expression rate", "parameters"),
+    plotFile("onset_time", "Onset time", "parameters"),
   ];
   return {
     id: "transfection",

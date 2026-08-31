@@ -31,4 +31,30 @@ describe("ResultPlotGallery reactivity", () => {
     setPlots([]);
     expect(screen.getByText("Run analysis first")).toBeTruthy();
   });
+
+  it("shows every per-sample traces.png with the sample folder in the title", () => {
+    render(() => (
+      <ResultPlotGallery
+        plots={[
+          {
+            fileName: "traces.png",
+            path: "/results/A431_aiLNP/traces.png",
+            title: "Intensity traces (A431_aiLNP)",
+            src: "/results/A431_aiLNP/traces.png",
+            section: "timeseries",
+          },
+          {
+            fileName: "traces.png",
+            path: "/results/Mock_(fixture)/traces.png",
+            title: "Intensity traces (Mock_(fixture))",
+            src: "/results/Mock_(fixture)/traces.png",
+            section: "timeseries",
+          },
+        ]}
+      />
+    ));
+
+    expect(screen.getByRole("img", { name: "Intensity traces (A431_aiLNP)" })).toBeTruthy();
+    expect(screen.getByRole("img", { name: "Intensity traces (Mock_(fixture))" })).toBeTruthy();
+  });
 });

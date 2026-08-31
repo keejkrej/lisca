@@ -100,7 +100,7 @@ pub fn run_timeseries_with_mode(
     )
 }
 
-pub fn run_auc(workspace: &Path, interval: f64) -> Result<PathBuf, String> {
+pub fn run_auc(workspace: &Path, interval: f64) -> Result<Vec<PathBuf>, String> {
     lisca_transfection::run_auc(workspace, interval)
 }
 
@@ -109,7 +109,7 @@ pub fn run_fit(
     interval: f64,
     max_onset_minutes: f64,
     jobs: usize,
-) -> Result<PathBuf, String> {
+) -> Result<Vec<PathBuf>, String> {
     lisca_transfection::run_fit(workspace, interval, max_onset_minutes, jobs)
 }
 

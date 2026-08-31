@@ -7,22 +7,22 @@ Most **analysis science** is developed outside this monorepo, in focused
 workspace layout, trusted on real experiments), this repo **imports** it rather
 than keeping a second copy of the pipeline.
 
-| Sibling package (R&D + prod kernels)                                  | Role                                                                            |
-| --------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| Sibling package (R&D + prod kernels)                                               | Role                                                                                                                                                                                                       |
+| ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [`lisca-transfection-assay`](https://github.com/keejkrej/lisca-transfection-assay) | Transfection analysis: Python `transfection` + Rust `lisca-transfection` (git URL). Parity: that repo’s [`docs/parity.md`](https://github.com/keejkrej/lisca-transfection-assay/blob/main/docs/parity.md). |
-| `lisca-killing-assay` (planned / external goals via mupattern)        | Killing survival / kill-curve science (Rust still in-tree here)                 |
-| `lisca-binding-assay` (planned)                                       | Binding / LNP-style assays before Studio registration                           |
+| `lisca-killing-assay` (planned / external goals via mupattern)                     | Killing survival / kill-curve science (Rust still in-tree here)                                                                                                                                            |
+| `lisca-binding-assay` (planned)                                                    | Binding / LNP-style assays before Studio registration                                                                                                                                                      |
 
 **Crop** (`lisca-crop`, ND2/CZI, bbox → `roi/`) stays in this monorepo. It is
 shared across assays and is not part of `lisca-transfection-assay`.
 
 **Models** (see [`models/README.md`](../../models/README.md)):
 
-| Stay in this repo (product / any-assay) | Assay brains (HF / sidecar; not long-term `models/` ownership) |
-| --------------------------------------- | -------------------------------------------------------------- |
+| Stay in this repo (product / any-assay)    | Assay brains (HF / sidecar; not long-term `models/` ownership)                                |
+| ------------------------------------------ | --------------------------------------------------------------------------------------------- |
 | Smart exclude (`smart-exclusion-resnet18`) | Transfection pattern U-Net: HF `keejkrej/single-cell-pattern-unet`, `LISCA_PATTERN_SEG_MODEL` |
-| Smart segment (`smart-segment-slimsam`) | Killing ResNet: HF `keejkrej/killing-assay-resnet18`; curl at Studio package time |
-| `mupattern-resnet18` (legacy reference) | Do not add new assay-specific weights under `models/` |
+| Smart segment (`smart-segment-slimsam`)    | Killing ResNet: HF `keejkrej/killing-assay-resnet18`; curl at Studio package time             |
+| `mupattern-resnet18` (legacy reference)    | Do not add new assay-specific weights under `models/`                                         |
 
 Studio still hosts a **transfection ONNX segment adapter** (`segment_onnx.rs`)
 until `lisca-transfection` un-stubs its ONNX backend. That adapter must resolve
@@ -35,13 +35,13 @@ workflow: [`/lisca-parity`](../../.agents/skills/lisca-parity/SKILL.md).
 
 ## Roles
 
-| Layer                                              | Responsibility                                                                      |
-| -------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| **Goal source** (Python `lisca-*-assay`)           | Define stages, flags, output paths, CSV columns, plot names, scientific definitions |
-| **Imported crate** (`lisca-transfection` git dep)  | Idiomatic Rust for transfection stages; Studio and `lisca-analyze` call it          |
-| **In-tree port** (`crates/lisca` killing, crop)    | Pipelines that do not yet have a sidecar crate                                      |
-| **Parity cage**                                    | Transfection: tests in the sidecar repo. Killing: tests here.                       |
-| **Studio UI** (`@lisca/analysis`, Studio web)      | Consume workspace outputs; chart catalogs must match file/column contracts          |
+| Layer                                             | Responsibility                                                                      |
+| ------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| **Goal source** (Python `lisca-*-assay`)          | Define stages, flags, output paths, CSV columns, plot names, scientific definitions |
+| **Imported crate** (`lisca-transfection` git dep) | Idiomatic Rust for transfection stages; Studio and `lisca-analyze` call it          |
+| **In-tree port** (`crates/lisca` killing, crop)   | Pipelines that do not yet have a sidecar crate                                      |
+| **Parity cage**                                   | Transfection: tests in the sidecar repo. Killing: tests here.                       |
+| **Studio UI** (`@lisca/analysis`, Studio web)     | Consume workspace outputs; chart catalogs must match file/column contracts          |
 
 **Not required:** matching Python module trees, NumPy evaluation order, process
 pools, or bitwise float identity.
@@ -75,11 +75,11 @@ pools, or bitwise float identity.
 
 ## Assay map
 
-| Studio `assayId`                                        | Goal source + Rust                                              | This repo                                                         | Parity CLI                        | Notes                                             |
-| ------------------------------------------------------- | --------------------------------------------------------------- | ----------------------------------------------------------------- | --------------------------------- | ------------------------------------------------- |
+| Studio `assayId`                                        | Goal source + Rust                                                           | This repo                                                             | Parity CLI                            | Notes                                                          |
+| ------------------------------------------------------- | ---------------------------------------------------------------------------- | --------------------------------------------------------------------- | ------------------------------------- | -------------------------------------------------------------- |
 | `transfection` (Studio wire id; science = transfection) | `lisca-transfection-assay` (`transfection` CLI + `lisca-transfection` crate) | Thin dispatch in `analysis/assays/transfection/` + local ONNX segment | `lisca-analyze` (calls the git crate) | Crop stays here. Python+Rust parity: sidecar `docs/parity.md`. |
-| `killing`                                               | mupattern / future `lisca-killing-assay`                        | `analysis/assays/killing/`                                        | extend when stages need stage-CLI | ONNX ResNet + kill-curve tables                   |
-| `lnp-binding` / binding                                 | future `lisca-binding-assay`                                    | none until mature                                                 | —                                 | Closed enum: do not half-register                 |
+| `killing`                                               | mupattern / future `lisca-killing-assay`                                     | `analysis/assays/killing/`                                            | extend when stages need stage-CLI     | ONNX ResNet + kill-curve tables                                |
+| `lnp-binding` / binding                                 | future `lisca-binding-assay`                                                 | none until mature                                                     | —                                     | Closed enum: do not half-register                              |
 
 Adding a Studio assay id is a **cross-cutting** change (`@lisca/contracts`,
 Rust, generated types). Unsupported ids fail explicitly — see `PRODUCT.md`.
@@ -113,17 +113,19 @@ crates); do not silently rewrite the sidecar to match this workspace.
 ### Contract parity
 
 - Workspace layout: `assay.json`, `roi/PosN/`, `mask/PosN/`,
-  `timeseries/Pos{n}/ch{n}.csv`, `results/` (no `slide.json`).
+  `analysis/Pos{n}/{ch{n},auc,fit}.csv`, `results/` (no `slide.json`, no
+  `timeseries/` folder, no CSV under `results/`).
 - Timeseries columns: `roi,t,area,background,sum,corrected` (no `pos` /
   `slide_channel`; joined later from path + assay mapping). `t` uses
   `index.json` `timeIndices`. Segmented bg = median of `~mask`;
   `analysis.skipSegment` bg = 10th percentile.
 - Slim `index.json`: always `TCZYX`; keep `zCount`; drop `source` /
   `pageOrder` / per-ROI `shape` (derive from counts + bbox).
-- Output basenames Studio and Python both expect (`auc.csv`, `fit.csv`,
-  `traces.png`, …).
-- AUC / fit identity columns: `slide_channel,pos,roi` (sidecar contract;
-  plots accept a legacy `slide` alias).
+- Output basenames Studio and Python both expect (`analysis/PosN/auc.csv`,
+  `fit.csv`, `results/<sample>/traces.png`, workspace `auc.png`, …).
+- Analysis AUC / fit identity columns: `roi` (optional `channel` when a Pos
+  has multiple signal CSVs). Results XLSX prefix `slide_channel`, `sample`,
+  and `pos`.
 - Stage order for full pipelines (`transfection pipeline` / `lisca-analyze pipeline`).
 - Flag defaults that change science (`--interval`, `--max-onset-minutes`,
   `analysis.skipSegment`, segmentation radius/sigma).
@@ -133,12 +135,12 @@ crates); do not silently rewrite the sidecar to match this workspace.
 Same definitions, within tolerances. **Transfection tolerances are owned by
 the sidecar** ([`docs/parity.md`](https://github.com/keejkrej/lisca-transfection-assay/blob/main/docs/parity.md)):
 
-| Quantity                                       | Typical relative tolerance                        | Where locked                      |
-| ---------------------------------------------- | ------------------------------------------------- | --------------------------------- |
+| Quantity                                       | Typical relative tolerance                        | Where locked                                  |
+| ---------------------------------------------- | ------------------------------------------------- | --------------------------------------------- |
 | Masked intensity / background / corrected      | `1e-6`                                            | sidecar + this repo’s synthetic wrapper tests |
-| Trapezoidal AUC                                | `1e-6`                                            | sidecar + AUC stage               |
-| Kinetic fit params (Rust reference kernel)     | `1e-5`                                            | sidecar synthetic fit test        |
-| Kinetic fit vs Python CLI (real/synthetic e2e) | `2e-2` (aim much tighter after kernel bugs fixed) | sidecar CLI test + real workspace |
+| Trapezoidal AUC                                | `1e-6`                                            | sidecar + AUC stage                           |
+| Kinetic fit params (Rust reference kernel)     | `1e-5`                                            | sidecar synthetic fit test                    |
+| Kinetic fit vs Python CLI (real/synthetic e2e) | `2e-2` (aim much tighter after kernel bugs fixed) | sidecar CLI test + real workspace             |
 
 Use relative error `|a−b| / max(|a|,|b|,ε)`. Report p50/p90/p99/max and
 success-flag mismatches before changing code. Kernel fixes belong in
@@ -169,14 +171,14 @@ cargo build -p lisca --release --bin lisca-analyze
 
 Stage names mirror `transfection`:
 
-| Command                                     | Writes                                                                              |
-| ------------------------------------------- | ----------------------------------------------------------------------------------- |
-| `segment`                                   | `mask/PosN/*.tif` (default Otsu via git crate; optional ONNX U-Net in this repo)    |
-| `timeseries`                                | `timeseries/Pos*/ch*.csv` (+ xlsx)                                                  |
-| `auc`                                       | `results/auc.csv`                                                                   |
-| `fit`                                       | `results/fit.csv`                                                                   |
-| `plot-timeseries` / `plot-auc` / `plot-fit` | `results/*.png` (timeseries includes summary mean/median/IQR + shared-y companions) |
-| `pipeline` (`analyze`, `all`)               | full Studio order from `assay.json`                                                 |
+| Command                                     | Writes                                                                           |
+| ------------------------------------------- | -------------------------------------------------------------------------------- |
+| `segment`                                   | `mask/PosN/*.tif` (default Otsu via git crate; optional ONNX U-Net in this repo) |
+| `timeseries`                                | `analysis/Pos*/ch*.csv` (CSV only; CLI verb still timeseries)                    |
+| `auc`                                       | `analysis/Pos*/auc.csv`                                                          |
+| `fit`                                       | `analysis/Pos*/fit.csv`                                                          |
+| `plot-timeseries` / `plot-auc` / `plot-fit` | `results/<sample>/` packs (xlsx + png) and workspace boxplots at `results/*.png` |
+| `pipeline` (`analyze`, `all`)               | full Studio order from `assay.json`                                              |
 
 Common flags: `--assay` (default `<workspace>/assay.json`), `--interval`,
 `--max-onset-minutes`, segment `--force` / radius / sigma. Parallel stages
@@ -198,16 +200,16 @@ INTERVAL=10
 uv run --directory ../lisca-transfection-assay \
   transfection auc "$WS"
 mkdir -p /tmp/TF84-python-golden
-cp "$WS/results/auc.csv" /tmp/TF84-python-golden/
+cp "$WS/analysis/Pos1/auc.csv" /tmp/TF84-python-golden/
 
 # 2) candidate (this repo → git crate)
 ./target/release/lisca-analyze auc "$WS" --interval "$INTERVAL"
 
 # 3) compare (keys + relative tolerance)
-# join on slide_channel,pos,roi — see sidecar docs/parity.md
+# join on roi (pos is the analysis/PosN folder) — see sidecar docs/parity.md
 ```
 
-Backup entire `results/` + `timeseries/` before a full re-run.
+Backup entire `analysis/` + `results/` before a full re-run.
 
 ## Tests in this repo
 

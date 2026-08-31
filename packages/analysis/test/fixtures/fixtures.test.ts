@@ -19,6 +19,9 @@ describe("analysis fixtures", () => {
       "expression_rate.png",
       "onset_time.png",
     ]);
+    expect(fixture.plots[0]?.path).toBe("fixture://results/Mock_(fixture)/traces.png");
+    expect(fixture.plots[0]?.title).toBe("Intensity traces (Mock_(fixture))");
+    expect(fixture.plots[4]?.path).toBe("fixture://mrna_lifetime.png");
     expect(fixture.plots.every((plot) => plot.src?.startsWith("data:image/png;base64,"))).toBe(
       true,
     );
