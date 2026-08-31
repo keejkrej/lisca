@@ -37,7 +37,7 @@ cargo test -p lisca-transfection   # in ../lisca-transfection-assay
 
 1. Run Python stage → copy artifact to `/tmp/*-python.csv`.
 2. Run Rust stage (overwrites workspace).
-3. Join on identity keys (`roi` / `pos,roi,t`; XLSX packs prefix `slide_channel,sample,pos`).
+3. Join on identity keys (`roi` / `pos,roi,t`; XLSX packs prefix `pos`).
 4. Relative error: `|a-b| / max(|a|,|b|,ε)` with stage ε from
    the sidecar `docs/parity.md` / `docs/analysis/parity.md`.
 5. Report p50/p90/p99/max and success-flag mismatches before editing kernels.

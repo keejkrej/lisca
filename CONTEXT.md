@@ -35,23 +35,28 @@
 - **Studio** composes assay setup, Align and Annotation sessions, an Analysis run,
   and result review in one workflow.
 
-## Transfection kinetic parameters (code = CSV = UI)
+## Transfection kinetic parameters
 
 Gene-expression fits (in `lisca-transfection`, imported by this repo) use the **basic translation–degradation model** (Müller et al.
-2024 Eq. 3; **no protein maturation**). Field names are the same in Rust, Python,
-`fit.csv`, and Studio labels. One name only — no CSV aliases.
+2024 Eq. 3; **no protein maturation**). Public names are the same in Rust, Python,
+`fit.csv` / `fit.xlsx`, and Studio labels. One name only — no CSV aliases.
 
-| Code / CSV / id            | Display label            | Paper symbol                           |
-| -------------------------- | ------------------------ | -------------------------------------- |
-| `onset_time`               | onset time t0            | t0                                     |
-| `expression_rate`          | expression rate m0 k_TL  | m0 k_TL                                |
-| `mrna_lifetime`            | mRNA lifetime τ_mRNA     | τ_mRNA = ln(2)/δ                       |
-| `protein_lifetime`         | protein lifetime τ_EGFP  | τ_EGFP = ln(2)/β                       |
-| `mrna_degradation_rate`    | mRNA degradation rate    | δ                                      |
-| `protein_degradation_rate` | protein degradation rate | β                                      |
-| `expression_amplitude`     | (internal fit coeff.)    | m0 k_TL / (δ − β)                      |
-| `baseline_intensity`       | baseline intensity       | additive baseline (not a kinetic rate) |
-| `auc`                      | AUC                      | integrated protein output              |
+| Code / CSV / id      | Display label            | Paper symbol                           |
+| -------------------- | ------------------------ | -------------------------------------- |
+| `onset_time`         | onset time t0            | t0                                     |
+| `expression_rate`    | expression rate m0 k_TL  | m0 k_TL                                |
+| `mrna_lifetime`      | mRNA lifetime τ_mRNA     | τ_mRNA = ln(2)/δ                       |
+| `protein_lifetime`   | protein lifetime τ_EGFP  | τ_EGFP = ln(2)/β                       |
+| `baseline_intensity` | baseline intensity       | additive baseline (not a kinetic rate) |
+| `auc`                | AUC                      | integrated protein output              |
+
+Internal solver fields — **not** written to `fit.csv` / `fit.xlsx`:
+
+| Code (internal only)       | Meaning                  | Paper symbol      |
+| -------------------------- | ------------------------ | ----------------- |
+| `mrna_degradation_rate`    | mRNA degradation rate    | δ                 |
+| `protein_degradation_rate` | protein degradation rate | β                 |
+| `expression_amplitude`     | (internal fit coeff.)    | m0 k_TL / (δ − β) |
 
 Lifetimes are **half-lives** ln(2)/δ and ln(2)/β, not 1/rate.
 Stored times (`onset_time`, lifetimes) are in **minutes**; plots may show hours.

@@ -195,8 +195,10 @@ pub fn trapezoidal_integral(times: &[f64], values: &[f64]) -> f64 {
 /// Paper terms: `onset_time` = onset time \(t_0\);
 /// `expression_rate = expression_amplitude * (δ − β)` = \(m_0 k_{TL}\);
 /// \(\tau_{\mathrm{mRNA}}=\ln 2/\delta\); \(\tau_{\mathrm{EGFP}}=\ln 2/\beta\)
-/// (half-lives, not \(1/\mathrm{rate}\)). Rates are `mrna_degradation_rate`
-/// (\(\delta\)) and `protein_degradation_rate` (\(\beta\)).
+/// (half-lives, not \(1/\mathrm{rate}\)).
+/// `mrna_degradation_rate` (\(\delta\)), `protein_degradation_rate` (\(\beta\)),
+/// and `expression_amplitude` are **internal solver fields** — `fit.csv` /
+/// `fit.xlsx` write `expression_rate` and lifetimes instead.
 /// `baseline_intensity` is a baseline nuisance, not a kinetic rate.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct KineticFitCoeffs {

@@ -120,16 +120,19 @@ crates); do not silently rewrite the sidecar to match this workspace.
   `analysis/Pos{n}/{ch{n},auc,fit}.csv`, `results/` (no `slide.json`, no
   `timeseries/` folder, no CSV under `results/`).
 - Timeseries columns: `roi,t,area,background,sum,corrected` (no `pos` /
-  `slide_channel`; joined later from path + assay mapping). `t` uses
-  `index.json` `timeIndices`. Segmented bg = median of `~mask`;
-  `analysis.skipSegment` bg = 10th percentile.
+  `slide_channel`; joined later from path + assay mapping). `background`
+  and `sum` are QC columns. `t` uses `index.json` `timeIndices`. Segmented
+  bg = median of `~mask`; `analysis.skipSegment` bg = 10th percentile.
 - Slim `index.json`: always `TCZYX`; keep `zCount`; drop `source` /
   `pageOrder` / per-ROI `shape` (derive from counts + bbox).
 - Output basenames Studio and Python both expect (`analysis/PosN/auc.csv`,
   `fit.csv`, `results/<sample>/traces.png`, workspace `auc.png`, …).
 - Analysis AUC / fit identity columns: `roi` (optional `channel` when a Pos
-  has multiple signal CSVs). Results XLSX prefix `slide_channel`, `sample`,
-  and `pos`.
+  has multiple signal CSVs). Fit public columns: `baseline_intensity`,
+  `protein_lifetime`, `mrna_lifetime`, `onset_time`, `expression_rate`,
+  `success` (`expression_amplitude` and `*_degradation_rate` are
+  internal-only). Results XLSX prefix `pos` only (no `slide_channel` /
+  `sample`; the pack lives under `results/<sample>/`).
 - Stage order for full pipelines (`transfection pipeline` / `lisca-analyze pipeline`).
 - Flag defaults that change science (`--interval`, `--max-onset-minutes`,
   `analysis.skipSegment`, segmentation radius/sigma).

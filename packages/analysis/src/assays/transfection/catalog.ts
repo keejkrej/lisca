@@ -1,3 +1,33 @@
+/** Analysis `PosN/chC.csv`. Optional `channel` when a Pos has multiple signal CSVs. */
+export const TRANSFECTION_TRACE_CSV_COLUMNS = [
+  "roi",
+  "t",
+  "area",
+  "background",
+  "sum",
+  "corrected",
+] as const;
+
+/** Analysis `PosN/auc.csv`. Optional `channel` when a Pos has multiple signal CSVs. */
+export const TRANSFECTION_AUC_CSV_COLUMNS = ["roi", "auc"] as const;
+
+/**
+ * Analysis `PosN/fit.csv`. Optional `channel` when a Pos has multiple signal CSVs.
+ * Internal solver fields (`expression_amplitude`, `*_degradation_rate`) are not written.
+ */
+export const TRANSFECTION_FIT_CSV_COLUMNS = [
+  "roi",
+  "baseline_intensity",
+  "protein_lifetime",
+  "mrna_lifetime",
+  "onset_time",
+  "expression_rate",
+  "success",
+] as const;
+
+/** Identity column prefixed on per-sample XLSX packs. Folder is the sample; no `slide_channel` / `sample` columns. */
+export const TRANSFECTION_XLSX_POS_COLUMN = "pos";
+
 export type TransfectionPlotScope = "workspace" | "sample";
 
 export type TransfectionPlotSpec = {

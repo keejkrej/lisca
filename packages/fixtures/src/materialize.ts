@@ -1,7 +1,13 @@
 import { existsSync, mkdirSync, readdirSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 
-import { KILLING_PLOTS, TRANSFECTION_PLOTS } from "@lisca/analysis";
+import {
+  KILLING_PLOTS,
+  TRANSFECTION_AUC_CSV_COLUMNS,
+  TRANSFECTION_FIT_CSV_COLUMNS,
+  TRANSFECTION_PLOTS,
+  TRANSFECTION_TRACE_CSV_COLUMNS,
+} from "@lisca/analysis";
 import {
   AssayJsonFileSchema,
   RoiIndexFileSchema,
@@ -379,7 +385,7 @@ function writeTransfectionAnalysis(write: WriteRel): void {
   const { positions, rois, times, signalChannel } = FIXTURE_LAYOUT;
   for (const pos of positions) {
     const traces = [
-      "roi,t,area,background,sum,corrected",
+      TRANSFECTION_TRACE_CSV_COLUMNS.join(","),
       ...rois.flatMap((roi) =>
         times.map((t) => {
           const area = 4;
@@ -392,21 +398,21 @@ function writeTransfectionAnalysis(write: WriteRel): void {
     ];
     write(join("analysis", `Pos${pos}`, `ch${signalChannel}.csv`), `${traces.join("\n")}\n`);
 
-    const auc = ["roi,auc", ...rois.map((roi) => `${roi},${(80 + pos * 5 + roi * 3).toFixed(1)}`)];
+    const auc = [
+      TRANSFECTION_AUC_CSV_COLUMNS.join(","),
+      ...rois.map((roi) => `${roi},${(80 + pos * 5 + roi * 3).toFixed(1)}`),
+    ];
     write(join("analysis", `Pos${pos}`, "auc.csv"), `${auc.join("\n")}\n`);
 
     const fit = [
-      "roi,baseline_intensity,protein_degradation_rate,protein_lifetime,mrna_degradation_rate,mrna_lifetime,onset_time,expression_amplitude,expression_rate,success",
+      TRANSFECTION_FIT_CSV_COLUMNS.join(","),
       ...rois.map((roi) =>
         [
           roi,
           (10 + roi).toFixed(1),
-          "0.10",
           "6.93",
-          "0.50",
           "1.39",
           (5 + pos).toFixed(1),
-          "100.0",
           "10.0",
           "true",
         ].join(","),

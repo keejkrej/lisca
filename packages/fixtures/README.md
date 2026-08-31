@@ -79,7 +79,7 @@ const { out } = materializeFixture({
 - Folder template: `Pos{p}` / `img_channel{c}_position{p}_time{t}_z{z}`
 - ROI stacks: `roi/PosN/RoiN.tif` + slim `index.json` (`axisOrder: TCZYX`)
 - Alignment: `bbox/PosN.csv` (`roi,x,y,w,h,…`) and `align/PosN.json`
-- Transfection analysis CSVs: `analysis/PosN/chC.csv` (`roi,t,area,background,sum,corrected`), `auc.csv` (`roi,auc`), `fit.csv`
+- Transfection analysis CSVs: `analysis/PosN/chC.csv` (`roi,t,area,background,sum,corrected`), `auc.csv` (`roi,auc`), `fit.csv` (`roi,baseline_intensity,protein_lifetime,mrna_lifetime,onset_time,expression_rate,success`)
 - Killing timeseries: `timeseries/PosN/chN.csv` (`roi,t,p_dead`)
 - Transfection plots: workspace boxplots at `results/*.png` and per-sample PNGs
   at `results/<sample>/` from the `@lisca/analysis` catalog. Killing plots stay

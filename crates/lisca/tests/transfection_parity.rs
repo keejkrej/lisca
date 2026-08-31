@@ -175,23 +175,24 @@ fn fit_stage_matches_transfection_reference_fit() {
         FIT_REL_TOL
     ));
     assert!(approx_eq(
-        parse_f64(&row["protein_degradation_rate"]),
-        reference.protein_degradation_rate,
+        parse_f64(&row["protein_lifetime"]),
+        std::f64::consts::LN_2 / reference.protein_degradation_rate,
         FIT_REL_TOL
     ));
     assert!(approx_eq(
-        parse_f64(&row["mrna_degradation_rate"]),
-        reference.mrna_degradation_rate,
-        FIT_REL_TOL
-    ));
-    assert!(approx_eq(
-        parse_f64(&row["expression_amplitude"]),
-        reference.expression_amplitude,
+        parse_f64(&row["mrna_lifetime"]),
+        std::f64::consts::LN_2 / reference.mrna_degradation_rate,
         FIT_REL_TOL
     ));
     assert!(approx_eq(
         parse_f64(&row["onset_time"]),
         reference.onset_time,
+        FIT_REL_TOL
+    ));
+    assert!(approx_eq(
+        parse_f64(&row["expression_rate"]),
+        reference.expression_amplitude
+            * (reference.mrna_degradation_rate - reference.protein_degradation_rate),
         FIT_REL_TOL
     ));
 }
@@ -295,10 +296,10 @@ fn compare_fit_csvs(lisca_csv: &str, transfection_csv: &str) {
         &tf_path,
         &[
             "baseline_intensity",
-            "protein_degradation_rate",
-            "mrna_degradation_rate",
+            "protein_lifetime",
+            "mrna_lifetime",
             "onset_time",
-            "expression_amplitude",
+            "expression_rate",
         ],
         FIT_CLI_REL_TOL,
     );
