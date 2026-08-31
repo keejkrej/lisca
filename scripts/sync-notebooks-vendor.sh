@@ -14,7 +14,7 @@ SIDECAR_URL="https://github.com/keejkrej/lisca-transfection-assay.git"
 
 extract_sidecar_sha() {
   local file="$1"
-  grep -oE 'lisca-transfection-assay#[0-9a-f]{40}' "$file" | head -1 | cut -d# -f2
+  grep -oE 'lisca-transfection-assay(\?rev=[0-9a-f]{40})?#[0-9a-f]{40}' "$file" | head -1 | grep -oE '[0-9a-f]{40}$'
 }
 
 if [[ ! -f "$PYTHON_SRC/pyproject.toml" || ! -d "$PYTHON_SRC/src/lisca" ]]; then

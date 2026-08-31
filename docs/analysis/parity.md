@@ -87,18 +87,22 @@ Rust, generated types). Unsupported ids fail explicitly — see `PRODUCT.md`.
 Cargo (this workspace):
 
 ```toml
-lisca-transfection = { git = "https://github.com/keejkrej/lisca-transfection-assay" }
+lisca-transfection = { git = "https://github.com/keejkrej/lisca-transfection-assay", rev = "a370d7f1f7ae760055a93a47d14b4200a2c9852b" }
 ```
 
 Python extra (`python/pyproject.toml`, `analysis` extra):
 
 ```toml
-transfection = { git = "https://github.com/keejkrej/lisca-transfection-assay" }
+transfection = { git = "https://github.com/keejkrej/lisca-transfection-assay", rev = "a370d7f1f7ae760055a93a47d14b4200a2c9852b" }
 ```
+
+Keep Cargo and Python on the **same SHA**. Lock files (`Cargo.lock`,
+`python/uv.lock`) must match. Notebooks vendor sync reads that SHA.
 
 The sidecar crate does **not** depend on this repo (that would cycle). Public
 API is workspace-path based: `run_segment`, `run_timeseries`, `run_auc`,
-`run_fit`, `run_pipeline`, `run_plot_*`, `load_assay_for_workspace`.
+`run_fit`, `run_pipeline`, `run_plot_*` (PNG only), `publish_sample_*_xlsx`,
+`load_assay_for_workspace`.
 
 ### ndarray / imageproc versions
 
@@ -177,7 +181,7 @@ Stage names mirror `transfection`:
 | `timeseries`                                | `analysis/Pos*/ch*.csv` (CSV only; CLI verb still timeseries)                    |
 | `auc`                                       | `analysis/Pos*/auc.csv`                                                          |
 | `fit`                                       | `analysis/Pos*/fit.csv`                                                          |
-| `plot-timeseries` / `plot-auc` / `plot-fit` | `results/<sample>/` packs (xlsx + png) and workspace boxplots at `results/*.png` |
+| `plot-timeseries` / `plot-auc` / `plot-fit` | PNG packs + workspace boxplots. CLI/`pipeline` call `publish_sample_*_xlsx` first so one-shot still writes `results/<sample>/{traces,auc,fit}.xlsx`. Plot services themselves are PNG-only. |
 | `pipeline` (`analyze`, `all`)               | full Studio order from `assay.json`                                              |
 
 Common flags: `--assay` (default `<workspace>/assay.json`), `--interval`,
