@@ -138,11 +138,11 @@ documented or re-run; docs list the stage.
 
 ## Quick map (see docs for full table)
 
-| Assay id          | Goal source (sibling)                          | Rust                          | Parity CLI            |
-| ----------------- | ---------------------------------------------- | ----------------------------- | --------------------- |
-| `transfection`    | `lisca-transfection-assay` (`transfection`)    | git crate `lisca-transfection` + thin `assays/transfection/` | `lisca-analyze` |
-| `killing`         | killing assay / mupattern goals                | `assays/killing/`             | (extend when porting) |
-| binding (future)  | `../lisca-binding-assay`                       | (not registered until mature) | —                     |
+| Assay id         | Goal source (sibling)                       | Rust                                                         | Parity CLI            |
+| ---------------- | ------------------------------------------- | ------------------------------------------------------------ | --------------------- |
+| `transfection`   | `lisca-transfection-assay` (`transfection`) | git crate `lisca-transfection` + thin `assays/transfection/` | `lisca-analyze`       |
+| `killing`        | killing assay / mupattern goals             | `assays/killing/`                                            | (extend when porting) |
+| binding (future) | `../lisca-binding-assay`                    | (not registered until mature)                                | —                     |
 
 ## Completion checklist
 
