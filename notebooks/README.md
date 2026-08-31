@@ -4,6 +4,8 @@ Download the zip from [GitHub Releases](https://github.com/keejkrej/lisca/releas
 
 Do **not** clone the Lisca monorepo. Hub and laptop users only need this zip. It is not a Studio, Aligner, or Annotator installer.
 
+This zip vendors Lisca crop (`vendor/lisca`, installed as `lisca[crop]`) and the transfection sidecar (`vendor/transfection`). `install.sh` / `install.ps1` only fetch third-party wheels from PyPI (numpy, pandas, matplotlib, nd2, pylibCZIrw, ipykernel, jupyter, …). They do not git-clone GitHub.
+
 Crop lives in this repo’s Python package (`lisca[crop]`). Analyze and results use the `transfection` sidecar. Do not use a deprecated `pyama*` package.
 
 ## Install
@@ -20,12 +22,12 @@ Windows:
 .\install.ps1
 ```
 
-That installs Python 3.12 and the notebook extra (`ipykernel`, `jupyter`) plus:
+That installs Python 3.12 and the notebook extra (`ipykernel`, `jupyter`) plus the vendored path packages:
 
-- `lisca[crop]` from `git+https://github.com/keejkrej/lisca.git#subdirectory=python` (ND2/CZI crop)
-- `transfection` from `git+https://github.com/keejkrej/lisca-transfection-assay` (analyze / results)
+- `lisca[crop]` from `vendor/lisca` (ND2/CZI crop)
+- `transfection` from `vendor/transfection` (analyze / results)
 
-This zip does not vendor the monorepo or Studio.
+This zip does not contain `apps/`, `crates/`, Studio, Aligner, Annotator, or the rest of the monorepo.
 
 ## JupyterHub
 
@@ -68,4 +70,4 @@ Set these in the first code cell of each notebook. Paths are the mounted or loca
 
 ## Version
 
-`VERSION` is the source of truth (this tree is `0.1.0`). Git tags are `notebooks-vX.Y.Z`. Desktop installers use a different train (`v*`) and are not in this zip.
+`VERSION` is the source of truth (this tree is `0.1.1`). Git tags are `notebooks-vX.Y.Z`. Desktop installers use a different train (`v*`) and are not in this zip.
