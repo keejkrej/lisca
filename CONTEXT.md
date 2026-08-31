@@ -41,14 +41,14 @@ Gene-expression fits (in `lisca-transfection`, imported by this repo) use the **
 2024 Eq. 3; **no protein maturation**). Public names are the same in Rust, Python,
 `fit.csv` / `fit.xlsx`, and Studio labels. One name only — no CSV aliases.
 
-| Code / CSV / id      | Display label            | Paper symbol                           |
-| -------------------- | ------------------------ | -------------------------------------- |
-| `onset_time`         | onset time t0            | t0                                     |
-| `expression_rate`    | expression rate m0 k_TL  | m0 k_TL                                |
-| `mrna_lifetime`      | mRNA lifetime τ_mRNA     | τ_mRNA = ln(2)/δ                       |
-| `protein_lifetime`   | protein lifetime τ_EGFP  | τ_EGFP = ln(2)/β                       |
-| `baseline_intensity` | baseline intensity       | additive baseline (not a kinetic rate) |
-| `auc`                | AUC                      | integrated protein output              |
+| Code / CSV / id      | Display label           | Paper symbol                           |
+| -------------------- | ----------------------- | -------------------------------------- |
+| `onset_time`         | onset time t0           | t0                                     |
+| `expression_rate`    | expression rate m0 k_TL | m0 k_TL                                |
+| `mrna_lifetime`      | mRNA lifetime τ_mRNA    | τ_mRNA = ln(2)/δ                       |
+| `protein_lifetime`   | protein lifetime τ_EGFP | τ_EGFP = ln(2)/β                       |
+| `baseline_intensity` | baseline intensity      | additive baseline (not a kinetic rate) |
+| `auc`                | AUC                     | integrated protein output              |
 
 Internal solver fields — **not** written to `fit.csv` / `fit.xlsx`:
 

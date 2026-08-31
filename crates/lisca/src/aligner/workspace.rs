@@ -91,28 +91,59 @@ pub(super) fn roi_pos_dir_path(root: &str, pos: u32) -> PathBuf {
 
 pub(super) fn parse_bbox_csv(path: &Path) -> Result<Vec<RoiBbox>, String> {
     let text = fs::read_to_string(path).map_err(|error| format!("{}: {error}", path.display()))?;
+    let mut lines = text
+        .lines()
+        .enumerate()
+        .filter(|(_, line)| !line.trim().is_empty());
+    let Some((header_index, header_line)) = lines.next() else {
+        return Err(format!("{}: empty bbox CSV", path.display()));
+    };
+    let header = header_line
+        .split(',')
+        .map(|cell| cell.trim().to_ascii_lowercase())
+        .collect::<Vec<_>>();
+    if header.iter().any(|name| name == "crop") && !header.iter().any(|name| name == "roi") {
+        return Err(format!(
+            "{}:{} bbox CSV header must use 'roi' (not deprecated 'crop')",
+            path.display(),
+            header_index + 1
+        ));
+    }
+    let column_index = |name: &str| {
+        header
+            .iter()
+            .position(|column| column == name)
+            .ok_or_else(|| {
+                format!(
+                    "{}:{} missing required column '{name}' (required: roi, x, y, w, h)",
+                    path.display(),
+                    header_index + 1
+                )
+            })
+    };
+    let roi_idx = column_index("roi")?;
+    let x_idx = column_index("x")?;
+    let y_idx = column_index("y")?;
+    let w_idx = column_index("w")?;
+    let h_idx = column_index("h")?;
+    let required_idx = roi_idx.max(x_idx).max(y_idx).max(w_idx).max(h_idx);
+
     let mut bboxes = Vec::new();
-    for (line_index, line) in text.lines().enumerate() {
-        let trimmed = line.trim();
-        if trimmed.is_empty() {
-            continue;
-        }
-        let columns = trimmed.split(',').map(str::trim).collect::<Vec<_>>();
-        if line_index == 0 && columns.first().copied() == Some("roi") {
-            continue;
-        }
-        if columns.len() < 5 {
+    for (line_index, line) in lines {
+        let columns = line.split(',').map(str::trim).collect::<Vec<_>>();
+        if columns.len() <= required_idx {
             return Err(format!(
-                "{}:{} expected at least 5 columns",
+                "{}:{} expected at least {} columns",
                 path.display(),
-                line_index + 1
+                line_index + 1,
+                required_idx + 1
             ));
         }
-        let roi = parse_bbox_csv_value(columns[0], "roi")?;
-        let x = parse_bbox_csv_value(columns[1], "x")?;
-        let y = parse_bbox_csv_value(columns[2], "y")?;
-        let w = parse_bbox_csv_value(columns[3], "w")?;
-        let h = parse_bbox_csv_value(columns[4], "h")?;
+        let roi = parse_bbox_csv_value(columns[roi_idx], "roi")?;
+        let x = parse_bbox_csv_value(columns[x_idx], "x")?;
+        let y = parse_bbox_csv_value(columns[y_idx], "y")?;
+        let w = parse_bbox_csv_value(columns[w_idx], "w")?;
+        let h = parse_bbox_csv_value(columns[h_idx], "h")?;
         if w == 0 || h == 0 {
             continue;
         }
@@ -151,6 +182,30 @@ mod tests {
         writeln!(file, "roi,x,y,w,h,i,j").expect("write header");
         let bboxes = parse_bbox_csv(&path).expect("parse csv");
         assert!(bboxes.is_empty());
+        let _ = fs::remove_file(path);
+    }
+
+    #[test]
+    fn parse_bbox_csv_rejects_crop_header() {
+        let path = std::env::temp_dir().join(format!("lisca-crop-bbox-{}.csv", std::process::id()));
+        let mut file = fs::File::create(&path).expect("create csv");
+        writeln!(file, "crop,x,y,w,h").expect("write header");
+        writeln!(file, "1,0,0,2,2").expect("write row");
+        let error = parse_bbox_csv(&path).expect_err("crop header");
+        assert!(error.contains("roi"), "{error}");
+        assert!(error.contains("crop"), "{error}");
+        let _ = fs::remove_file(path);
+    }
+
+    #[test]
+    fn parse_bbox_csv_reads_named_roi_columns() {
+        let path = std::env::temp_dir().join(format!("lisca-roi-bbox-{}.csv", std::process::id()));
+        let mut file = fs::File::create(&path).expect("create csv");
+        writeln!(file, "roi,x,y,w,h").expect("write header");
+        writeln!(file, "1,0,0,2,2").expect("write row");
+        let bboxes = parse_bbox_csv(&path).expect("parse csv");
+        assert_eq!(bboxes.len(), 1);
+        assert_eq!(bboxes[0].roi, 1);
         let _ = fs::remove_file(path);
     }
 }

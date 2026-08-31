@@ -116,9 +116,9 @@ describe("workspace fixture smoke", () => {
     expect(read(out, "analysis/Pos1/fit.csv").split("\n")[0]).toBe(
       TRANSFECTION_FIT_CSV_COLUMNS.join(","),
     );
-    expect(read(out, "analysis/Pos1/auc.csv").startsWith(TRANSFECTION_AUC_CSV_COLUMNS.join(","))).toBe(
-      true,
-    );
+    expect(
+      read(out, "analysis/Pos1/auc.csv").startsWith(TRANSFECTION_AUC_CSV_COLUMNS.join(",")),
+    ).toBe(true);
     expect(existsSync(join(out, "results/auc.csv"))).toBe(false);
     expect(existsSync(join(out, "timeseries"))).toBe(false);
     const sampleDir = "Mock_(fixture)";

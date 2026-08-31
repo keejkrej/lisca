@@ -407,15 +407,9 @@ function writeTransfectionAnalysis(write: WriteRel): void {
     const fit = [
       TRANSFECTION_FIT_CSV_COLUMNS.join(","),
       ...rois.map((roi) =>
-        [
-          roi,
-          (10 + roi).toFixed(1),
-          "6.93",
-          "1.39",
-          (5 + pos).toFixed(1),
-          "10.0",
-          "true",
-        ].join(","),
+        [roi, (10 + roi).toFixed(1), "6.93", "1.39", (5 + pos).toFixed(1), "10.0", "true"].join(
+          ",",
+        ),
       ),
     ];
     write(join("analysis", `Pos${pos}`, "fit.csv"), `${fit.join("\n")}\n`);
