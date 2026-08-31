@@ -37,7 +37,7 @@
 
 ## Transfection kinetic parameters (code = CSV = UI)
 
-Gene-expression fits use the **basic translation–degradation model** (Müller et al.
+Gene-expression fits (in `lisca-transfection`, imported by this repo) use the **basic translation–degradation model** (Müller et al.
 2024 Eq. 3; **no protein maturation**). Field names are the same in Rust, Python,
 `fit.csv`, and Studio labels:
 

@@ -7,6 +7,7 @@ Utilities for dataset building and model training used by the Lisca monorepo.
 ```sh
 cd python
 uv sync                 # runtime + dev
+uv sync --extra analysis  # + transfection git package (Python 3.12+)
 uv sync --group train   # + torch / lightning / onnx / cellpose
 # or labeling only:
 uv sync --group label

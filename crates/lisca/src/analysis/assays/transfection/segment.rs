@@ -1,16 +1,18 @@
+//! Transfection segmentation dispatch.
+//!
+//! Otsu (Python-parity default) is implemented in `lisca-transfection`. ONNX /
+//! smart segment stays in this crate so Studio can keep using `ort`.
+
 use std::collections::BTreeMap;
 use std::fs::File;
 use std::path::Path;
-
-use rayon::prelude::*;
-use tiff::encoder::{colortype, TiffEncoder};
 
 use crate::analysis::roi_stack::{
     position_dir, read_position_index, roi_frame_2d, validate_channel_index, RoiStack,
 };
 use crate::analysis::slide::SlideMapping;
 
-use super::image_ops::segment_frame;
+use super::mapping::to_sidecar_mapping;
 #[cfg(feature = "smart")]
 use super::segment_onnx::{resolve_ge_seg_model_dir, OnnxSegmentConfig, OnnxSegmenter};
 
@@ -88,28 +90,18 @@ fn run_segment_otsu(
     mapping: &SlideMapping,
     options: &SegmentOptions,
 ) -> Result<(), String> {
-    let tasks = collect_tasks(mapping)?;
-    let pool = rayon::ThreadPoolBuilder::new()
-        .num_threads(options.jobs.max(1))
-        .build()
-        .map_err(|error| error.to_string())?;
-
-    let results = pool.install(|| {
-        tasks
-            .par_iter()
-            .map(|(slide_channel, mask_channel, position)| {
-                run_position_segmentation_otsu(
-                    workspace,
-                    *slide_channel,
-                    *mask_channel,
-                    *position,
-                    options,
-                )
-            })
-            .collect::<Result<Vec<_>, String>>()
-    })?;
-
-    summarize_results(results)
+    let sidecar_options = lisca_transfection::SegmentOptions {
+        variation_radius: options.variation_radius,
+        gaussian_sigma: options.gaussian_sigma,
+        force: options.force,
+        jobs: options.jobs,
+        backend: lisca_transfection::SegmentBackend::Otsu,
+        model_dir: None,
+        image_size: options.image_size,
+        threshold: options.threshold,
+        batch_size: options.batch_size,
+    };
+    lisca_transfection::run_segment(workspace, &to_sidecar_mapping(mapping), &sidecar_options)
 }
 
 #[cfg(feature = "smart")]
@@ -194,68 +186,6 @@ fn summarize_results(results: Vec<PositionSegmentResult>) -> Result<(), String> 
     }
 
     Ok(())
-}
-
-fn run_position_segmentation_otsu(
-    workspace: &Path,
-    slide_channel: u32,
-    mask_channel: u32,
-    position: u32,
-    options: &SegmentOptions,
-) -> Result<PositionSegmentResult, String> {
-    let pos_dir = match position_dir(workspace, position) {
-        Ok(path) => path,
-        Err(_) => {
-            return Ok(PositionSegmentResult {
-                slide_channel,
-                position,
-                mask_count: 0,
-                skipped: true,
-            });
-        }
-    };
-    let index = read_position_index(&pos_dir)?;
-    validate_channel_index(&index, mask_channel)?;
-    let mut mask_count = 0usize;
-
-    for roi in &index.rois {
-        let output_path = crate::analysis::roi_stack::default_mask_path(
-            workspace,
-            index.position,
-            &roi.file_name,
-        );
-        if output_path.exists() && !options.force {
-            mask_count += 1;
-            continue;
-        }
-        let roi_path = pos_dir.join(&roi.file_name);
-        if !roi_path.is_file() {
-            return Err(format!(
-                "Missing ROI TIFF referenced by index.json: {}",
-                roi_path.display()
-            ));
-        }
-        let stack = RoiStack::load(&roi_path, roi.shape)?;
-        let width = roi.shape[4] as usize;
-        let height = roi.shape[3] as usize;
-        let mut masks = Vec::with_capacity(index.time_count as usize);
-        for timepoint in 0..index.time_count {
-            let frame = roi_frame_2d(&stack, &index.axis_order, timepoint, mask_channel, 0)?;
-            masks.push(segment_frame(
-                frame,
-                options.variation_radius,
-                options.gaussian_sigma,
-            ));
-        }
-        write_mask_tif(&output_path, &masks, width, height)?;
-        mask_count += 1;
-    }
-    Ok(PositionSegmentResult {
-        slide_channel,
-        position,
-        mask_count,
-        skipped: false,
-    })
 }
 
 #[cfg(feature = "smart")]
@@ -357,7 +287,7 @@ fn write_mask_tif(
         std::fs::create_dir_all(parent).map_err(|error| error.to_string())?;
     }
     let file = File::create(path).map_err(|error| error.to_string())?;
-    let mut encoder = TiffEncoder::new(file).map_err(|error| error.to_string())?;
+    let mut encoder = tiff::encoder::TiffEncoder::new(file).map_err(|error| error.to_string())?;
     let plane = width
         .checked_mul(height)
         .ok_or_else(|| format!("mask plane size overflow for width={width} height={height}"))?;
@@ -373,7 +303,7 @@ fn write_mask_tif(
             .map(|value| u8::from(*value))
             .collect::<Vec<_>>();
         let image = encoder
-            .new_image::<colortype::Gray8>(width as u32, height as u32)
+            .new_image::<tiff::encoder::colortype::Gray8>(width as u32, height as u32)
             .map_err(|error| error.to_string())?;
         image
             .write_data(&bytes)
@@ -383,10 +313,7 @@ fn write_mask_tif(
 }
 
 pub fn default_jobs() -> usize {
-    std::thread::available_parallelism()
-        .map(usize::from)
-        .unwrap_or(1)
-        .max(1)
+    lisca_transfection::default_jobs()
 }
 
 #[cfg(test)]

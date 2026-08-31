@@ -1,7 +1,8 @@
 //! NumPy-style array helpers for ROI frames, masks, and shared numeric kernels.
 //!
-//! Transfection describes **goals** for masked reductions and morphology metrics; implementations
-//! use the `ndarray` ecosystem (`ndarray-stats`, `ndarray-ndimage`) rather than hand-rolled loops.
+//! Transfection production kernels live in `lisca-transfection`. This module
+//! keeps Frame2D / quantiles / trapz used by crop viewers, killing plots, and
+//! Studio ONNX segment.
 
 use ndarray::{s, Array1, ArrayView2};
 use ndarray_stats::{interpolate::Linear, Quantile1dExt};

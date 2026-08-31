@@ -1,37 +1,36 @@
-mod auc;
-mod fit;
-mod image_ops;
-mod metrics;
-mod plot;
+//! Thin dispatch into the `lisca-transfection` git crate.
+//!
+//! Transfection **analysis** (Otsu segment, timeseries, AUC, kinetic fit, plots)
+//! lives in [`lisca_transfection`]. Crop (`lisca-crop`) and Studio ONNX segment
+//! stay in this repo. The on-disk workspace (`assay.json` + `roi/`) is the
+//! contract; ndarray types are not passed across the crate boundary.
+
+mod mapping;
 mod segment;
 #[cfg(feature = "smart")]
 mod segment_onnx;
-mod timeseries;
-mod traces;
 
-pub use auc::run_auc;
-pub use fit::{default_fit_jobs, run_fit};
-pub use plot::{run_plot_auc, run_plot_fit, run_plot_timeseries, DEFAULT_PLOT_COLUMNS};
+pub use crate::analysis::plot::DEFAULT_PLOT_COLUMNS;
 pub use segment::{default_jobs, run_segment, SegmentBackend, SegmentOptions};
-pub use timeseries::{default_timeseries_jobs, run_timeseries, run_timeseries_with_mode};
 
-use std::path::PathBuf;
-
-use crate::protocol::{AnalysisCsvFile, AnalysisProgress, AnalysisStage, AssayJsonFile};
+use std::path::{Path, PathBuf};
 
 use crate::analysis::output::collect_csv_outputs;
 use crate::analysis::progress::{analysis_progress, run_blocking};
-use crate::analysis::slide::{build_slide_mapping, parse_interval_minutes};
+use crate::analysis::slide::{build_slide_mapping, parse_interval_minutes, SlideMapping};
+use crate::protocol::{AnalysisCsvFile, AnalysisProgress, AnalysisStage, AssayJsonFile};
+
+use mapping::to_sidecar_mapping;
 
 /// Default second-pass **onset time** (\(t_0\)) search cap when assay.json
 /// omits `analysis.maxOnsetMinutes` (minutes). `0` still means “onset fixed
 /// at 0” when the field is set explicitly. Fit uses the basic
 /// translation–degradation model (Müller et al. 2024 Eq. 3; no maturation).
-pub const DEFAULT_MAX_ONSET_MINUTES: f64 = 120.0;
+pub const DEFAULT_MAX_ONSET_MINUTES: f64 = lisca_transfection::DEFAULT_MAX_ONSET_MINUTES;
 
 /// Default frame interval (minutes) when assay.json omits a positive
 /// `interval.value` / unit for this assay.
-pub const DEFAULT_INTERVAL_MINUTES: f64 = 10.0;
+pub const DEFAULT_INTERVAL_MINUTES: f64 = lisca_transfection::DEFAULT_INTERVAL_MINUTES;
 
 /// Transfection-only analysis option. Other assays ignore `analysis.maxOnsetMinutes`.
 pub fn max_onset_minutes(assay_json: &AssayJsonFile) -> f64 {
@@ -71,6 +70,72 @@ pub fn interval_minutes(assay_json: &AssayJsonFile) -> Result<f64, String> {
             "missing interval.value/unit for assay {other:?} (no default interval)"
         )),
     }
+}
+
+pub fn default_timeseries_jobs() -> usize {
+    lisca_transfection::default_timeseries_jobs()
+}
+
+pub fn default_fit_jobs() -> usize {
+    lisca_transfection::default_fit_jobs()
+}
+
+pub fn run_timeseries(workspace: &Path, mapping: &SlideMapping, jobs: usize) -> Result<(), String> {
+    run_timeseries_with_mode(workspace, mapping, jobs, false)
+}
+
+pub fn run_timeseries_with_mode(
+    workspace: &Path,
+    mapping: &SlideMapping,
+    jobs: usize,
+    full_frame: bool,
+) -> Result<(), String> {
+    lisca_transfection::run_timeseries_with_mode(
+        workspace,
+        &to_sidecar_mapping(mapping),
+        jobs,
+        full_frame,
+    )
+}
+
+pub fn run_auc(workspace: &Path, interval: f64) -> Result<PathBuf, String> {
+    lisca_transfection::run_auc(workspace, interval)
+}
+
+pub fn run_fit(
+    workspace: &Path,
+    interval: f64,
+    max_onset_minutes: f64,
+    jobs: usize,
+) -> Result<PathBuf, String> {
+    lisca_transfection::run_fit(workspace, interval, max_onset_minutes, jobs)
+}
+
+pub fn run_plot_timeseries(
+    workspace: &Path,
+    mapping: &SlideMapping,
+    interval: f64,
+    columns: Option<usize>,
+) -> Result<(), String> {
+    lisca_transfection::run_plot_timeseries(
+        workspace,
+        &to_sidecar_mapping(mapping),
+        interval,
+        columns,
+    )
+}
+
+pub fn run_plot_auc(workspace: &Path, mapping: &SlideMapping) -> Result<(), String> {
+    lisca_transfection::run_plot_auc(workspace, &to_sidecar_mapping(mapping))
+}
+
+pub fn run_plot_fit(
+    workspace: &Path,
+    mapping: &SlideMapping,
+    interval: f64,
+    columns: Option<usize>,
+) -> Result<(), String> {
+    lisca_transfection::run_plot_fit(workspace, &to_sidecar_mapping(mapping), interval, columns)
 }
 
 pub async fn run<F>(
@@ -144,7 +209,7 @@ where
 
     run_blocking({
         let workspace = workspace_path.clone();
-        move || auc::run_auc(&workspace, interval)
+        move || run_auc(&workspace, interval).map(|_| ())
     })
     .await
     .map_err(|error| format!("auc step failed: {error}"))?;
@@ -164,7 +229,7 @@ where
     let max_onset = max_onset_minutes(&assay_json);
     run_blocking({
         let workspace = workspace_path.clone();
-        move || fit::run_fit(&workspace, interval, max_onset, fit::default_fit_jobs())
+        move || run_fit(&workspace, interval, max_onset, default_fit_jobs()).map(|_| ())
     })
     .await
     .map_err(|error| format!("fit step failed: {error}"))?;
@@ -195,36 +260,16 @@ where
 ///
 /// Same stage order as Studio: segment → timeseries → plot-timeseries → auc →
 /// plot-auc → fit → plot-fit. Sample mapping is read from `assay.json` only.
-pub fn run_sync(workspace: &std::path::Path, assay_json: &AssayJsonFile) -> Result<(), String> {
+/// Science stages run in `lisca-transfection` (Otsu default).
+pub fn run_sync(workspace: &Path, assay_json: &AssayJsonFile) -> Result<(), String> {
     run_sync_with_mode(workspace, assay_json, skip_segment(assay_json))
 }
 
 pub fn run_sync_with_mode(
-    workspace: &std::path::Path,
-    assay_json: &AssayJsonFile,
+    workspace: &Path,
+    _assay_json: &AssayJsonFile,
     full_frame: bool,
 ) -> Result<(), String> {
-    let interval = interval_minutes(assay_json)?;
-
-    let mapping = build_slide_mapping(assay_json)?;
-    let jobs = default_timeseries_jobs();
-
-    if !full_frame {
-        run_segment(
-            workspace,
-            &mapping,
-            &SegmentOptions {
-                jobs,
-                ..SegmentOptions::default()
-            },
-        )?;
-    }
-    run_timeseries_with_mode(workspace, &mapping, jobs, full_frame)?;
-    run_plot_timeseries(workspace, &mapping, interval, None)?;
-    run_auc(workspace, interval)?;
-    run_plot_auc(workspace, &mapping)?;
-    let max_onset = max_onset_minutes(assay_json);
-    run_fit(workspace, interval, max_onset, default_fit_jobs())?;
-    run_plot_fit(workspace, &mapping, interval, None)?;
-    Ok(())
+    let sidecar_assay = lisca_transfection::load_assay_for_workspace(workspace, None)?;
+    lisca_transfection::run_pipeline_with_mode(workspace, &sidecar_assay, full_frame)
 }

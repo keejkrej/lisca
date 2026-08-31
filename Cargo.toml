@@ -27,10 +27,8 @@ base64 = "0.22"
 czi-rs = { git = "https://github.com/keejkrej/czi-rs" }
 image = { version = "0.25", default-features = false, features = ["jpeg", "png"] }
 ndarray = { version = "0.17", features = ["std"] }
-ndarray-ndimage = "0.6"
 ndarray-stats = "0.7"
 noisy_float = "0.2"
-imageproc = { version = "0.27", default-features = false }
 ort = { version = "=2.0.0-rc.11", default-features = false, features = [
   "std",
   "ndarray",
@@ -55,6 +53,10 @@ mplot = { git = "https://github.com/keejkrej/mplot-rs" }
 rust_xlsxwriter = "0.90"
 lisca = { path = "crates/lisca", default-features = false }
 lisca-server = { path = "crates/lisca-server" }
+# Transfection analysis (Otsu segment, timeseries, AUC, fit, plots).
+# ndarray 0.16 / imageproc 0.25 in that crate; this workspace stays on 0.17 / 0.27.
+# Call workspace-path APIs so ndarray types are not unified across the boundary.
+lisca-transfection = { git = "https://github.com/keejkrej/lisca-transfection-assay" }
 tauri = "2"
 tauri-build = "2"
 

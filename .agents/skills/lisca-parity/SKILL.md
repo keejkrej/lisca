@@ -10,22 +10,23 @@ description: >
 
 # LiSCA assay parity
 
-**Python is the lab notebook; Rust is production.** Assay science is developed
-to maturity in sibling `lisca-*-assay` packages (CLI + workspace I/O). Once
-stable, the same _goals_ are rewritten into idiomatic Rust under
-`crates/lisca/src/analysis/` for Studio / Tauri. Parity means **same workspace
-contracts and same scientific answers**, not the same NumPy loops.
+**Python is the lab notebook.** Mature transfection analysis (Python + Rust)
+lives in [`lisca-transfection-assay`](https://github.com/keejkrej/lisca-transfection-assay);
+this monorepo **imports** that crate and package via git URL. Killing remains
+in-tree until its sidecar exists. Parity means **same workspace contracts and
+same scientific answers**, not the same NumPy loops.
 
 Read the full process and assay map in
 [`docs/analysis/parity.md`](../../../docs/analysis/parity.md) before changing
-kernels. Stage CLI details live in
+kernels. Transfection Python↔Rust comparisons belong in the sidecar
+(`docs/parity.md` there). Stage CLI details live in
 [`docs/analysis/analysis.md`](../../../docs/analysis/analysis.md).
 
 ## Leading words
 
 - **Goal source** — the Python package defines _what_ to compute and _which
   files_ to read/write (columns, stage order, plot names).
-- **Prod port** — Rust implementation Studio actually runs.
+- **Prod port** — Imported sidecar crate (transfection) or in-tree Rust (killing).
 - **Contract parity** — paths, CSV headers, plot filenames, `assay.json` /
   `slide.json` semantics.
 - **Scientific parity** — same definitions within documented tolerances
@@ -49,9 +50,10 @@ kernels. Stage CLI details live in
 2. Inventory **stages**, **CLI flags**, **output paths**, and **CSV columns**
    from the Python package (commands + README / `*-analyze.sh`), not from
    Rust first.
-3. Locate the Rust counterpart under
-   `crates/lisca/src/analysis/assays/<name>/` and the parity CLI surface
-   (`lisca-analyze` for gene-expression today).
+3. Locate the Rust counterpart: transfection is the git crate
+   `lisca-transfection` (thin dispatch under
+   `crates/lisca/src/analysis/assays/transfection/`); killing is still
+   `assays/killing/`. Parity CLI: `lisca-analyze` for transfection.
 
 **Done when:** you can name goal-source path, stage list, and Rust module paths
 in one short table.
@@ -91,15 +93,16 @@ passes on a known-good stage (paste invocation + verdict).
 
 ## Phase 3 — Port or fix (Rust is idiomatic)
 
-- Implement goals with `ndarray` / `imageproc` / ONNX / mplot-rs — **do not**
-  mirror Python module layout or package structure.
+- Implement goals in the **sidecar crate** (transfection) or idiomatic
+  ONNX / mplot-rs in this repo (killing, crop).
+  **Do not** copy the transfection pipeline back into `crates/lisca`.
 - Match **stage order**, **defaults** (e.g. variation radius, Gaussian sigma,
   fit grid sizes), and **edge semantics** (inclusive position ranges, onset
   cap).
 - Export stages through a parity CLI with **the same command names and flag
   shapes** as Python when practical (`segment`, `timeseries`, `auc`, `fit`, …).
-- Shared kernels go in `analysis/array.rs` (or shared assay modules), not copy-
-  pasted per stage.
+- Shared kernels that crop or killing still need stay in this repo
+  (`roi_stack`, `csv_io`, `array.rs`). Transfection kernels live in the sidecar.
 
 Common failure class: **grid refine windows**, median pooling order, mask
 foreground definition, time = `t * interval` units. Diff distributions by
@@ -133,8 +136,8 @@ documented or re-run; docs list the stage.
 
 | Assay id          | Goal source (sibling)                          | Rust                          | Parity CLI            |
 | ----------------- | ---------------------------------------------- | ----------------------------- | --------------------- |
-| `gene-expression` | `../lisca-transfection-assay` (`transfection`) | `assays/gene_expression/`     | `lisca-analyze`       |
-| `immune-killing`  | killing assay / mupattern goals                | `assays/immune_killing/`      | (extend when porting) |
+| `transfection`    | `lisca-transfection-assay` (`transfection`)    | git crate `lisca-transfection` + thin `assays/transfection/` | `lisca-analyze` |
+| `killing`         | killing assay / mupattern goals                | `assays/killing/`             | (extend when porting) |
 | binding (future)  | `../lisca-binding-assay`                       | (not registered until mature) | —                     |
 
 ## Completion checklist
