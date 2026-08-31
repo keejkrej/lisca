@@ -1,6 +1,15 @@
+import type { LiscaAppId } from "@lisca/utils";
 import IconMoonRegular from "phosphor-icons-solid/IconMoonRegular";
 import IconSunRegular from "phosphor-icons-solid/IconSunRegular";
-import { createContext, createEffect, createSignal, Show, useContext, type JSX } from "solid-js";
+import {
+  createContext,
+  createEffect,
+  createSignal,
+  onCleanup,
+  Show,
+  useContext,
+  type JSX,
+} from "solid-js";
 import { createStore } from "solid-js/store";
 import { Button } from "../../components/ui/button";
 import { cn } from "../../lib/utils";
@@ -45,8 +54,9 @@ function themeReducer(state: ShellThemeMode, action: ThemeAction): ShellThemeMod
 }
 
 /**
- * Persists light/dark choice and syncs `document.documentElement` (`class="dark"` and
- * `color-scheme`) so Tailwind `dark:` utilities apply app-wide.
+ * Persists light/dark choice and syncs `document.documentElement` (`class="dark"`,
+ * `color-scheme`, and optional `data-lisca-app`) so Tailwind `dark:` utilities and
+ * per-app brand tokens apply app-wide.
  */
 export function ShellThemeProvider(props: {
   children?: JSX.Element;
@@ -54,6 +64,8 @@ export function ShellThemeProvider(props: {
   defaultMode?: ShellThemeMode;
   /** `localStorage` key for the mode string. */
   storageKey?: string;
+  /** Scopes `--lisca-brand` via `document.documentElement[data-lisca-app]`. */
+  appId?: LiscaAppId;
 }) {
   const defaultMode = () => props.defaultMode ?? "light";
   const storageKey = () => props.storageKey ?? DEFAULT_STORAGE_KEY;
@@ -85,6 +97,21 @@ export function ShellThemeProvider(props: {
     const current = theme.mode;
     root.classList.toggle("dark", current === "dark");
     root.style.colorScheme = current === "dark" ? "dark" : "light";
+  });
+
+  createEffect(() => {
+    const appId = props.appId;
+    if (!appId) return;
+    const root = document.documentElement;
+    const previous = root.dataset.liscaApp;
+    root.dataset.liscaApp = appId;
+    onCleanup(() => {
+      if (previous === undefined) {
+        delete root.dataset.liscaApp;
+      } else {
+        root.dataset.liscaApp = previous;
+      }
+    });
   });
 
   return <ShellThemeContext.Provider value={theme}>{props.children}</ShellThemeContext.Provider>;

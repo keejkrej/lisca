@@ -69,7 +69,7 @@ export function createLiscaWebApp(config: LiscaWebAppConfig): void {
   render(
     () => (
       <AtomsProvider>
-        <ShellThemeProvider>
+        <ShellThemeProvider appId={appId}>
           <ShellServerProvider appId={appId} defaultPort={defaultPort} probe={probe}>
             <ShellWorkspaceProvider>
               <App />

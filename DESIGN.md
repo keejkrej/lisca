@@ -16,6 +16,10 @@ colors:
   rule: "#E5E5E5"
   destructive: "#DC2626"
   gfp: "#10B981"
+  brand-studio: "#3DDC97"
+  brand-aligner: "#4EA3FF"
+  brand-annotator: "#F24B4B"
+  brand-foreground: "#171717"
 typography:
   display:
     fontFamily: Outfit Variable
@@ -160,7 +164,7 @@ components:
 
 ## Overview
 
-LiSCA should feel like a precise scientific instrument: quiet, legible, and direct. High-contrast neutral surfaces keep image data primary; restrained GFP green identifies biological signal, not general interaction. The stage shell and all instrument controls use Outfit Variable.
+LiSCA should feel like a precise scientific instrument: quiet, legible, and direct. High-contrast neutral surfaces keep image data primary. Each product app borrows one accent from its icon — Studio mint, Aligner blue, Annotator coral — and uses it only on the highest-emphasis chrome. Restrained GFP green identifies biological signal, not general interaction. The stage shell and all instrument controls use Outfit Variable.
 
 Studio, Aligner, and Annotator share this language. Reuse the same shell, section, field, navigation, toggle, slider, and action primitives rather than introducing app-local variants.
 
@@ -169,11 +173,15 @@ Studio, Aligner, and Annotator share this language. Reuse the same shell, sectio
 - **Stage and muted (`#F5F5F5`):** the desktop surround and low-emphasis surfaces.
 - **Background and paper (`#FFFFFF`):** the top bar, sheets, inputs, and canvas framing.
 - **Foreground and ink (`#171717`):** default text, icons, and navigation carets.
-- **Primary (`#252525`) / primary foreground (`#FAFAFA`):** active controls and the highest-emphasis action.
+- **Primary (`#252525`) / primary foreground (`#FAFAFA`):** unscoped and marketing chrome. Studio, Aligner, and Annotator remap `--primary`, `--ring`, and `--sidebar-primary` to that app's brand.
+- **Brand accents:** one icon color per app, used sparingly on filled primary actions, focus rings, selected nav/tool, and pressed Show/Edit/Expert toggles. Outline actions, body text, section titles, and rails stay ink/stage. Do not tint rail backgrounds.
+  - **Studio mint (`#3DDC97`)** with ink foreground. Distinct from GFP.
+  - **Aligner blue (`#4EA3FF`)** with ink foreground (white-on-blue fails 12px AA).
+  - **Annotator coral (`#F24B4B`)** with ink foreground (white-on-coral fails 12px AA). Distinct from destructive.
 - **Muted foreground (`#6B6B6B`):** metadata and secondary values; never primary labels. It remains AA-readable on the muted stage.
 - **Border and rule (`#E5E5E5`):** control outlines and quiet separators.
-- **Destructive (`#DC2626`):** irreversible or error states only.
-- **GFP (`#10B981`):** biological GFP signal and its legend only.
+- **Destructive (`#DC2626`):** irreversible or error states only. Do not restyle it as Annotator coral, and do not use Annotator coral on error toasts.
+- **GFP (`#10B981`):** biological GFP signal and its legend only. Never Studio chrome.
 
 ## Typography
 
@@ -205,11 +213,11 @@ Use 6px and 8px radii for compact surfaces, 14px for secondary cards, and 18px f
 
 Use the installed Zaidan Maia catalog through `@lisca/ui/components` before creating a new primitive. Product code must not deep-import registry files or hand-roll a control already covered by the catalog. Keep LiSCA behavior and composition in shared feature or shell modules; refresh registry-owned primitives through `packages/ui/components.json` instead of editing their generated implementation ad hoc.
 
-State controls and actions must be distinguishable before interaction. **Show** and **Edit** are toggles: always render a persistent state indicator, set `aria-pressed`, and use the dark primary fill only when on. Save, Reset, Auto Range, Undo, and exclusion commands are momentary actions: never leave them looking selected.
+State controls and actions must be distinguishable before interaction. **Show** and **Edit** are toggles: always render a persistent state indicator, set `aria-pressed`, and use the brand fill only when on. Save, Reset, Auto Range, Undo, and exclusion commands are momentary actions: never leave them looking selected.
 
 Grid **Show / Reset** is a named two-column action pair: both labels are short, they share one grid-visibility task scope, and Show retains its persistent state indicator. This is the canonical toggle/reset exception to the full-width rule.
 
-Expert mode is a workspace-level setting. Show its compact checkmark toggle (same Show/Edit family: persistent indicator, `aria-pressed`, dark primary fill when on) in the Studio top bar only on routes that provide an expert view. It sits immediately after Tasks in the left cluster; the right cluster contains only Connected and theme. Never place Expert at the bottom of a scrolling rail.
+Expert mode is a workspace-level setting. Show its compact checkmark toggle (same Show/Edit family: persistent indicator, `aria-pressed`, brand fill when on) in the Studio top bar only on routes that provide an expert view. It sits immediately after Tasks in the left cluster; the right cluster contains only Connected and theme. Never place Expert at the bottom of a scrolling rail.
 
 Read-only source and workspace paths are full-width picker triggers, not editable inputs. The complete surface opens the picker and always exposes the same trailing **Browse** action so identical behavior has an identical affordance.
 
@@ -236,9 +244,12 @@ Action is the final rail section. Output-path and included/excluded count labels
 - Do expose toggle state persistently and give every icon-only control an accessible name.
 - Do check `@lisca/ui/components` before adding a product-local primitive.
 - Do keep image navigation, overlays, and hit testing on the same viewport transform.
+- Do use each app's icon color only on primary CTAs, focus, selected nav/tool, and pressed toggles.
 - Don't use fallback or mixed font families inside the application interface.
 - Don't hand-roll or deep-import a control already provided by the installed Zaidan Maia catalog.
 - Don't pair controls with unrelated scope, mismatched emphasis, user-authored text, or labels that cannot scan comfortably in 96px.
 - Don't style a momentary action as selected, or a toggle as an ordinary outline action.
 - Don't use ad hoc shadows, text-glyph arrows, invisible slider thumbs, or app-specific control geometry.
-- Don't use GFP green as a generic success or primary-action color.
+- Don't use GFP green as a generic success, primary-action, or Studio chrome color.
+- Don't use Annotator coral for errors, or destructive red as the Annotator brand.
+- Don't tint rails or flood backgrounds with the brand color.

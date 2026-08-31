@@ -62,6 +62,9 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-gfp: var(--instrument-gfp);
+  --color-lisca-brand: var(--lisca-brand);
+  --color-lisca-brand-foreground: var(--lisca-brand-foreground);
+  --color-lisca-brand-muted: var(--lisca-brand-muted);
   --color-ink: var(--instrument-ink);
   --color-mute: var(--instrument-mute);
   --color-paper: var(--instrument-paper);
@@ -77,8 +80,12 @@
   --card-foreground: #171717;
   --popover: #ffffff;
   --popover-foreground: #171717;
-  --primary: #252525;
-  --primary-foreground: #fafafa;
+  /* Unscoped chrome stays ink. Identified apps remap --lisca-brand below. */
+  --lisca-brand: #252525;
+  --lisca-brand-foreground: #fafafa;
+  --lisca-brand-muted: color-mix(in oklab, var(--lisca-brand) 12%, var(--background));
+  --primary: var(--lisca-brand);
+  --primary-foreground: var(--lisca-brand-foreground);
   --secondary: #f5f5f5;
   --secondary-foreground: #252525;
   --muted: #f5f5f5;
@@ -96,7 +103,7 @@
   --warning-foreground: oklch(0.421 0.095 57.708);
   --border: #e5e5e5;
   --input: #e5e5e5;
-  --ring: oklch(0.708 0 0);
+  --ring: var(--lisca-brand);
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -104,12 +111,12 @@
   --chart-5: oklch(0.269 0 0);
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: #171717;
-  --sidebar-primary: #252525;
-  --sidebar-primary-foreground: #fafafa;
+  --sidebar-primary: var(--lisca-brand);
+  --sidebar-primary-foreground: var(--lisca-brand-foreground);
   --sidebar-accent: oklch(0.97 0 0);
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: #e5e5e5;
-  --sidebar-ring: oklch(0.708 0 0);
+  --sidebar-ring: var(--lisca-brand);
 }
 
 .dark {
@@ -119,8 +126,11 @@
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.205 0 0);
   --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
+  /* Unscoped dark chrome stays inverted ink. App selectors keep the icon hex. */
+  --lisca-brand: oklch(0.922 0 0);
+  --lisca-brand-foreground: oklch(0.205 0 0);
+  --primary: var(--lisca-brand);
+  --primary-foreground: var(--lisca-brand-foreground);
   --secondary: oklch(0.269 0 0);
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.269 0 0);
@@ -138,7 +148,7 @@
   --warning-foreground: oklch(0.795 0.184 86.047);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
+  --ring: var(--lisca-brand);
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -146,12 +156,33 @@
   --chart-5: oklch(0.269 0 0);
   --sidebar: oklch(0.205 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-primary: var(--lisca-brand);
+  --sidebar-primary-foreground: var(--lisca-brand-foreground);
   --sidebar-accent: oklch(0.269 0 0);
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --sidebar-ring: var(--lisca-brand);
+}
+
+/*
+ * Per-app icon accents. One vivid fill for primary CTAs, focus rings, selected
+ * nav/tool, and pressed Show/Edit/Expert toggles. Ink foreground on every fill:
+ * white-on-#4EA3FF (~2.5:1) and white-on-#F24B4B (~3.4:1) fail AA at 12px control
+ * text; ink-on-brand passes. GFP (#10B981) and destructive (#DC2626) stay separate.
+ */
+[data-lisca-app="studio"] {
+  --lisca-brand: #3ddc97;
+  --lisca-brand-foreground: #171717;
+}
+
+[data-lisca-app="aligner"] {
+  --lisca-brand: #4ea3ff;
+  --lisca-brand-foreground: #171717;
+}
+
+[data-lisca-app="annotator"] {
+  --lisca-brand: #f24b4b;
+  --lisca-brand-foreground: #171717;
 }
 
 /* Lisca-owned utilities (not shipped by zaidan style-maia) */
@@ -231,14 +262,22 @@
 }
 
 .lisca-instrument-shell [data-instrument-state-toggle][aria-pressed="true"] {
-  background-color: var(--instrument-ink);
-  border-color: var(--instrument-ink);
-  color: var(--instrument-paper);
+  background-color: var(--lisca-brand, var(--instrument-ink));
+  border-color: var(--lisca-brand, var(--instrument-ink));
+  color: var(--lisca-brand-foreground, var(--instrument-paper));
 }
 
 .lisca-instrument-shell [data-instrument-state-toggle][aria-pressed="true"]:hover {
-  background-color: color-mix(in oklab, var(--instrument-ink) 88%, var(--instrument-paper));
-  border-color: color-mix(in oklab, var(--instrument-ink) 88%, var(--instrument-paper));
+  background-color: color-mix(
+    in oklab,
+    var(--lisca-brand, var(--instrument-ink)) 88%,
+    var(--lisca-brand-foreground, var(--instrument-paper))
+  );
+  border-color: color-mix(
+    in oklab,
+    var(--lisca-brand, var(--instrument-ink)) 88%,
+    var(--lisca-brand-foreground, var(--instrument-paper))
+  );
 }
 
 .lisca-instrument-shell [data-slot="modal-scrim"] {

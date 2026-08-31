@@ -11,7 +11,7 @@ if (!mount) {
 
 render(
   () => (
-    <ShellThemeProvider>
+    <ShellThemeProvider appId="studio">
       <AnalysisDemo />
     </ShellThemeProvider>
   ),

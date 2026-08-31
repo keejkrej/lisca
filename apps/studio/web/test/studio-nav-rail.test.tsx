@@ -132,7 +132,7 @@ function renderStudioShell() {
   return {
     router,
     ...render(() => (
-      <ShellThemeProvider>
+      <ShellThemeProvider appId="studio">
         <ShellServerProvider appId="studio" defaultPort={8767}>
           <ShellWorkspaceProvider>
             <RouterProvider router={router} />
