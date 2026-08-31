@@ -44,20 +44,39 @@ class TestNotebooksBundle(unittest.TestCase):
         self.assertTrue((BUNDLE / "install.ps1").is_file())
         self.assertFalse((SCRIPTS / "install.sh").exists())
         self.assertFalse((SCRIPTS / "install.ps1").exists())
+        install_sh = (BUNDLE / "install.sh").read_text(encoding="utf-8")
+        install_ps1 = (BUNDLE / "install.ps1").read_text(encoding="utf-8")
+        self.assertIn("vendored under vendor/", install_sh)
+        self.assertIn("PyPI", install_sh)
+        self.assertIn("vendored under vendor/", install_ps1)
+        self.assertIn("PyPI", install_ps1)
 
-    def test_pyproject_is_notebook_env_not_lisca_package(self) -> None:
+    def test_pyproject_uses_vendor_path_sources_not_git(self) -> None:
         text = (BUNDLE / "pyproject.toml").read_text(encoding="utf-8")
         self.assertIn('name = "lisca-notebooks"', text)
         self.assertIn("lisca[crop]", text)
-        self.assertIn("subdirectory = \"python\"", text)
-        self.assertIn("keejkrej/lisca.git", text)
+        self.assertIn('path = "vendor/lisca"', text)
+        self.assertIn('path = "vendor/transfection"', text)
         self.assertIn("transfection", text)
-        self.assertIn("keejkrej/lisca-transfection-assay", text)
         self.assertIn("package = false", text)
+        self.assertIn('version = "0.1.1"', text)
         self.assertNotIn("apps/studio", text)
+        self.assertNotIn("git =", text)
+        self.assertNotIn("git+", text)
+        self.assertNotIn("github.com/keejkrej", text)
+        self.assertNotIn("subdirectory", text)
         python_pkg = (REPO / "python" / "pyproject.toml").read_text(encoding="utf-8")
         self.assertIn('name = "lisca"', python_pkg)
         self.assertNotEqual(text, python_pkg)
+
+    def test_lockfile_has_no_git_sources(self) -> None:
+        lock = (BUNDLE / "uv.lock").read_text(encoding="utf-8")
+        self.assertNotIn("git+", lock)
+        self.assertNotIn("github.com/keejkrej", lock)
+        self.assertIn("vendor/lisca", lock)
+        self.assertIn("vendor/transfection", lock)
+        self.assertIn('name = "lisca-notebooks"', lock)
+        self.assertIn('version = "0.1.1"', lock)
 
     def test_bundle_has_no_pyama_dependency(self) -> None:
         forbidden = ("pyama", "PYAMA", "Pyama")
@@ -82,7 +101,7 @@ class TestNotebooksBundle(unittest.TestCase):
             for token in forbidden:
                 self.assertNotIn(token, text, f"{token} in {path}")
 
-    def test_readme_tells_users_not_to_clone(self) -> None:
+    def test_readme_tells_users_not_to_clone_and_vendors_packages(self) -> None:
         readme = (BUNDLE / "README.md").read_text(encoding="utf-8")
         self.assertIn("notebooks-v", readme)
         self.assertIn("Do **not** clone", readme)
@@ -91,6 +110,17 @@ class TestNotebooksBundle(unittest.TestCase):
         self.assertIn("Config", readme)
         self.assertIn("lisca[crop]", readme)
         self.assertIn("transfection", readme)
+        self.assertIn("vendor/lisca", readme)
+        self.assertIn("vendor/transfection", readme)
+        self.assertIn("PyPI", readme)
+        self.assertIn("0.1.1", readme)
+        self.assertNotIn("git+https", readme)
+
+    def test_vendor_readme_explains_sync_not_commit(self) -> None:
+        readme = (BUNDLE / "vendor" / "README.md").read_text(encoding="utf-8")
+        self.assertIn("sync-notebooks-vendor.sh", readme)
+        self.assertIn("Do not commit", readme)
+        self.assertIn("PyPI", readme)
 
     def test_copied_notebooks_keep_config_cells(self) -> None:
         crop = (BUNDLE / "notebooks" / "crop.ipynb").read_text(encoding="utf-8")

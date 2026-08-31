@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Install Python 3.12 and the notebook extra. lisca[crop] and transfection are
+# vendored under vendor/ (path sources). Third-party wheels come from PyPI only.
 set -euo pipefail
 
 pause_to_exit() {

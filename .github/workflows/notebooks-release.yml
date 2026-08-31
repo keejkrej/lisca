@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Expected SemVer from notebooks/VERSION (e.g. 0.1.0). Tag push is the publish path."
+        description: "Expected SemVer from notebooks/VERSION (e.g. 0.1.1). Tag push is the publish path."
         required: false
         type: string
 
@@ -61,7 +61,7 @@ jobs:
         id: pack
         run: |
           set -euo pipefail
-          chmod +x scripts/pack-notebooks.sh
+          chmod +x scripts/pack-notebooks.sh scripts/sync-notebooks-vendor.sh
           zip_path="$(bash scripts/pack-notebooks.sh)"
           echo "zip_path=${zip_path}" >> "$GITHUB_OUTPUT"
           unzip -Z1 "$zip_path"
@@ -77,7 +77,7 @@ jobs:
           body: |
             Jupyter notebooks zip for Hub and local use. Not desktop installers.
 
-            Download `lisca-notebooks-${{ steps.version.outputs.version }}.zip`, extract it, then `bash install.sh` (Windows: `.\install.ps1`). Do not clone this monorepo.
+            Download `lisca-notebooks-${{ steps.version.outputs.version }}.zip`, extract it, then `bash install.sh` (Windows: `.\install.ps1`). The zip vendors lisca crop and transfection; install only fetches third-party wheels from PyPI. Do not clone this monorepo.
 
             Desktop Studio, Aligner, and Annotator installers ship from `v*` tags, not this release.
 
