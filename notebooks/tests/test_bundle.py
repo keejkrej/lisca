@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import unittest
 from pathlib import Path
 
@@ -108,6 +109,36 @@ class TestNotebooksBundle(unittest.TestCase):
         self.assertIn("plot_timeseries", results)
         self.assertIn("from transfection.services import", results)
         self.assertNotIn("SIGNAL_CHANNEL", results)
+        self.assertIn("publish_sample_traces_xlsx", results)
+        self.assertIn("publish_sample_tables_xlsx", results)
+        self.assertIn("without re-running Tables", results)
+        nb = json.loads(results)
+        code_cells = [
+            "".join(cell.get("source", []))
+            for cell in nb["cells"]
+            if cell.get("cell_type") == "code"
+        ]
+        self.assertEqual(len(code_cells), 3)
+        config, tables, plots = code_cells
+        self.assertIn("WORKSPACE", config)
+        self.assertIn("INTERVAL_MINUTES", config)
+        self.assertIn("SAMPLES", config)
+        self.assertIn('payload["samples"]', config)
+        self.assertNotIn('payload["interval"]', config)
+        self.assertNotIn("maxOnsetMinutes", config)
+        self.assertNotIn("analysis.channels", config)
+        self.assertNotIn("xlsx", config.lower())
+        self.assertIn("publish_sample_traces_xlsx", tables)
+        self.assertIn("publish_sample_tables_xlsx", tables)
+        self.assertIn('"auc"', tables)
+        self.assertIn('"fit"', tables)
+        self.assertNotIn(".png", tables)
+        self.assertNotIn("plot_timeseries", tables)
+        self.assertIn("plot_timeseries", plots)
+        self.assertIn("plot_auc", plots)
+        self.assertIn("plot_fit", plots)
+        self.assertNotIn("xlsx", plots.lower())
+        self.assertNotIn("publish_sample", plots)
 
 
 if __name__ == "__main__":
