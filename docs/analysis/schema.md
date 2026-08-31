@@ -11,10 +11,8 @@ Writers use the names below.
 
 `roi`, `x`, `y`, `w`, `h` — integers, top-left origin, `w`/`h` > 0.
 
-Old `crop` headers are rewritten to `roi` by lisca workspace migrations, then
-`roi` is required.
-
-Optional: `i`, `j` (grid indices from Aligner).
+Old `crop` headers are rewritten to `roi` in place when a tool opens the
+workspace, then `roi` is required. `crop` is not a live alias.
 
 ## `analysis/Pos{n}/` (CSV only; written by transfection sidecar)
 

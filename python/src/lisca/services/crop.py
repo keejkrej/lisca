@@ -24,6 +24,7 @@ from lisca.core.bbox import (
     workspace_bbox_csv_path,
     workspace_roi_pos_dir,
 )
+from lisca.migrations import migrate_workspace
 from lisca.readers import ImageInfo, open_reader
 
 try:
@@ -471,6 +472,7 @@ def crop_position(
 ) -> CropPositionResult | None:
     workspace = workspace.resolve()
     source = source.expanduser().resolve()
+    migrate_workspace(workspace)
     bbox_path = workspace_bbox_csv_path(workspace, pos)
     if not bbox_path.is_file():
         return None
@@ -564,6 +566,7 @@ def run_crop(
     if not source.is_file():
         raise FileNotFoundError(f"Source not found: {source}")
 
+    migrate_workspace(workspace)
     requested = (
         positions if positions is not None else discover_bbox_positions(workspace)
     )

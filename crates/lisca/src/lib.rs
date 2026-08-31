@@ -9,6 +9,7 @@ pub mod analysis;
 pub mod config;
 pub mod http;
 pub mod image_source;
+pub mod migrations;
 #[cfg(feature = "smart")]
 mod onnx;
 pub mod profile;
