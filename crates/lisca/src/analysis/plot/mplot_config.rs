@@ -25,7 +25,8 @@ pub const TITLE_FONTSIZE: f64 = 18.0;
 /// Matches transfection `xtick.labelsize` / `ytick.labelsize`.
 pub const TICK_FONTSIZE: f64 = 17.0;
 
-/// One axes (AUC / fit parameter boxplots).
+/// One axes (AUC / fit parameter boxplots). Kept for killing / shared plot API.
+#[allow(dead_code)]
 pub fn figure_builder_single() -> FigureBuilder {
     figure_builder(FIGURE_SINGLE_WIDTH_IN, FIGURE_SINGLE_HEIGHT_IN, 0.2, 0.2)
 }

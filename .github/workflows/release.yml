@@ -91,6 +91,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Download Studio killing model
+        # Killing-assay ONNX (HF); package-time cache only — not a product brain.
         if: matrix.product == 'studio'
         shell: bash
         run: |

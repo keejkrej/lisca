@@ -54,28 +54,37 @@ See `packages/fixtures/README.md`.
 
 ## Rust pipeline
 
-Native analysis pipeline in `crates/lisca/src/analysis/`. ROI stacks under `roi/` come from **Studio crop**
+Native analysis pipeline in `crates/lisca/src/analysis/` plus git crates for
+mature assays. ROI stacks under `roi/` come from **Studio crop**
 or CLI (`lisca-crop`; Python crop in `../pyama-v2`) — not from the light Aligner shell. The running workflow
 depends on `assay.json` → root `type`:
 
 | Assay          | Goal source (not implementation reference)                                                                                  | Pipeline                                                          |
 | -------------- | --------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
-| `transfection` | sibling [`lisca-transfection-assay`](../../../lisca-transfection-assay) — stages, CSV columns, plot names                   | segment → timeseries → AUC → fit (+ plots)                        |
+| `transfection` | [`lisca-transfection-assay`](https://github.com/keejkrej/lisca-transfection-assay) — Python + Rust crate imported via git URL | segment → timeseries → AUC → fit (+ plots) in `lisca-transfection`; Studio ONNX segment stays here |
 | `killing`      | [mupattern](https://github.com/keejkrej/mupattern) / future `lisca-killing-assay` — kill curve semantics, ResNet classifier | predict → plot-timeseries → clean → death times → kill curve plot |
 
-Numeric stages and PNG plots run in Rust via [**mplot-rs**](https://github.com/keejkrej/mplot-rs). Killing inference uses ONNX Runtime (`ort`) with the `keejkrej/killing-assay-resnet18` model.
+Numeric stages and PNG plots for transfection run in the imported
+[`lisca-transfection`](https://github.com/keejkrej/lisca-transfection-assay) crate
+via [**mplot-rs**](https://github.com/keejkrej/mplot-rs). Killing inference uses ONNX Runtime (`ort`) with Hugging Face `keejkrej/killing-assay-resnet18` (curl at Studio package time; not a product `models/` brain).
 
-**Python-first → Rust prod process, tolerances, and assay map:** [`parity.md`](./parity.md). Agent workflow: `/lisca-parity`.
+**Python-first → imported crate process, tolerances, and assay map:** [`parity.md`](./parity.md). Transfection Python+Rust parity lives in the sidecar (`docs/parity.md` there). Agent workflow: `/lisca-parity`.
 
 ## Design stance
 
-Sibling **goal sources** (`lisca-*-assay` packages, mupattern) describe **what** to compute and **which files** to read/write. They are **not** Rust implementation references — do not mirror their NumPy loops, module layout, or Python packaging. Full rules: [`parity.md`](./parity.md).
+Sibling **goal sources** (`lisca-*-assay` packages, mupattern) describe **what** to compute and **which files** to read/write. Mature transfection analysis is **imported** from `lisca-transfection-assay` (git crate + Python package). Killing remains in-tree until its sidecar exists.
 
-Rust should be idiomatic for this crate:
+Rust in this crate should stay idiomatic:
 
-- Shared ROI math in `array.rs` (`ndarray`, `ndarray-stats`) and segmentation via `ndarray-ndimage` + `imageproc` (Otsu).
-- Per-assay pipelines under `assays/<name>/`.
-- Parity is judged on **workspace outputs and scientific meaning** (tolerances in tests), not on matching Python evaluation order or data structures.
+- Shared ROI I/O in `roi_stack.rs` / `csv_io.rs`; crop in `lisca-crop`.
+- Transfection stages: call `lisca-transfection` (Otsu, timeseries, AUC, fit, plots). Do not keep a second full pipeline under `assays/transfection/`.
+- Product Smart exclude / Smart segment models stay in `models/`. Transfection
+  ONNX segment may stay as a Studio adapter (`segment_onnx.rs` + `ort`) until
+  the sidecar un-stubs it; resolve `keejkrej/single-cell-pattern-unet` via
+  `LISCA_PATTERN_SEG_MODEL`, not as a lisca-owned assay brain.
+- Killing: per-assay code under `assays/killing/`. Weights: HF
+  `keejkrej/killing-assay-resnet18`, curl at package time.
+- Parity for transfection is judged in the sidecar; this repo’s wrapper tests check the dispatch still writes the workspace contract.
 
 ## Transfection pipeline
 
@@ -109,10 +118,18 @@ Progress reuses the same HTTP stage names with kill-specific messages:
 
 ### Kill model path
 
-Set `LISCA_KILL_MODEL` to a directory containing `model.onnx`, or place the exported ONNX model at `workspace/models/killing-assay-resnet18/model.onnx`. Packaged Studio sets `LISCA_KILL_MODEL` to the bundled resource `models/killing-assay-resnet18` (next to the bundled server). Export from Hugging Face:
+The classifier is Hugging Face [`keejkrej/killing-assay-resnet18`](https://huggingface.co/keejkrej/killing-assay-resnet18)
+(killing-assay owned). This repo does **not** treat it as a product model;
+Studio **curls the ONNX at package time** into `models/killing-assay-resnet18/`
+(see `.github/workflows/release.yml`). Set `LISCA_KILL_MODEL` to a directory
+containing `model.onnx`, or use the packaged resource next to the bundled
+server. Workspace-local `models/killing-assay-resnet18/` is a cache, not a
+second weights tree. Package-time download:
 
 ```sh
-uv run optimum-cli export onnx --model keejkrej/killing-assay-resnet18 ./models/killing-assay-resnet18
+curl -fL --retry 3 --retry-delay 2 \
+  "https://huggingface.co/keejkrej/killing-assay-resnet18/resolve/main/model.onnx" \
+  -o ./models/killing-assay-resnet18/model.onnx
 ```
 
 ### Killing outputs
@@ -158,19 +175,18 @@ analysis/
   plot.rs + plot/      # shared mplot-rs helpers
   assays.rs            # match assay type → pipeline
   assays/
-    transfection.rs + transfection/
-      traces.rs        # shared timeseries CSV grouping for AUC/fit/plots
+    transfection.rs + transfection/   # thin dispatch + local ONNX segment
+      mapping.rs       # lisca SlideMapping → lisca-transfection mapping
+      segment.rs       # Otsu → git crate; ONNX adapter stays here (HF weights)
+      segment_onnx.rs  # Studio ONNX adapter (`LISCA_PATTERN_SEG_MODEL` / HF)
     killing.rs + killing/
 ```
 
 | Module                                | Goal                                                         |
 | ------------------------------------- | ------------------------------------------------------------ |
-| `assays/transfection/segment.rs`      | Mask per ROI frame (Otsu default; optional ONNX U-Net)       |
-| `assays/transfection/segment_onnx.rs` | Dense fg/bg ONNX backend (`LISCA_PATTERN_SEG_MODEL`)         |
-| `assays/transfection/timeseries.rs`   | Mask-corrected intensity traces → `timeseries/` CSVs         |
-| `assays/transfection/auc.rs`          | Trapezoidal AUC per trace                                    |
-| `assays/transfection/fit.rs`          | Two-exponential kinetic fit                                  |
-| `assays/transfection/plot/`           | PNGs for traces, AUC, fit parameters                         |
+| `assays/transfection/`                | Dispatch into `lisca-transfection`; Studio ONNX adapter      |
+| `assays/transfection/segment_onnx.rs` | Studio ONNX adapter; weights via `LISCA_PATTERN_SEG_MODEL` / HF |
+| `lisca-transfection` (git)            | Otsu, timeseries, AUC, kinetic fit, plots                    |
 | `assays/killing/`                     | ResNet presence, monotonicity clean, death times, kill curve |
 
 Adding a new assay type: create `assays/<name>.rs` plus `assays/<name>/`, implement `run` (async) and optionally `run_sync`, then register in `assays.rs`.
@@ -188,18 +204,16 @@ Summary — full process, tolerances table, and lifecycle in [`parity.md`](./par
 - **Not required**: matching Python module names, NumPy vs loop structure, or bitwise float identity.
 - Position ranges in `assay.json` use **inclusive** Studio semantics (`1:12` → positions 1…12).
 - Segmentation defaults: Otsu backend with `variation_radius=2`, `gaussian_sigma=1.0`.
-- Optional ONNX fg/bg backend for higher-quality masks (trained student U-Net; see
-  `models/single-cell-pattern-unet/` / [keejkrej/single-cell-pattern-unet](https://huggingface.co/keejkrej/single-cell-pattern-unet)):
+- Optional ONNX fg/bg backend for higher-quality masks. The student U-Net is a
+  **transfection-assay** model ([keejkrej/single-cell-pattern-unet](https://huggingface.co/keejkrej/single-cell-pattern-unet)),
+  resolved via `LISCA_PATTERN_SEG_MODEL` / `--model-dir`. Studio keeps a local
+  ONNX adapter until the sidecar un-stubs ONNX; do not add new assay weights
+  under `models/` (see [`models/README.md`](../../models/README.md)):
 
   ```sh
-  # Pseudo-label + train (Python)
-  cd python && uv sync --group train
-  uv run lisca dataset label-cpsam --workspace ~/data/TF84 --output ~/data/TF84/cpsam_labels --time-stride 20
-  uv run lisca dataset create-gene-expression-seg --labels ~/data/TF84/cpsam_labels --output ~/data/TF84/ge_seg_dataset
-  uv run lisca dataset train-gene-expression-seg --dataset ~/data/TF84/ge_seg_dataset --output ~/data/TF84/ge_seg_runs
-
-  # Infer (Rust)
-  export LISCA_PATTERN_SEG_MODEL=./models/single-cell-pattern-unet/onnx
+  huggingface-cli download keejkrej/single-cell-pattern-unet \
+    --local-dir /tmp/single-cell-pattern-unet
+  export LISCA_PATTERN_SEG_MODEL=/tmp/single-cell-pattern-unet/onnx
   ./target/release/lisca-analyze segment ~/data/TF84 --backend onnx --force
   ```
 
@@ -211,7 +225,7 @@ Summary — full process, tolerances table, and lifecycle in [`parity.md`](./par
 
 ## Parity CLI (`lisca-analyze`)
 
-Rust stage CLI shaped like sibling [`lisca-transfection-assay`](../../../lisca-transfection-assay) so the same workspace can be driven from either side. Process and side-by-side recipe: [`parity.md`](./parity.md).
+Rust stage CLI shaped like sibling [`lisca-transfection-assay`](https://github.com/keejkrej/lisca-transfection-assay) so the same workspace can be driven from either side. `lisca-analyze` calls the git crate (plus local ONNX segment). Process and side-by-side recipe: [`parity.md`](./parity.md).
 
 ```sh
 cargo build -p lisca --release --bin lisca-analyze

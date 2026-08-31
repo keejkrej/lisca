@@ -1,6 +1,7 @@
-//! Gene-expression analysis parity tests against transfection reference formulas.
+//! Transfection analysis parity tests against reference formulas.
 //!
-//! Tolerance constants: see `docs/analysis/analysis.md` and
+//! Stage functions dispatch into the `lisca-transfection` git crate.
+//! Tolerance constants: see `docs/analysis/parity.md` and
 //! `tests/support/transfection_reference.rs`.
 
 mod support;
@@ -139,7 +140,7 @@ fn auc_stage_matches_reference_trapz() {
     assert!(approx_eq(actual_auc, expected_auc, AUC_REL_TOL));
     assert_eq!(rows[0]["pos"], "1");
     assert_eq!(rows[0]["roi"], "1");
-    assert_eq!(rows[0]["slide"], "0");
+    assert_eq!(rows[0]["slide_channel"], "0");
 }
 
 #[test]

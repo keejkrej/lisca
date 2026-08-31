@@ -41,7 +41,9 @@ function stageArtifacts(product: LiscaProduct, cfg: DesktopProductConfig): strin
   }
   cpSync(brandSrc, join(resourcesDir, "brand"), { recursive: true });
 
-  if (product === "studio") {
+    if (product === "studio") {
+    // Killing-assay ONNX (HF keejkrej/killing-assay-resnet18). Ownership is
+    // the killing sidecar; this repo only stages the curl-at-package-time cache.
     const modelSrc = join(root, "models", "killing-assay-resnet18");
     const modelFile = join(modelSrc, "model.onnx");
     if (!existsSync(modelFile)) {

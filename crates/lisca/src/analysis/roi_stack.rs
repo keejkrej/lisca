@@ -316,6 +316,7 @@ pub fn default_mask_path(workspace: &Path, position: u32, roi_file_name: &str) -
         .join(roi_file_name)
 }
 
+#[cfg(test)]
 pub struct MaskStack {
     pub masks: Vec<Vec<bool>>,
     #[allow(dead_code)]
@@ -324,6 +325,7 @@ pub struct MaskStack {
     pub width: usize,
 }
 
+#[cfg(test)]
 impl MaskStack {
     pub fn load(path: &Path, time_count: u32, height: usize, width: usize) -> Result<Self, String> {
         let file = File::open(path).map_err(|error| error.to_string())?;
@@ -370,6 +372,7 @@ impl MaskStack {
     }
 }
 
+#[cfg(test)]
 fn decode_page_to_bool(
     data: DecodingResult,
     width: usize,

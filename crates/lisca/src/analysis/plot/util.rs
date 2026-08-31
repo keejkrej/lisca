@@ -105,6 +105,7 @@ pub fn grid_dimensions(count: usize, columns: usize) -> (usize, usize) {
     resolve_subplot_grid(count, Some(columns))
 }
 
+#[allow(dead_code)] // path-based titles; killing plots use sample_subplot_title
 pub fn subplot_title(csv_path: &Path, trace_count: usize, mapping: &SlideMapping) -> String {
     let labels = slide_channel_labels(mapping);
     let label = match resolve_slide_channel(csv_path, mapping) {
@@ -134,6 +135,7 @@ pub fn sample_subplot_title(
     format!("{label} ({trace_count} traces)")
 }
 
+#[allow(dead_code)] // path-based color haystack; killing plots use sample_trace_naming_haystack
 pub fn trace_naming_haystack(csv_path: &Path, mapping: &SlideMapping) -> String {
     let labels = slide_channel_labels(mapping);
     let mut parts = vec![
@@ -190,6 +192,7 @@ pub fn trace_color_alpha(haystack: &str) -> (&'static str, f64) {
     (color, 0.1)
 }
 
+#[allow(dead_code)] // transfection boxplots moved to lisca-transfection
 pub fn boxplot_tick_label(channel: u32, count: usize, labels: &BTreeMap<u32, String>) -> String {
     let name = labels
         .get(&channel)
@@ -199,6 +202,7 @@ pub fn boxplot_tick_label(channel: u32, count: usize, labels: &BTreeMap<u32, Str
     format!("{name} (n={count})")
 }
 
+#[allow(dead_code)] // transfection boxplots moved to lisca-transfection
 pub fn boxplot_x_axis_label(labels: &BTreeMap<u32, String>) -> &'static str {
     if labels.is_empty() {
         "slide channel"
@@ -207,6 +211,7 @@ pub fn boxplot_x_axis_label(labels: &BTreeMap<u32, String>) -> &'static str {
     }
 }
 
+#[allow(dead_code)] // transfection boxplots moved to lisca-transfection
 pub fn quartile_axis_upper(grouped_values: &[Vec<f64>]) -> f64 {
     let max_q3 = grouped_values
         .iter()
@@ -220,6 +225,7 @@ pub fn quartile_axis_upper(grouped_values: &[Vec<f64>]) -> f64 {
     }
 }
 
+#[allow(dead_code)]
 fn quartile(values: &[f64], q: f64) -> Option<f64> {
     if values.is_empty() {
         return None;

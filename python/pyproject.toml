@@ -21,6 +21,9 @@ dependencies = [
 [project.scripts]
 lisca = "lisca.main:app"
 
+[project.optional-dependencies]
+analysis = ["transfection; python_version >= '3.12'"]
+
 [dependency-groups]
 dev = ["pytest>=8.3.5,<9", "ruff>=0.9", "ty>=0.0.1"]
 label = ["cellpose>=4.1.0", "torch>=2.6,<3"]
@@ -54,3 +57,6 @@ all = "error"
 constraint-dependencies = ["pytest>=8.3.5,<9"]
 exclude-newer = "7 days"
 default-groups = ["dev"]
+
+[tool.uv.sources]
+transfection = { git = "https://github.com/keejkrej/lisca-transfection-assay" }

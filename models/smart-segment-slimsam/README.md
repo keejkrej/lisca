@@ -1,5 +1,8 @@
 # Smart segment SlimSAM
 
+**Ownership:** this lisca monorepo (product / any-assay). Smart segment is not
+an assay pipeline.
+
 ONNX SlimSAM model for LiSCA **Smart segment**: click-prompted binary masks per ROI frame.
 
 Source: [Xenova/slimsam-77-uniform](https://huggingface.co/Xenova/slimsam-77-uniform) (quantized encoder + prompt/mask decoder).

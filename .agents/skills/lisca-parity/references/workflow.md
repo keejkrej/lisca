@@ -1,18 +1,20 @@
 # Parity workflow cheatsheet
 
 Pointer target for agents; the canonical long form is
-`docs/analysis/parity.md` in the monorepo.
+`docs/analysis/parity.md` in the monorepo. Transfection Python↔Rust parity
+is owned by [`lisca-transfection-assay`](https://github.com/keejkrej/lisca-transfection-assay)
+(`docs/parity.md` there). This repo imports that crate.
 
-## Gene-expression (current reference implementation)
+## Transfection (imported crate)
 
-| Stage      | Python                                           | Rust                                |
+| Stage      | Python                                           | Rust (`lisca-analyze` → git crate)  |
 | ---------- | ------------------------------------------------ | ----------------------------------- |
-| segment    | `transfection segment WS --sample slide.json`    | `lisca-analyze segment WS`          |
-| timeseries | `transfection timeseries WS --sample slide.json` | `lisca-analyze timeseries WS`       |
+| segment    | `transfection segment WS`                        | `lisca-analyze segment WS` (Otsu via crate; `--backend onnx` is local) |
+| timeseries | `transfection timeseries WS`                     | `lisca-analyze timeseries WS`       |
 | auc        | `transfection auc WS --interval N`               | `lisca-analyze auc WS --interval N` |
 | fit        | `transfection fit WS --interval N`               | `lisca-analyze fit WS --interval N` |
 | plots      | `plot-timeseries` / `plot-auc` / `plot-fit`      | same names on `lisca-analyze`       |
-| full       | `transfection-analyze.sh`                        | `lisca-analyze pipeline WS`         |
+| full       | `transfection pipeline WS`                       | `lisca-analyze pipeline WS`         |
 
 Build:
 
@@ -23,8 +25,12 @@ cargo build -p lisca --release --bin lisca-analyze
 Tests:
 
 ```sh
-cargo test -p lisca --test gene_expression_parity
-cargo test -p lisca --test gene_expression_parity -- --ignored
+# wrapper still writes sidecar CSVs
+cargo test -p lisca --test transfection_parity
+cargo test -p lisca --test transfection_parity -- --ignored
+
+# canonical Python vs Rust cage (sidecar checkout)
+cargo test -p lisca-transfection   # in ../lisca-transfection-assay
 ```
 
 ## Diff recipe (CSV)
@@ -33,8 +39,10 @@ cargo test -p lisca --test gene_expression_parity -- --ignored
 2. Run Rust stage (overwrites workspace).
 3. Join on identity keys (`slide_channel,pos,roi` or `pos,roi,t`).
 4. Relative error: `|a-b| / max(|a|,|b|,ε)` with stage ε from
-   `docs/analysis/parity.md`.
+   the sidecar `docs/parity.md` / `docs/analysis/parity.md`.
 5. Report p50/p90/p99/max and success-flag mismatches before editing kernels.
+6. Kernel fixes for transfection go in `lisca-transfection-assay`, not a fork
+   under `crates/lisca`.
 
 ## Bug classes that have bitten
 

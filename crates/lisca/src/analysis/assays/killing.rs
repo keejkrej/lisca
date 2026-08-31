@@ -12,6 +12,8 @@ use crate::analysis::progress::{analysis_progress, run_blocking};
 use crate::analysis::slide::{build_slide_mapping, parse_interval_minutes};
 
 pub fn resolve_model_path(workspace: &Path) -> Result<PathBuf, String> {
+    // Killing-assay brain (HF keejkrej/killing-assay-resnet18). This repo
+    // curls the ONNX at Studio package time; do not grow a third weights tree.
     let mut candidates = vec![
         workspace.join("models/killing-assay-resnet18"),
         crate::onnx::workspace_models_dir().join("killing-assay-resnet18"),

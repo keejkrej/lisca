@@ -8,7 +8,11 @@ moving files, read `~/workspace/phd-notes/standard/README.md`. Status:
 
 ## Project Structure & Module Organization
 
-LiSCA is a pnpm/Vite+ and Cargo monorepo. Product applications live under `apps/{aligner,annotator,studio}/`, each split as applicable into SolidJS `web/`, Rust `server/`, Tauri `desktop/`, and demo packages. Shared TypeScript code belongs in `packages/`: contracts and schemas in `contracts`, client I/O in `client`, reusable logic in `utils` and `ui-headless`, and rendered components in `ui`. Rust libraries are in `crates/`; Python utilities and training code are in `python/`. Keep documentation in the relevant `docs/<domain>/` directory, model artifacts in `models/`, and shared brand assets in `assets/brand/`.
+LiSCA is a pnpm/Vite+ and Cargo monorepo. Product applications live under `apps/{aligner,annotator,studio}/`, each split as applicable into SolidJS `web/`, Rust `server/`, Tauri `desktop/`, and demo packages. Shared TypeScript code belongs in `packages/`: contracts and schemas in `contracts`, client I/O in `client`, reusable logic in `utils` and `ui-headless`, and rendered components in `ui`. Rust libraries are in `crates/`; Python utilities and training code are in `python/`. Keep documentation in the relevant `docs/<domain>/` directory, **product**
+model artifacts (Smart exclude / Smart segment) in `models/`, and shared brand
+assets in `assets/brand/`. Assay-specific weights (transfection pattern U-Net,
+killing ResNet) live on Hugging Face / assay sidecars — see `models/README.md`.
+Do not add new assay brains under `models/`.
 
 ## Build, Test, and Development Commands
 

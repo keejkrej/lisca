@@ -37,7 +37,7 @@
 
 ## Transfection kinetic parameters (code = CSV = UI)
 
-Gene-expression fits use the **basic translation–degradation model** (Müller et al.
+Gene-expression fits (in `lisca-transfection`, imported by this repo) use the **basic translation–degradation model** (Müller et al.
 2024 Eq. 3; **no protein maturation**). Field names are the same in Rust, Python,
 `fit.csv`, and Studio labels:
 
@@ -53,3 +53,12 @@ Gene-expression fits use the **basic translation–degradation model** (Müller 
 
 Use **expression rate** for \(m*0 k*{TL}\); reserve “efficiency” for delivery/escape
 fractions. One name only — no alternate CSV/API aliases.
+
+## Models
+
+Product / any-assay tools stay in this repo (`models/smart-exclusion-resnet18`,
+`models/smart-segment-slimsam`; `mupattern-resnet18` is legacy reference).
+Assay-specific brains do not: transfection pattern U-Net is
+`keejkrej/single-cell-pattern-unet` (`LISCA_PATTERN_SEG_MODEL`); killing ResNet
+is `keejkrej/killing-assay-resnet18` (curl at Studio package time). See
+[`models/README.md`](models/README.md).

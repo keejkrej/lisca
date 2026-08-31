@@ -1,7 +1,8 @@
-//! Transfection analysis CLI for parity with the Python `transfection` package.
+//! Transfection analysis CLI. Stages dispatch into `lisca-transfection`
+//! (git crate) so outputs stay aligned with the Python `transfection` package.
 //!
-//! Stage commands mirror `transfection segment|timeseries|auc|fit|plot-*|pipeline`
-//! so the same workspace can be driven from either tool and outputs compared.
+//! `--backend onnx` uses the local Studio ONNX segmenter; Otsu and all
+//! downstream stages come from the sidecar crate.
 //!
 //! ```text
 //! cargo run -p lisca --bin lisca-analyze -- --help
@@ -59,7 +60,7 @@ fn run() -> Result<(), String> {
 fn print_help() {
     eprintln!(
         "\
-lisca-analyze — transfection stages (Rust parity with `transfection` CLI)
+lisca-analyze — transfection stages (`lisca-transfection` git crate + local ONNX)
 
 Usage:
   lisca-analyze <command> [options] <workspace>
@@ -85,7 +86,7 @@ Common options:
   --variation-radius N    segment local-variation radius (default: 2)
   --gaussian-sigma F      segment Gaussian sigma (default: 1.0)
   --backend otsu|onnx     segment backend (default: otsu)
-  --model-dir PATH        ONNX model dir (or LISCA_PATTERN_SEG_MODEL)
+  --model-dir PATH        ONNX dir (LISCA_PATTERN_SEG_MODEL / HF pattern U-Net)
   --image-size N          ONNX input size (default: 128)
   --threshold F           ONNX sigmoid threshold (default: 0.5)
   --batch-size N          ONNX frame batch size (default: 32)

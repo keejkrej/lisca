@@ -7,6 +7,7 @@ Utilities for dataset building and model training used by the Lisca monorepo.
 ```sh
 cd python
 uv sync                 # runtime + dev
+uv sync --extra analysis  # + transfection git package (Python 3.12+)
 uv sync --group train   # + torch / lightning / onnx / cellpose
 # or labeling only:
 uv sync --group label
@@ -28,7 +29,10 @@ uv run lisca dataset train-smart-exclusion --dataset … --output …
 Teacher (Cellpose v4 **cpsam**) → train/val pairs → small U-Net → ONNX for
 `lisca-analyze segment --backend onnx`.
 
-Published model: [keejkrej/single-cell-pattern-unet](https://huggingface.co/keejkrej/single-cell-pattern-unet)
+This is a **transfection-assay** brain ([keejkrej/single-cell-pattern-unet](https://huggingface.co/keejkrej/single-cell-pattern-unet)),
+not a product model. Point `LISCA_PATTERN_SEG_MODEL` at the exported ONNX (or
+`--model-dir`). Do not add new assay-specific weights under `models/`. See
+[`../models/README.md`](../models/README.md).
 
 ```sh
 # 1) Pseudo-label BF ROI frames (resume-safe; writes images/masks + previews)
@@ -55,17 +59,16 @@ uv run lisca dataset train-gene-expression-seg \
   --output ~/data/TF84/ge_seg_runs \
   --epochs 40 --image-size 128
 
-# 4) Package
-cp ~/data/TF84/ge_seg_runs/<timestamp>/model.onnx \
-  ../models/single-cell-pattern-unet/onnx/model.onnx
-cp ~/data/TF84/ge_seg_runs/<timestamp>/export_meta.json \
-  ../models/single-cell-pattern-unet/export_meta.json
+# 4) Point lisca-analyze at the export (do not copy into models/ as ownership)
+export LISCA_PATTERN_SEG_MODEL=~/data/TF84/ge_seg_runs/<timestamp>
 ```
 
-Rust inference:
+Rust inference from the published HF weights:
 
 ```sh
-export LISCA_PATTERN_SEG_MODEL=../models/single-cell-pattern-unet/onnx
+huggingface-cli download keejkrej/single-cell-pattern-unet \
+  --local-dir /tmp/single-cell-pattern-unet
+export LISCA_PATTERN_SEG_MODEL=/tmp/single-cell-pattern-unet/onnx
 ../target/release/lisca-analyze segment ~/data/TF84 --backend onnx --force
 ```
 

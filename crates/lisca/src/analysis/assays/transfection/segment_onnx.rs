@@ -1,4 +1,9 @@
-//! ONNX dense fg/bg segmentation backend for gene-expression masks.
+//! ONNX dense fg/bg segmentation adapter for transfection masks.
+//!
+//! Studio keeps this `ort` adapter until `lisca-transfection` un-stubs ONNX.
+//! The weights are a transfection-assay brain (HF `keejkrej/single-cell-pattern-unet`),
+//! resolved via `LISCA_PATTERN_SEG_MODEL` / `--model-dir`. Do not add new assay
+//! weights under this repo's `models/`.
 //!
 //! Model contract matches Python export from `train-gene-expression-seg`:
 //! - input `pixel_values`: float32 `(N, 3, S, S)` ImageNet-normalized RGB
@@ -13,8 +18,6 @@ use ort::value::Tensor;
 
 use crate::analysis::array::Frame2D;
 use crate::onnx::{resolve_model_path, workspace_models_dir, IMAGENET_MEAN, IMAGENET_STD};
-
-use super::image_ops::fill_binary_holes_2d;
 
 const DEFAULT_IMAGE_SIZE: u32 = 128;
 const DEFAULT_THRESHOLD: f32 = 0.5;
@@ -60,6 +63,8 @@ pub fn resolve_ge_seg_model_dir(explicit: Option<&Path>) -> Result<PathBuf, Stri
         ));
     }
 
+    // Local `models/single-cell-pattern-unet` is a checkout cache only.
+    // Canonical: LISCA_PATTERN_SEG_MODEL or HF keejkrej/single-cell-pattern-unet.
     let candidates = [
         workspace_models_dir().join("single-cell-pattern-unet/onnx"),
         workspace_models_dir().join("single-cell-pattern-unet"),
@@ -74,7 +79,13 @@ pub fn resolve_ge_seg_model_dir(explicit: Option<&Path>) -> Result<PathBuf, Stri
     } else {
         "LISCA_PATTERN_SEG_MODEL"
     };
-    resolve_model_path(env_var, candidates)
+    resolve_model_path(env_var, candidates).map_err(|err| {
+        format!(
+            "{err}. Transfection pattern U-Net is not a product model: download \
+             keejkrej/single-cell-pattern-unet and set LISCA_PATTERN_SEG_MODEL \
+             (or pass --model-dir)."
+        )
+    })
 }
 
 pub struct OnnxSegmenter {
@@ -305,6 +316,54 @@ fn logits_to_mask_u8(logits: &[f32], size: usize, threshold: f32) -> Vec<u8> {
     out
 }
 
+/// Fill interior background holes using exterior flood-fill (scipy `binary_fill_holes` parity).
+fn fill_binary_holes_2d(mask: &[bool], width: usize, height: usize) -> Vec<bool> {
+    let mut exterior = vec![false; width * height];
+    let mut stack = Vec::new();
+
+    for x in 0..width {
+        if !mask[x] {
+            stack.push((0, x));
+        }
+        if height > 1 && !mask[(height - 1) * width + x] {
+            stack.push((height - 1, x));
+        }
+    }
+    for y in 0..height {
+        if !mask[y * width] {
+            stack.push((y, 0));
+        }
+        if width > 1 && !mask[y * width + width - 1] {
+            stack.push((y, width - 1));
+        }
+    }
+
+    while let Some((y, x)) = stack.pop() {
+        let index = y * width + x;
+        if exterior[index] || mask[index] {
+            continue;
+        }
+        exterior[index] = true;
+        if y > 0 {
+            stack.push((y - 1, x));
+        }
+        if y + 1 < height {
+            stack.push((y + 1, x));
+        }
+        if x > 0 {
+            stack.push((y, x - 1));
+        }
+        if x + 1 < width {
+            stack.push((y, x + 1));
+        }
+    }
+
+    mask.iter()
+        .zip(exterior.iter())
+        .map(|(mask, exterior)| *mask || !*exterior)
+        .collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -323,5 +382,22 @@ mod tests {
         let logits = vec![-2.0f32, 2.0, -0.1, 0.1];
         let mask = logits_to_mask_u8(&logits, 2, 0.5);
         assert_eq!(mask, vec![0, 1, 0, 1]);
+    }
+
+    #[test]
+    fn fill_binary_holes_closes_interior_gaps() {
+        let width = 5;
+        let height = 5;
+        let mut mask = vec![false; width * height];
+        for x in 0..width {
+            mask[x] = true;
+            mask[(height - 1) * width + x] = true;
+        }
+        for y in 0..height {
+            mask[y * width] = true;
+            mask[y * width + width - 1] = true;
+        }
+        let filled = fill_binary_holes_2d(&mask, width, height);
+        assert!(filled[2 * width + 2]);
     }
 }

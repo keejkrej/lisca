@@ -13,13 +13,19 @@ library_name: onnx
 
 # Single-cell pattern U-Net
 
+**Ownership:** transfection assay, not this product monorepo. Canonical weights
+are Hugging Face **[keejkrej/single-cell-pattern-unet](https://huggingface.co/keejkrej/single-cell-pattern-unet)**.
+Studio / `lisca-analyze --backend onnx` resolve them via `LISCA_PATTERN_SEG_MODEL`
+(or `--model-dir`). This directory is a local cache / checkout convenience —
+do not treat it as a lisca-owned analysis brain, and do not add new assay
+weights under `models/`.
+
 Small dense **foreground / background** segmenter for **LISCA micropattern**
-brightfield ROI crops (~128×128 single-cell sites).
+brightfield ROI crops (~128×128 single-cell sites). Gene-expression ROI masks
+for the transfection assay.
 
 Use it whenever you need a binary cell mask on a patterned site (gene-expression
 intensity, binding overlays, etc.) without running full Cellpose cpsam.
-
-Published as: **[keejkrej/single-cell-pattern-unet](https://huggingface.co/keejkrej/single-cell-pattern-unet)**
 
 ## Why not full Cellpose cpsam?
 
@@ -67,15 +73,21 @@ Matches `export_meta.json`:
 
 ## Download / inference (lisca Rust)
 
+The sidecar crate’s ONNX backend is still a stub; Studio keeps a local adapter
+in this repo until that is un-stubbed. Resolve weights from HF, not as a
+product model:
+
 ```sh
 huggingface-cli download keejkrej/single-cell-pattern-unet \
-  --local-dir ./models/single-cell-pattern-unet
+  --local-dir /tmp/single-cell-pattern-unet
 
-export LISCA_PATTERN_SEG_MODEL=./models/single-cell-pattern-unet/onnx
+export LISCA_PATTERN_SEG_MODEL=/tmp/single-cell-pattern-unet/onnx
 lisca-analyze segment ~/data/TF84 --backend onnx --force
 ```
 
-Legacy env alias: `LISCA_GE_SEG_MODEL` is still accepted.
+`--model-dir` is equivalent to `LISCA_PATTERN_SEG_MODEL`. A checkout under
+`models/single-cell-pattern-unet/` still works as a local cache if the ONNX
+is already there. Legacy env alias: `LISCA_GE_SEG_MODEL`.
 
 ## Train (from `lisca/python`)
 
