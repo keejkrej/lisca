@@ -1,6 +1,7 @@
 name: Release
 
 # Landing already deploys from deploy/landing via Render (vp run deploy:landing).
+# Notebook zips ship from notebooks-v* tags via notebooks-release.yml, not this workflow.
 
 on:
   push:

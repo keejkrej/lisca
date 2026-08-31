@@ -37,7 +37,7 @@ export function useAlignState(): Accessor<AlignState> {
       useWorkspace: useShellWorkspace,
       useCanvasTransaction: useCanvasResourceTransaction,
     },
-    // Light shell: bbox/align only. Crop is Studio / lisca-crop / pyama-v2.
+    // Light shell: bbox/align only. Crop is Studio / lisca-crop / notebooks zip.
     enableCrop: false,
   });
 }

@@ -51,3 +51,21 @@ whose version differs from any of the nine desktop manifest fields fails without
 
 Release notes follow the product version. Internal dependency changes are described in the notes but do
 not force unrelated package-version bumps.
+
+## Notebook zip releases
+
+Jupyter notebooks are a second, independent SemVer train. They do not share a version with desktop
+installers and must not be hooked into `.github/workflows/release.yml`.
+
+- Desktop tags: `vX.Y.Z` → unsigned Studio, Aligner, and Annotator installers (DMG, NSIS, deb).
+- Notebook tags: `notebooks-vX.Y.Z` → one zip, `lisca-notebooks-X.Y.Z.zip`. Workflow:
+  `.github/workflows/notebooks-release.yml`.
+- `notebooks/VERSION` is the source of truth. The tag `notebooks-v0.1.0` must match `0.1.0` in that
+  file (and `notebooks/pyproject.toml`). The workflow fails when they differ.
+- Never reuse a notebooks tag. A notebook-only hotfix is `notebooks-v0.1.1`, not a desktop bump and
+  not a moved `notebooks-v0.1.0`.
+- Hub and laptop users download the zip. They must not clone this monorepo.
+
+Pack locally with `bash scripts/pack-notebooks.sh`. CI smoke-tests that zip on pull requests; only a
+`notebooks-v*` tag publishes a GitHub Release, and that release is zip-only (`make_latest: false` so
+it does not replace the latest desktop release).

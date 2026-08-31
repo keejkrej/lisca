@@ -129,7 +129,7 @@ export type AlignSessionPolicy = {
   preserveFrameOnContrastFailure?: boolean;
   /**
    * When false, crop actions no-op (light Aligner shell). Default true for Studio.
-   * Crop is Studio / `lisca-crop` / pyama-v2 — not standalone Aligner.
+   * Crop is Studio / `lisca-crop` / notebooks zip — not standalone Aligner.
    */
   enableCrop?: boolean;
   cropRequestPrefix?: string;
@@ -520,7 +520,7 @@ export function useAlignSessionCore(options: UseAlignSessionCoreOptions) {
   };
 
   const cropDisabledMessage =
-    "ROI crop is not available in Aligner. Use Studio, lisca-crop, or pyama-v2.";
+    "ROI crop is not available in Aligner. Use Studio, lisca-crop, or the notebooks zip.";
 
   const runCrop = async (positions: number[], overwrite: boolean) => {
     if (policy.enableCrop === false) {

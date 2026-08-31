@@ -86,3 +86,21 @@ jobs:
 
       - name: Exercise the portable Vite+ launcher
         run: pnpm exec vp test run scripts/node-run.test.ts
+
+  notebooks-pack:
+    name: notebooks pack smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check launcher scripts
+        run: python3 notebooks/tests/test_bundle.py
+
+      - name: Pack zip (do not publish)
+        run: |
+          set -euo pipefail
+          chmod +x scripts/pack-notebooks.sh notebooks/install.sh notebooks/scripts/*.sh
+          zip_path="$(bash scripts/pack-notebooks.sh)"
+          echo "Packed ${zip_path}"
+          unzip -l "$zip_path"

@@ -8,7 +8,7 @@ moving files, read `~/workspace/phd-notes/standard/README.md`. Status:
 
 ## Project Structure & Module Organization
 
-LiSCA is a pnpm/Vite+ and Cargo monorepo. Product applications live under `apps/{aligner,annotator,studio}/`, each split as applicable into SolidJS `web/`, Rust `server/`, Tauri `desktop/`, and demo packages. Shared TypeScript code belongs in `packages/`: contracts and schemas in `contracts`, client I/O in `client`, reusable logic in `utils` and `ui-headless`, and rendered components in `ui`. Rust libraries are in `crates/`; Python utilities and training code are in `python/`. Keep documentation in the relevant `docs/<domain>/` directory, **product**
+LiSCA is a pnpm/Vite+ and Cargo monorepo. Product applications live under `apps/{aligner,annotator,studio}/`, each split as applicable into SolidJS `web/`, Rust `server/`, Tauri `desktop/`, and demo packages. Shared TypeScript code belongs in `packages/`: contracts and schemas in `contracts`, client I/O in `client`, reusable logic in `utils` and `ui-headless`, and rendered components in `ui`. Rust libraries are in `crates/`; Python utilities, ROI crop (`lisca.services.crop`), and training code are in `python/`. Canonical Jupyter notebooks for Hub/local zip users live under `notebooks/` (independent SemVer; tags `notebooks-v*`). Keep documentation in the relevant `docs/<domain>/` directory, **product**
 model artifacts (Smart exclude / Smart segment) in `models/`, and shared brand
 assets in `assets/brand/`. Assay-specific weights (transfection pattern U-Net,
 killing ResNet) live on Hugging Face / assay sidecars — see `models/README.md`.
@@ -24,9 +24,9 @@ Use Node 22+, pnpm 10+, and the `vp` wrapper for JavaScript workspace tasks.
 - `vp run check` runs linting, TypeScript checks, contract validation, Rust checks/Clippy, and workspace tests.
 - `vp run fmt` formats supported files; `vp run fmt:check` verifies formatting without edits.
 - `vp run dist:studio` packages the Studio desktop installer; replace `studio` with `aligner` or `annotator`.
-- GitHub Actions runs `vp run fmt:check` and `vp run check` on pull requests and `main`. A `v*` tag publishes unsigned Studio, Aligner, and Annotator installers (macOS DMG, Windows NSIS, Linux deb) to a GitHub Release. Studio installers include the public killing ONNX.
+- GitHub Actions runs `vp run fmt:check` and `vp run check` on pull requests and `main`. A `v*` tag publishes unsigned Studio, Aligner, and Annotator installers (macOS DMG, Windows NSIS, Linux deb) to a GitHub Release. Studio installers include the public killing ONNX. A `notebooks-v*` tag publishes only `lisca-notebooks-X.Y.Z.zip` (not desktop installers).
 - `cargo test --workspace` runs Rust tests.
-- `cd python && uv run pytest` runs the Python suite.
+- `cd python && uv run pytest` runs the Python suite (crop tests do not need the crop extra).
 
 ## Coding Style & Naming Conventions
 

@@ -57,8 +57,8 @@ See `packages/fixtures/README.md`.
 ## Rust pipeline
 
 Native analysis pipeline in `crates/lisca/src/analysis/` plus git crates for
-mature assays. ROI stacks under `roi/` come from **Studio crop**
-or CLI (`lisca-crop`; Python crop in `../pyama-v2`) — not from the light Aligner shell. The running workflow
+mature assays. ROI stacks under `roi/` come from **Studio crop**, CLI (`lisca-crop`),
+or the notebooks zip (`lisca.services.crop` in `python/`) — not from the light Aligner shell. The running workflow
 depends on `assay.json` → root `type`:
 
 | Assay          | Goal source (not implementation reference)                                                                                    | Pipeline                                                                                           |

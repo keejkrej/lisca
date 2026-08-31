@@ -1,0 +1,16 @@
+[project]
+name = "lisca-notebooks"
+version = "0.1.0"
+description = "Jupyter notebooks for Lisca crop, analyze, and results."
+requires-python = ">=3.12,<3.13"
+dependencies = ["lisca[crop]", "transfection"]
+
+[project.optional-dependencies]
+notebook = ["ipykernel", "jupyter"]
+
+[tool.uv]
+package = false
+
+[tool.uv.sources]
+lisca = { git = "https://github.com/keejkrej/lisca.git", subdirectory = "python" }
+transfection = { git = "https://github.com/keejkrej/lisca-transfection-assay" }
