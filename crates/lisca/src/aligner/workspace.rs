@@ -102,13 +102,6 @@ pub(super) fn parse_bbox_csv(path: &Path) -> Result<Vec<RoiBbox>, String> {
         .split(',')
         .map(|cell| cell.trim().to_ascii_lowercase())
         .collect::<Vec<_>>();
-    if header.iter().any(|name| name == "crop") && !header.iter().any(|name| name == "roi") {
-        return Err(format!(
-            "{}:{} bbox CSV header must use 'roi' (not deprecated 'crop')",
-            path.display(),
-            header_index + 1
-        ));
-    }
     let column_index = |name: &str| {
         header
             .iter()
@@ -121,7 +114,17 @@ pub(super) fn parse_bbox_csv(path: &Path) -> Result<Vec<RoiBbox>, String> {
                 )
             })
     };
-    let roi_idx = column_index("roi")?;
+    let roi_idx = header
+        .iter()
+        .position(|column| column == "roi")
+        .or_else(|| header.iter().position(|column| column == "crop"))
+        .ok_or_else(|| {
+            format!(
+                "{}:{} missing required column 'roi' (or alias 'crop'); required: roi, x, y, w, h",
+                path.display(),
+                header_index + 1
+            )
+        })?;
     let x_idx = column_index("x")?;
     let y_idx = column_index("y")?;
     let w_idx = column_index("w")?;
@@ -186,14 +189,14 @@ mod tests {
     }
 
     #[test]
-    fn parse_bbox_csv_rejects_crop_header() {
+    fn parse_bbox_csv_accepts_crop_header_as_roi_alias() {
         let path = std::env::temp_dir().join(format!("lisca-crop-bbox-{}.csv", std::process::id()));
         let mut file = fs::File::create(&path).expect("create csv");
         writeln!(file, "crop,x,y,w,h").expect("write header");
         writeln!(file, "1,0,0,2,2").expect("write row");
-        let error = parse_bbox_csv(&path).expect_err("crop header");
-        assert!(error.contains("roi"), "{error}");
-        assert!(error.contains("crop"), "{error}");
+        let bboxes = parse_bbox_csv(&path).expect("crop alias");
+        assert_eq!(bboxes.len(), 1);
+        assert_eq!(bboxes[0].roi, 1);
         let _ = fs::remove_file(path);
     }
 

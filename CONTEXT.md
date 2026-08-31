@@ -37,6 +37,8 @@
 
 ## Transfection kinetic parameters
 
+On-disk workspace table columns: [`docs/analysis/schema.md`](docs/analysis/schema.md).
+
 Gene-expression fits (in `lisca-transfection`, imported by this repo) use the **basic translation–degradation model** (Müller et al.
 2024 Eq. 3; **no protein maturation**). Public names are the same in Rust, Python,
 `fit.csv` / `fit.xlsx`, and Studio labels. One name only — no CSV aliases.

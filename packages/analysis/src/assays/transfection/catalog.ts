@@ -18,15 +18,41 @@ export const TRANSFECTION_AUC_CSV_COLUMNS = ["roi", "auc"] as const;
 export const TRANSFECTION_FIT_CSV_COLUMNS = [
   "roi",
   "baseline_intensity",
-  "protein_lifetime",
-  "mrna_lifetime",
   "onset_time",
   "expression_rate",
+  "mrna_lifetime",
+  "protein_lifetime",
   "success",
 ] as const;
 
 /** Identity column prefixed on per-sample XLSX packs. Folder is the sample; no `slide_channel` / `sample` columns. */
 export const TRANSFECTION_XLSX_POS_COLUMN = "pos";
+
+/** `results/<sample>/traces.xlsx`. Optional `channel` when a sample has multiple signal channels. */
+export const TRANSFECTION_TRACE_XLSX_COLUMNS = [
+  "pos",
+  "roi",
+  "t",
+  "area",
+  "background",
+  "sum",
+  "corrected",
+] as const;
+
+/** `results/<sample>/auc.xlsx`. Optional `channel` when a sample has multiple signal channels. */
+export const TRANSFECTION_AUC_XLSX_COLUMNS = ["pos", "roi", "auc"] as const;
+
+/** `results/<sample>/fit.xlsx`. Optional `channel` when a sample has multiple signal channels. */
+export const TRANSFECTION_FIT_XLSX_COLUMNS = [
+  "pos",
+  "roi",
+  "baseline_intensity",
+  "onset_time",
+  "expression_rate",
+  "mrna_lifetime",
+  "protein_lifetime",
+  "success",
+] as const;
 
 export type TransfectionPlotScope = "workspace" | "sample";
 

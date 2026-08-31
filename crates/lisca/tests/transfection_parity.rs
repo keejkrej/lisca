@@ -296,10 +296,10 @@ fn compare_fit_csvs(lisca_csv: &str, transfection_csv: &str) {
         &tf_path,
         &[
             "baseline_intensity",
-            "protein_lifetime",
-            "mrna_lifetime",
             "onset_time",
             "expression_rate",
+            "mrna_lifetime",
+            "protein_lifetime",
         ],
         FIT_CLI_REL_TOL,
     );

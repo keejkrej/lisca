@@ -1,35 +1,43 @@
-# Workspace table schemas
+# Workspace table schema
 
-On-disk CSV/XLSX column contracts. One name only — no aliases.
+Canonical on-disk columns for a LISCA workspace. Kinetic ids match
+[`CONTEXT.md`](../../CONTEXT.md) (`onset_time`, `expression_rate`,
+`mrna_lifetime`, `protein_lifetime`, `baseline_intensity`, `auc`). Times and
+lifetimes are **minutes**. Lifetimes are half-lives ln(2)/δ and ln(2)/β.
 
-## `bbox/PosN.csv`
+Writers use the names below. Header `crop` is accepted as an alias for `roi` on
+bbox CSVs only.
 
-Required columns: `roi`, `x`, `y`, `w`, `h`.
+## `bbox/Pos{n}.csv` (lisca crop/align)
+
+`roi`, `x`, `y`, `w`, `h` — integers, top-left origin, `w`/`h` > 0.
+
+Header `crop` is accepted as an alias for `roi`.
 
 Optional: `i`, `j` (grid indices from Aligner).
 
-The identity column is **`roi` only**. `crop` is not an alias and is not
-accepted. Rename old files manually (`crop` → `roi`) before crop/CLI/Studio
-will read them.
+## `analysis/Pos{n}/` (CSV only; written by transfection sidecar)
 
-## Transfection analysis CSVs (`analysis/PosN/`)
+Pos is the folder name.
 
-Traces (`chC.csv`): `roi`, `t`, `area`, `background`, `sum`, `corrected`.
-`background` and `sum` are QC columns. No `pos` / `slide_channel` (`t` from
-`index.json` `timeIndices`). Optional `channel` when that Pos has multiple
-signal CSVs.
+| File        | Columns                                                                                                      |
+| ----------- | ------------------------------------------------------------------------------------------------------------ |
+| `ch{c}.csv` | `roi`, `t`, `area`, `background`, `sum`, `corrected`                                                         |
+| `auc.csv`   | `roi`, `auc`                                                                                                 |
+| `fit.csv`   | `roi`, `baseline_intensity`, `onset_time`, `expression_rate`, `mrna_lifetime`, `protein_lifetime`, `success` |
 
-AUC (`auc.csv`): `roi`, `auc` (same optional `channel` rule).
+`channel` on `auc.csv` / `fit.csv` only if that Pos has more than one signal
+channel.
 
-Fit (`fit.csv`): `roi`, `baseline_intensity`, `protein_lifetime`,
-`mrna_lifetime`, `onset_time`, `expression_rate`, `success` (same optional
-`channel` rule).
+## `results/<sample>/` (XLSX + PNG only)
 
-Internal solver fields — **not** written to `fit.csv` / `fit.xlsx`:
-`expression_amplitude`, `protein_degradation_rate`, `mrna_degradation_rate`.
+No `slide_channel`, no `sample` column, no CSV under `results/`. The folder is
+the sample.
 
-## Transfection per-sample XLSX (`results/<sample>/`)
+| File          | Columns                                                                                                             |
+| ------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `traces.xlsx` | `pos`, `roi`, `t`, `area`, `background`, `sum`, `corrected`                                                         |
+| `auc.xlsx`    | `pos`, `roi`, `auc`                                                                                                 |
+| `fit.xlsx`    | `pos`, `roi`, `baseline_intensity`, `onset_time`, `expression_rate`, `mrna_lifetime`, `protein_lifetime`, `success` |
 
-Same measure columns as the analysis CSVs, plus identity prefix `pos`.
-Optional `channel` when multi. No `slide_channel` / `sample` columns (the
-folder is the sample). Traces keep `background` and `sum`.
+`channel` only if that sample has more than one signal channel.

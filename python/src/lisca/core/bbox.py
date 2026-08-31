@@ -46,13 +46,11 @@ def parse_bbox_csv(path: Path) -> list[RoiBbox]:
 
     reader = csv.reader(lines)
     header = [cell.strip().lower() for cell in next(reader)]
-    if "crop" in header and "roi" not in header:
-        raise ValueError(
-            f"BBox CSV header must use 'roi' (not deprecated 'crop'); "
-            f"rename the column: {path}"
-        )
     try:
-        roi_idx = header.index("roi")
+        if "roi" in header:
+            roi_idx = header.index("roi")
+        else:
+            roi_idx = header.index("crop")
         x_idx = header.index("x")
         y_idx = header.index("y")
         w_idx = header.index("w")

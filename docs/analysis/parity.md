@@ -127,12 +127,12 @@ crates); do not silently rewrite the sidecar to match this workspace.
   `pageOrder` / per-ROI `shape` (derive from counts + bbox).
 - Output basenames Studio and Python both expect (`analysis/PosN/auc.csv`,
   `fit.csv`, `results/<sample>/traces.png`, workspace `auc.png`, …).
-- Analysis AUC / fit identity columns: `roi` (optional `channel` when a Pos
-  has multiple signal CSVs). Fit public columns: `baseline_intensity`,
-  `protein_lifetime`, `mrna_lifetime`, `onset_time`, `expression_rate`,
-  `success` (`expression_amplitude` and `*_degradation_rate` are
-  internal-only). Results XLSX prefix `pos` only (no `slide_channel` /
-  `sample`; the pack lives under `results/<sample>/`).
+- Analysis AUC / fit identity columns: `roi` (`channel` on auc/fit only when
+  a Pos has more than one signal channel). Fit public columns:
+  `baseline_intensity`, `onset_time`, `expression_rate`, `mrna_lifetime`,
+  `protein_lifetime`, `success`. Results XLSX prefix `pos` only (no
+  `slide_channel` / `sample`; the pack lives under `results/<sample>/`).
+  Column contract: [`schema.md`](./schema.md).
 - Stage order for full pipelines (`transfection pipeline` / `lisca-analyze pipeline`).
 - Flag defaults that change science (`--interval`, `--max-onset-minutes`,
   `analysis.skipSegment`, segmentation radius/sigma).
