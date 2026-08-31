@@ -63,4 +63,4 @@ exclude-newer = "7 days"
 default-groups = ["dev"]
 
 [tool.uv.sources]
-transfection = { git = "https://github.com/keejkrej/lisca-transfection-assay", rev = "a370d7f1f7ae760055a93a47d14b4200a2c9852b" }
+transfection = { git = "https://github.com/keejkrej/lisca-transfection-assay", rev = "1718aeaffa45f51632a30b7764b1f1df820b46e0" }
