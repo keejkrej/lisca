@@ -9,6 +9,8 @@ how the shell modules implement that contract; it does not define app-specific a
 
 Edit colors in `packages/ui/theme.css`: CSS `z-*` component classes (button, input, field, select, toggle, etc.) and theme tokens (`--background`, `--border`, `--muted`, …).
 
+Studio, Aligner, and Annotator set `data-lisca-app` on the document root so `--primary`, `--ring`, and `--sidebar-primary` resolve to that app's icon color. Landing stays unscoped ink. GFP (`--instrument-gfp`) and destructive stay separate from brand chrome.
+
 Do not scatter layout tint tokens (`railChrome`, `panel`, `stat`, etc.); shell surfaces use `background` + `border`.
 
 ## Instrument stage shell
@@ -60,7 +62,7 @@ Stage shells keep both 256px rails inline at 1024px and wider. Below 1024px—or
 
 ### Studio Instruction + Expert
 
-Studio’s right rail always shows an Instruction section when the route provides copy, then either the default instrument stack or the expert stack. Expert mode is a workspace-level setting: render its compact checkmark toggle (Show/Edit family: persistent indicator, `aria-pressed`, dark primary fill when on) in the Studio top bar only on routes with an expert body. Place it immediately after Tasks in the left cluster; the right cluster is Connected + theme only. Never put Expert at the bottom of a scrolling rail.
+Studio’s right rail always shows an Instruction section when the route provides copy, then either the default instrument stack or the expert stack. Expert mode is a workspace-level setting: render its compact checkmark toggle (Show/Edit family: persistent indicator, `aria-pressed`, brand fill when on) in the Studio top bar only on routes with an expert body. Place it immediately after Tasks in the left cluster; the right cluster is Connected + theme only. Never put Expert at the bottom of a scrolling rail.
 
 ## Shell components (web)
 
