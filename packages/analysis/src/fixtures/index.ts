@@ -78,8 +78,8 @@ export function buildTransfectionFixture(): AnalysisFixture {
     ),
     plotFile("mrna_lifetime", "mRNA lifetime", "parameters"),
     plotFile("auc", "AUC", "parameters"),
-    plotFile("expression_rate", "expression rate", "parameters"),
-    plotFile("onset_time", "onset time", "parameters"),
+    plotFile("expression_rate", "Expression rate", "parameters"),
+    plotFile("onset_time", "Onset time", "parameters"),
   ];
   return {
     id: "transfection",
