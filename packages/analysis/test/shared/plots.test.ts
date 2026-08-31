@@ -95,9 +95,14 @@ describe("collectResultPlots", () => {
     ]);
   });
 
-  it("titles the expression-rate vs onset-time scatter from the catalog", () => {
+  it("titles the expression-rate scatters from the catalog next to each other", () => {
     const plots = collectResultPlots(
       [
+        {
+          kind: "plot",
+          fileName: "expression_rate_vs_mrna_lifetime.png",
+          path: "/results/A431_aiLNP/expression_rate_vs_mrna_lifetime.png",
+        },
         {
           kind: "plot",
           fileName: "expression_rate_vs_onset_time.png",
@@ -110,9 +115,12 @@ describe("collectResultPlots", () => {
     expect(plots.map((plot) => plot.fileName)).toEqual([
       "onset_time.png",
       "expression_rate_vs_onset_time.png",
+      "expression_rate_vs_mrna_lifetime.png",
     ]);
     expect(plots[1]?.title).toBe("Expression rate vs onset time (A431_aiLNP)");
     expect(plots[1]?.section).toBe("parameters");
+    expect(plots[2]?.title).toBe("Expression rate vs mRNA lifetime (A431_aiLNP)");
+    expect(plots[2]?.section).toBe("parameters");
   });
 
   it("uses killing titles for shared filenames", () => {

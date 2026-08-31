@@ -75,4 +75,10 @@ export const TRANSFECTION_PLOTS: readonly TransfectionPlotSpec[] = [
     section: "parameters",
     scope: "sample",
   },
+  {
+    fileName: "expression_rate_vs_mrna_lifetime.png",
+    title: "Expression rate vs mRNA lifetime",
+    section: "parameters",
+    scope: "sample",
+  },
 ] as const;

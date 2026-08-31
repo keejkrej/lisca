@@ -66,7 +66,7 @@ Set these in the first code cell of each notebook. Paths are the mounted or loca
 | `analyze.ipynb` | `WORKSPACE`, `INTERVAL_MINUTES`, `MAX_ONSET_MINUTES`, `SIGNAL_CHANNEL` (one int, every Pos) |
 | `results.ipynb` | `WORKSPACE`, `INTERVAL_MINUTES`, `SAMPLES` (names + positions). No `SIGNAL_CHANNEL`.        |
 
-`analyze.ipynb` writes `analysis/` CSVs only. `results.ipynb` packs `results/{sample}/` (XLSX + PNG). Re-run results without repeating analyze.
+`analyze.ipynb` writes `analysis/` CSVs only. `results.ipynb` writes `samples[]` into `assay.json`, then Tables (`traces.xlsx` / `auc.xlsx` / `fit.xlsx`) and Plots (per-sample PNGs and root boxplots) as separate cells. Re-run Plots without re-running Tables or analyze.
 
 ## Version
 
