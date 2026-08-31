@@ -132,10 +132,6 @@ fn roi_root_path(root: &str) -> PathBuf {
     lisca_workspace::roi_dir(root)
 }
 
-fn roi_pos_dir_path(root: &str, pos: u32) -> PathBuf {
-    lisca_workspace::roi_pos_dir(root, pos)
-}
-
 fn roi_tiff_path(root: &str, pos: u32, roi: u32) -> PathBuf {
     lisca_workspace::roi_tiff_path(root, pos, &lisca_workspace::roi_tiff_name(roi))
 }
