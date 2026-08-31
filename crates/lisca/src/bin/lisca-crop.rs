@@ -261,7 +261,7 @@ Source:
   or assay.json: data (folder{path,template}|nd2{path}|czi{path})
 
 Positions: --positions list, or all bbox/Pos*.csv under the workspace.
-Env: LISCA_CROP_MAX_WORKERS overrides --workers
+Env: LISCA_CROP_WORKERS overrides --workers (upper bound; default is 1)
 
 ROI crop is Studio/CLI-owned; the Aligner app only saves bbox/align."
 }
@@ -398,7 +398,7 @@ fn run(args: Vec<String>) -> Result<(), String> {
         if workers == 0 {
             return Err("--workers must be at least 1".to_string());
         }
-        env::set_var("LISCA_CROP_MAX_WORKERS", workers.to_string());
+        env::set_var("LISCA_CROP_WORKERS", workers.to_string());
     }
 
     let scan = scan_source(source.clone())?;

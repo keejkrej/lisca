@@ -24,7 +24,14 @@ use super::workspace::{
     bbox_csv_path, list_saved_bbox_positions, parse_bbox_csv, roi_pos_dir_path,
 };
 
-const CROP_ROI_CHUNK_SIZE: usize = 32;
+/// Extra position workers each open another ND2/CZI reader on the same file
+/// and contend for seeks (especially JupyterHub NFS). Default is one worker;
+/// `LISCA_CROP_WORKERS` opts into parallelism but is an upper bound, not a
+/// guarantee — the FD budget can still shrink the request.
+const FD_HEADROOM: u64 = 256;
+const MIN_FD_BUDGET: u64 = 64;
+const UNBOUNDED_FD_BUDGET: u64 = 1 << 20;
+const CROP_WORKERS_ENV: &str = "LISCA_CROP_WORKERS";
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct CropPositionOutput {
@@ -65,9 +72,11 @@ impl From<String> for CropPositionError {
 
 /// Crops and atomically publishes exactly one position.
 ///
-/// The caller owns scheduling. Cancellation is checked between bounded frame/chunk
-/// writes and immediately before publication. A failed or cancelled call removes
-/// its staging directory and leaves any previously published position untouched.
+/// The caller owns scheduling. One source pass opens every `Roi{n}.tif` writer
+/// for the position, then loads each T×C×Z plane once. Cancellation is checked
+/// per plane and immediately before publication. A failed or cancelled call
+/// removes its staging directory and leaves any previously published position
+/// untouched.
 pub fn crop_roi_position<F>(
     request: &CropRoiRequest,
     scan: &WorkspaceScan,
@@ -111,7 +120,10 @@ where
             pages_written = pages_written.saturating_add(count);
             on_pages_written(pages_written);
         },
-        &mut source_reader,
+        &mut CropFrameSource {
+            load_frame: &mut |frame_request| source_reader.load_frame(frame_request),
+            fd_budget: crop_fd_budget(None),
+        },
     )?;
     Ok(summary)
 }
@@ -184,6 +196,14 @@ where
         }
     }
 
+    let fd_budget = crop_fd_budget(None);
+    let max_roi_count = position_bboxes
+        .iter()
+        .map(|(_, bboxes)| bboxes.len())
+        .max()
+        .unwrap_or(0);
+    let worker_count = crop_position_worker_count(position_bboxes.len(), max_roi_count, fd_budget);
+
     let mut progress = CropRoiProgress {
         request_id: request.request_id.clone(),
         status: CropRoiStatus::Running,
@@ -192,7 +212,10 @@ where
         total_positions: position_bboxes.len() as u32,
         completed_rois: 0,
         total_rois,
-        message: Some("Starting crop".to_string()),
+        message: Some(format!(
+            "Starting crop with {worker_count} worker(s) for {} position(s)",
+            position_bboxes.len()
+        )),
         error: None,
         skipped_positions: skipped_positions.clone(),
     };
@@ -200,7 +223,6 @@ where
 
     let request = Arc::new(request);
     let scan = Arc::new(scan);
-    let worker_count = crop_position_worker_count(position_bboxes.len());
     let queue = Arc::new(Mutex::new(VecDeque::from(position_bboxes)));
     let (event_sender, event_receiver) = mpsc::channel::<CropPositionEvent>();
     let mut failed = None::<String>;
@@ -214,7 +236,7 @@ where
             let queue = queue.clone();
             let event_sender = event_sender.clone();
             scope.spawn(move || {
-                crop_position_worker(request, scan, queue, cancel, event_sender);
+                crop_position_worker(request, scan, queue, cancel, event_sender, fd_budget);
             });
         }
         drop(event_sender);
@@ -336,7 +358,16 @@ struct RoiTiffWriter {
 impl RoiTiffWriter {
     fn create(output_dir: &Path, bbox: &RoiBbox) -> Result<Self, String> {
         let path = output_dir.join(format!("Roi{}.tif", bbox.roi));
-        let file = File::create(&path).map_err(|error| error.to_string())?;
+        let file = File::create(&path).map_err(|error| {
+            if is_too_many_open_files(&error) {
+                format!(
+                    "too many open files creating {}: {error}. This crop keeps one TIFF writer open per ROI and cannot append after close",
+                    path.display()
+                )
+            } else {
+                error.to_string()
+            }
+        })?;
         let encoder = TiffEncoder::new(file).map_err(|error| error.to_string())?;
         Ok(Self {
             bbox: bbox.clone(),
@@ -414,12 +445,18 @@ fn publish_staged_directory(
 
 type CropJobQueue = Arc<Mutex<VecDeque<(u32, Vec<RoiBbox>)>>>;
 
+struct CropFrameSource<'a, L> {
+    load_frame: &'a mut L,
+    fd_budget: u64,
+}
+
 fn crop_position_worker(
     request: Arc<CropRoiRequest>,
     scan: Arc<WorkspaceScan>,
     queue: CropJobQueue,
     cancel: &AtomicBool,
     event_sender: mpsc::Sender<CropPositionEvent>,
+    fd_budget: u64,
 ) {
     let mut source_reader = match CachedSourceReader::open(request.source.clone()) {
         Ok(reader) => reader,
@@ -454,7 +491,10 @@ fn crop_position_worker(
             bboxes,
             cancel,
             &event_sender,
-            &mut source_reader,
+            CropFrameSource {
+                load_frame: &mut |frame_request| source_reader.load_frame(frame_request),
+                fd_budget,
+            },
         ) {
             Ok(()) => {}
             Err(CropPositionError::Cancelled) => {
@@ -473,15 +513,18 @@ fn crop_position_worker(
     }
 }
 
-fn crop_position_frame_major(
+fn crop_position_frame_major<L>(
     request: &CropRoiRequest,
     scan: &WorkspaceScan,
     pos: u32,
     bboxes: Vec<RoiBbox>,
     cancel: &AtomicBool,
     event_sender: &mpsc::Sender<CropPositionEvent>,
-    source_reader: &mut CachedSourceReader,
-) -> Result<(), CropPositionError> {
+    mut source: CropFrameSource<'_, L>,
+) -> Result<(), CropPositionError>
+where
+    L: FnMut(FrameRequest) -> Result<RawFrame, String>,
+{
     if cancel.load(AtomicOrdering::SeqCst) {
         return Err(CropPositionError::Cancelled);
     }
@@ -495,24 +538,25 @@ fn crop_position_frame_major(
         |count| {
             let _ = event_sender.send(CropPositionEvent::PagesWritten { pos, count });
         },
-        source_reader,
+        &mut source,
     )?;
     let _ = event_sender.send(CropPositionEvent::Finished { pos });
     Ok(())
 }
 
-fn crop_position_atomic<F, P>(
+fn crop_position_atomic<F, P, L>(
     request: &CropRoiRequest,
     scan: &WorkspaceScan,
     pos: u32,
     bboxes: &[RoiBbox],
     is_cancelled: &F,
     mut on_pages_written: P,
-    source_reader: &mut CachedSourceReader,
+    source: &mut CropFrameSource<'_, L>,
 ) -> Result<(), CropPositionError>
 where
     F: Fn() -> bool,
     P: FnMut(u32),
+    L: FnMut(FrameRequest) -> Result<RawFrame, String>,
 {
     if is_cancelled() {
         return Err(CropPositionError::Cancelled);
@@ -532,20 +576,15 @@ where
     fs::create_dir(&staging_dir).map_err(|error| error.to_string())?;
     let mut staging = StagingDirectory::new(staging_dir.clone());
 
-    for chunk in bboxes.chunks(CROP_ROI_CHUNK_SIZE) {
-        if is_cancelled() {
-            return Err(CropPositionError::Cancelled);
-        }
-        write_roi_tiff_chunk_frame_major(
-            scan,
-            pos,
-            chunk,
-            &staging_dir,
-            is_cancelled,
-            &mut on_pages_written,
-            source_reader,
-        )?;
-    }
+    write_roi_tiffs_frame_major(
+        scan,
+        pos,
+        bboxes,
+        &staging_dir,
+        is_cancelled,
+        &mut on_pages_written,
+        source,
+    )?;
 
     write_roi_index(pos, roi_index_entries(bboxes), scan, &staging_dir)?;
     if is_cancelled() {
@@ -556,19 +595,37 @@ where
     Ok(())
 }
 
-fn write_roi_tiff_chunk_frame_major<F, P>(
+fn write_roi_tiffs_frame_major<F, P, L>(
     scan: &WorkspaceScan,
     pos: u32,
     bboxes: &[RoiBbox],
     output_dir: &Path,
     is_cancelled: &F,
     on_pages_written: &mut P,
-    source_reader: &mut CachedSourceReader,
+    source: &mut CropFrameSource<'_, L>,
 ) -> Result<(), CropPositionError>
 where
     F: Fn() -> bool,
     P: FnMut(u32),
+    L: FnMut(FrameRequest) -> Result<RawFrame, String>,
 {
+    if is_cancelled() {
+        return Err(CropPositionError::Cancelled);
+    }
+    if bboxes.is_empty() {
+        return Ok(());
+    }
+
+    let fd_budget = source.fd_budget;
+    let max_open = fd_budget.saturating_sub(1).max(1);
+    if (bboxes.len() as u64) > max_open {
+        return Err(CropPositionError::Failed(format!(
+            "Pos{pos} has {} ROIs; keeping one TIFF writer open per ROI needs {} file descriptors (source reader + writers), but the FD budget is {fd_budget} (RLIMIT_NOFILE minus {FD_HEADROOM} headroom). Raise the process file-descriptor limit; this crop does not re-read the source or append after closing writers.",
+            bboxes.len(),
+            bboxes.len() as u64 + 1,
+        )));
+    }
+
     let mut writers = bboxes
         .iter()
         .map(|bbox| RoiTiffWriter::create(output_dir, bbox))
@@ -580,22 +637,15 @@ where
                 if is_cancelled() {
                     return Err(CropPositionError::Cancelled);
                 }
-                let raw = source_reader
-                    .load_frame(FrameRequest {
-                        pos,
-                        channel,
-                        time,
-                        z,
-                    })
-                    .map_err(|error| {
-                        format!(
-                            "Pos{pos} channel={channel} time={time} z={z}: {error}",
-                            pos = pos,
-                            channel = channel,
-                            time = time,
-                            z = z,
-                        )
-                    })?;
+                let raw = (source.load_frame)(FrameRequest {
+                    pos,
+                    channel,
+                    time,
+                    z,
+                })
+                .map_err(|error| {
+                    format!("Pos{pos} channel={channel} time={time} z={z}: {error}")
+                })?;
                 for writer in &mut writers {
                     let pixels = crop_frame(&raw, &writer.bbox)?;
                     write_roi_tiff_page(&mut writer.encoder, &writer.bbox, &pixels)?;
@@ -645,11 +695,81 @@ fn write_roi_tiff_page(
     image.write_data(pixels).map_err(|error| error.to_string())
 }
 
-fn crop_position_worker_count(position_count: usize) -> usize {
-    let available = std::thread::available_parallelism()
-        .map(usize::from)
-        .unwrap_or(1);
-    position_count.min(available).max(1)
+fn crop_fd_budget(soft_limit: Option<u64>) -> u64 {
+    crop_fd_budget_from(soft_limit.or_else(rlimit_nofile_soft))
+}
+
+fn crop_fd_budget_from(soft_limit: Option<u64>) -> u64 {
+    let Some(soft_limit) = soft_limit else {
+        return UNBOUNDED_FD_BUDGET;
+    };
+    if soft_limit == 0 || soft_limit > 1_000_000_000 {
+        return UNBOUNDED_FD_BUDGET;
+    }
+    MIN_FD_BUDGET.max(soft_limit.saturating_sub(FD_HEADROOM))
+}
+
+fn rlimit_nofile_soft() -> Option<u64> {
+    #[cfg(unix)]
+    {
+        let mut lim = libc::rlimit {
+            rlim_cur: 0,
+            rlim_max: 0,
+        };
+        // SAFETY: `lim` is a valid `rlimit` out-parameter; `getrlimit` only writes it.
+        let rc = unsafe { libc::getrlimit(libc::RLIMIT_NOFILE, &mut lim) };
+        if rc == 0 {
+            Some(lim.rlim_cur)
+        } else {
+            None
+        }
+    }
+    #[cfg(not(unix))]
+    {
+        None
+    }
+}
+
+fn parse_positive_usize(raw: &str) -> Option<usize> {
+    raw.trim().parse::<usize>().ok().filter(|value| *value > 0)
+}
+
+fn env_requested_crop_workers() -> usize {
+    std::env::var(CROP_WORKERS_ENV)
+        .ok()
+        .as_deref()
+        .and_then(parse_positive_usize)
+        .unwrap_or(1)
+}
+
+fn crop_position_worker_count(
+    position_count: usize,
+    max_roi_count: usize,
+    fd_budget: u64,
+) -> usize {
+    crop_position_worker_count_for(
+        position_count,
+        max_roi_count,
+        fd_budget,
+        env_requested_crop_workers(),
+    )
+}
+
+fn crop_position_worker_count_for(
+    position_count: usize,
+    max_roi_count: usize,
+    fd_budget: u64,
+    requested: usize,
+) -> usize {
+    let position_count = position_count.max(1);
+    let requested = requested.max(1).min(position_count);
+    let per_worker = max_roi_count.saturating_add(1);
+    let fd_capped = (fd_budget as usize) / per_worker;
+    requested.min(fd_capped.max(1))
+}
+
+fn is_too_many_open_files(error: &std::io::Error) -> bool {
+    matches!(error.raw_os_error(), Some(24) | Some(4))
 }
 
 fn roi_index_entries(bboxes: &[RoiBbox]) -> Vec<RoiIndexEntry> {
@@ -693,10 +813,13 @@ fn write_roi_index(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::protocol::{AlignerSource, CropOutputFormat};
+    use crate::protocol::{AlignerSource, ContrastWindow, CropOutputFormat};
+    use crate::tiff_io;
     use image::{GrayImage, Luma};
     use std::sync::atomic::{AtomicUsize, Ordering};
     use tempfile::TempDir;
+
+    static CROP_WORKERS_ENV_LOCK: Mutex<()> = Mutex::new(());
 
     fn fixture(position_count: u32) -> (TempDir, CropRoiRequest, WorkspaceScan) {
         let root = tempfile::tempdir().expect("temp workspace");
@@ -761,6 +884,198 @@ mod tests {
             error: None,
             skipped_positions: Vec::new(),
         }
+    }
+
+    fn scan_axes(times: Vec<u32>, channels: Vec<u32>, z_slices: Vec<u32>) -> WorkspaceScan {
+        WorkspaceScan {
+            channel_labels: Vec::new(),
+            channels,
+            position_labels: Vec::new(),
+            positions: vec![0],
+            time_labels: Vec::new(),
+            times,
+            z_slice_labels: Vec::new(),
+            z_slices,
+        }
+    }
+
+    fn write_and_check_roi_tiffs(
+        output_dir: &Path,
+        n_roi: u32,
+        fd_budget: u64,
+    ) -> Result<Vec<(u32, u32, u32, u32)>, CropPositionError> {
+        let bboxes: Vec<RoiBbox> = (0..n_roi)
+            .map(|i| RoiBbox {
+                roi: i,
+                x: i,
+                y: 0,
+                w: 1,
+                h: 1,
+            })
+            .collect();
+        let mut reads = Vec::new();
+        let scan = scan_axes(vec![0, 1], vec![0], vec![0]);
+        write_roi_tiffs_frame_major(
+            &scan,
+            0,
+            &bboxes,
+            output_dir,
+            &|| false,
+            &mut |_| {},
+            &mut CropFrameSource {
+                load_frame: &mut |request: FrameRequest| {
+                    reads.push((request.pos, request.time, request.channel, request.z));
+                    let data = (0..n_roi)
+                        .map(|i| i as u16 + 100 * request.time as u16)
+                        .collect();
+                    Ok(RawFrame {
+                        width: n_roi,
+                        height: 1,
+                        data,
+                        contrast_domain: ContrastWindow {
+                            min: 0,
+                            max: u16::MAX as u32,
+                        },
+                    })
+                },
+                fd_budget,
+            },
+        )?;
+        for i in 0..n_roi {
+            let path = output_dir.join(format!("Roi{i}.tif"));
+            let page0 = tiff_io::load_tiff_frame_page(&path, 0).expect("page 0");
+            let page1 = tiff_io::load_tiff_frame_page(&path, 1).expect("page 1");
+            assert_eq!(page0.data, vec![i as u16]);
+            assert_eq!(page1.data, vec![i as u16 + 100]);
+        }
+        Ok(reads)
+    }
+
+    struct EnvVarGuard {
+        key: &'static str,
+        previous: Option<String>,
+    }
+
+    impl EnvVarGuard {
+        fn unset(key: &'static str) -> Self {
+            let previous = std::env::var(key).ok();
+            std::env::remove_var(key);
+            Self { key, previous }
+        }
+
+        fn set(key: &'static str, value: &str) -> Self {
+            let previous = std::env::var(key).ok();
+            std::env::set_var(key, value);
+            Self { key, previous }
+        }
+    }
+
+    impl Drop for EnvVarGuard {
+        fn drop(&mut self) {
+            match &self.previous {
+                Some(value) => std::env::set_var(self.key, value),
+                None => std::env::remove_var(self.key),
+            }
+        }
+    }
+
+    #[test]
+    fn crop_fd_budget_leaves_headroom() {
+        assert_eq!(crop_fd_budget(Some(1024)), 768);
+        assert_eq!(crop_fd_budget(Some(200)), 64);
+        assert_eq!(crop_fd_budget(Some(400)), 144);
+        assert_eq!(crop_fd_budget(Some(0)), UNBOUNDED_FD_BUDGET);
+        assert_eq!(crop_fd_budget_from(None), UNBOUNDED_FD_BUDGET);
+    }
+
+    #[test]
+    fn crop_fd_budget_reads_rlimit() {
+        let expected = crop_fd_budget_from(rlimit_nofile_soft());
+        assert_eq!(crop_fd_budget(None), expected);
+        #[cfg(unix)]
+        assert!(rlimit_nofile_soft().is_some());
+    }
+
+    #[test]
+    fn crop_position_worker_count_defaults_to_one() {
+        let _lock = CROP_WORKERS_ENV_LOCK.lock().expect("env lock");
+        let _guard = EnvVarGuard::unset(CROP_WORKERS_ENV);
+        assert_eq!(crop_position_worker_count(3, 0, 10_000), 1);
+        assert_eq!(crop_position_worker_count(20, 0, 10_000), 1);
+        assert_eq!(crop_position_worker_count_for(20, 0, 10_000, 1), 1);
+
+        let _override = EnvVarGuard::set(CROP_WORKERS_ENV, "6");
+        assert_eq!(crop_position_worker_count(20, 0, 10_000), 6);
+        assert_eq!(crop_position_worker_count(3, 0, 10_000), 3);
+
+        drop(_override);
+        let _invalid = EnvVarGuard::set(CROP_WORKERS_ENV, "nope");
+        assert_eq!(crop_position_worker_count(20, 0, 10_000), 1);
+        assert_eq!(parse_positive_usize("nope"), None);
+        assert_eq!(parse_positive_usize("6"), Some(6));
+    }
+
+    #[test]
+    fn crop_position_worker_count_shrinks_when_roi_grid_exceeds_fd_budget() {
+        assert_eq!(crop_position_worker_count_for(20, 80, 300, 8), 3);
+        assert_eq!(crop_position_worker_count_for(20, 80, 100, 8), 1);
+        assert_eq!(crop_position_worker_count_for(5, 10_000, 64, 8), 1);
+    }
+
+    #[test]
+    fn frame_major_write_reads_each_plane_once_for_all_rois() {
+        let output = tempfile::tempdir().expect("temp output");
+        let reads = write_and_check_roi_tiffs(output.path(), 40, 10_000).expect("write");
+        assert_eq!(reads, vec![(0, 0, 0, 0), (0, 1, 0, 0)]);
+        assert_eq!(
+            reads.len(),
+            2,
+            "one source pass: T×C×Z planes, not multiplied by ROI-writer chunks"
+        );
+    }
+
+    #[test]
+    fn write_fails_when_single_position_exceeds_fd_budget_without_rereading() {
+        let output = tempfile::tempdir().expect("temp output");
+        let bboxes: Vec<RoiBbox> = (0..5)
+            .map(|i| RoiBbox {
+                roi: i,
+                x: i,
+                y: 0,
+                w: 1,
+                h: 1,
+            })
+            .collect();
+        let mut reads = Vec::new();
+        let scan = scan_axes(vec![0, 1], vec![0], vec![0]);
+        let error = write_roi_tiffs_frame_major(
+            &scan,
+            0,
+            &bboxes,
+            output.path(),
+            &|| false,
+            &mut |_| {},
+            &mut CropFrameSource {
+                load_frame: &mut |request: FrameRequest| {
+                    reads.push((request.pos, request.time, request.channel, request.z));
+                    Ok(RawFrame {
+                        width: 5,
+                        height: 1,
+                        data: vec![0; 5],
+                        contrast_domain: ContrastWindow {
+                            min: 0,
+                            max: u16::MAX as u32,
+                        },
+                    })
+                },
+                fd_budget: 3,
+            },
+        )
+        .expect_err("too many ROIs for FD budget");
+        assert!(
+            matches!(error, CropPositionError::Failed(message) if message.contains("does not re-read"))
+        );
+        assert!(reads.is_empty());
     }
 
     #[test]
