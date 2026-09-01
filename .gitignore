@@ -1,0 +1,7 @@
+.venv/
+.uv/
+.tools/
+.ipynb_checkpoints/
+__pycache__/
+*.pyc
+*.pyo

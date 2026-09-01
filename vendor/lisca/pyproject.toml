@@ -1,0 +1,45 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "lisca"
+version = "0.1.0"
+description = "Python utilities and protocol helpers for the Lisca monorepo."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Lisca contributors" }]
+dependencies = [
+  "numpy>=2.2,<3",
+  "pillow>=11.1,<12",
+  "pydantic>=2.10,<3",
+  "tifffile>=2025.1.10,<2026",
+  "typer>=0.15,<1",
+]
+
+[project.scripts]
+lisca = "lisca.main:app"
+
+[project.optional-dependencies]
+crop = ["nd2>=0.10", "pylibCZIrw>=4.1"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/lisca"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.ruff.lint.per-file-ignores]
+"src/lisca/commands/*.py" = ["B008"]
+
+[tool.ty.environment]
+python-version = "3.12"
+
+[tool.ty.rules]
+all = "error"
+
