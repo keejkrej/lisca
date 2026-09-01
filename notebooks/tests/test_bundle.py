@@ -126,6 +126,7 @@ class TestNotebooksBundle(unittest.TestCase):
         self.assertIn("git pull --ff-only", (BUNDLE / "update.sh").read_text(encoding="utf-8"))
         self.assertIn("*.bak-", readme)
         self.assertIn("Editing template notebooks is fine", readme)
+        self.assertIn("discarded, not backed up", readme)
         self.assertNotIn(".local/notebooks-backup", readme)
         self.assertNotIn("notebooks-backup", readme)
         self.assertIn("bash scripts/jupyter-notebook.sh", readme)
@@ -159,6 +160,8 @@ class TestNotebooksBundle(unittest.TestCase):
             self.assertIn(".tools/", text)
             self.assertIn("UV_PYTHON_INSTALL_DIR", text)
             self.assertIn("*.bak-*", text)
+            self.assertIn("notebooks/*.ipynb", text)
+            self.assertIn("clean -fd", text)
             self.assertNotIn("Working tree is dirty. Stash", text)
             self.assertNotIn("stash pop", text)
             self.assertNotIn("git stash", text)
@@ -205,11 +208,16 @@ class TestNotebooksBundle(unittest.TestCase):
         self.assertIn("yyyyMMdd'T'HHmmss'Z'", ps1)
         self.assertIn("fetch origin notebooks", sh)
         self.assertIn("fetch origin notebooks", ps1)
+        self.assertIn("clean -fd", sh)
+        self.assertIn("clean -fd", ps1)
+        self.assertIn("notebooks/*.ipynb", sh)
+        self.assertIn("notebooks/*.ipynb", ps1)
 
-        start = sh.index("backup_dirty_notebooks() {")
-        end = sh.index("\nworking_tree_has_tracked_changes() {")
-        backup_fn = sh[start:end]
-        self.assertIn('dest="${src}.bak-${ts}"', backup_fn)
+        start = sh.index("porcelain_path() {")
+        end = sh.index("\nsync_env() {")
+        helpers = sh[start:end]
+        self.assertIn('dest="${src}.bak-${ts}"', helpers)
+        self.assertIn("clean_untracked_keep_env", helpers)
 
         ts = "20260901T130000Z"
         env = os.environ.copy()
@@ -227,6 +235,8 @@ class TestNotebooksBundle(unittest.TestCase):
             nb_dir.mkdir()
             src = nb_dir / "crop.ipynb"
             src.write_text("template-config\n", encoding="utf-8")
+            readme = root / "README.md"
+            readme.write_text("export-readme\n", encoding="utf-8")
             (root / ".gitignore").write_text("*.bak-*\n", encoding="utf-8")
             subprocess.run(["git", "init", "-q"], cwd=root, check=True, env=env)
             subprocess.run(
@@ -242,7 +252,7 @@ class TestNotebooksBundle(unittest.TestCase):
                 env=env,
             )
             subprocess.run(
-                ["git", "add", ".gitignore", "notebooks/crop.ipynb"],
+                ["git", "add", ".gitignore", "README.md", "notebooks/crop.ipynb"],
                 cwd=root,
                 check=True,
                 env=env,
@@ -254,12 +264,17 @@ class TestNotebooksBundle(unittest.TestCase):
                 env=env,
             )
             src.write_text("user-config\n", encoding="utf-8")
+            readme.write_text("local-readme\n", encoding="utf-8")
+            extra = root / "extra.txt"
+            extra.write_text("scratch\n", encoding="utf-8")
             script = (
                 "set -euo pipefail\n"
                 f'ROOT="{root}"\n'
                 'run_git() { git "$@"; }\n'
-                + backup_fn
+                + helpers
                 + f'\nbackup_dirty_notebooks "{ts}"\n'
+                + "run_git -C \"$ROOT\" reset --hard HEAD\n"
+                + "clean_untracked_keep_env\n"
             )
             subprocess.run(["bash", "-c", script], check=True, env=env)
             bak = Path(f"{src}.bak-{ts}")
@@ -267,13 +282,10 @@ class TestNotebooksBundle(unittest.TestCase):
             self.assertEqual(bak.name, "crop.ipynb.bak-20260901T130000Z")
             self.assertEqual(bak.parent, src.parent)
             self.assertEqual(bak.read_text(encoding="utf-8"), "user-config\n")
-            subprocess.run(
-                ["git", "reset", "--hard", "HEAD"],
-                cwd=root,
-                check=True,
-            )
+            self.assertFalse(Path(f"{readme}.bak-{ts}").exists())
             self.assertEqual(src.read_text(encoding="utf-8"), "template-config\n")
-            self.assertEqual(bak.read_text(encoding="utf-8"), "user-config\n")
+            self.assertEqual(readme.read_text(encoding="utf-8"), "export-readme\n")
+            self.assertFalse(extra.exists())
             ignored = subprocess.run(
                 [
                     "git",

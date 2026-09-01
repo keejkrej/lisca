@@ -65,7 +65,7 @@ bash update.sh
 
 Windows: `.\update.ps1`.
 
-Editing template notebooks is fine (Config cells in `crop.ipynb` / `analyze.ipynb` / `results.ipynb`). Update copies each dirty file under `notebooks/` to a sibling `*.bak-<UTC-timestamp>` (for example `notebooks/crop.ipynb.bak-20260901T130000Z`), then refreshes the templates from branch `notebooks`. Re-apply Config from the backup if needed. It does not pull `main`.
+Editing template notebooks is fine (Config cells in `crop.ipynb` / `analyze.ipynb` / `results.ipynb`). Update copies each dirty `notebooks/*.ipynb` to a sibling `*.bak-<UTC-timestamp>` (for example `notebooks/crop.ipynb.bak-20260901T130000Z`), then refreshes the templates from branch `notebooks`. Other local files (scripts, README, install) are discarded, not backed up. Re-apply Config from the backup if needed. It does not pull `main`.
 
 ## JupyterHub
 

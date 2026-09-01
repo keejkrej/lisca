@@ -1,10 +1,10 @@
 # Update this notebooks tree from export branch notebooks, then uv sync like install.
 # Always uses portable MinGit under ROOT\.tools\git (never system git).
 # If ROOT has no .git, bootstrap onto branch notebooks (keep .venv / .uv / .tools).
-# Dirty tracked files (typical: Config edits in notebooks/*.ipynb): copy each dirty
-# file under notebooks/ to a sibling *.bak-<UTC> then fetch + reset --hard
-# origin/notebooks. Clean trees use git pull --ff-only. Do not stash.
-# Templates win; re-apply Config from the sibling backups if needed.
+# Dirty notebooks/*.ipynb (typical: Config edits): copy each to a sibling
+# *.bak-<UTC>. Any other dirty or untracked paths are discarded (reset --hard,
+# then git clean except .venv / .uv / .tools / *.bak-*). Never fail on a dirty
+# tree. Clean trees use git pull --ff-only. Do not stash. Templates win.
 # Does not download a notebooks zip.
 $ErrorActionPreference = "Stop"
 
@@ -158,7 +158,26 @@ function Ensure-Gitignore {
     }
 }
 
-function Test-WorkingTreeHasTrackedChanges {
+function Get-PorcelainPath {
+    param([string]$Line)
+    if ($Line.Length -lt 4) { return $null }
+    $path = $Line.Substring(3)
+    if ($path -match " -> ") {
+        $path = ($path -split " -> ")[-1]
+    }
+    return $path.Trim().Trim('"') -replace "\\", "/"
+}
+
+function Test-KeepPath {
+    param([string]$PathNorm)
+    if ($PathNorm -like ".venv" -or $PathNorm -like ".venv/" -or $PathNorm -like ".venv/*") { return $true }
+    if ($PathNorm -like ".uv" -or $PathNorm -like ".uv/" -or $PathNorm -like ".uv/*") { return $true }
+    if ($PathNorm -like ".tools" -or $PathNorm -like ".tools/" -or $PathNorm -like ".tools/*") { return $true }
+    if ($PathNorm -like "*.bak-*") { return $true }
+    return $false
+}
+
+function Test-WorkingTreeIsDirty {
     param([Parameter(Mandatory = $true)][string]$GitBin)
     $porcelain = Invoke-ResolvedGit -GitBin $GitBin -- -C $Root status --porcelain
     if ($LASTEXITCODE -ne 0) {
@@ -169,16 +188,18 @@ function Test-WorkingTreeHasTrackedChanges {
         $line = [string]$line
         if ($line.Length -lt 2) { continue }
         $status = $line.Substring(0, 2)
-        if ($status -ne "??" -and $status -ne "!!") {
-            return $true
-        }
+        if ($status -eq "!!") { continue }
+        $pathNorm = Get-PorcelainPath -Line $line
+        if (-not $pathNorm) { continue }
+        if (Test-KeepPath -PathNorm $pathNorm) { continue }
+        return $true
     }
     return $false
 }
 
-# Copy dirty files under notebooks/ beside the template as <file>.bak-<UTC>.
-# In-place siblings only — never a separate backup directory. Skip untracked
-# *.bak-* so previous backups do not multiply. Source files must exist (skip deletions).
+# Copy dirty notebooks/*.ipynb beside the template as <file>.bak-<UTC>.
+# In-place siblings only. Other dirty paths (README, scripts, install, ...) are
+# not backed up. Skip *.bak-* so previous backups do not multiply.
 function Backup-DirtyNotebooks {
     param(
         [Parameter(Mandatory = $true)][string]$GitBin,
@@ -191,16 +212,12 @@ function Backup-DirtyNotebooks {
         $line = ([string]$line).TrimEnd()
         if ($line.Length -lt 4) { continue }
         $status = $line.Substring(0, 2)
-        if ($status -eq "??" -or $status -eq "!!") { continue }
-        $path = $line.Substring(3)
-        if ($path -match " -> ") {
-            $path = ($path -split " -> ")[-1]
-        }
-        $path = $path.Trim().Trim('"')
-        $pathNorm = $path -replace "\\", "/"
-        if ($pathNorm -notlike "notebooks/*") { continue }
-        if ($pathNorm -like "*.bak-*") { continue }
-        if ($pathNorm -like "notebooks/.ipynb_checkpoints/*") { continue }
+        if ($status -eq "!!") { continue }
+        $pathNorm = Get-PorcelainPath -Line $line
+        if (-not $pathNorm) { continue }
+        if ($pathNorm -notlike "notebooks/*.ipynb") { continue }
+        $rest = $pathNorm.Substring("notebooks/".Length)
+        if ($rest -like "*/*") { continue }
         $relParts = $pathNorm -split "/"
         $src = $Root
         foreach ($part in $relParts) {
@@ -215,6 +232,11 @@ function Backup-DirtyNotebooks {
     if ($count -gt 0) {
         Write-Host "Re-apply Config from the sibling *.bak-$Timestamp files if needed."
     }
+}
+
+function Clear-UntrackedKeepEnv {
+    param([Parameter(Mandatory = $true)][string]$GitBin)
+    Invoke-ResolvedGit -GitBin $GitBin -- -C $Root clean -fd -e ".venv" -e ".venv/" -e ".uv" -e ".uv/" -e ".tools" -e ".tools/" -e "*.bak-*"
 }
 
 $installExitCode = 0
@@ -251,9 +273,9 @@ try {
             $got = if ($branch) { $branch } else { "detached" }
             throw "This folder tracks '$got', not notebooks. update.ps1 only tracks the notebooks export branch, not main. Re-get:`n  $CloneHint"
         }
-        if (Test-WorkingTreeHasTrackedChanges -GitBin $GitBin) {
+        if (Test-WorkingTreeIsDirty -GitBin $GitBin) {
             $ts = [datetime]::UtcNow.ToString("yyyyMMdd'T'HHmmss'Z'")
-            Write-Host "Local tracked changes detected. Backing up dirty notebooks/ files beside the templates, then reset --hard origin/notebooks."
+            Write-Host "Local changes detected. Backing up dirty notebooks/*.ipynb beside the templates; other local files are discarded."
             Invoke-ResolvedGit -GitBin $GitBin -- -C $Root status --short | Out-Host
             Backup-DirtyNotebooks -GitBin $GitBin -Timestamp $ts
             Write-Host "Fetching origin notebooks and resetting hard (templates win)..."
@@ -265,6 +287,7 @@ try {
             if ($LASTEXITCODE -ne 0) {
                 throw "git reset --hard origin/notebooks failed. Re-clone:`n  $CloneHint"
             }
+            Clear-UntrackedKeepEnv -GitBin $GitBin
         } else {
             Write-Host "Pulling branch notebooks (ff-only)..."
             Invoke-ResolvedGit -GitBin $GitBin -- -C $Root pull --ff-only

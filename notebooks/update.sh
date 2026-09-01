@@ -2,10 +2,10 @@
 # Update this notebooks tree from export branch notebooks, then uv sync like install.
 # Always uses portable git under ROOT/.tools/git (never system git).
 # If ROOT has no .git, bootstrap onto branch notebooks (keep .venv / .uv / .tools).
-# Dirty tracked files (typical: Config edits in notebooks/*.ipynb): copy each dirty
-# file under notebooks/ to a sibling *.bak-<UTC> then fetch + reset --hard
-# origin/notebooks. Clean trees use git pull --ff-only. Do not stash.
-# Templates win; re-apply Config from the sibling backups if needed.
+# Dirty notebooks/*.ipynb (typical: Config edits): copy each to a sibling
+# *.bak-<UTC>. Any other dirty or untracked paths are discarded (reset --hard,
+# then git clean except .venv / .uv / .tools / *.bak-*). Never fail on a dirty
+# tree. Clean trees use git pull --ff-only. Do not stash. Templates win.
 # Does not download a notebooks zip.
 set -euo pipefail
 
@@ -190,31 +190,49 @@ ensure_gitignore() {
   done
 }
 
-# Copy dirty files under notebooks/ beside the template as <file>.bak-<UTC>.
-# In-place siblings only — never a separate backup directory. Skip untracked
-# *.bak-* so previous backups do not multiply. Source files must exist (skip deletions).
+porcelain_path() {
+  local line="$1"
+  local path="${line:3}"
+  if [[ "$path" == *" -> "* ]]; then
+    path="${path##* -> }"
+  fi
+  if [[ "$path" == \"*\" ]]; then
+    path="${path:1:${#path}-2}"
+  fi
+  printf '%s\n' "$path"
+}
+
+is_keep_path() {
+  local path="$1"
+  case "$path" in
+    .venv | .venv/ | .venv/* | .uv | .uv/ | .uv/* | .tools | .tools/ | .tools/* | *.bak-*)
+      return 0
+      ;;
+  esac
+  return 1
+}
+
+# Copy dirty notebooks/*.ipynb beside the template as <file>.bak-<UTC>.
+# In-place siblings only. Other dirty paths (README, scripts, install, …) are
+# not backed up. Skip *.bak-* so previous backups do not multiply.
 backup_dirty_notebooks() {
   local ts="$1"
-  local line status path src dest
+  local line status path rest src dest
   local count=0
   while IFS= read -r line; do
     [[ -z "$line" ]] && continue
     status="${line:0:2}"
-    if [[ "$status" == "??" || "$status" == "!!" ]]; then
+    if [[ "$status" == "!!" ]]; then
       continue
     fi
-    path="${line:3}"
-    if [[ "$path" == *" -> "* ]]; then
-      path="${path##* -> }"
-    fi
-    if [[ "$path" == \"*\" ]]; then
-      path="${path:1:${#path}-2}"
-    fi
+    path="$(porcelain_path "$line")"
+    rest="${path#notebooks/}"
     case "$path" in
-      notebooks/*.bak-* | notebooks/.ipynb_checkpoints/*)
-        continue
+      notebooks/*.ipynb)
+        if [[ "$rest" == */* ]]; then
+          continue
+        fi
         ;;
-      notebooks/*) ;;
       *)
         continue
         ;;
@@ -233,16 +251,30 @@ backup_dirty_notebooks() {
   fi
 }
 
-working_tree_has_tracked_changes() {
-  local line status
+working_tree_is_dirty() {
+  local line status path
   while IFS= read -r line; do
     [[ -z "$line" ]] && continue
     status="${line:0:2}"
-    if [[ "$status" != "??" && "$status" != "!!" ]]; then
-      return 0
+    if [[ "$status" == "!!" ]]; then
+      continue
     fi
+    path="$(porcelain_path "$line")"
+    if is_keep_path "$path"; then
+      continue
+    fi
+    return 0
   done < <(run_git -C "$ROOT" status --porcelain)
   return 1
+}
+
+# Discard untracked files that are not env dirs or notebook backups.
+clean_untracked_keep_env() {
+  run_git -C "$ROOT" clean -fd \
+    -e '.venv' -e '.venv/' \
+    -e '.uv' -e '.uv/' \
+    -e '.tools' -e '.tools/' \
+    -e '*.bak-*' || true
 }
 
 sync_env() {
@@ -317,9 +349,9 @@ else
     echo "  $CLONE_HINT" >&2
     exit 1
   fi
-  if working_tree_has_tracked_changes; then
+  if working_tree_is_dirty; then
     ts="$(date -u +%Y%m%dT%H%M%SZ)"
-    echo "Local tracked changes detected. Backing up dirty notebooks/ files beside the templates, then reset --hard origin/notebooks."
+    echo "Local changes detected. Backing up dirty notebooks/*.ipynb beside the templates; other local files are discarded."
     run_git -C "$ROOT" status --short || true
     backup_dirty_notebooks "$ts"
     echo "Fetching origin notebooks and resetting hard (templates win)..."
@@ -333,6 +365,7 @@ else
       echo "  $CLONE_HINT" >&2
       exit 1
     fi
+    clean_untracked_keep_env
   else
     echo "Pulling branch notebooks (ff-only)..."
     if ! run_git -C "$ROOT" pull --ff-only; then
