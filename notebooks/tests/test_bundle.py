@@ -72,7 +72,7 @@ class TestNotebooksBundle(unittest.TestCase):
         self.assertIn('path = "vendor/transfection"', text)
         self.assertIn("transfection", text)
         self.assertIn("package = false", text)
-        self.assertIn('version = "0.1.3"', text)
+        self.assertIn('version = "0.1.4"', text)
         self.assertNotIn("apps/studio", text)
         self.assertNotIn("git =", text)
         self.assertNotIn("git+", text)
@@ -89,7 +89,7 @@ class TestNotebooksBundle(unittest.TestCase):
         self.assertIn("vendor/lisca", lock)
         self.assertIn("vendor/transfection", lock)
         self.assertIn('name = "lisca-notebooks"', lock)
-        self.assertIn('version = "0.1.3"', lock)
+        self.assertIn('version = "0.1.4"', lock)
 
     def test_bundle_has_no_pyama_dependency(self) -> None:
         forbidden = ("pyama", "PYAMA", "Pyama")
@@ -124,9 +124,11 @@ class TestNotebooksBundle(unittest.TestCase):
         self.assertIn("Do **not** clone `main`", readme)
         self.assertIn("bash update.sh", readme)
         self.assertIn("git pull --ff-only", (BUNDLE / "update.sh").read_text(encoding="utf-8"))
-        self.assertIn("*.bak-", readme)
-        self.assertIn("Editing template notebooks is fine", readme)
+        self.assertIn("crop.backup-", readme)
+        self.assertIn("crop_exp1.ipynb", readme)
+        self.assertIn("leaves them in place", readme)
         self.assertIn("discarded, not backed up", readme)
+        self.assertNotIn("*.bak-", readme)
         self.assertNotIn(".local/notebooks-backup", readme)
         self.assertNotIn("notebooks-backup", readme)
         self.assertIn("bash scripts/jupyter-notebook.sh", readme)
@@ -151,7 +153,7 @@ class TestNotebooksBundle(unittest.TestCase):
         for text in (sh, ps1):
             self.assertIn("git pull --ff-only", text)
             self.assertIn("reset --hard origin/notebooks", text)
-            self.assertIn(".bak-", text)
+            self.assertIn(".backup-", text)
             self.assertIn("branch notebooks", text)
             self.assertIn("sync --python 3.12 --extra notebook", text)
             self.assertIn("checkout -f -B notebooks origin/notebooks", text)
@@ -159,9 +161,11 @@ class TestNotebooksBundle(unittest.TestCase):
             self.assertIn(".uv/", text)
             self.assertIn(".tools/", text)
             self.assertIn("UV_PYTHON_INSTALL_DIR", text)
-            self.assertIn("*.bak-*", text)
+            self.assertIn("notebooks/*.backup-*.ipynb", text)
             self.assertIn("notebooks/*.ipynb", text)
             self.assertIn("clean -fd", text)
+            self.assertNotIn("*.bak-*", text)
+            self.assertNotIn(".bak-", text)
             self.assertNotIn("Working tree is dirty. Stash", text)
             self.assertNotIn("stash pop", text)
             self.assertNotIn("git stash", text)
@@ -179,14 +183,16 @@ class TestNotebooksBundle(unittest.TestCase):
         self.assertIn("MinGit-2.55.0.5-64-bit.zip", ps1)
         self.assertIn("Install-PortableGit", ps1)
         self.assertIn(".tools/", pack)
-        self.assertIn("*.bak-*", pack)
+        self.assertIn("notebooks/*.backup-*.ipynb", pack)
+        self.assertNotIn("*.bak-*", pack)
         publish = (REPO / "scripts" / "publish-notebooks-branch.sh").read_text(
             encoding="utf-8"
         )
         self.assertIn("HEAD:refs/heads/notebooks", publish)
         self.assertIn("--dry-run", publish)
         self.assertIn(".tools/", publish)
-        self.assertIn("*.bak-*", publish)
+        self.assertIn("notebooks/*.backup-*.ipynb", publish)
+        self.assertNotIn("*.bak-*", publish)
         release = (REPO / ".github" / "workflows" / "notebooks-release.yml").read_text(
             encoding="utf-8"
         )
@@ -202,22 +208,29 @@ class TestNotebooksBundle(unittest.TestCase):
 
         sh = (BUNDLE / "update.sh").read_text(encoding="utf-8")
         ps1 = (BUNDLE / "update.ps1").read_text(encoding="utf-8")
-        self.assertIn('dest="${src}.bak-${ts}"', sh)
+        self.assertIn('dest="${stem}.backup-${ts}.ipynb"', sh)
         self.assertIn("date -u +%Y%m%dT%H%M%SZ", sh)
-        self.assertIn('"$src.bak-$Timestamp"', ps1)
+        self.assertIn(".backup-$Timestamp.ipynb", ps1)
         self.assertIn("yyyyMMdd'T'HHmmss'Z'", ps1)
+        self.assertIn('"$status" == "??"', sh)
+        self.assertIn('$status -eq "??"', ps1)
         self.assertIn("fetch origin notebooks", sh)
         self.assertIn("fetch origin notebooks", ps1)
         self.assertIn("clean -fd", sh)
         self.assertIn("clean -fd", ps1)
         self.assertIn("notebooks/*.ipynb", sh)
         self.assertIn("notebooks/*.ipynb", ps1)
+        self.assertIn("notebooks/*.backup-*.ipynb", sh)
+        self.assertIn("notebooks/*.backup-*.ipynb", ps1)
+        self.assertNotIn("*.bak-*", sh)
+        self.assertNotIn("*.bak-*", ps1)
 
         start = sh.index("porcelain_path() {")
         end = sh.index("\nsync_env() {")
         helpers = sh[start:end]
-        self.assertIn('dest="${src}.bak-${ts}"', helpers)
+        self.assertIn('dest="${stem}.backup-${ts}.ipynb"', helpers)
         self.assertIn("clean_untracked_keep_env", helpers)
+        self.assertIn("is_additive_notebook", helpers)
 
         ts = "20260901T130000Z"
         env = os.environ.copy()
@@ -237,7 +250,9 @@ class TestNotebooksBundle(unittest.TestCase):
             src.write_text("template-config\n", encoding="utf-8")
             readme = root / "README.md"
             readme.write_text("export-readme\n", encoding="utf-8")
-            (root / ".gitignore").write_text("*.bak-*\n", encoding="utf-8")
+            (root / ".gitignore").write_text(
+                "notebooks/*.backup-*.ipynb\n", encoding="utf-8"
+            )
             subprocess.run(["git", "init", "-q"], cwd=root, check=True, env=env)
             subprocess.run(
                 ["git", "config", "user.email", "lisca-test@example.com"],
@@ -263,6 +278,30 @@ class TestNotebooksBundle(unittest.TestCase):
                 check=True,
                 env=env,
             )
+            copy = nb_dir / "crop_exp1.ipynb"
+            copy.write_text("experiment-copy\n", encoding="utf-8")
+            additive_script = (
+                "set -euo pipefail\n"
+                f'ROOT="{root}"\n'
+                'run_git() { git "$@"; }\n'
+                + helpers
+                + "if working_tree_is_dirty; then echo DIRTY; else echo CLEAN; fi\n"
+                + f'backup_dirty_notebooks "{ts}"\n'
+            )
+            additive = subprocess.run(
+                ["bash", "-c", additive_script],
+                check=True,
+                env=env,
+                capture_output=True,
+                text=True,
+            )
+            self.assertIn("CLEAN", additive.stdout)
+            self.assertTrue(copy.is_file())
+            self.assertEqual(copy.read_text(encoding="utf-8"), "experiment-copy\n")
+            self.assertFalse((nb_dir / f"crop.backup-{ts}.ipynb").exists())
+            self.assertFalse((nb_dir / f"crop_exp1.backup-{ts}.ipynb").exists())
+            self.assertFalse(Path(f"{src}.bak-{ts}").exists())
+
             src.write_text("user-config\n", encoding="utf-8")
             readme.write_text("local-readme\n", encoding="utf-8")
             extra = root / "extra.txt"
@@ -272,17 +311,31 @@ class TestNotebooksBundle(unittest.TestCase):
                 f'ROOT="{root}"\n'
                 'run_git() { git "$@"; }\n'
                 + helpers
-                + f'\nbackup_dirty_notebooks "{ts}"\n'
-                + "run_git -C \"$ROOT\" reset --hard HEAD\n"
+                + "if working_tree_is_dirty; then echo DIRTY; else echo CLEAN; fi\n"
+                + f'backup_dirty_notebooks "{ts}"\n'
+                + 'run_git -C "$ROOT" reset --hard HEAD\n'
                 + "clean_untracked_keep_env\n"
             )
-            subprocess.run(["bash", "-c", script], check=True, env=env)
-            bak = Path(f"{src}.bak-{ts}")
+            dirty = subprocess.run(
+                ["bash", "-c", script],
+                check=True,
+                env=env,
+                capture_output=True,
+                text=True,
+            )
+            self.assertIn("DIRTY", dirty.stdout)
+            bak = nb_dir / f"crop.backup-{ts}.ipynb"
             self.assertTrue(bak.is_file())
-            self.assertEqual(bak.name, "crop.ipynb.bak-20260901T130000Z")
+            self.assertEqual(bak.name, "crop.backup-20260901T130000Z.ipynb")
+            self.assertEqual(bak.suffix, ".ipynb")
             self.assertEqual(bak.parent, src.parent)
             self.assertEqual(bak.read_text(encoding="utf-8"), "user-config\n")
+            self.assertTrue(copy.is_file())
+            self.assertEqual(copy.read_text(encoding="utf-8"), "experiment-copy\n")
+            self.assertFalse((nb_dir / f"crop_exp1.backup-{ts}.ipynb").exists())
+            self.assertFalse(Path(f"{src}.bak-{ts}").exists())
             self.assertFalse(Path(f"{readme}.bak-{ts}").exists())
+            self.assertFalse((root / f"README.backup-{ts}.ipynb").exists())
             self.assertEqual(src.read_text(encoding="utf-8"), "template-config\n")
             self.assertEqual(readme.read_text(encoding="utf-8"), "export-readme\n")
             self.assertFalse(extra.exists())
@@ -291,7 +344,7 @@ class TestNotebooksBundle(unittest.TestCase):
                     "git",
                     "check-ignore",
                     "-q",
-                    "notebooks/crop.ipynb.bak-20260901T130000Z",
+                    "notebooks/crop.backup-20260901T130000Z.ipynb",
                 ],
                 cwd=root,
             )
@@ -301,6 +354,11 @@ class TestNotebooksBundle(unittest.TestCase):
                 cwd=root,
             )
             self.assertNotEqual(template.returncode, 0)
+            copy_ignored = subprocess.run(
+                ["git", "check-ignore", "-q", "notebooks/crop_exp1.ipynb"],
+                cwd=root,
+            )
+            self.assertNotEqual(copy_ignored.returncode, 0)
             porcelain = subprocess.run(
                 ["git", "status", "--porcelain"],
                 cwd=root,
@@ -308,7 +366,9 @@ class TestNotebooksBundle(unittest.TestCase):
                 capture_output=True,
                 text=True,
             )
-            self.assertEqual(porcelain.stdout.strip(), "")
+            self.assertEqual(
+                porcelain.stdout.strip(), "?? notebooks/crop_exp1.ipynb"
+            )
 
     def test_get_notebooks_always_clones_with_portable_git(self) -> None:
         sh = (REPO / "scripts" / "get-notebooks.sh").read_text(encoding="utf-8")

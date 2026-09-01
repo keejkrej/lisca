@@ -1,10 +1,13 @@
 # Update this notebooks tree from export branch notebooks, then uv sync like install.
 # Always uses portable MinGit under ROOT\.tools\git (never system git).
 # If ROOT has no .git, bootstrap onto branch notebooks (keep .venv / .uv / .tools).
-# Dirty notebooks/*.ipynb (typical: Config edits): copy each to a sibling
-# *.bak-<UTC>. Any other dirty or untracked paths are discarded (reset --hard,
-# then git clean except .venv / .uv / .tools / *.bak-*). Never fail on a dirty
-# tree. Clean trees use git pull --ff-only. Do not stash. Templates win.
+# Dirty tracked notebooks/*.ipynb templates (typical: Config edits): copy each
+# to a sibling <stem>.backup-<UTC>.ipynb. Untracked notebooks/*.ipynb copies
+# (for example crop_exp1.ipynb) are kept, never backed up or cleaned. Any other
+# dirty or untracked paths are discarded (reset --hard, then git clean except
+# .venv / .uv / .tools / notebooks/*.ipynb / notebooks/*.backup-*.ipynb).
+# Never fail on a dirty tree. Clean trees and additive-only copies use
+# git pull --ff-only. Do not stash. Templates win.
 # Does not download a notebooks zip.
 $ErrorActionPreference = "Stop"
 
@@ -151,7 +154,7 @@ function Ensure-Gitignore {
     $text = Get-Content -LiteralPath $gi -ErrorAction SilentlyContinue
     $lines = @()
     if ($text) { $lines = @($text) }
-    foreach ($need in @(".venv/", ".uv/", ".tools/", "*.bak-*")) {
+    foreach ($need in @(".venv/", ".uv/", ".tools/", "notebooks/*.backup-*.ipynb")) {
         if ($lines -notcontains $need) {
             Add-Content -LiteralPath $gi -Value $need
         }
@@ -173,8 +176,16 @@ function Test-KeepPath {
     if ($PathNorm -like ".venv" -or $PathNorm -like ".venv/" -or $PathNorm -like ".venv/*") { return $true }
     if ($PathNorm -like ".uv" -or $PathNorm -like ".uv/" -or $PathNorm -like ".uv/*") { return $true }
     if ($PathNorm -like ".tools" -or $PathNorm -like ".tools/" -or $PathNorm -like ".tools/*") { return $true }
-    if ($PathNorm -like "*.bak-*") { return $true }
+    if ($PathNorm -like "notebooks/*.backup-*.ipynb") { return $true }
     return $false
+}
+
+function Test-AdditiveNotebook {
+    param([string]$PathNorm)
+    if ($PathNorm -notlike "notebooks/*.ipynb") { return $false }
+    $rest = $PathNorm.Substring("notebooks/".Length)
+    if ($rest -like "*/*") { return $false }
+    return $true
 }
 
 function Test-WorkingTreeIsDirty {
@@ -192,14 +203,16 @@ function Test-WorkingTreeIsDirty {
         $pathNorm = Get-PorcelainPath -Line $line
         if (-not $pathNorm) { continue }
         if (Test-KeepPath -PathNorm $pathNorm) { continue }
+        if ($status -eq "??" -and (Test-AdditiveNotebook -PathNorm $pathNorm)) { continue }
         return $true
     }
     return $false
 }
 
-# Copy dirty notebooks/*.ipynb beside the template as <file>.bak-<UTC>.
-# In-place siblings only. Other dirty paths (README, scripts, install, ...) are
-# not backed up. Skip *.bak-* so previous backups do not multiply.
+# Copy dirty tracked notebooks/*.ipynb templates beside the file as
+# <stem>.backup-<UTC>.ipynb (still a real notebook). Untracked copies (??)
+# are never backed up. Other dirty paths (README, scripts, install, ...) are
+# not backed up. Skip *.backup-*.ipynb so previous backups do not multiply.
 function Backup-DirtyNotebooks {
     param(
         [Parameter(Mandatory = $true)][string]$GitBin,
@@ -212,9 +225,10 @@ function Backup-DirtyNotebooks {
         $line = ([string]$line).TrimEnd()
         if ($line.Length -lt 4) { continue }
         $status = $line.Substring(0, 2)
-        if ($status -eq "!!") { continue }
+        if ($status -eq "??" -or $status -eq "!!") { continue }
         $pathNorm = Get-PorcelainPath -Line $line
         if (-not $pathNorm) { continue }
+        if ($pathNorm -like "notebooks/*.backup-*.ipynb") { continue }
         if ($pathNorm -notlike "notebooks/*.ipynb") { continue }
         $rest = $pathNorm.Substring("notebooks/".Length)
         if ($rest -like "*/*") { continue }
@@ -224,19 +238,20 @@ function Backup-DirtyNotebooks {
             $src = Join-Path $src $part
         }
         if (-not (Test-Path -LiteralPath $src -PathType Leaf)) { continue }
-        $dest = "$src.bak-$Timestamp"
+        $dest = $src -replace '\.ipynb$', ".backup-$Timestamp.ipynb"
         Copy-Item -LiteralPath $src -Destination $dest -Force
-        Write-Host "Backed up $pathNorm -> $pathNorm.bak-$Timestamp"
+        $relDest = $pathNorm -replace '\.ipynb$', ".backup-$Timestamp.ipynb"
+        Write-Host "Backed up $pathNorm -> $relDest"
         $count++
     }
     if ($count -gt 0) {
-        Write-Host "Re-apply Config from the sibling *.bak-$Timestamp files if needed."
+        Write-Host "Re-apply Config from the sibling *.backup-$Timestamp.ipynb files if needed."
     }
 }
 
 function Clear-UntrackedKeepEnv {
     param([Parameter(Mandatory = $true)][string]$GitBin)
-    Invoke-ResolvedGit -GitBin $GitBin -- -C $Root clean -fd -e ".venv" -e ".venv/" -e ".uv" -e ".uv/" -e ".tools" -e ".tools/" -e "*.bak-*"
+    Invoke-ResolvedGit -GitBin $GitBin -- -C $Root clean -fd -e ".venv" -e ".venv/" -e ".uv" -e ".uv/" -e ".tools" -e ".tools/" -e "notebooks/*.ipynb" -e "notebooks/*.backup-*.ipynb"
 }
 
 $installExitCode = 0
@@ -275,7 +290,7 @@ try {
         }
         if (Test-WorkingTreeIsDirty -GitBin $GitBin) {
             $ts = [datetime]::UtcNow.ToString("yyyyMMdd'T'HHmmss'Z'")
-            Write-Host "Local changes detected. Backing up dirty notebooks/*.ipynb beside the templates; other local files are discarded."
+            Write-Host "Local changes detected. Backing up dirty tracked notebooks/*.ipynb beside the templates; untracked notebook copies are kept; other local files are discarded."
             Invoke-ResolvedGit -GitBin $GitBin -- -C $Root status --short | Out-Host
             Backup-DirtyNotebooks -GitBin $GitBin -Timestamp $ts
             Write-Host "Fetching origin notebooks and resetting hard (templates win)..."
@@ -362,7 +377,7 @@ try {
     }
     Write-Host ""
     Write-Host "Config cells in notebooks/ may have changed; re-check them before running."
-    Write-Host "If you edited templates, re-apply Config from sibling *.bak-* files if needed."
+    Write-Host "If you edited templates, re-apply Config from sibling *.backup-*.ipynb files if needed."
     Write-Host "On a laptop, start Jupyter with:"
     Write-Host "  .\scripts\jupyter-notebook.ps1"
     Write-Host "On JupyterHub, register the Lisca kernel with:"
