@@ -141,9 +141,10 @@ class TestNotebooksBundle(unittest.TestCase):
         release = (REPO / ".github" / "workflows" / "notebooks-release.yml").read_text(
             encoding="utf-8"
         )
-        self.assertIn("workflow_dispatch", release)
-        self.assertIn("ref: main", release)
-        self.assertIn("publish-notebooks-branch.sh --tag", release)
+        self.assertIn("- \"notebooks-v*\"", release)
+        self.assertIn("publish-notebooks-branch.sh", release)
+        self.assertIn("do not publish branch or tag", release)
+        self.assertNotIn("publish-notebooks-branch.sh --tag", release)
 
     def test_vendor_readme_explains_sync_not_commit(self) -> None:
         readme = (BUNDLE / "vendor" / "README.md").read_text(encoding="utf-8")

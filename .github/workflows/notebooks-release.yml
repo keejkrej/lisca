@@ -1,17 +1,19 @@
 name: Notebooks release
 
-# Pack from main (monorepo). Tag notebooks-v* on the notebooks export branch, not main.
+# Only this tagged-release path may update branch notebooks.
+# Trigger: push tag notebooks-v* on a monorepo commit (after merging to main).
+# Job: pack zip → GitHub Release → publish packed tree to branch notebooks.
 
 on:
-  workflow_dispatch:
-    inputs:
-      version:
-        description: "Expected SemVer from notebooks/VERSION on main (e.g. 0.1.2)."
-        required: true
-        type: string
   push:
     tags:
       - "notebooks-v*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Pack-only smoke (no branch push, no tag). SemVer from notebooks/VERSION."
+        required: true
+        type: string
 
 concurrency:
   group: notebooks-release
@@ -21,37 +23,35 @@ permissions:
   contents: write
 
 jobs:
-  export:
-    name: pack-from-main
-    if: github.event_name == 'workflow_dispatch'
+  release:
+    name: notebooks-zip
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/notebooks-v')
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - name: Checkout main (monorepo pack sources)
+      - name: Checkout notebooks-v* tag (must be a monorepo pack tree)
         uses: actions/checkout@v4
-        with:
-          ref: main
-          fetch-depth: 0
 
       - name: Require monorepo pack tree
         run: |
           set -euo pipefail
           if [[ ! -f scripts/pack-notebooks.sh || ! -f python/pyproject.toml || ! -f Cargo.lock ]]; then
-            echo "Packing must run from a main monorepo checkout (python/, Cargo.lock, scripts/pack-notebooks.sh)." >&2
+            echo "Tag ${GITHUB_REF_NAME} is not a monorepo commit. Tag notebooks-v* on main after merge, not on branch notebooks." >&2
             exit 1
           fi
 
       - name: Read VERSION
         id: version
         env:
-          EXPECTED: ${{ inputs.version }}
+          TAG: ${{ github.ref_name }}
         run: |
           set -euo pipefail
           version="$(tr -d '[:space:]' < notebooks/VERSION)"
           echo "version=${version}" >> "$GITHUB_OUTPUT"
-          echo "Notebooks VERSION on main is ${version}"
-          if [[ "$EXPECTED" != "$version" ]]; then
-            echo "workflow_dispatch version '$EXPECTED' does not match notebooks/VERSION '$version'" >&2
+          echo "Notebooks VERSION is ${version}"
+          expected="notebooks-v${version}"
+          if [[ "$TAG" != "$expected" ]]; then
+            echo "Tag '$TAG' does not match notebooks/VERSION '$version' (expected '$expected')" >&2
             exit 1
           fi
 
@@ -64,87 +64,69 @@ jobs:
           echo "zip_path=${zip_path}" >> "$GITHUB_OUTPUT"
           unzip -Z1 "$zip_path"
 
-      - name: Publish branch notebooks and tag export commit
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Notebooks ${{ steps.version.outputs.version }}
+          make_latest: false
+          fail_on_unmatched_files: true
+          files: ${{ steps.pack.outputs.zip_path }}
+          body: |
+            Jupyter notebooks zip for Hub and local use. Not desktop installers.
+
+            Preferred: `git clone --branch notebooks --single-branch --depth 1 https://github.com/keejkrej/lisca.git lisca-notebooks` then `bash install.sh`. Update with `bash update.sh` (git pull on the notebooks export branch, not main).
+
+            Airgapped / no-git: download `lisca-notebooks-${{ steps.version.outputs.version }}.zip`. The zip vendors lisca crop and transfection; install only fetches third-party wheels from PyPI.
+
+            Branch `notebooks` is this export artifact. Daily work stays on `main`. Desktop installers ship from `v*` tags.
+
+      - name: Publish packed tree to branch notebooks
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          sha="$(bash scripts/publish-notebooks-branch.sh --tag "${{ steps.pack.outputs.zip_path }}")"
-          echo "Published notebooks export $sha"
+          sha="$(bash scripts/publish-notebooks-branch.sh "${{ steps.pack.outputs.zip_path }}")"
+          echo "Published notebooks export $sha (tag ${GITHUB_REF_NAME} stays on this monorepo commit)"
 
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: notebooks-v${{ steps.version.outputs.version }}
-          name: Notebooks ${{ steps.version.outputs.version }}
-          make_latest: false
-          fail_on_unmatched_files: true
-          files: ${{ steps.pack.outputs.zip_path }}
-          body: |
-            Jupyter notebooks export for Hub and local use. Not desktop installers.
-
-            Preferred: `git clone --branch notebooks --single-branch --depth 1 https://github.com/keejkrej/lisca.git lisca-notebooks` then `bash install.sh`. Update with `bash update.sh` (git pull on this export branch).
-
-            Airgapped / no-git: download `lisca-notebooks-${{ steps.version.outputs.version }}.zip`. The zip vendors lisca crop and transfection; install only fetches third-party wheels from PyPI.
-
-            Tag `notebooks-v${{ steps.version.outputs.version }}` points at branch `notebooks` (export artifact), not `main`. Daily work stays on `main`.
-
-            Desktop Studio, Aligner, and Annotator installers ship from `v*` tags, not this release.
-
-  republish:
-    name: republish-from-tag
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/notebooks-v')
+  pack-artifact:
+    name: pack-artifact-only
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
-      - name: Checkout notebooks-v* tag (export tree)
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Verify export tree (do not pack from this checkout)
-        id: version
+      - name: Require monorepo pack tree
         run: |
           set -euo pipefail
-          if [[ -e apps || -e crates || -e python/src || -f scripts/pack-notebooks.sh ]]; then
-            echo "Tag ${GITHUB_REF_NAME} looks like a monorepo commit. notebooks-v* tags must point at branch notebooks." >&2
+          if [[ ! -f scripts/pack-notebooks.sh || ! -f python/pyproject.toml ]]; then
+            echo "workflow_dispatch packing needs a monorepo checkout. It does not push branch notebooks." >&2
             exit 1
           fi
-          if [[ ! -f VERSION || ! -f vendor/transfection/pyproject.toml || ! -f update.sh ]]; then
-            echo "Tag ${GITHUB_REF_NAME} is missing the notebooks export layout." >&2
-            exit 1
-          fi
-          version="$(tr -d '[:space:]' < VERSION)"
-          expected="notebooks-v${version}"
-          if [[ "${GITHUB_REF_NAME}" != "$expected" ]]; then
-            echo "Tag '${GITHUB_REF_NAME}' does not match VERSION '${version}' (expected '$expected')" >&2
-            exit 1
-          fi
-          echo "version=${version}" >> "$GITHUB_OUTPUT"
 
-      - name: Zip export tree
+      - name: Verify VERSION
+        id: version
+        env:
+          EXPECTED: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          version="$(tr -d '[:space:]' < notebooks/VERSION)"
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          if [[ "$EXPECTED" != "$version" ]]; then
+            echo "workflow_dispatch version '$EXPECTED' does not match notebooks/VERSION '$version'" >&2
+            exit 1
+          fi
+
+      - name: Pack zip (do not publish branch or tag)
         id: pack
         run: |
           set -euo pipefail
-          version="${{ steps.version.outputs.version }}"
-          name="lisca-notebooks-${version}"
-          mkdir -p dist "$name"
-          # Copy the tag tree (zip root) excluding .git
-          tar -C . --exclude .git --exclude dist --exclude "${name}" -cf - . | tar -C "$name" -xf -
-          zip_path="$PWD/dist/${name}.zip"
-          zip -r -X "$zip_path" "$name"
+          chmod +x scripts/pack-notebooks.sh scripts/sync-notebooks-vendor.sh
+          zip_path="$(bash scripts/pack-notebooks.sh)"
           echo "zip_path=${zip_path}" >> "$GITHUB_OUTPUT"
-          unzip -Z1 "$zip_path"
 
-      - name: Upload GitHub Release asset
-        uses: softprops/action-gh-release@v2
+      - name: Upload zip artifact
+        uses: actions/upload-artifact@v4
         with:
-          tag_name: ${{ github.ref_name }}
-          name: Notebooks ${{ steps.version.outputs.version }}
-          make_latest: false
-          fail_on_unmatched_files: true
-          files: ${{ steps.pack.outputs.zip_path }}
-          body: |
-            Jupyter notebooks export for Hub and local use. Not desktop installers.
-
-            Preferred: `git clone --branch notebooks --single-branch --depth 1 https://github.com/keejkrej/lisca.git lisca-notebooks` then `bash install.sh`. Update with `bash update.sh` (git pull on this export branch).
-
-            Airgapped / no-git: download `lisca-notebooks-${{ steps.version.outputs.version }}.zip`.
+          name: lisca-notebooks-${{ steps.version.outputs.version }}
+          path: ${{ steps.pack.outputs.zip_path }}

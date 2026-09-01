@@ -2,6 +2,8 @@
 # Publish a packed notebooks tree to branch `notebooks` (export artifact only).
 # Pack from a monorepo checkout of main; this script never packs.
 # Usage: scripts/publish-notebooks-branch.sh [--dry-run] [--tag] <zip-or-dir>
+# Production release calls this without --tag (the notebooks-v* tag already exists
+# on the monorepo commit that packed). --tag is optional for local experiments.
 # Prints the export commit SHA on stdout.
 
 set -euo pipefail

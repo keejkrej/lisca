@@ -58,25 +58,26 @@ Jupyter notebooks are a second, independent SemVer train. They do not share a ve
 installers and must not be hooked into `.github/workflows/release.yml`.
 
 - Desktop tags: `vX.Y.Z` → unsigned Studio, Aligner, and Annotator installers (DMG, NSIS, deb).
-- Notebook tags: `notebooks-vX.Y.Z` point at branch **`notebooks`** (export artifact), not `main`.
-  Asset: `lisca-notebooks-X.Y.Z.zip`. Workflow: `.github/workflows/notebooks-release.yml`.
+- Notebook tags: `notebooks-vX.Y.Z` on a **main** monorepo commit. Asset:
+  `lisca-notebooks-X.Y.Z.zip`. Workflow: `.github/workflows/notebooks-release.yml`.
 - Bump `notebooks/VERSION` (and `notebooks/pyproject.toml`) on **`main`**. Daily work never lands on
-  `notebooks`. The release job packs from a main monorepo checkout, pushes the packed tree to
-  `notebooks`, then creates the annotated tag on that export commit.
-- Preferred trigger is `workflow_dispatch` on main with the expected SemVer. A `notebooks-v*` tag
-  push only re-publishes the zip from the already-exported tree (that checkout cannot pack).
+  `notebooks`. Branch `notebooks` is an export artifact equivalent to the zip.
+- The only writer of branch `notebooks` is the `notebooks-v*` **tag-push** job: pack zip → GitHub
+  Release → push the packed tree to `notebooks`. Do not push that branch from main merges, PRs, or
+  workflow_dispatch (dispatch is pack-artifact only). Do not add a sync from main.
 - Never reuse a notebooks tag. A notebook-only hotfix is the next patch (for example `0.1.2`), not a
   desktop bump and not a moved `notebooks-v0.1.0`.
-- Preferred user get: clone `--branch notebooks` (then `bash update.sh`). Zip from the GitHub Release
-  remains for airgapped / no-git. Do not clone `main` for Hub or laptop notebooks.
+- Preferred user get: clone `--branch notebooks` (then `bash update.sh`, which `git pull`s that
+  export branch, not `main`). Zip from the GitHub Release remains for airgapped / no-git. Do not
+  clone `main` for Hub or laptop notebooks.
 - The export vendors Lisca crop (`vendor/lisca` from this repo’s `python/`) and the transfection
   sidecar Python package (`vendor/transfection` at the SHA pinned in `Cargo.lock` / `python/uv.lock`).
   `install.sh` only fetches third-party wheels from PyPI. It must not git-clone `keejkrej` packages.
 - `scripts/pack-notebooks.sh` runs `scripts/sync-notebooks-vendor.sh` so `notebooks/vendor/` is not a
   committed duplicate of `python/src` **on main**. Pack fails if `pyproject.toml` or `uv.lock` still
-  contain `git+` / `github.com/keejkrej` sources. `scripts/publish-notebooks-branch.sh` pushes the
-  packed tree (vendor included) to branch `notebooks`.
+  contain `git+` / `github.com/keejkrej` sources. `scripts/publish-notebooks-branch.sh` is called
+  only from the tagged release job (and from CI as `--dry-run`).
 
-Pack locally with `bash scripts/pack-notebooks.sh`. CI smoke-tests that zip on pull requests. Publish
-with the notebooks-release workflow after merge (`workflow_dispatch`); do not tag `main` with
-`notebooks-v*`. Desktop `v*` / `0.3.2` is a separate train.
+Pack locally with `bash scripts/pack-notebooks.sh`. CI smoke-tests that zip on pull requests. After
+merge, push tag `notebooks-vX.Y.Z` on that main commit to publish. Desktop `v*` / `0.3.2` is a
+separate train.

@@ -104,4 +104,4 @@ jobs:
           zip_path="$(bash scripts/pack-notebooks.sh)"
           echo "Packed ${zip_path}"
           unzip -l "$zip_path"
-          bash scripts/publish-notebooks-branch.sh --dry-run --tag "$zip_path"
+          bash scripts/publish-notebooks-branch.sh --dry-run "$zip_path"

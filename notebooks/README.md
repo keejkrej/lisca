@@ -2,7 +2,7 @@
 
 This tree is the notebooks **export** (same layout as `lisca-notebooks-X.Y.Z.zip`). It is not Studio, Aligner, Annotator, or the Lisca monorepo (`apps/`, `crates/`, …).
 
-Daily work happens on **`main`**. Branch **`notebooks`** is an export artifact: the release job packs from main, pushes this tree, and tags `notebooks-vX.Y.Z` on that export commit. Nobody hand-edits `notebooks`.
+Daily work happens on **`main`**. Branch **`notebooks`** is an export artifact (same layout as the zip), not a development branch. Nobody hand-edits it. The only writer is the `notebooks-v*` release workflow: pack zip → GitHub Release → push this packed tree to `notebooks`. There is no sync from main merges or PRs.
 
 ## Get
 
@@ -96,4 +96,4 @@ Set these in the first code cell of each notebook. Paths are the mounted or loca
 
 ## Version
 
-`VERSION` is the source of truth (this tree is `0.1.2`). Bump it on **`main`**. The release job exports this tree to branch `notebooks` and creates annotated tag `notebooks-vX.Y.Z` on that export commit (not a `main` SHA). Desktop installers use a different train (`v*`) and are not in this export.
+`VERSION` is the source of truth (this tree is `0.1.2`). Bump it on **`main`**. After merge, tag `notebooks-vX.Y.Z` on that main commit. The release job packs from the tag, attaches the zip, and exports this tree to branch `notebooks`. Desktop installers use a different train (`v*`) and are not in this export.
