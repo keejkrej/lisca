@@ -59,7 +59,7 @@ class TestNotebooksBundle(unittest.TestCase):
             self.assertIn("UV_CACHE_DIR", text)
             self.assertIn("UV_TOOL_DIR", text)
             self.assertIn("UV_PYTHON_BIN_DIR", text)
-        self.assertIn(".uv/python", install_sh)
+        self.assertIn("$UV_DIR/python", install_sh)
         self.assertIn("PyPI", install_sh)
         self.assertIn("vendored under vendor/", install_ps1)
         self.assertIn("PyPI", install_ps1)
