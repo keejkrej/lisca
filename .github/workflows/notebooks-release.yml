@@ -79,8 +79,8 @@ jobs:
           body: |
             Jupyter notebooks zip for Hub and local use. Not desktop installers.
 
-            Preferred: `curl -fsSL https://raw.githubusercontent.com/keejkrej/lisca/main/scripts/get-notebooks.sh | bash` (Windows: `irm https://raw.githubusercontent.com/keejkrej/lisca/main/scripts/get-notebooks.ps1 | iex`). That clones branch `notebooks` if git is installed, otherwise extracts the zip.
+            Preferred: `curl -fsSL https://raw.githubusercontent.com/keejkrej/lisca/main/scripts/get-notebooks.sh | bash` (Windows: `irm https://raw.githubusercontent.com/keejkrej/lisca/main/scripts/get-notebooks.ps1 | iex`). That clones branch `notebooks` (system git, or portable git under `.tools/git`).
 
-            Update: `bash update.sh` (requires git; zip extracts bootstrap onto branch `notebooks`). Do not clone `main`.
+            Update: `bash update.sh` (same git; pull or bootstrap onto branch `notebooks`). Do not clone `main`.
 
             Tag `notebooks-v${{ steps.version.outputs.version }}` points at the export commit on branch `notebooks`. Daily work stays on `main`. Desktop installers ship from `v*` tags.

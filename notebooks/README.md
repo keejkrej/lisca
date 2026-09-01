@@ -4,11 +4,11 @@ This tree is the notebooks **export artifact**, equivalent to `lisca-notebooks-X
 
 - All daily edits happen on **`main`** (and assay sidecars). Nobody hand-edits branch `notebooks`.
 - The only writer of branch `notebooks` is the notebooks release workflow: pack zip → push that packed tree to `notebooks` → tag `notebooks-vX.Y.Z` on that export commit → GitHub Release. There is no sync from main merges or PRs.
-- `update.sh` requires git. It pulls export branch `notebooks`; it does not pull `main` and does not download a zip.
+- `update.sh` uses system git or portable git under `.tools/git`. It pulls export branch `notebooks`; it does not pull `main`.
 
 ## Get
 
-Preferred:
+Preferred (clones branch `notebooks`, then install):
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/keejkrej/lisca/main/scripts/get-notebooks.sh | bash
@@ -20,7 +20,7 @@ Windows:
 irm https://raw.githubusercontent.com/keejkrej/lisca/main/scripts/get-notebooks.ps1 | iex
 ```
 
-If git is on PATH, that clones branch `notebooks` then runs install. If git is missing, it extracts the latest `notebooks-v*` zip instead (`update.sh` will need git later). If the repo is private, set `GH_TOKEN` / `GITHUB_TOKEN`.
+Uses system git if present, otherwise a portable git under `.tools/git`. If the repo is private, set `GH_TOKEN` / `GITHUB_TOKEN`.
 
 You can also clone directly:
 
@@ -30,7 +30,7 @@ cd lisca-notebooks
 bash install.sh
 ```
 
-Do **not** clone `main` for Hub or laptop notebooks. Airgapped: download `lisca-notebooks-X.Y.Z.zip` from a [`notebooks-v*`](https://github.com/keejkrej/lisca/releases) GitHub Release, extract, then `bash install.sh`.
+Do **not** clone `main` for Hub or laptop notebooks.
 
 This export vendors Lisca crop (`vendor/lisca`, installed as `lisca[crop]`) and the transfection sidecar (`vendor/transfection`). `install.sh` / `install.ps1` only fetch third-party wheels from PyPI (numpy, pandas, matplotlib, nd2, pylibCZIrw, ipykernel, jupyter, …). They do not git-clone GitHub packages.
 
@@ -57,7 +57,7 @@ That installs Python 3.12 and the notebook extra (`ipykernel`, `jupyter`) plus t
 
 ## Update
 
-Requires **git**. Zip-first folders are fine: `update.sh` bootstraps onto branch `notebooks` and keeps `.venv` / `.uv`.
+Uses system git or portable git under `.tools/git`. If this folder has no `.git`, `update.sh` bootstraps onto branch `notebooks` and keeps `.venv` / `.uv` / `.tools`.
 
 ```sh
 bash update.sh
@@ -65,7 +65,7 @@ bash update.sh
 
 Windows: `.\update.ps1`.
 
-If git is missing, install it and re-run. It does not pull `main`. Config cells in `notebooks/` may change — re-check them.
+It does not pull `main`. Config cells in `notebooks/` may change — re-check them.
 
 ## JupyterHub
 

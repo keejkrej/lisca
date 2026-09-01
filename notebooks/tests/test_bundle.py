@@ -125,10 +125,12 @@ class TestNotebooksBundle(unittest.TestCase):
         self.assertIn("export artifact", readme)
         self.assertIn("Nobody hand-edits", readme)
         self.assertIn("does not pull `main`", readme)
+        self.assertNotIn("Airgapped", readme)
 
     def test_update_pulls_notebooks_branch_not_release_zip(self) -> None:
         sh = (BUNDLE / "update.sh").read_text(encoding="utf-8")
         ps1 = (BUNDLE / "update.ps1").read_text(encoding="utf-8")
+        pack = (REPO / "scripts" / "pack-notebooks.sh").read_text(encoding="utf-8")
         for text in (sh, ps1):
             self.assertIn("git pull --ff-only", text)
             self.assertIn("branch notebooks", text)
@@ -136,17 +138,19 @@ class TestNotebooksBundle(unittest.TestCase):
             self.assertIn("checkout -f -B notebooks origin/notebooks", text)
             self.assertIn(".venv/", text)
             self.assertIn(".uv/", text)
+            self.assertIn(".tools/", text)
             self.assertNotIn("api.github.com/repos/keejkrej/lisca/releases", text)
-            self.assertNotIn(".tools/git", text)
-            self.assertNotIn("baulk/git-minimal", text)
-            self.assertNotIn("MinGit-", text)
+        self.assertIn(".tools/git", sh)
+        self.assertIn("baulk/git-minimal", sh)
+        self.assertIn("MinGit-2.55.0.5-64-bit.zip", ps1)
         self.assertIn("command -v git", sh)
-        self.assertIn("git is required for update", sh)
+        self.assertIn(".tools/", pack)
         publish = (REPO / "scripts" / "publish-notebooks-branch.sh").read_text(
             encoding="utf-8"
         )
         self.assertIn("HEAD:refs/heads/notebooks", publish)
         self.assertIn("--dry-run", publish)
+        self.assertIn(".tools/", publish)
         release = (REPO / ".github" / "workflows" / "notebooks-release.yml").read_text(
             encoding="utf-8"
         )
@@ -155,22 +159,19 @@ class TestNotebooksBundle(unittest.TestCase):
         self.assertIn("ref: main", release)
         self.assertIn("tag_name: notebooks-v", release)
 
-    def test_get_notebooks_clones_if_git_else_zip(self) -> None:
+    def test_get_notebooks_always_clones_with_system_or_portable_git(self) -> None:
         sh = (REPO / "scripts" / "get-notebooks.sh").read_text(encoding="utf-8")
         ps1 = (REPO / "scripts" / "get-notebooks.ps1").read_text(encoding="utf-8")
         for text in (sh, ps1):
             self.assertIn("clone --branch notebooks --single-branch --depth 1", text)
-            self.assertIn("notebooks-v", text)
+            self.assertIn(".tools/git", text)
             self.assertIn("keejkrej/lisca/main/scripts/get-notebooks", text)
-            self.assertIn("update", text)
-            self.assertNotIn(".tools/git", text)
-            self.assertNotIn("baulk/git-minimal", text)
-            self.assertNotIn("MinGit-", text)
+            self.assertNotIn("api.github.com/repos/keejkrej/lisca/releases", text)
+            self.assertNotIn("Airgapped", text)
         self.assertIn("command -v git", sh)
-        self.assertIn("print_update_needs_git", sh)
-        self.assertIn("Write-UpdateNeedsGit", ps1)
-        self.assertIn("git not found", sh)
-        self.assertIn("git not found", ps1)
+        self.assertIn("baulk/git-minimal", sh)
+        self.assertIn("MinGit-2.55.0.5-64-bit.zip", ps1)
+        self.assertIn("Get-Command git", ps1)
 
     def test_vendor_readme_explains_sync_not_commit(self) -> None:
         readme = (BUNDLE / "vendor" / "README.md").read_text(encoding="utf-8")

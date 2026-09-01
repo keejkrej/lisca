@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# First-time notebooks get from main (curl|bash).
-# If git is on PATH: clone export branch notebooks, then install.
-# If git is missing: download the latest notebooks-v* zip, extract, install.
+# First-time notebooks get from main (curl|bash). Always clones export branch
+# notebooks, then install. Uses system git if present, otherwise a portable git
+# under DEST/.tools/git. Scripts do not zip-extract.
 # Usage:
 #   curl -fsSL https://raw.githubusercontent.com/keejkrej/lisca/main/scripts/get-notebooks.sh | bash
 #   curl ... | bash -s -- --no-install
@@ -11,7 +11,6 @@ set -euo pipefail
 
 REPO="keejkrej/lisca"
 CLONE_URL="https://github.com/${REPO}.git"
-API="https://api.github.com/repos/${REPO}/releases"
 NO_INSTALL=0
 DEST="${LISCA_NOTEBOOKS_DIR:-}"
 
@@ -44,15 +43,13 @@ done
 DEST="${DEST:-lisca-notebooks}"
 
 token="${GH_TOKEN:-${GITHUB_TOKEN:-}}"
-auth_args=()
 if [[ -n "$token" ]]; then
-  auth_args=(-H "Authorization: Bearer ${token}")
   CLONE_URL="https://x-access-token:${token}@github.com/${REPO}.git"
 fi
 
 if [[ -e "$DEST" ]]; then
   echo "Destination already exists: $DEST" >&2
-  echo "For updates, cd there and run bash update.sh (requires git)." >&2
+  echo "For updates, cd there and run bash update.sh." >&2
   exit 1
 fi
 
@@ -62,122 +59,193 @@ auth_note() {
   fi
 }
 
-print_update_needs_git() {
-  echo "This zip extract is not a git checkout. update.sh requires git."
-  echo "Install git, then in $DEST run: bash update.sh"
-  echo "That bootstraps onto export branch notebooks (keeps .venv / .uv)."
-  echo "  macOS:         xcode-select --install"
-  echo "  Debian/Ubuntu: sudo apt-get update && sudo apt-get install -y git"
-  echo "  Fedora:        sudo dnf install -y git"
-  echo "  Windows:       winget install Git.Git   or https://git-scm.com/download/win"
+# Portable Git pins. Keep in sync with get-notebooks.ps1 / notebooks/update.sh / update.ps1.
+verify_sha256() {
+  local file="$1" expect="$2" got=""
+  if command -v sha256sum >/dev/null 2>&1; then
+    got="$(sha256sum "$file" | awk '{print $1}')"
+  elif command -v shasum >/dev/null 2>&1; then
+    got="$(shasum -a 256 "$file" | awk '{print $1}')"
+  else
+    echo "Need sha256sum or shasum to verify portable git." >&2
+    exit 1
+  fi
+  got="$(printf '%s' "$got" | tr '[:upper:]' '[:lower:]')"
+  expect="$(printf '%s' "$expect" | tr '[:upper:]' '[:lower:]')"
+  if [[ "$got" != "$expect" ]]; then
+    echo "Checksum mismatch for portable git (got $got, expected $expect)." >&2
+    exit 1
+  fi
 }
 
-pick_and_download_zip() {
-  local json zip_url
-  if ! command -v python3 >/dev/null 2>&1 && ! command -v python >/dev/null 2>&1; then
-    echo "python3 is required to pick the latest notebooks-v* release (or install git and re-run)." >&2
-    exit 1
-  fi
-  local py
-  py="$(command -v python3 || command -v python)"
-  echo "Fetching latest notebooks-v* GitHub Release..."
-  json="$(curl -fsSL "${auth_args[@]}" -H "Accept: application/vnd.github+json" "$API")" || {
-    echo "Failed to list GitHub Releases for ${REPO}." >&2
-    auth_note
-    exit 1
-  }
-  zip_url="$(
-    "$py" -c '
-import json, re, sys
-releases = json.load(sys.stdin)
-best = None
-best_key = None
-for rel in releases:
-    if rel.get("draft"):
-        continue
-    tag = rel.get("tag_name") or ""
-    if not tag.startswith("notebooks-v"):
-        continue
-    ver = tag[len("notebooks-v"):]
-    m = re.fullmatch(r"(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)", ver)
-    if not m:
-        continue
-    key = (tuple(int(p) for p in m.groups()), rel.get("published_at") or "")
-    if best is None or key > best_key:
-        best, best_key = rel, key
-if best is None:
-    sys.stderr.write("No GitHub Release with tag notebooks-vX.Y.Z found.\n")
-    sys.exit(1)
-asset = None
-for a in best.get("assets") or []:
-    name = a.get("name") or ""
-    if name.startswith("lisca-notebooks-") and name.endswith(".zip"):
-        asset = a
-        break
-if asset is None:
-    sys.stderr.write("Release %s has no lisca-notebooks-*.zip asset.\n" % best.get("tag_name"))
-    sys.exit(1)
-print(asset["id"])
-print(asset["name"])
-print(asset.get("browser_download_url") or "")
-print(best.get("tag_name") or "")
-' <<<"$json"
-  )" || exit 1
-  local asset_id zip_name zip_dl tag work
-  asset_id="$(sed -n '1p' <<<"$zip_url")"
-  zip_name="$(sed -n '2p' <<<"$zip_url")"
-  zip_dl="$(sed -n '3p' <<<"$zip_url")"
-  tag="$(sed -n '4p' <<<"$zip_url")"
-  echo "Downloading ${zip_name} (${tag})..."
+portable_git_bin() {
+  local home="$1" c
+  for c in \
+    "$home/cmd/git" \
+    "$home/cmd/git.exe" \
+    "$home/bin/git" \
+    "$home/bin/git.exe" \
+    "$home/mingw64/bin/git.exe"
+  do
+    if [[ -f "$c" ]] && "$c" --version >/dev/null 2>&1; then
+      printf '%s\n' "$c"
+      return 0
+    fi
+  done
+  return 1
+}
+
+extract_git_archive() {
+  local archive="$1" dest="$2" work
   work="$(mktemp -d)"
-  local zip_path="$work/$zip_name"
-  if [[ -n "$token" ]]; then
-    curl -fsSL "${auth_args[@]}" -H "Accept: application/octet-stream" \
-      -o "$zip_path" \
-      "https://api.github.com/repos/${REPO}/releases/assets/${asset_id}" || {
-      echo "Failed to download release asset." >&2
-      auth_note
+  case "$archive" in
+    *.zip) unzip -q "$archive" -d "$work" ;;
+    *.tar.gz|*.tgz) tar -xzf "$archive" -C "$work" ;;
+    *.tar.xz)
+      if ! tar -xJf "$archive" -C "$work" 2>/dev/null; then
+        if command -v python3 >/dev/null 2>&1; then
+          python3 - "$archive" "$work" <<'PY'
+import sys, tarfile
+kw = {}
+if hasattr(tarfile, "data_filter"):
+    kw["filter"] = "data"
+with tarfile.open(sys.argv[1]) as tf:
+    tf.extractall(sys.argv[2], **kw)
+PY
+        else
+          echo "Need tar+xz or python3 to extract portable git ($archive)." >&2
+          exit 1
+        fi
+      fi
+      ;;
+    *)
+      echo "Unknown portable git archive: $archive" >&2
       exit 1
-    }
-  else
-    curl -fsSL -o "$zip_path" "$zip_dl" || {
-      echo "Failed to download $zip_dl." >&2
-      auth_note
-      exit 1
-    }
-  fi
-  mkdir -p "$work/extracted"
-  unzip -q "$zip_path" -d "$work/extracted"
+      ;;
+  esac
+  mkdir -p "$dest"
   local top=()
   while IFS= read -r -d '' path; do
     top+=("$path")
-  done < <(find "$work/extracted" -mindepth 1 -maxdepth 1 -print0)
-  if [[ ${#top[@]} -ne 1 || ! -d "${top[0]}" ]]; then
-    echo "Zip did not contain a single top-level folder." >&2
-    exit 1
+  done < <(find "$work" -mindepth 1 -maxdepth 1 -print0)
+  if [[ ${#top[@]} -eq 1 && -d "${top[0]}" ]]; then
+    cp -a "${top[0]}/." "$dest/"
+  else
+    cp -a "$work"/. "$dest/"
   fi
-  mkdir -p "$(dirname "$DEST")"
-  mv "${top[0]}" "$DEST"
   rm -rf "$work"
 }
 
-if command -v git >/dev/null 2>&1; then
-  echo "git found; cloning export branch notebooks..."
-  mkdir -p "$(dirname "$DEST")"
-  git clone --branch notebooks --single-branch --depth 1 "$CLONE_URL" "$DEST" || {
-    echo "Clone of branch notebooks failed." >&2
-    auth_note
-    echo "Airgapped: download lisca-notebooks-X.Y.Z.zip from GitHub Releases, extract, then bash install.sh." >&2
+ensure_portable_git() {
+  local dest="$1" url sha name
+  if portable_git_bin "$dest" >/dev/null; then
+    echo "Using portable git at $(portable_git_bin "$dest")"
+    return 0
+  fi
+  rm -rf "$dest"
+  mkdir -p "$dest"
+  case "$(uname -sm)" in
+    "Linux x86_64"|"Linux amd64")
+      name="git-minimal-musl-v2.55.0-linux-amd64.tar.xz"
+      url="https://github.com/baulk/git-minimal/releases/download/v2.55.0/${name}"
+      sha="f3b65fb7c0dda1be9623ffb9e403a5dcaeb3cc48750428ad38d0ba6996146c8c"
+      ;;
+    "Linux aarch64"|"Linux arm64")
+      name="git-minimal-musl-v2.55.0-linux-aarch64.tar.xz"
+      url="https://github.com/baulk/git-minimal/releases/download/v2.55.0/${name}"
+      sha="14375946388ffc83bdc5ac253aec0080880ee2fa22eb530cc9299e7ee482286f"
+      ;;
+    "Darwin arm64")
+      name="dugite-native-v2.53.0-4098283-macOS-arm64.tar.gz"
+      url="https://github.com/desktop/dugite-native/releases/download/v2.53.0-4/${name}"
+      sha="f9dc64635a5b62fbd7ad95db73268bbb8912255ac516d65d37bf7af22fcb8ffe"
+      ;;
+    "Darwin x86_64")
+      name="dugite-native-v2.53.0-4098283-macOS-x64.tar.gz"
+      url="https://github.com/desktop/dugite-native/releases/download/v2.53.0-4/${name}"
+      sha="ae6686718aa34f4140424db16b92a47dcffd6d1f312eb8b5f3b267f7404e2680"
+      ;;
+    *)
+      echo "No portable git pin for $(uname -sm). Install git and re-run." >&2
+      exit 1
+      ;;
+  esac
+  echo "Downloading portable git ($name) into $dest ..."
+  local tmp
+  tmp="$(mktemp)"
+  if ! curl -fsSL "$url" -o "$tmp"; then
+    rm -f "$tmp"
+    echo "Failed to download portable git from $url" >&2
     exit 1
-  }
+  fi
+  verify_sha256 "$tmp" "$sha"
+  extract_git_archive "$tmp" "$dest"
+  rm -f "$tmp"
+  if ! portable_git_bin "$dest" >/dev/null; then
+    echo "Portable git downloaded but git --version failed in $dest." >&2
+    exit 1
+  fi
+}
+
+run_git() {
+  local bin="$GIT_BIN" home="${GIT_HOME:-}"
+  if [[ -z "$home" ]]; then
+    "$bin" "$@"
+    return
+  fi
+  local bindir
+  bindir="$(cd "$(dirname "$bin")" && pwd)"
+  local env_args=(PATH="${bindir}:${PATH}")
+  if [[ -d "$home/libexec/git-core" ]]; then
+    env_args+=("GIT_EXEC_PATH=$home/libexec/git-core")
+  fi
+  if [[ -d "$home/share/git-core/templates" ]]; then
+    env_args+=("GIT_TEMPLATE_DIR=$home/share/git-core/templates")
+  fi
+  if [[ -f "$home/ssl/cacert.pem" ]]; then
+    env_args+=("GIT_SSL_CAINFO=$home/ssl/cacert.pem")
+  fi
+  env "${env_args[@]}" "$bin" "$@"
+}
+
+STAGE=""
+cleanup_stage() {
+  if [[ -n "${STAGE:-}" && -d "$STAGE" ]]; then
+    rm -rf "$STAGE"
+  fi
+}
+trap cleanup_stage EXIT
+
+GIT_HOME=""
+if command -v git >/dev/null 2>&1 && git --version >/dev/null 2>&1; then
+  GIT_BIN="$(command -v git)"
+  echo "Using system git: $GIT_BIN"
 else
-  echo "git not found; downloading the latest notebooks-v* zip."
-  pick_and_download_zip
-  print_update_needs_git
+  STAGE="$(mktemp -d)"
+  echo "System git not found; installing portable git..."
+  ensure_portable_git "$STAGE"
+  GIT_BIN="$(portable_git_bin "$STAGE")"
+  GIT_HOME="$STAGE"
+  echo "Portable git: $GIT_BIN"
+fi
+
+echo "Cloning export branch notebooks..."
+mkdir -p "$(dirname "$DEST")"
+if ! run_git clone --branch notebooks --single-branch --depth 1 "$CLONE_URL" "$DEST"; then
+  echo "Clone of branch notebooks failed." >&2
+  auth_note
+  exit 1
+fi
+
+if [[ -n "$STAGE" ]]; then
+  mkdir -p "$DEST/.tools"
+  rm -rf "$DEST/.tools/git"
+  mv "$STAGE" "$DEST/.tools/git"
+  STAGE=""
 fi
 
 if [[ ! -f "$DEST/install.sh" || ! -f "$DEST/pyproject.toml" ]]; then
-  echo "Extracted/cloned tree is missing install.sh or pyproject.toml: $DEST" >&2
+  echo "Cloned tree is missing install.sh or pyproject.toml: $DEST" >&2
   exit 1
 fi
 

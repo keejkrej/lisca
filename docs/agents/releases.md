@@ -66,13 +66,15 @@ installers and must not be hooked into `.github/workflows/release.yml`.
   publishes the packed tree to `notebooks` with `--tag` (`notebooks-vX.Y.Z` on the export commit),
   then creates the GitHub Release. Do not tag a main monorepo commit. Do not push branch `notebooks`
   from merges or PRs. Do not add a sync from main.
-- Preferred user get:
+- Preferred user get (always clone branch `notebooks`):
   `curl -fsSL https://raw.githubusercontent.com/keejkrej/lisca/main/scripts/get-notebooks.sh | bash`
   Windows: `irm https://raw.githubusercontent.com/keejkrej/lisca/main/scripts/get-notebooks.ps1 | iex`.
-  If git is on PATH, get-notebooks clones branch `notebooks`; otherwise it extracts the latest
-  `notebooks-v*` zip and prints that `update.sh` will need git later.
-- Update: `bash update.sh` **requires git**. A zip extract with no `.git` is bootstrapped onto branch
-  `notebooks` (`.venv` / `.uv` kept). Update does not download a zip and does not pull `main`.
+  Scripts use system git if present, otherwise portable git under `.tools/git`. They do not
+  zip-extract. The GitHub Release still attaches `lisca-notebooks-X.Y.Z.zip` for a manual
+  download; scripts do not treat that zip as a get/update path.
+- Update: `bash update.sh` uses the same git (system or portable). No `.git` → bootstrap onto
+  branch `notebooks` (`.venv` / `.uv` / `.tools` kept). Already on `notebooks` → `git pull --ff-only`
+  then `uv sync`. Update does not download a notebooks zip and does not pull `main`.
 - Never reuse a notebooks tag. A notebook-only hotfix is the next patch (for example `0.1.2`), not a
   desktop bump and not a moved `notebooks-v0.1.0`.
 - The export vendors Lisca crop (`vendor/lisca` from this repo’s `python/`) and the transfection
