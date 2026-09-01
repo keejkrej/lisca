@@ -154,7 +154,7 @@ fi
 cp -a "$TREE/." "$REPO/"
 # Keep .venv / .uv untracked on the export branch.
 if [[ ! -f "$REPO/.gitignore" ]]; then
-  printf '%s\n' ".venv/" ".uv/" ".tools/" ".ipynb_checkpoints/" "__pycache__/" "*.pyc" "*.pyo" >"$REPO/.gitignore"
+  printf '%s\n' ".venv/" ".uv/" ".ipynb_checkpoints/" "__pycache__/" "*.pyc" "*.pyo" >"$REPO/.gitignore"
 fi
 
 git -C "$REPO" add -A

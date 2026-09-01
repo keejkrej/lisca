@@ -4,11 +4,11 @@ This tree is the notebooks **export artifact**, equivalent to `lisca-notebooks-X
 
 - All daily edits happen on **`main`** (and assay sidecars). Nobody hand-edits branch `notebooks`.
 - The only writer of branch `notebooks` is the notebooks release workflow: pack zip → push that packed tree to `notebooks` → tag `notebooks-vX.Y.Z` on that export commit → GitHub Release. There is no sync from main merges or PRs.
-- `update.sh` always uses portable Git under `.tools/git` (same idea as `.uv`). It pulls export branch `notebooks`; it does not pull `main` and does not download a zip.
+- `update.sh` requires git. It pulls export branch `notebooks`; it does not pull `main` and does not download a zip.
 
 ## Get
 
-Preferred (downloads portable Git into `.tools/git`, then clones branch `notebooks`):
+Preferred:
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/keejkrej/lisca/main/scripts/get-notebooks.sh | bash
@@ -20,9 +20,17 @@ Windows:
 irm https://raw.githubusercontent.com/keejkrej/lisca/main/scripts/get-notebooks.ps1 | iex
 ```
 
-That does **not** use system `git`. Zip extract is second-class: pass `--zip` (Windows `-Zip`), or download `lisca-notebooks-X.Y.Z.zip` from a GitHub Release. If the repo is private, set `GH_TOKEN` / `GITHUB_TOKEN`.
+If git is on PATH, that clones branch `notebooks` then runs install. If git is missing, it extracts the latest `notebooks-v*` zip instead (`update.sh` will need git later). If the repo is private, set `GH_TOKEN` / `GITHUB_TOKEN`.
 
-Do **not** clone `main` for Hub or laptop notebooks. Airgapped: download `lisca-notebooks-X.Y.Z.zip` from a [`notebooks-v*`](https://github.com/keejkrej/lisca/releases) GitHub Release, extract, then `bash install.sh`. Later `update.sh` still needs network once to fetch portable Git unless `.tools/git` is already present.
+You can also clone directly:
+
+```sh
+git clone --branch notebooks --single-branch --depth 1 https://github.com/keejkrej/lisca.git lisca-notebooks
+cd lisca-notebooks
+bash install.sh
+```
+
+Do **not** clone `main` for Hub or laptop notebooks. Airgapped: download `lisca-notebooks-X.Y.Z.zip` from a [`notebooks-v*`](https://github.com/keejkrej/lisca/releases) GitHub Release, extract, then `bash install.sh`.
 
 This export vendors Lisca crop (`vendor/lisca`, installed as `lisca[crop]`) and the transfection sidecar (`vendor/transfection`). `install.sh` / `install.ps1` only fetch third-party wheels from PyPI (numpy, pandas, matplotlib, nd2, pylibCZIrw, ipykernel, jupyter, …). They do not git-clone GitHub packages.
 
@@ -49,7 +57,7 @@ That installs Python 3.12 and the notebook extra (`ipykernel`, `jupyter`) plus t
 
 ## Update
 
-Uses portable Git in `.tools/git` (downloaded if missing). Zip-first folders are fine: `update.sh` bootstraps onto branch `notebooks` and keeps `.venv` / `.uv` / `.tools`.
+Requires **git**. Zip-first folders are fine: `update.sh` bootstraps onto branch `notebooks` and keeps `.venv` / `.uv`.
 
 ```sh
 bash update.sh
@@ -57,7 +65,7 @@ bash update.sh
 
 Windows: `.\update.ps1`.
 
-It does not pull `main`. Config cells in `notebooks/` may change — re-check them.
+If git is missing, install it and re-run. It does not pull `main`. Config cells in `notebooks/` may change — re-check them.
 
 ## JupyterHub
 
