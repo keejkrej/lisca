@@ -65,7 +65,7 @@ bash update.sh
 
 Windows: `.\update.ps1`.
 
-Editing template notebooks is fine (Config cells in `crop.ipynb` / `analyze.ipynb` / `results.ipynb`). Update copies each dirty `notebooks/*.ipynb` to a sibling `*.bak-<UTC-timestamp>` (for example `notebooks/crop.ipynb.bak-20260901T130000Z`), then refreshes the templates from branch `notebooks`. Other local files (scripts, README, install) are discarded, not backed up. Re-apply Config from the backup if needed. It does not pull `main`.
+Duplicate templates and work on copies (for example `notebooks/crop_exp1.ipynb`). Those copies stay untracked and update leaves them in place. If you edit the tracked templates (`crop.ipynb` / `analyze.ipynb` / `results.ipynb`), update copies each dirty template to a sibling `*.backup-<UTC-timestamp>.ipynb` (for example `notebooks/crop.backup-20260901T130000Z.ipynb`) so Jupyter can still open it, then refreshes the templates from branch `notebooks`. Other local files (scripts, README, install) are discarded, not backed up. Re-apply Config from the backup if needed. It does not pull `main`.
 
 ## JupyterHub
 
@@ -108,4 +108,4 @@ Set these in the first code cell of each notebook. Paths are the mounted or loca
 
 ## Version
 
-`VERSION` is the source of truth (this tree is `0.1.3`). Bump it on **`main`**. After merge, run notebooks-release `workflow_dispatch` with that SemVer. The job packs from main, publishes this tree to branch `notebooks`, and tags `notebooks-vX.Y.Z` on that **export** commit (not a main SHA). Desktop installers use a different train (`v*`) and are not in this export.
+`VERSION` is the source of truth (this tree is `0.1.4`). Bump it on **`main`**. After merge, run notebooks-release `workflow_dispatch` with that SemVer. The job packs from main, publishes this tree to branch `notebooks`, and tags `notebooks-vX.Y.Z` on that **export** commit (not a main SHA). Desktop installers use a different train (`v*`) and are not in this export.
