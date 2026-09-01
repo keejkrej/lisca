@@ -2,10 +2,13 @@
 # Update this notebooks tree from export branch notebooks, then uv sync like install.
 # Always uses portable git under ROOT/.tools/git (never system git).
 # If ROOT has no .git, bootstrap onto branch notebooks (keep .venv / .uv / .tools).
-# Dirty notebooks/*.ipynb (typical: Config edits): copy each to a sibling
-# *.bak-<UTC>. Any other dirty or untracked paths are discarded (reset --hard,
-# then git clean except .venv / .uv / .tools / *.bak-*). Never fail on a dirty
-# tree. Clean trees use git pull --ff-only. Do not stash. Templates win.
+# Dirty tracked notebooks/*.ipynb templates (typical: Config edits): copy each
+# to a sibling <stem>.backup-<UTC>.ipynb. Untracked notebooks/*.ipynb copies
+# (for example crop_exp1.ipynb) are kept, never backed up or cleaned. Any other
+# dirty or untracked paths are discarded (reset --hard, then git clean except
+# .venv / .uv / .tools / notebooks/*.ipynb / notebooks/*.backup-*.ipynb).
+# Never fail on a dirty tree. Clean trees and additive-only copies use
+# git pull --ff-only. Do not stash. Templates win.
 # Does not download a notebooks zip.
 set -euo pipefail
 
@@ -183,7 +186,7 @@ ensure_gitignore() {
   local gi="$ROOT/.gitignore"
   touch "$gi"
   local line
-  for line in ".venv/" ".uv/" ".tools/" "*.bak-*"; do
+  for line in ".venv/" ".uv/" ".tools/" "notebooks/*.backup-*.ipynb"; do
     if ! grep -Fxq "$line" "$gi"; then
       printf '%s\n' "$line" >>"$gi"
     fi
@@ -205,29 +208,47 @@ porcelain_path() {
 is_keep_path() {
   local path="$1"
   case "$path" in
-    .venv | .venv/ | .venv/* | .uv | .uv/ | .uv/* | .tools | .tools/ | .tools/* | *.bak-*)
+    .venv | .venv/ | .venv/* | .uv | .uv/ | .uv/* | .tools | .tools/ | .tools/* | notebooks/*.backup-*.ipynb)
       return 0
       ;;
   esac
   return 1
 }
 
-# Copy dirty notebooks/*.ipynb beside the template as <file>.bak-<UTC>.
-# In-place siblings only. Other dirty paths (README, scripts, install, …) are
-# not backed up. Skip *.bak-* so previous backups do not multiply.
+is_additive_notebook() {
+  local path="$1"
+  local rest="${path#notebooks/}"
+  case "$path" in
+    notebooks/*.ipynb)
+      if [[ "$rest" == */* ]]; then
+        return 1
+      fi
+      return 0
+      ;;
+  esac
+  return 1
+}
+
+# Copy dirty tracked notebooks/*.ipynb templates beside the file as
+# <stem>.backup-<UTC>.ipynb (still a real notebook). Untracked copies (??)
+# are never backed up. Other dirty paths (README, scripts, install, …) are
+# not backed up. Skip *.backup-*.ipynb so previous backups do not multiply.
 backup_dirty_notebooks() {
   local ts="$1"
-  local line status path rest src dest
+  local line status path rest src dest rel_dest stem
   local count=0
   while IFS= read -r line; do
     [[ -z "$line" ]] && continue
     status="${line:0:2}"
-    if [[ "$status" == "!!" ]]; then
+    if [[ "$status" == "??" || "$status" == "!!" ]]; then
       continue
     fi
     path="$(porcelain_path "$line")"
     rest="${path#notebooks/}"
     case "$path" in
+      notebooks/*.backup-*.ipynb)
+        continue
+        ;;
       notebooks/*.ipynb)
         if [[ "$rest" == */* ]]; then
           continue
@@ -241,13 +262,15 @@ backup_dirty_notebooks() {
     if [[ ! -f "$src" ]]; then
       continue
     fi
-    dest="${src}.bak-${ts}"
+    stem="${src%.ipynb}"
+    dest="${stem}.backup-${ts}.ipynb"
+    rel_dest="${path%.ipynb}.backup-${ts}.ipynb"
     cp -a "$src" "$dest"
-    echo "Backed up ${path} -> ${path}.bak-${ts}"
+    echo "Backed up ${path} -> ${rel_dest}"
     count=$((count + 1))
   done < <(run_git -C "$ROOT" status --porcelain -- notebooks/)
   if [[ "$count" -gt 0 ]]; then
-    echo "Re-apply Config from the sibling *.bak-${ts} files if needed."
+    echo "Re-apply Config from the sibling *.backup-${ts}.ipynb files if needed."
   fi
 }
 
@@ -263,18 +286,23 @@ working_tree_is_dirty() {
     if is_keep_path "$path"; then
       continue
     fi
+    if [[ "$status" == "??" ]] && is_additive_notebook "$path"; then
+      continue
+    fi
     return 0
   done < <(run_git -C "$ROOT" status --porcelain)
   return 1
 }
 
-# Discard untracked files that are not env dirs or notebook backups.
+# Discard untracked files that are not env dirs, user notebook copies, or
+# template backups. Do not remove notebooks/*.ipynb or *.backup-*.ipynb.
 clean_untracked_keep_env() {
   run_git -C "$ROOT" clean -fd \
     -e '.venv' -e '.venv/' \
     -e '.uv' -e '.uv/' \
     -e '.tools' -e '.tools/' \
-    -e '*.bak-*' || true
+    -e 'notebooks/*.ipynb' \
+    -e 'notebooks/*.backup-*.ipynb' || true
 }
 
 sync_env() {
@@ -351,7 +379,7 @@ else
   fi
   if working_tree_is_dirty; then
     ts="$(date -u +%Y%m%dT%H%M%SZ)"
-    echo "Local changes detected. Backing up dirty notebooks/*.ipynb beside the templates; other local files are discarded."
+    echo "Local changes detected. Backing up dirty tracked notebooks/*.ipynb beside the templates; untracked notebook copies are kept; other local files are discarded."
     run_git -C "$ROOT" status --short || true
     backup_dirty_notebooks "$ts"
     echo "Fetching origin notebooks and resetting hard (templates win)..."
@@ -383,7 +411,7 @@ describe="$(run_git -C "$ROOT" describe --tags --always 2>/dev/null || true)"
 echo "Done. Now at ${version}${describe:+ (${describe})}."
 echo ""
 echo "Config cells in notebooks/ may have changed; re-check them before running."
-echo "If you edited templates, re-apply Config from sibling *.bak-* files if needed."
+echo "If you edited templates, re-apply Config from sibling *.backup-*.ipynb files if needed."
 echo "On a laptop, start Jupyter with:"
 echo "  bash scripts/jupyter-notebook.sh"
 echo "On JupyterHub, register the Lisca kernel with:"
