@@ -8,7 +8,7 @@ This tree is the notebooks **export artifact**, equivalent to `lisca-notebooks-X
 
 ## Get
 
-Preferred (clones branch `notebooks`, then install):
+Preferred (clones branch `notebooks` into **`./lisca-notebooks`** under the current directory, then install):
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/keejkrej/lisca/main/scripts/get-notebooks.sh | bash
@@ -20,7 +20,7 @@ Windows:
 irm https://raw.githubusercontent.com/keejkrej/lisca/main/scripts/get-notebooks.ps1 | iex
 ```
 
-Uses system git if present, otherwise a portable git under `.tools/git`. If the repo is private, set `GH_TOKEN` / `GITHUB_TOKEN`.
+Optional folder name or path: `curl ... | bash -s -- my-notebooks`. Installs under PWD only — never `~/.local/share`, `~/Library`, or other user-global tool dirs. Portable git lives in `.tools/git`; `.uv` (uv binary and managed Python) and `.venv` stay in that folder. Uses system git if present, otherwise portable git. If the repo is private, set `GH_TOKEN` / `GITHUB_TOKEN`.
 
 You can also clone directly:
 

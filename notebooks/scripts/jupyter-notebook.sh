@@ -32,4 +32,8 @@ if [[ ! -d "$NOTEBOOKS_DIR" ]]; then
 fi
 
 cd "$REPO_ROOT"
+export UV_PYTHON_INSTALL_DIR="$REPO_ROOT/.uv/python"
+export UV_CACHE_DIR="$REPO_ROOT/.uv/cache"
+export UV_TOOL_DIR="$REPO_ROOT/.uv/tools"
+export UV_PYTHON_BIN_DIR="$REPO_ROOT/.uv/bin"
 exec "$UV_EXE" run --python 3.12 --extra notebook jupyter notebook "$NOTEBOOKS_DIR"

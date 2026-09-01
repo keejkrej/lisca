@@ -63,7 +63,9 @@ portable_git_bin() {
 
 extract_git_archive() {
   local archive="$1" dest="$2" work
-  work="$(mktemp -d)"
+  work="${dest}/_extract"
+  rm -rf "$work"
+  mkdir -p "$work"
   case "$archive" in
     *.zip) unzip -q "$archive" -d "$work" ;;
     *.tar.gz|*.tgz) tar -xzf "$archive" -C "$work" ;;
@@ -137,8 +139,7 @@ ensure_portable_git() {
       ;;
   esac
   echo "Downloading portable git ($name) into $dest ..."
-  local tmp
-  tmp="$(mktemp)"
+  local tmp="$dest/$name"
   if ! curl -fsSL "$url" -o "$tmp"; then
     rm -f "$tmp"
     echo "Failed to download portable git from $url" >&2
@@ -188,6 +189,10 @@ ensure_gitignore() {
 sync_env() {
   local UV_DIR="$ROOT/.uv"
   local UV_BIN="$UV_DIR/uv"
+  export UV_PYTHON_INSTALL_DIR="$UV_DIR/python"
+  export UV_CACHE_DIR="$UV_DIR/cache"
+  export UV_TOOL_DIR="$UV_DIR/tools"
+  export UV_PYTHON_BIN_DIR="$UV_DIR/bin"
   local TAR URL current VENV_DIR VENV_PYTHON ARCH
   case "$(uname -sm)" in
       "Linux x86_64") ARCH="x86_64-unknown-linux-gnu" ;;

@@ -20,6 +20,10 @@ else
   exit 1
 fi
 UV_DIR="$ROOT/.uv"
+export UV_PYTHON_INSTALL_DIR="$UV_DIR/python"
+export UV_CACHE_DIR="$UV_DIR/cache"
+export UV_TOOL_DIR="$UV_DIR/tools"
+export UV_PYTHON_BIN_DIR="$UV_DIR/bin"
 
 case "$(uname -sm)" in
     "Linux x86_64") ARCH="x86_64-unknown-linux-gnu" ;;

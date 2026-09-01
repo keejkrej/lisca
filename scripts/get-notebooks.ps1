@@ -1,7 +1,8 @@
-# First-time notebooks get. Always clones export branch notebooks, then install.
-# Uses system git if present, otherwise portable MinGit under DEST\.tools\git.
+# Always clones export branch notebooks into PWD (default .\lisca-notebooks),
+# then install. Optional arg is the folder name or path. Never user-global tool
+# dirs. Portable MinGit lives in DEST\.tools\git; .uv lives in DEST\.uv.
 # irm https://raw.githubusercontent.com/keejkrej/lisca/main/scripts/get-notebooks.ps1 | iex
-# Env: LISCA_NOTEBOOKS_DIR, GH_TOKEN / GITHUB_TOKEN (private repo).
+# Env: GH_TOKEN / GITHUB_TOKEN (private repo).
 # Optional: -NoInstall, destination dir.
 $ErrorActionPreference = "Stop"
 
@@ -9,7 +10,7 @@ $Repo = "keejkrej/lisca"
 $CloneUrl = "https://github.com/$Repo.git"
 
 $NoInstall = $false
-$Dest = $env:LISCA_NOTEBOOKS_DIR
+$Dest = $null
 if ($args) {
     foreach ($arg in $args) {
         if ($arg -eq "-NoInstall" -or $arg -eq "--no-install") {
@@ -26,6 +27,10 @@ if ($args) {
 if (-not $Dest) {
     $Dest = "lisca-notebooks"
 }
+if (-not [System.IO.Path]::IsPathRooted($Dest)) {
+    $Dest = Join-Path (Get-Location).ProviderPath $Dest
+}
+Write-Host "Installing into $Dest (current directory only; portable git and .uv stay in this folder)."
 
 $Token = $env:GH_TOKEN
 if (-not $Token) {
@@ -88,14 +93,17 @@ function Install-PortableGit {
     New-Item -ItemType Directory -Force -Path $HomeDir | Out-Null
     $pin = Get-MinGitPin
     Write-Host "Downloading portable git ($($pin.Name)) into $HomeDir ..."
-    $zipPath = Join-Path ([System.IO.Path]::GetTempPath()) $pin.Name
+    $zipPath = Join-Path $HomeDir $pin.Name
+    $work = Join-Path $HomeDir "_extract"
     try {
         Invoke-WebRequest -Uri $pin.Url -OutFile $zipPath
         $got = (Get-FileHash -Algorithm SHA256 -LiteralPath $zipPath).Hash.ToLowerInvariant()
         if ($got -ne $pin.Sha) {
             throw "Checksum mismatch for portable git (got $got, expected $($pin.Sha))."
         }
-        $work = Join-Path ([System.IO.Path]::GetTempPath()) ("lisca-git-" + [guid]::NewGuid().ToString("N"))
+        if (Test-Path -LiteralPath $work) {
+            Remove-Item -LiteralPath $work -Recurse -Force
+        }
         Expand-Archive -Path $zipPath -DestinationPath $work -Force
         $top = Get-ChildItem -LiteralPath $work | Where-Object { $_.PSIsContainer }
         if ($top.Count -eq 1) {
@@ -103,10 +111,12 @@ function Install-PortableGit {
         } else {
             Copy-Item -Path (Join-Path $work "*") -Destination $HomeDir -Recurse -Force
         }
-        Remove-Item -LiteralPath $work -Recurse -Force
     } finally {
         if (Test-Path -LiteralPath $zipPath) {
             Remove-Item -LiteralPath $zipPath -Force
+        }
+        if (Test-Path -LiteralPath $work) {
+            Remove-Item -LiteralPath $work -Recurse -Force
         }
     }
     $bin = Get-PortableGitBin -HomeDir $HomeDir
@@ -145,8 +155,11 @@ if ($gitCmd) {
     $GitBin = $gitCmd.Source
     Write-Host "Using system git: $GitBin"
 } else {
-    Write-Host "System git not found; installing portable git..."
-    $stage = Join-Path ([System.IO.Path]::GetTempPath()) ("lisca-git-" + [guid]::NewGuid().ToString("N"))
+    Write-Host "System git not found; installing portable git into this folder..."
+    $stage = "$Dest.portable-git"
+    if (Test-Path -LiteralPath $stage) {
+        Remove-Item -LiteralPath $stage -Recurse -Force
+    }
     $GitBin = Install-PortableGit -HomeDir $stage
     Write-Host "Portable git: $GitBin"
 }

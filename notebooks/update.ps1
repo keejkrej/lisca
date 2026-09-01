@@ -31,6 +31,10 @@ if (Test-Path -LiteralPath (Join-Path $ScriptDir "pyproject.toml")) {
 $OriginUrl = "https://github.com/keejkrej/lisca.git"
 $CloneHint = "irm https://raw.githubusercontent.com/keejkrej/lisca/main/scripts/get-notebooks.ps1 | iex"
 $UvDir = Join-Path $Root ".uv"
+$env:UV_PYTHON_INSTALL_DIR = Join-Path $UvDir "python"
+$env:UV_CACHE_DIR = Join-Path $UvDir "cache"
+$env:UV_TOOL_DIR = Join-Path $UvDir "tools"
+$env:UV_PYTHON_BIN_DIR = Join-Path $UvDir "bin"
 $VenvDir = Join-Path $Root ".venv"
 $Arch = "x86_64-pc-windows-msvc"
 $UvExe = Join-Path $UvDir "uv.exe"
@@ -83,14 +87,17 @@ function Install-PortableGit {
     New-Item -ItemType Directory -Force -Path $HomeDir | Out-Null
     $pin = Get-MinGitPin
     Write-Host "Downloading portable git ($($pin.Name)) into $HomeDir ..."
-    $zipPath = Join-Path ([System.IO.Path]::GetTempPath()) $pin.Name
+    $zipPath = Join-Path $HomeDir $pin.Name
+    $work = Join-Path $HomeDir "_extract"
     try {
         Invoke-WebRequest -Uri $pin.Url -OutFile $zipPath
         $got = (Get-FileHash -Algorithm SHA256 -LiteralPath $zipPath).Hash.ToLowerInvariant()
         if ($got -ne $pin.Sha) {
             throw "Checksum mismatch for portable git (got $got, expected $($pin.Sha))."
         }
-        $work = Join-Path ([System.IO.Path]::GetTempPath()) ("lisca-git-" + [guid]::NewGuid().ToString("N"))
+        if (Test-Path -LiteralPath $work) {
+            Remove-Item -LiteralPath $work -Recurse -Force
+        }
         Expand-Archive -Path $zipPath -DestinationPath $work -Force
         $top = Get-ChildItem -LiteralPath $work | Where-Object { $_.PSIsContainer }
         if ($top.Count -eq 1) {
@@ -98,10 +105,12 @@ function Install-PortableGit {
         } else {
             Copy-Item -Path (Join-Path $work "*") -Destination $HomeDir -Recurse -Force
         }
-        Remove-Item -LiteralPath $work -Recurse -Force
     } finally {
         if (Test-Path -LiteralPath $zipPath) {
             Remove-Item -LiteralPath $zipPath -Force
+        }
+        if (Test-Path -LiteralPath $work) {
+            Remove-Item -LiteralPath $work -Recurse -Force
         }
     }
     $bin = Get-PortableGitBin -HomeDir $HomeDir

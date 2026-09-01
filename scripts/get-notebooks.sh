@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
-# First-time notebooks get from main (curl|bash). Always clones export branch
-# notebooks, then install. Uses system git if present, otherwise a portable git
-# under DEST/.tools/git. Scripts do not zip-extract.
+# Always clones export branch notebooks into PWD (default ./lisca-notebooks),
+# then install. Optional arg is the folder name or path. Never user-global tool
+# dirs. Portable git lives in DEST/.tools/git; .uv (and managed Python) live in DEST/.uv.
 # Usage:
 #   curl -fsSL https://raw.githubusercontent.com/keejkrej/lisca/main/scripts/get-notebooks.sh | bash
 #   curl ... | bash -s -- --no-install
-#   curl ... | bash -s -- /path/to/lisca-notebooks
-# Env: LISCA_NOTEBOOKS_DIR, GH_TOKEN / GITHUB_TOKEN (private repo).
+#   curl ... | bash -s -- lisca-notebooks
+# Env: GH_TOKEN / GITHUB_TOKEN (private repo).
 set -euo pipefail
 
 REPO="keejkrej/lisca"
 CLONE_URL="https://github.com/${REPO}.git"
 NO_INSTALL=0
-DEST="${LISCA_NOTEBOOKS_DIR:-}"
+DEST=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -41,6 +41,11 @@ while [[ $# -gt 0 ]]; do
 done
 
 DEST="${DEST:-lisca-notebooks}"
+case "$DEST" in
+  /*) ;;
+  *) DEST="$PWD/$DEST" ;;
+esac
+echo "Installing into $DEST (PWD only; portable git and .uv stay in this folder)."
 
 token="${GH_TOKEN:-${GITHUB_TOKEN:-}}"
 if [[ -n "$token" ]]; then
@@ -97,7 +102,9 @@ portable_git_bin() {
 
 extract_git_archive() {
   local archive="$1" dest="$2" work
-  work="$(mktemp -d)"
+  work="${dest}/_extract"
+  rm -rf "$work"
+  mkdir -p "$work"
   case "$archive" in
     *.zip) unzip -q "$archive" -d "$work" ;;
     *.tar.gz|*.tgz) tar -xzf "$archive" -C "$work" ;;
@@ -171,8 +178,7 @@ ensure_portable_git() {
       ;;
   esac
   echo "Downloading portable git ($name) into $dest ..."
-  local tmp
-  tmp="$(mktemp)"
+  local tmp="$dest/$name"
   if ! curl -fsSL "$url" -o "$tmp"; then
     rm -f "$tmp"
     echo "Failed to download portable git from $url" >&2
@@ -221,8 +227,9 @@ if command -v git >/dev/null 2>&1 && git --version >/dev/null 2>&1; then
   GIT_BIN="$(command -v git)"
   echo "Using system git: $GIT_BIN"
 else
-  STAGE="$(mktemp -d)"
-  echo "System git not found; installing portable git..."
+  STAGE="${DEST}.portable-git"
+  rm -rf "$STAGE"
+  echo "System git not found; installing portable git into this folder..."
   ensure_portable_git "$STAGE"
   GIT_BIN="$(portable_git_bin "$STAGE")"
   GIT_HOME="$STAGE"

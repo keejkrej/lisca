@@ -26,6 +26,10 @@ if (Test-Path -LiteralPath (Join-Path $ScriptDir "pyproject.toml")) {
     $Root = Split-Path -Parent $ScriptDir
 }
 $UvDir = Join-Path $Root ".uv"
+$env:UV_PYTHON_INSTALL_DIR = Join-Path $UvDir "python"
+$env:UV_CACHE_DIR = Join-Path $UvDir "cache"
+$env:UV_TOOL_DIR = Join-Path $UvDir "tools"
+$env:UV_PYTHON_BIN_DIR = Join-Path $UvDir "bin"
 $VenvDir = Join-Path $Root ".venv"
 $Arch = "x86_64-pc-windows-msvc"
 

@@ -20,6 +20,11 @@ if [[ ! -d "$NOTEBOOKS_DIR" ]]; then
   exit 1
 fi
 
+export UV_PYTHON_INSTALL_DIR="$REPO_ROOT/.uv/python"
+export UV_CACHE_DIR="$REPO_ROOT/.uv/cache"
+export UV_TOOL_DIR="$REPO_ROOT/.uv/tools"
+export UV_PYTHON_BIN_DIR="$REPO_ROOT/.uv/bin"
+
 detect_uv() {
   if [[ -x "$REPO_ROOT/.uv/uv.exe" ]]; then
     UV_EXE="$REPO_ROOT/.uv/uv.exe"

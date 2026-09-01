@@ -35,6 +35,12 @@ if (-not (Test-Path -LiteralPath $NotebooksDir)) {
     exit 1
 }
 
+$UvDir = Join-Path $RepoRoot ".uv"
+$env:UV_PYTHON_INSTALL_DIR = Join-Path $UvDir "python"
+$env:UV_CACHE_DIR = Join-Path $UvDir "cache"
+$env:UV_TOOL_DIR = Join-Path $UvDir "tools"
+$env:UV_PYTHON_BIN_DIR = Join-Path $UvDir "bin"
+
 $UvExe = Resolve-UvExe
 if (-not $UvExe -or -not (Test-Venv)) {
     $Install = Join-Path $PSScriptRoot "install.ps1"

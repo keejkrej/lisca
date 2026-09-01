@@ -69,9 +69,12 @@ installers and must not be hooked into `.github/workflows/release.yml`.
 - Preferred user get (always clone branch `notebooks`):
   `curl -fsSL https://raw.githubusercontent.com/keejkrej/lisca/main/scripts/get-notebooks.sh | bash`
   Windows: `irm https://raw.githubusercontent.com/keejkrej/lisca/main/scripts/get-notebooks.ps1 | iex`.
-  Scripts use system git if present, otherwise portable git under `.tools/git`. They do not
-  zip-extract. The GitHub Release still attaches `lisca-notebooks-X.Y.Z.zip` for a manual
-  download; scripts do not treat that zip as a get/update path.
+  Scripts clone into **PWD** only (default `./lisca-notebooks`; optional arg is the folder
+  name or path). Never `~/.local/share`, `~/Library`, or other user-global tool dirs.
+  Portable git lives in `.tools/git`; `.uv` (including managed Python) stays in that folder.
+  System git if present, otherwise portable git. They do not zip-extract. The GitHub Release
+  still attaches `lisca-notebooks-X.Y.Z.zip` for a manual download; scripts do not treat
+  that zip as a get/update path.
 - Update: `bash update.sh` uses the same git (system or portable). No `.git` → bootstrap onto
   branch `notebooks` (`.venv` / `.uv` / `.tools` kept). Already on `notebooks` → `git pull --ff-only`
   then `uv sync`. Update does not download a notebooks zip and does not pull `main`.
