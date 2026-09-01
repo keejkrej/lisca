@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Update this notebooks tree from export branch notebooks, then uv sync like install.
-# Uses system git if present, otherwise portable git under ROOT/.tools/git.
+# Always uses portable git under ROOT/.tools/git (never system git).
 # If ROOT has no .git, bootstrap onto branch notebooks (keep .venv / .uv / .tools).
 # Does not download a notebooks zip.
 set -euo pipefail
@@ -134,7 +134,7 @@ ensure_portable_git() {
       sha="ae6686718aa34f4140424db16b92a47dcffd6d1f312eb8b5f3b267f7404e2680"
       ;;
     *)
-      echo "No portable git pin for $(uname -sm). Install git and re-run." >&2
+      echo "No portable git pin for $(uname -sm)." >&2
       exit 1
       ;;
   esac
@@ -233,16 +233,10 @@ sync_env() {
   "$UV_BIN" sync --python 3.12 --extra notebook --directory "$ROOT"
 }
 
-GIT_HOME=""
-if command -v git >/dev/null 2>&1 && git --version >/dev/null 2>&1; then
-  GIT_BIN="$(command -v git)"
-  echo "Using system git: $GIT_BIN"
-else
-  GIT_HOME="$ROOT/.tools/git"
-  echo "System git not found; using portable git under .tools/git ..."
-  ensure_portable_git "$GIT_HOME"
-  GIT_BIN="$(portable_git_bin "$GIT_HOME")"
-fi
+GIT_HOME="$ROOT/.tools/git"
+echo "Using portable git under .tools/git ..."
+ensure_portable_git "$GIT_HOME"
+GIT_BIN="$(portable_git_bin "$GIT_HOME")"
 
 if [[ ! -e "$ROOT/.git" ]]; then
   echo "No .git here. Bootstrapping onto export branch notebooks..."

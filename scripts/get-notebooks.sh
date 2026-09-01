@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Always clones export branch notebooks into PWD (default ./lisca-notebooks),
 # then install. Optional arg is the folder name or path. Never user-global tool
-# dirs. Portable git lives in DEST/.tools/git; .uv (and managed Python) live in DEST/.uv.
+# dirs. Always bootstraps portable git under DEST/.tools/git (never system git).
+# .uv (and managed Python) live in DEST/.uv.
 # Usage:
 #   curl -fsSL https://raw.githubusercontent.com/keejkrej/lisca/main/scripts/get-notebooks.sh | bash
 #   curl ... | bash -s -- --no-install
@@ -173,7 +174,7 @@ ensure_portable_git() {
       sha="ae6686718aa34f4140424db16b92a47dcffd6d1f312eb8b5f3b267f7404e2680"
       ;;
     *)
-      echo "No portable git pin for $(uname -sm). Install git and re-run." >&2
+      echo "No portable git pin for $(uname -sm)." >&2
       exit 1
       ;;
   esac
@@ -222,19 +223,13 @@ cleanup_stage() {
 }
 trap cleanup_stage EXIT
 
-GIT_HOME=""
-if command -v git >/dev/null 2>&1 && git --version >/dev/null 2>&1; then
-  GIT_BIN="$(command -v git)"
-  echo "Using system git: $GIT_BIN"
-else
-  STAGE="${DEST}.portable-git"
-  rm -rf "$STAGE"
-  echo "System git not found; installing portable git into this folder..."
-  ensure_portable_git "$STAGE"
-  GIT_BIN="$(portable_git_bin "$STAGE")"
-  GIT_HOME="$STAGE"
-  echo "Portable git: $GIT_BIN"
-fi
+STAGE="${DEST}.portable-git"
+rm -rf "$STAGE"
+echo "Installing portable git into this folder..."
+ensure_portable_git "$STAGE"
+GIT_BIN="$(portable_git_bin "$STAGE")"
+GIT_HOME="$STAGE"
+echo "Portable git: $GIT_BIN"
 
 echo "Cloning export branch notebooks..."
 mkdir -p "$(dirname "$DEST")"
@@ -244,12 +239,10 @@ if ! run_git clone --branch notebooks --single-branch --depth 1 "$CLONE_URL" "$D
   exit 1
 fi
 
-if [[ -n "$STAGE" ]]; then
-  mkdir -p "$DEST/.tools"
-  rm -rf "$DEST/.tools/git"
-  mv "$STAGE" "$DEST/.tools/git"
-  STAGE=""
-fi
+mkdir -p "$DEST/.tools"
+rm -rf "$DEST/.tools/git"
+mv "$STAGE" "$DEST/.tools/git"
+STAGE=""
 
 if [[ ! -f "$DEST/install.sh" || ! -f "$DEST/pyproject.toml" ]]; then
   echo "Cloned tree is missing install.sh or pyproject.toml: $DEST" >&2

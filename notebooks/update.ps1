@@ -1,5 +1,5 @@
 # Update this notebooks tree from export branch notebooks, then uv sync like install.
-# Uses system git if present, otherwise portable MinGit under ROOT\.tools\git.
+# Always uses portable MinGit under ROOT\.tools\git (never system git).
 # If ROOT has no .git, bootstrap onto branch notebooks (keep .venv / .uv / .tools).
 # Does not download a notebooks zip.
 $ErrorActionPreference = "Stop"
@@ -156,14 +156,8 @@ function Ensure-Gitignore {
 
 $installExitCode = 0
 try {
-    $gitCmd = Get-Command git -ErrorAction SilentlyContinue
-    if ($gitCmd) {
-        $GitBin = $gitCmd.Source
-        Write-Host "Using system git: $GitBin"
-    } else {
-        Write-Host "System git not found; using portable git under .tools/git ..."
-        $GitBin = Install-PortableGit -HomeDir $ToolsGit
-    }
+    Write-Host "Using portable git under .tools/git ..."
+    $GitBin = Install-PortableGit -HomeDir $ToolsGit
 
     $GitDir = Join-Path $Root ".git"
     if (-not (Test-Path -LiteralPath $GitDir)) {

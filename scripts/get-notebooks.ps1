@@ -1,6 +1,7 @@
 # Always clones export branch notebooks into PWD (default .\lisca-notebooks),
 # then install. Optional arg is the folder name or path. Never user-global tool
-# dirs. Portable MinGit lives in DEST\.tools\git; .uv lives in DEST\.uv.
+# dirs. Always bootstraps portable MinGit under DEST\.tools\git (never system git).
+# .uv lives in DEST\.uv.
 # irm https://raw.githubusercontent.com/keejkrej/lisca/main/scripts/get-notebooks.ps1 | iex
 # Env: GH_TOKEN / GITHUB_TOKEN (private repo).
 # Optional: -NoInstall, destination dir.
@@ -149,20 +150,13 @@ if (Test-Path -LiteralPath $Dest) {
     throw "Destination already exists: $Dest`nFor updates, cd there and run .\update.ps1."
 }
 
-$stage = $null
-$gitCmd = Get-Command git -ErrorAction SilentlyContinue
-if ($gitCmd) {
-    $GitBin = $gitCmd.Source
-    Write-Host "Using system git: $GitBin"
-} else {
-    Write-Host "System git not found; installing portable git into this folder..."
-    $stage = "$Dest.portable-git"
-    if (Test-Path -LiteralPath $stage) {
-        Remove-Item -LiteralPath $stage -Recurse -Force
-    }
-    $GitBin = Install-PortableGit -HomeDir $stage
-    Write-Host "Portable git: $GitBin"
+Write-Host "Installing portable git into this folder..."
+$stage = "$Dest.portable-git"
+if (Test-Path -LiteralPath $stage) {
+    Remove-Item -LiteralPath $stage -Recurse -Force
 }
+$GitBin = Install-PortableGit -HomeDir $stage
+Write-Host "Portable git: $GitBin"
 
 Write-Host "Cloning export branch notebooks..."
 $parent = Split-Path -Parent $Dest
@@ -175,15 +169,13 @@ if ($LASTEXITCODE -ne 0) {
     throw "Clone of branch notebooks failed."
 }
 
-if ($stage) {
-    $tools = Join-Path $Dest ".tools"
-    New-Item -ItemType Directory -Force -Path $tools | Out-Null
-    $destGit = Join-Path $tools "git"  # .tools/git
-    if (Test-Path -LiteralPath $destGit) {
-        Remove-Item -LiteralPath $destGit -Recurse -Force
-    }
-    Move-Item -LiteralPath $stage -Destination $destGit
+$tools = Join-Path $Dest ".tools"
+New-Item -ItemType Directory -Force -Path $tools | Out-Null
+$destGit = Join-Path $tools "git"  # .tools/git
+if (Test-Path -LiteralPath $destGit) {
+    Remove-Item -LiteralPath $destGit -Recurse -Force
 }
+Move-Item -LiteralPath $stage -Destination $destGit
 
 if (-not (Test-Path -LiteralPath (Join-Path $Dest "install.ps1")) -or -not (Test-Path -LiteralPath (Join-Path $Dest "pyproject.toml"))) {
     throw "Cloned tree is missing install.ps1 or pyproject.toml: $Dest"

@@ -135,6 +135,8 @@ class TestNotebooksBundle(unittest.TestCase):
         self.assertIn("export artifact", readme)
         self.assertIn("Nobody hand-edits", readme)
         self.assertIn("does not pull `main`", readme)
+        self.assertIn("does not use system git", readme)
+        self.assertNotIn("system git if present", readme)
         self.assertNotIn("Airgapped", readme)
 
     def test_update_pulls_notebooks_branch_not_release_zip(self) -> None:
@@ -153,10 +155,14 @@ class TestNotebooksBundle(unittest.TestCase):
             self.assertNotIn("api.github.com/repos/keejkrej/lisca/releases", text)
             self.assertNotIn("mktemp", text)
             self.assertNotIn("GetTempPath", text)
+            self.assertNotIn("Using system git", text)
+            self.assertNotIn("command -v git", text)
+            self.assertNotIn("Get-Command git", text)
         self.assertIn(".tools/git", sh)
+        self.assertIn("ensure_portable_git", sh)
         self.assertIn("baulk/git-minimal", sh)
         self.assertIn("MinGit-2.55.0.5-64-bit.zip", ps1)
-        self.assertIn("command -v git", sh)
+        self.assertIn("Install-PortableGit", ps1)
         self.assertIn(".tools/", pack)
         publish = (REPO / "scripts" / "publish-notebooks-branch.sh").read_text(
             encoding="utf-8"
@@ -172,7 +178,7 @@ class TestNotebooksBundle(unittest.TestCase):
         self.assertIn("ref: main", release)
         self.assertIn("tag_name: notebooks-v", release)
 
-    def test_get_notebooks_always_clones_with_system_or_portable_git(self) -> None:
+    def test_get_notebooks_always_clones_with_portable_git(self) -> None:
         sh = (REPO / "scripts" / "get-notebooks.sh").read_text(encoding="utf-8")
         ps1 = (REPO / "scripts" / "get-notebooks.ps1").read_text(encoding="utf-8")
         for text in (sh, ps1):
@@ -181,10 +187,13 @@ class TestNotebooksBundle(unittest.TestCase):
             self.assertIn("keejkrej/lisca/main/scripts/get-notebooks", text)
             self.assertNotIn("api.github.com/repos/keejkrej/lisca/releases", text)
             self.assertNotIn("Airgapped", text)
-        self.assertIn("command -v git", sh)
+            self.assertNotIn("Using system git", text)
+            self.assertNotIn("command -v git", text)
+            self.assertNotIn("Get-Command git", text)
+        self.assertIn("ensure_portable_git", sh)
         self.assertIn("baulk/git-minimal", sh)
         self.assertIn("MinGit-2.55.0.5-64-bit.zip", ps1)
-        self.assertIn("Get-Command git", ps1)
+        self.assertIn("Install-PortableGit", ps1)
         self.assertIn('$PWD/', sh)
         self.assertIn("lisca-notebooks", sh)
         self.assertIn(".portable-git", sh)
