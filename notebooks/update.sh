@@ -2,6 +2,10 @@
 # Update this notebooks tree from export branch notebooks, then uv sync like install.
 # Always uses portable git under ROOT/.tools/git (never system git).
 # If ROOT has no .git, bootstrap onto branch notebooks (keep .venv / .uv / .tools).
+# Dirty tracked files (typical: Config edits in notebooks/*.ipynb): copy each dirty
+# file under notebooks/ to a sibling *.bak-<UTC> then fetch + reset --hard
+# origin/notebooks. Clean trees use git pull --ff-only. Do not stash.
+# Templates win; re-apply Config from the sibling backups if needed.
 # Does not download a notebooks zip.
 set -euo pipefail
 
@@ -179,11 +183,66 @@ ensure_gitignore() {
   local gi="$ROOT/.gitignore"
   touch "$gi"
   local line
-  for line in ".venv/" ".uv/" ".tools/"; do
+  for line in ".venv/" ".uv/" ".tools/" "*.bak-*"; do
     if ! grep -Fxq "$line" "$gi"; then
       printf '%s\n' "$line" >>"$gi"
     fi
   done
+}
+
+# Copy dirty files under notebooks/ beside the template as <file>.bak-<UTC>.
+# In-place siblings only — never a separate backup directory. Skip untracked
+# *.bak-* so previous backups do not multiply. Source files must exist (skip deletions).
+backup_dirty_notebooks() {
+  local ts="$1"
+  local line status path src dest
+  local count=0
+  while IFS= read -r line; do
+    [[ -z "$line" ]] && continue
+    status="${line:0:2}"
+    if [[ "$status" == "??" || "$status" == "!!" ]]; then
+      continue
+    fi
+    path="${line:3}"
+    if [[ "$path" == *" -> "* ]]; then
+      path="${path##* -> }"
+    fi
+    if [[ "$path" == \"*\" ]]; then
+      path="${path:1:${#path}-2}"
+    fi
+    case "$path" in
+      notebooks/*.bak-* | notebooks/.ipynb_checkpoints/*)
+        continue
+        ;;
+      notebooks/*) ;;
+      *)
+        continue
+        ;;
+    esac
+    src="$ROOT/$path"
+    if [[ ! -f "$src" ]]; then
+      continue
+    fi
+    dest="${src}.bak-${ts}"
+    cp -a "$src" "$dest"
+    echo "Backed up ${path} -> ${path}.bak-${ts}"
+    count=$((count + 1))
+  done < <(run_git -C "$ROOT" status --porcelain -- notebooks/)
+  if [[ "$count" -gt 0 ]]; then
+    echo "Re-apply Config from the sibling *.bak-${ts} files if needed."
+  fi
+}
+
+working_tree_has_tracked_changes() {
+  local line status
+  while IFS= read -r line; do
+    [[ -z "$line" ]] && continue
+    status="${line:0:2}"
+    if [[ "$status" != "??" && "$status" != "!!" ]]; then
+      return 0
+    fi
+  done < <(run_git -C "$ROOT" status --porcelain)
+  return 1
 }
 
 sync_env() {
@@ -258,16 +317,29 @@ else
     echo "  $CLONE_HINT" >&2
     exit 1
   fi
-  if [[ -n "$(run_git -C "$ROOT" status --porcelain)" ]]; then
-    echo "Working tree is dirty. Stash or re-clone, then retry." >&2
-    run_git -C "$ROOT" status --short >&2
-    exit 1
-  fi
-  echo "Pulling branch notebooks (ff-only)..."
-  if ! run_git -C "$ROOT" pull --ff-only; then
-    echo "git pull --ff-only failed (diverged from upstream). Stash/reset or re-clone:" >&2
-    echo "  $CLONE_HINT" >&2
-    exit 1
+  if working_tree_has_tracked_changes; then
+    ts="$(date -u +%Y%m%dT%H%M%SZ)"
+    echo "Local tracked changes detected. Backing up dirty notebooks/ files beside the templates, then reset --hard origin/notebooks."
+    run_git -C "$ROOT" status --short || true
+    backup_dirty_notebooks "$ts"
+    echo "Fetching origin notebooks and resetting hard (templates win)..."
+    if ! run_git -C "$ROOT" fetch origin notebooks; then
+      echo "git fetch origin notebooks failed. Re-clone:" >&2
+      echo "  $CLONE_HINT" >&2
+      exit 1
+    fi
+    if ! run_git -C "$ROOT" reset --hard origin/notebooks; then
+      echo "git reset --hard origin/notebooks failed. Re-clone:" >&2
+      echo "  $CLONE_HINT" >&2
+      exit 1
+    fi
+  else
+    echo "Pulling branch notebooks (ff-only)..."
+    if ! run_git -C "$ROOT" pull --ff-only; then
+      echo "git pull --ff-only failed (diverged from upstream). Re-clone:" >&2
+      echo "  $CLONE_HINT" >&2
+      exit 1
+    fi
   fi
 fi
 
@@ -278,6 +350,7 @@ describe="$(run_git -C "$ROOT" describe --tags --always 2>/dev/null || true)"
 echo "Done. Now at ${version}${describe:+ (${describe})}."
 echo ""
 echo "Config cells in notebooks/ may have changed; re-check them before running."
+echo "If you edited templates, re-apply Config from sibling *.bak-* files if needed."
 echo "On a laptop, start Jupyter with:"
 echo "  bash scripts/jupyter-notebook.sh"
 echo "On JupyterHub, register the Lisca kernel with:"

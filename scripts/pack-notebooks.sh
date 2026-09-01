@@ -111,7 +111,9 @@ cp "$BUNDLE_SRC/install.sh" "$DEST/install.sh"
 cp "$BUNDLE_SRC/install.ps1" "$DEST/install.ps1"
 cp "$BUNDLE_SRC/update.sh" "$DEST/update.sh"
 cp "$BUNDLE_SRC/update.ps1" "$DEST/update.ps1"
-printf '%s\n' ".venv/" ".uv/" ".tools/" ".ipynb_checkpoints/" "__pycache__/" "*.pyc" "*.pyo" >"$DEST/.gitignore"
+# Export gitignore: keep venv/tools untracked, and sibling update backups (*.bak-*).
+# Backups stay next to the templates, not in a separate backup directory.
+printf '%s\n' ".venv/" ".uv/" ".tools/" ".ipynb_checkpoints/" "__pycache__/" "*.pyc" "*.pyo" "*.bak-*" >"$DEST/.gitignore"
 cp "$BUNDLE_SRC/notebooks/crop.ipynb" "$DEST/notebooks/crop.ipynb"
 cp "$BUNDLE_SRC/notebooks/analyze.ipynb" "$DEST/notebooks/analyze.ipynb"
 cp "$BUNDLE_SRC/notebooks/results.ipynb" "$DEST/notebooks/results.ipynb"

@@ -124,6 +124,10 @@ class TestNotebooksBundle(unittest.TestCase):
         self.assertIn("Do **not** clone `main`", readme)
         self.assertIn("bash update.sh", readme)
         self.assertIn("git pull --ff-only", (BUNDLE / "update.sh").read_text(encoding="utf-8"))
+        self.assertIn("*.bak-", readme)
+        self.assertIn("Editing template notebooks is fine", readme)
+        self.assertNotIn(".local/notebooks-backup", readme)
+        self.assertNotIn("notebooks-backup", readme)
         self.assertIn("bash scripts/jupyter-notebook.sh", readme)
         self.assertIn("bash scripts/jupyter-hub.sh", readme)
         self.assertIn("Config", readme)
@@ -145,6 +149,8 @@ class TestNotebooksBundle(unittest.TestCase):
         pack = (REPO / "scripts" / "pack-notebooks.sh").read_text(encoding="utf-8")
         for text in (sh, ps1):
             self.assertIn("git pull --ff-only", text)
+            self.assertIn("reset --hard origin/notebooks", text)
+            self.assertIn(".bak-", text)
             self.assertIn("branch notebooks", text)
             self.assertIn("sync --python 3.12 --extra notebook", text)
             self.assertIn("checkout -f -B notebooks origin/notebooks", text)
@@ -152,6 +158,12 @@ class TestNotebooksBundle(unittest.TestCase):
             self.assertIn(".uv/", text)
             self.assertIn(".tools/", text)
             self.assertIn("UV_PYTHON_INSTALL_DIR", text)
+            self.assertIn("*.bak-*", text)
+            self.assertNotIn("Working tree is dirty. Stash", text)
+            self.assertNotIn("stash pop", text)
+            self.assertNotIn("git stash", text)
+            self.assertNotIn(".local/", text)
+            self.assertNotIn("notebooks-backup", text)
             self.assertNotIn("api.github.com/repos/keejkrej/lisca/releases", text)
             self.assertNotIn("mktemp", text)
             self.assertNotIn("GetTempPath", text)
@@ -164,12 +176,14 @@ class TestNotebooksBundle(unittest.TestCase):
         self.assertIn("MinGit-2.55.0.5-64-bit.zip", ps1)
         self.assertIn("Install-PortableGit", ps1)
         self.assertIn(".tools/", pack)
+        self.assertIn("*.bak-*", pack)
         publish = (REPO / "scripts" / "publish-notebooks-branch.sh").read_text(
             encoding="utf-8"
         )
         self.assertIn("HEAD:refs/heads/notebooks", publish)
         self.assertIn("--dry-run", publish)
         self.assertIn(".tools/", publish)
+        self.assertIn("*.bak-*", publish)
         release = (REPO / ".github" / "workflows" / "notebooks-release.yml").read_text(
             encoding="utf-8"
         )
@@ -177,6 +191,112 @@ class TestNotebooksBundle(unittest.TestCase):
         self.assertIn("publish-notebooks-branch.sh --tag", release)
         self.assertIn("ref: main", release)
         self.assertIn("tag_name: notebooks-v", release)
+
+    def test_update_backup_sidecar_and_gitignore_pattern(self) -> None:
+        import os
+        import subprocess
+        import tempfile
+
+        sh = (BUNDLE / "update.sh").read_text(encoding="utf-8")
+        ps1 = (BUNDLE / "update.ps1").read_text(encoding="utf-8")
+        self.assertIn('dest="${src}.bak-${ts}"', sh)
+        self.assertIn("date -u +%Y%m%dT%H%M%SZ", sh)
+        self.assertIn('"$src.bak-$Timestamp"', ps1)
+        self.assertIn("yyyyMMdd'T'HHmmss'Z'", ps1)
+        self.assertIn("fetch origin notebooks", sh)
+        self.assertIn("fetch origin notebooks", ps1)
+
+        start = sh.index("backup_dirty_notebooks() {")
+        end = sh.index("\nworking_tree_has_tracked_changes() {")
+        backup_fn = sh[start:end]
+        self.assertIn('dest="${src}.bak-${ts}"', backup_fn)
+
+        ts = "20260901T130000Z"
+        env = os.environ.copy()
+        env.update(
+            {
+                "GIT_AUTHOR_NAME": "lisca-test",
+                "GIT_AUTHOR_EMAIL": "lisca-test@example.com",
+                "GIT_COMMITTER_NAME": "lisca-test",
+                "GIT_COMMITTER_EMAIL": "lisca-test@example.com",
+            }
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            nb_dir = root / "notebooks"
+            nb_dir.mkdir()
+            src = nb_dir / "crop.ipynb"
+            src.write_text("template-config\n", encoding="utf-8")
+            (root / ".gitignore").write_text("*.bak-*\n", encoding="utf-8")
+            subprocess.run(["git", "init", "-q"], cwd=root, check=True, env=env)
+            subprocess.run(
+                ["git", "config", "user.email", "lisca-test@example.com"],
+                cwd=root,
+                check=True,
+                env=env,
+            )
+            subprocess.run(
+                ["git", "config", "user.name", "lisca-test"],
+                cwd=root,
+                check=True,
+                env=env,
+            )
+            subprocess.run(
+                ["git", "add", ".gitignore", "notebooks/crop.ipynb"],
+                cwd=root,
+                check=True,
+                env=env,
+            )
+            subprocess.run(
+                ["git", "commit", "-qm", "template"],
+                cwd=root,
+                check=True,
+                env=env,
+            )
+            src.write_text("user-config\n", encoding="utf-8")
+            script = (
+                "set -euo pipefail\n"
+                f'ROOT="{root}"\n'
+                'run_git() { git "$@"; }\n'
+                + backup_fn
+                + f'\nbackup_dirty_notebooks "{ts}"\n'
+            )
+            subprocess.run(["bash", "-c", script], check=True, env=env)
+            bak = Path(f"{src}.bak-{ts}")
+            self.assertTrue(bak.is_file())
+            self.assertEqual(bak.name, "crop.ipynb.bak-20260901T130000Z")
+            self.assertEqual(bak.parent, src.parent)
+            self.assertEqual(bak.read_text(encoding="utf-8"), "user-config\n")
+            subprocess.run(
+                ["git", "reset", "--hard", "HEAD"],
+                cwd=root,
+                check=True,
+            )
+            self.assertEqual(src.read_text(encoding="utf-8"), "template-config\n")
+            self.assertEqual(bak.read_text(encoding="utf-8"), "user-config\n")
+            ignored = subprocess.run(
+                [
+                    "git",
+                    "check-ignore",
+                    "-q",
+                    "notebooks/crop.ipynb.bak-20260901T130000Z",
+                ],
+                cwd=root,
+            )
+            self.assertEqual(ignored.returncode, 0)
+            template = subprocess.run(
+                ["git", "check-ignore", "-q", "notebooks/crop.ipynb"],
+                cwd=root,
+            )
+            self.assertNotEqual(template.returncode, 0)
+            porcelain = subprocess.run(
+                ["git", "status", "--porcelain"],
+                cwd=root,
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(porcelain.stdout.strip(), "")
 
     def test_get_notebooks_always_clones_with_portable_git(self) -> None:
         sh = (REPO / "scripts" / "get-notebooks.sh").read_text(encoding="utf-8")
