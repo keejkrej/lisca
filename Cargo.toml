@@ -58,7 +58,7 @@ lisca-server = { path = "crates/lisca-server" }
 # Transfection analysis (Otsu segment, timeseries, AUC, fit, plots).
 # ndarray 0.16 / imageproc 0.25 in that crate; this workspace stays on 0.17 / 0.27.
 # Call workspace-path APIs so ndarray types are not unified across the boundary.
-lisca-transfection = { git = "https://github.com/keejkrej/lisca-transfection-assay", rev = "1718aeaffa45f51632a30b7764b1f1df820b46e0" }
+lisca-transfection = { git = "https://github.com/keejkrej/lisca-transfection-assay", rev = "869a231e089cde21cf44af1d6ed155b2610ca383" }
 tauri = "2"
 tauri-build = "2"
 

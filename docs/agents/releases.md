@@ -58,20 +58,34 @@ Jupyter notebooks are a second, independent SemVer train. They do not share a ve
 installers and must not be hooked into `.github/workflows/release.yml`.
 
 - Desktop tags: `vX.Y.Z` → unsigned Studio, Aligner, and Annotator installers (DMG, NSIS, deb).
-- Notebook tags: `notebooks-vX.Y.Z` → one zip, `lisca-notebooks-X.Y.Z.zip`. Workflow:
-  `.github/workflows/notebooks-release.yml`.
-- `notebooks/VERSION` is the source of truth. The tag `notebooks-v0.1.1` must match `0.1.1` in that
-  file (and `notebooks/pyproject.toml`). The workflow fails when they differ.
+- Notebook tags: `notebooks-vX.Y.Z` on the **export commit** of branch `notebooks` (not `main`).
+  Asset: `lisca-notebooks-X.Y.Z.zip`. Workflow: `.github/workflows/notebooks-release.yml`.
+- Bump `notebooks/VERSION` (and `notebooks/pyproject.toml`) on **`main`**. Daily work never lands on
+  `notebooks`. Branch `notebooks` is an export artifact equivalent to the zip.
+- After merge, `workflow_dispatch` notebooks-release with that SemVer. The job packs from **main**,
+  publishes the packed tree to `notebooks` with `--tag` (`notebooks-vX.Y.Z` on the export commit),
+  then creates the GitHub Release. Do not tag a main monorepo commit. Do not push branch `notebooks`
+  from merges or PRs. Do not add a sync from main.
+- Preferred user get (always clone branch `notebooks`):
+  `curl -fsSL https://raw.githubusercontent.com/keejkrej/lisca/main/scripts/get-notebooks.sh | bash`
+  Windows: `irm https://raw.githubusercontent.com/keejkrej/lisca/main/scripts/get-notebooks.ps1 | iex`.
+  Scripts clone into **PWD** only (default `./lisca-notebooks`; optional arg is the folder
+  name or path). Never `~/.local/share`, `~/Library`, or other user-global tool dirs.
+  Always bootstraps portable git under `.tools/git` (does not use system git). `.uv`
+  (including managed Python) stays in that folder. Scripts do not zip-extract. The GitHub
+  Release still attaches `lisca-notebooks-X.Y.Z.zip` for a manual download; scripts do not
+  treat that zip as a get/update path.
+- Update: `bash update.sh` uses the same portable git under `.tools/git`. No `.git` → bootstrap onto
+  branch `notebooks` (`.venv` / `.uv` / `.tools` kept). Already on `notebooks` → `git pull --ff-only`
+  then `uv sync`. Update does not download a notebooks zip and does not pull `main`.
 - Never reuse a notebooks tag. A notebook-only hotfix is the next patch (for example `0.1.2`), not a
   desktop bump and not a moved `notebooks-v0.1.0`.
-- Hub and laptop users download the zip. They must not clone this monorepo.
-- The zip vendors Lisca crop (`vendor/lisca` from this repo’s `python/`) and the transfection sidecar
-  Python package (`vendor/transfection` at the SHA pinned in `Cargo.lock` / `python/uv.lock`).
+- The export vendors Lisca crop (`vendor/lisca` from this repo’s `python/`) and the transfection
+  sidecar Python package (`vendor/transfection` at the SHA pinned in `Cargo.lock` / `python/uv.lock`).
   `install.sh` only fetches third-party wheels from PyPI. It must not git-clone `keejkrej` packages.
 - `scripts/pack-notebooks.sh` runs `scripts/sync-notebooks-vendor.sh` so `notebooks/vendor/` is not a
-  committed duplicate of `python/src`. Pack fails if `pyproject.toml` or `uv.lock` still contain
-  `git+` / `github.com/keejkrej` sources.
+  committed duplicate of `python/src` **on main**. Pack fails if `pyproject.toml` or `uv.lock` still
+  contain `git+` / `github.com/keejkrej` sources.
 
-Pack locally with `bash scripts/pack-notebooks.sh`. CI smoke-tests that zip on pull requests; only a
-`notebooks-v*` tag publishes a GitHub Release, and that release is zip-only (`make_latest: false` so
-it does not replace the latest desktop release). Desktop `v*` / `0.3.2` is a separate train.
+Pack locally with `bash scripts/pack-notebooks.sh`. CI smoke-tests that zip on pull requests. Desktop
+`v*` / `0.3.2` is a separate train.

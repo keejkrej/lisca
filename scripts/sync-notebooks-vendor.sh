@@ -111,6 +111,85 @@ cp "$WORKDIR/pyproject.toml" "$VENDOR/transfection/pyproject.toml"
 cp -a "$WORKDIR/src/transfection" "$VENDOR/transfection/src/transfection"
 printf '%s\n' "$SHA" >"$VENDOR/transfection/.vendor-sha"
 
+# Sidecar pyproject may git-depend on keejkrej/lisca. The zip must stay
+# PyPI-only, so rewrite [tool.uv.sources] lisca to the sibling vendor path.
+# Keep lisca in transfection's dependencies list.
+python3 - "$VENDOR/transfection/pyproject.toml" <<'PY'
+from pathlib import Path
+import re
+import sys
+
+path = Path(sys.argv[1])
+text = path.read_text(encoding="utf-8")
+
+
+def is_header(line: str) -> bool:
+    stripped = line.strip()
+    return stripped.startswith("[") and stripped.endswith("]")
+
+
+def rewrite_lisca_source(text: str) -> str:
+    lines = text.splitlines(keepends=True)
+    out: list[str] = []
+    i = 0
+    wrote_sources = False
+    while i < len(lines):
+        if lines[i].strip() == "[tool.uv.sources]":
+            i += 1
+            kept: list[str] = []
+            while i < len(lines) and not is_header(lines[i]):
+                stripped = lines[i].strip()
+                lower = stripped.lower()
+                key = stripped.split("=", 1)[0].strip()
+                is_lisca = key == "lisca"
+                is_git = (
+                    "git =" in lower
+                    or "git+" in lower
+                    or "github.com/keejkrej" in lower
+                    or "github.com/" in lower
+                )
+                drop_comment = stripped.startswith("#") and (
+                    "git" in lower or "github" in lower
+                )
+                if is_lisca or is_git or drop_comment:
+                    i += 1
+                    continue
+                kept.append(lines[i])
+                i += 1
+            out.append("[tool.uv.sources]\n")
+            # strips any git/GitHub lisca source
+            out.append('lisca = { path = "../lisca" }\n')
+            body = "".join(kept).strip("\n")
+            if body:
+                out.append(body + "\n")
+            if i < len(lines) and (not out[-1].endswith("\n\n")):
+                out.append("\n")
+            wrote_sources = True
+            continue
+        out.append(lines[i])
+        i += 1
+    if not wrote_sources:
+        if out and not out[-1].endswith("\n"):
+            out.append("\n")
+        if out and not "".join(out).endswith("\n\n"):
+            out.append("\n")
+        out.append("[tool.uv.sources]\n")
+        out.append('lisca = { path = "../lisca" }\n')
+    result = "".join(out)
+    if not re.search(r'(?m)^\s*"lisca"', result):
+        raise SystemExit("transfection pyproject lost lisca from dependencies")
+    if re.search(r"git\+|github\.com/keejkrej", result, re.I):
+        raise SystemExit(
+            "transfection pyproject still has git/GitHub sources after rewrite"
+        )
+    if 'lisca = { path = "../lisca" }' not in result:
+        raise SystemExit("transfection pyproject missing path lisca source")
+    return result
+
+
+path.write_text(rewrite_lisca_source(text), encoding="utf-8")
+PY
+
 find "$VENDOR" -type d -name '__pycache__' -prune -exec rm -rf {} +
 find "$VENDOR" -type f \( -name '*.pyc' -o -name '*.pyo' \) -delete
 

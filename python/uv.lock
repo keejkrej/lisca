@@ -16,6 +16,7 @@ exclude-newer-span = "P7D"
 
 [manifest]
 constraints = [{ name = "pytest", specifier = ">=8.3.5,<9" }]
+overrides = [{ name = "lisca", editable = "." }]
 
 [[package]]
 name = "aiohappyeyeballs"
@@ -1181,7 +1182,7 @@ requires-dist = [
     { name = "pydantic", specifier = ">=2.10,<3" },
     { name = "pylibczirw", marker = "extra == 'crop'", specifier = ">=4.1" },
     { name = "tifffile", specifier = ">=2025.1.10,<2026" },
-    { name = "transfection", marker = "python_full_version >= '3.12' and extra == 'analysis'", git = "https://github.com/keejkrej/lisca-transfection-assay?rev=1718aeaffa45f51632a30b7764b1f1df820b46e0" },
+    { name = "transfection", marker = "python_full_version >= '3.12' and extra == 'analysis'", git = "https://github.com/keejkrej/lisca-transfection-assay?rev=869a231e089cde21cf44af1d6ed155b2610ca383" },
     { name = "typer", specifier = ">=0.15,<1" },
 ]
 provides-extras = ["analysis", "crop"]
@@ -3238,10 +3239,11 @@ wheels = [
 [[package]]
 name = "transfection"
 version = "0.1.3"
-source = { git = "https://github.com/keejkrej/lisca-transfection-assay?rev=1718aeaffa45f51632a30b7764b1f1df820b46e0#1718aeaffa45f51632a30b7764b1f1df820b46e0" }
+source = { git = "https://github.com/keejkrej/lisca-transfection-assay?rev=869a231e089cde21cf44af1d6ed155b2610ca383#869a231e089cde21cf44af1d6ed155b2610ca383" }
 dependencies = [
     { name = "imageio" },
     { name = "imageio-ffmpeg" },
+    { name = "lisca" },
     { name = "marimo" },
     { name = "markdown-it-py", version = "3.0.0", source = { registry = "https://pypi.org/simple" } },
     { name = "matplotlib" },

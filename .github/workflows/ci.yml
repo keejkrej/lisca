@@ -100,7 +100,8 @@ jobs:
       - name: Pack zip (do not publish)
         run: |
           set -euo pipefail
-          chmod +x scripts/pack-notebooks.sh scripts/sync-notebooks-vendor.sh notebooks/install.sh notebooks/scripts/*.sh
+          chmod +x scripts/pack-notebooks.sh scripts/sync-notebooks-vendor.sh scripts/publish-notebooks-branch.sh scripts/get-notebooks.sh notebooks/install.sh notebooks/update.sh notebooks/scripts/*.sh
           zip_path="$(bash scripts/pack-notebooks.sh)"
           echo "Packed ${zip_path}"
           unzip -l "$zip_path"
+          bash scripts/publish-notebooks-branch.sh --dry-run --tag "$zip_path"

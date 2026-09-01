@@ -1,6 +1,6 @@
 [project]
 name = "lisca-notebooks"
-version = "0.1.1"
+version = "0.1.2"
 description = "Jupyter notebooks for Lisca crop, analyze, and results."
 requires-python = ">=3.12,<3.13"
 dependencies = ["lisca[crop]", "transfection"]

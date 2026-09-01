@@ -61,6 +61,10 @@ all = "error"
 constraint-dependencies = ["pytest>=8.3.5,<9"]
 exclude-newer = "7 days"
 default-groups = ["dev"]
+# Transfection git-depends on keejkrej/lisca; satisfy that with this package.
+override-dependencies = ["lisca"]
 
 [tool.uv.sources]
-transfection = { git = "https://github.com/keejkrej/lisca-transfection-assay", rev = "1718aeaffa45f51632a30b7764b1f1df820b46e0" }
+transfection = { git = "https://github.com/keejkrej/lisca-transfection-assay", rev = "869a231e089cde21cf44af1d6ed155b2610ca383" }
+# Transfection git-depends on this package; analysis extra must use the workspace member.
+lisca = { workspace = true }

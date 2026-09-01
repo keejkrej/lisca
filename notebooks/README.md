@@ -1,10 +1,38 @@
 # Lisca notebooks
 
-Download the zip from [GitHub Releases](https://github.com/keejkrej/lisca/releases) on a `notebooks-v*` tag. Extract it and run the launchers from this folder.
+This tree is the notebooks **export artifact**, equivalent to `lisca-notebooks-X.Y.Z.zip`. It is not a development branch, and it is not Studio, Aligner, Annotator, or the Lisca monorepo (`apps/`, `crates/`, …).
 
-Do **not** clone the Lisca monorepo. Hub and laptop users only need this zip. It is not a Studio, Aligner, or Annotator installer.
+- All daily edits happen on **`main`** (and assay sidecars). Nobody hand-edits branch `notebooks`.
+- The only writer of branch `notebooks` is the notebooks release workflow: pack zip → push that packed tree to `notebooks` → tag `notebooks-vX.Y.Z` on that export commit → GitHub Release. There is no sync from main merges or PRs.
+- `update.sh` always uses portable git under `.tools/git`. It pulls export branch `notebooks`; it does not pull `main`.
 
-This zip vendors Lisca crop (`vendor/lisca`, installed as `lisca[crop]`) and the transfection sidecar (`vendor/transfection`). `install.sh` / `install.ps1` only fetch third-party wheels from PyPI (numpy, pandas, matplotlib, nd2, pylibCZIrw, ipykernel, jupyter, …). They do not git-clone GitHub.
+## Get
+
+Preferred (clones branch `notebooks` into **`./lisca-notebooks`** under the current directory, then install):
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/keejkrej/lisca/main/scripts/get-notebooks.sh | bash
+```
+
+Windows:
+
+```powershell
+irm https://raw.githubusercontent.com/keejkrej/lisca/main/scripts/get-notebooks.ps1 | iex
+```
+
+Optional folder name or path: `curl ... | bash -s -- my-notebooks`. Installs under PWD only — never `~/.local/share`, `~/Library`, or other user-global tool dirs. Always bootstraps portable git into `.tools/git` (does not use system git). `.uv` (uv binary and managed Python) and `.venv` stay in that folder. If the repo is private, set `GH_TOKEN` / `GITHUB_TOKEN`.
+
+You can also clone directly:
+
+```sh
+git clone --branch notebooks --single-branch --depth 1 https://github.com/keejkrej/lisca.git lisca-notebooks
+cd lisca-notebooks
+bash install.sh
+```
+
+Do **not** clone `main` for Hub or laptop notebooks.
+
+This export vendors Lisca crop (`vendor/lisca`, installed as `lisca[crop]`) and the transfection sidecar (`vendor/transfection`). `install.sh` / `install.ps1` only fetch third-party wheels from PyPI (numpy, pandas, matplotlib, nd2, pylibCZIrw, ipykernel, jupyter, …). They do not git-clone GitHub packages.
 
 Crop lives in this repo’s Python package (`lisca[crop]`). Analyze and results use the `transfection` sidecar. Do not use a deprecated `pyama*` package.
 
@@ -27,7 +55,17 @@ That installs Python 3.12 and the notebook extra (`ipykernel`, `jupyter`) plus t
 - `lisca[crop]` from `vendor/lisca` (ND2/CZI crop)
 - `transfection` from `vendor/transfection` (analyze / results)
 
-This zip does not contain `apps/`, `crates/`, Studio, Aligner, Annotator, or the rest of the monorepo.
+## Update
+
+Always uses portable git under `.tools/git` (does not use system git). If this folder has no `.git`, `update.sh` bootstraps onto branch `notebooks` and keeps `.venv` / `.uv` / `.tools`.
+
+```sh
+bash update.sh
+```
+
+Windows: `.\update.ps1`.
+
+It does not pull `main`. Config cells in `notebooks/` may change — re-check them.
 
 ## JupyterHub
 
@@ -70,4 +108,4 @@ Set these in the first code cell of each notebook. Paths are the mounted or loca
 
 ## Version
 
-`VERSION` is the source of truth (this tree is `0.1.1`). Git tags are `notebooks-vX.Y.Z`. Desktop installers use a different train (`v*`) and are not in this zip.
+`VERSION` is the source of truth (this tree is `0.1.2`). Bump it on **`main`**. After merge, run notebooks-release `workflow_dispatch` with that SemVer. The job packs from main, publishes this tree to branch `notebooks`, and tags `notebooks-vX.Y.Z` on that **export** commit (not a main SHA). Desktop installers use a different train (`v*`) and are not in this export.
