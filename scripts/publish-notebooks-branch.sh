@@ -2,8 +2,8 @@
 # Publish a packed notebooks tree to branch `notebooks` (export artifact only).
 # Pack from a monorepo checkout of main; this script never packs.
 # Usage: scripts/publish-notebooks-branch.sh [--dry-run] [--tag] <zip-or-dir>
-# Production release calls this without --tag (the notebooks-v* tag already exists
-# on the monorepo commit that packed). --tag is optional for local experiments.
+# Production notebooks-release calls this with --tag so notebooks-vX.Y.Z lands on
+# the export commit (not a main SHA). CI uses --dry-run (optionally --tag).
 # Prints the export commit SHA on stdout.
 
 set -euo pipefail
@@ -154,7 +154,7 @@ fi
 cp -a "$TREE/." "$REPO/"
 # Keep .venv / .uv untracked on the export branch.
 if [[ ! -f "$REPO/.gitignore" ]]; then
-  printf '%s\n' ".venv/" ".uv/" ".ipynb_checkpoints/" "__pycache__/" "*.pyc" "*.pyo" >"$REPO/.gitignore"
+  printf '%s\n' ".venv/" ".uv/" ".tools/" ".ipynb_checkpoints/" "__pycache__/" "*.pyc" "*.pyo" >"$REPO/.gitignore"
 fi
 
 git -C "$REPO" add -A

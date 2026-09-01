@@ -109,10 +109,10 @@ class TestNotebooksBundle(unittest.TestCase):
     def test_readme_tells_users_not_to_clone_and_vendors_packages(self) -> None:
         readme = (BUNDLE / "README.md").read_text(encoding="utf-8")
         self.assertIn("notebooks-v", readme)
-        self.assertIn("git clone --branch notebooks", readme)
+        self.assertIn("get-notebooks.sh", readme)
+        self.assertIn(".tools/git", readme)
         self.assertIn("Do **not** clone `main`", readme)
         self.assertIn("bash update.sh", readme)
-        self.assertIn("git pull --ff-only", readme)
         self.assertIn("bash scripts/jupyter-notebook.sh", readme)
         self.assertIn("bash scripts/jupyter-hub.sh", readme)
         self.assertIn("Config", readme)
@@ -123,30 +123,54 @@ class TestNotebooksBundle(unittest.TestCase):
         self.assertIn("PyPI", readme)
         self.assertIn("export artifact", readme)
         self.assertIn("Nobody hand-edits", readme)
-        self.assertIn("pack zip → GitHub Release → push that packed tree to `notebooks`", readme)
         self.assertIn("does not pull `main`", readme)
 
-    def test_update_pulls_notebooks_branch_not_release_zip(self) -> None:
+    def test_update_uses_portable_git_not_release_zip(self) -> None:
         sh = (BUNDLE / "update.sh").read_text(encoding="utf-8")
         ps1 = (BUNDLE / "update.ps1").read_text(encoding="utf-8")
+        pack = (REPO / "scripts" / "pack-notebooks.sh").read_text(encoding="utf-8")
         for text in (sh, ps1):
             self.assertIn("git pull --ff-only", text)
             self.assertIn("branch notebooks", text)
+            self.assertIn(".tools/git", text)
             self.assertIn("sync --python 3.12 --extra notebook", text)
+            self.assertIn("checkout -f -B notebooks origin/notebooks", text)
+            self.assertIn(".venv/", text)
+            self.assertIn(".uv/", text)
+            self.assertIn(".tools/", text)
             self.assertNotIn("api.github.com/repos/keejkrej/lisca/releases", text)
-            self.assertNotIn("lisca-notebooks-*.zip", text)
+            self.assertNotIn("sudo apt-get install", text)
+        self.assertIn("baulk/git-minimal", sh)
+        self.assertIn("git-for-windows/git", ps1)
+        self.assertIn("MinGit-2.55.0.5-64-bit.zip", ps1)
+        self.assertIn(".tools/", pack)
         publish = (REPO / "scripts" / "publish-notebooks-branch.sh").read_text(
             encoding="utf-8"
         )
         self.assertIn("HEAD:refs/heads/notebooks", publish)
         self.assertIn("--dry-run", publish)
+        self.assertIn(".tools/", publish)
         release = (REPO / ".github" / "workflows" / "notebooks-release.yml").read_text(
             encoding="utf-8"
         )
-        self.assertIn("- \"notebooks-v*\"", release)
-        self.assertIn("publish-notebooks-branch.sh", release)
-        self.assertIn("do not publish branch or tag", release)
-        self.assertNotIn("publish-notebooks-branch.sh --tag", release)
+        self.assertIn("workflow_dispatch", release)
+        self.assertIn("publish-notebooks-branch.sh --tag", release)
+        self.assertIn("ref: main", release)
+        self.assertIn("tag_name: notebooks-v", release)
+
+    def test_get_notebooks_clones_with_portable_git(self) -> None:
+        sh = (REPO / "scripts" / "get-notebooks.sh").read_text(encoding="utf-8")
+        ps1 = (REPO / "scripts" / "get-notebooks.ps1").read_text(encoding="utf-8")
+        for text in (sh, ps1):
+            self.assertIn("clone --branch notebooks --single-branch --depth 1", text)
+            self.assertIn(".tools/git", text)
+            self.assertIn("--zip", text)
+            self.assertIn("keejkrej/lisca/main/scripts/get-notebooks", text)
+        self.assertIn("baulk/git-minimal", sh)
+        self.assertIn("MinGit-2.55.0.5-64-bit.zip", ps1)
+        self.assertIn("git-for-windows/git", ps1)
+        self.assertNotIn("sudo apt-get install", sh)
+        self.assertNotIn("command -v git", sh)
 
     def test_vendor_readme_explains_sync_not_commit(self) -> None:
         readme = (BUNDLE / "vendor" / "README.md").read_text(encoding="utf-8")
