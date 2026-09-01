@@ -1,8 +1,10 @@
 # Lisca notebooks
 
-This tree is the notebooks **export** (same layout as `lisca-notebooks-X.Y.Z.zip`). It is not Studio, Aligner, Annotator, or the Lisca monorepo (`apps/`, `crates/`, …).
+This tree is the notebooks **export artifact**, equivalent to `lisca-notebooks-X.Y.Z.zip`. It is not a development branch, and it is not Studio, Aligner, Annotator, or the Lisca monorepo (`apps/`, `crates/`, …).
 
-Daily work happens on **`main`**. Branch **`notebooks`** is an export artifact (same layout as the zip), not a development branch. Nobody hand-edits it. The only writer is the `notebooks-v*` release workflow: pack zip → GitHub Release → push this packed tree to `notebooks`. There is no sync from main merges or PRs.
+- All daily edits happen on **`main`** (and assay sidecars). Nobody hand-edits branch `notebooks`.
+- The only writer of branch `notebooks` is the `notebooks-v*` release workflow: pack zip → GitHub Release → push that packed tree to `notebooks`. There is no sync from main merges or PRs.
+- `update.sh` git-pulls this export branch; it does not pull `main`.
 
 ## Get
 
@@ -51,7 +53,7 @@ bash update.sh
 
 Windows: `.\update.ps1`.
 
-That runs `git pull --ff-only` on this export branch (not `main`), then the same `uv sync` as install. `.venv` is kept. Config cells in `notebooks/` may change on pull — re-check them.
+That runs `git pull --ff-only` on this export branch. It does not pull `main`. Then it runs the same `uv sync` as install. `.venv` is kept. Config cells in `notebooks/` may change on pull — re-check them.
 
 If this folder has no `.git` (zip extract only), re-clone as in Get, or download a fresh zip. `VERSION` plus optional `git describe` tell you which export you have.
 

@@ -121,8 +121,10 @@ class TestNotebooksBundle(unittest.TestCase):
         self.assertIn("vendor/lisca", readme)
         self.assertIn("vendor/transfection", readme)
         self.assertIn("PyPI", readme)
-        self.assertIn("0.1.2", readme)
-        self.assertNotIn("git+https", readme)
+        self.assertIn("export artifact", readme)
+        self.assertIn("Nobody hand-edits", readme)
+        self.assertIn("pack zip → GitHub Release → push that packed tree to `notebooks`", readme)
+        self.assertIn("does not pull `main`", readme)
 
     def test_update_pulls_notebooks_branch_not_release_zip(self) -> None:
         sh = (BUNDLE / "update.sh").read_text(encoding="utf-8")
