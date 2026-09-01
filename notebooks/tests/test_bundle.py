@@ -72,7 +72,7 @@ class TestNotebooksBundle(unittest.TestCase):
         self.assertIn('path = "vendor/transfection"', text)
         self.assertIn("transfection", text)
         self.assertIn("package = false", text)
-        self.assertIn('version = "0.1.2"', text)
+        self.assertIn('version = "0.1.3"', text)
         self.assertNotIn("apps/studio", text)
         self.assertNotIn("git =", text)
         self.assertNotIn("git+", text)
@@ -89,7 +89,7 @@ class TestNotebooksBundle(unittest.TestCase):
         self.assertIn("vendor/lisca", lock)
         self.assertIn("vendor/transfection", lock)
         self.assertIn('name = "lisca-notebooks"', lock)
-        self.assertIn('version = "0.1.2"', lock)
+        self.assertIn('version = "0.1.3"', lock)
 
     def test_bundle_has_no_pyama_dependency(self) -> None:
         forbidden = ("pyama", "PYAMA", "Pyama")
