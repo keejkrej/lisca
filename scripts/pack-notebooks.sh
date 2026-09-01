@@ -2,7 +2,7 @@
 # Pack notebooks/ into lisca-notebooks-X.Y.Z.zip (folder inside matches that name).
 # Vendors lisca[crop] + transfection as path sources so install only talks to PyPI.
 # Usage: scripts/pack-notebooks.sh [output-dir]
-# Prints the zip path on stdout.
+# Prints the zip path on stdout. Pack from a main monorepo checkout.
 
 set -euo pipefail
 
@@ -73,6 +73,8 @@ required=(
   "$BUNDLE_SRC/uv.lock"
   "$BUNDLE_SRC/install.sh"
   "$BUNDLE_SRC/install.ps1"
+  "$BUNDLE_SRC/update.sh"
+  "$BUNDLE_SRC/update.ps1"
   "$BUNDLE_SRC/notebooks/crop.ipynb"
   "$BUNDLE_SRC/notebooks/analyze.ipynb"
   "$BUNDLE_SRC/notebooks/results.ipynb"
@@ -107,6 +109,9 @@ cp "$BUNDLE_SRC/pyproject.toml" "$DEST/pyproject.toml"
 cp "$BUNDLE_SRC/uv.lock" "$DEST/uv.lock"
 cp "$BUNDLE_SRC/install.sh" "$DEST/install.sh"
 cp "$BUNDLE_SRC/install.ps1" "$DEST/install.ps1"
+cp "$BUNDLE_SRC/update.sh" "$DEST/update.sh"
+cp "$BUNDLE_SRC/update.ps1" "$DEST/update.ps1"
+printf '%s\n' ".venv/" ".uv/" ".ipynb_checkpoints/" "__pycache__/" "*.pyc" "*.pyo" >"$DEST/.gitignore"
 cp "$BUNDLE_SRC/notebooks/crop.ipynb" "$DEST/notebooks/crop.ipynb"
 cp "$BUNDLE_SRC/notebooks/analyze.ipynb" "$DEST/notebooks/analyze.ipynb"
 cp "$BUNDLE_SRC/notebooks/results.ipynb" "$DEST/notebooks/results.ipynb"
@@ -117,7 +122,7 @@ cp "$BUNDLE_SRC/scripts/jupyter-notebook.ps1" "$DEST/scripts/jupyter-notebook.ps
 cp "$BUNDLE_SRC/vendor/README.md" "$DEST/vendor/README.md"
 cp -a "$BUNDLE_SRC/vendor/lisca" "$DEST/vendor/lisca"
 cp -a "$BUNDLE_SRC/vendor/transfection" "$DEST/vendor/transfection"
-chmod +x "$DEST/install.sh" "$DEST/scripts/"*.sh
+chmod +x "$DEST/install.sh" "$DEST/update.sh" "$DEST/scripts/"*.sh
 
 find "$DEST" -type d -name '__pycache__' -exec rm -rf {} + 2>/dev/null || true
 find "$DEST" -type f \( -name '*.pyc' -o -name '*.pyo' \) -delete
@@ -155,6 +160,9 @@ expected=(
   "$NAME/uv.lock"
   "$NAME/install.sh"
   "$NAME/install.ps1"
+  "$NAME/update.sh"
+  "$NAME/update.ps1"
+  "$NAME/.gitignore"
   "$NAME/notebooks/crop.ipynb"
   "$NAME/notebooks/analyze.ipynb"
   "$NAME/notebooks/results.ipynb"

@@ -2372,7 +2372,7 @@ dependencies = [
 [[package]]
 name = "lisca-transfection"
 version = "0.1.0"
-source = "git+https://github.com/keejkrej/lisca-transfection-assay?rev=1718aeaffa45f51632a30b7764b1f1df820b46e0#1718aeaffa45f51632a30b7764b1f1df820b46e0"
+source = "git+https://github.com/keejkrej/lisca-transfection-assay?rev=869a231e089cde21cf44af1d6ed155b2610ca383#869a231e089cde21cf44af1d6ed155b2610ca383"
 dependencies = [
  "csv",
  "image 0.25.10",

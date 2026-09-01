@@ -87,13 +87,13 @@ Rust, generated types). Unsupported ids fail explicitly — see `PRODUCT.md`.
 Cargo (this workspace):
 
 ```toml
-lisca-transfection = { git = "https://github.com/keejkrej/lisca-transfection-assay", rev = "1718aeaffa45f51632a30b7764b1f1df820b46e0" }
+lisca-transfection = { git = "https://github.com/keejkrej/lisca-transfection-assay", rev = "869a231e089cde21cf44af1d6ed155b2610ca383" }
 ```
 
 Python extra (`python/pyproject.toml`, `analysis` extra):
 
 ```toml
-transfection = { git = "https://github.com/keejkrej/lisca-transfection-assay", rev = "1718aeaffa45f51632a30b7764b1f1df820b46e0" }
+transfection = { git = "https://github.com/keejkrej/lisca-transfection-assay", rev = "869a231e089cde21cf44af1d6ed155b2610ca383" }
 ```
 
 Keep Cargo and Python on the **same SHA**. Lock files (`Cargo.lock`,

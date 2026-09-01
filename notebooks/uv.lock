@@ -964,7 +964,7 @@ provides-extras = ["crop"]
 
 [[package]]
 name = "lisca-notebooks"
-version = "0.1.1"
+version = "0.1.2"
 source = { virtual = "." }
 dependencies = [
     { name = "lisca", extra = ["crop"] },
@@ -1947,6 +1947,7 @@ source = { directory = "vendor/transfection" }
 dependencies = [
     { name = "imageio" },
     { name = "imageio-ffmpeg" },
+    { name = "lisca" },
     { name = "marimo" },
     { name = "markdown-it-py" },
     { name = "matplotlib" },
@@ -1961,6 +1962,7 @@ dependencies = [
 requires-dist = [
     { name = "imageio" },
     { name = "imageio-ffmpeg" },
+    { name = "lisca", directory = "vendor/lisca" },
     { name = "marimo" },
     { name = "markdown-it-py", specifier = "<4" },
     { name = "matplotlib" },

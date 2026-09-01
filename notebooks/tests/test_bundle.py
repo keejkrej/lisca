@@ -43,8 +43,12 @@ class TestNotebooksBundle(unittest.TestCase):
     def test_install_lives_at_bundle_root(self) -> None:
         self.assertTrue((BUNDLE / "install.sh").is_file())
         self.assertTrue((BUNDLE / "install.ps1").is_file())
+        self.assertTrue((BUNDLE / "update.sh").is_file())
+        self.assertTrue((BUNDLE / "update.ps1").is_file())
         self.assertFalse((SCRIPTS / "install.sh").exists())
         self.assertFalse((SCRIPTS / "install.ps1").exists())
+        self.assertFalse((SCRIPTS / "update.sh").exists())
+        self.assertFalse((SCRIPTS / "update.ps1").exists())
         install_sh = (BUNDLE / "install.sh").read_text(encoding="utf-8")
         install_ps1 = (BUNDLE / "install.ps1").read_text(encoding="utf-8")
         self.assertIn("vendored under vendor/", install_sh)
@@ -60,7 +64,7 @@ class TestNotebooksBundle(unittest.TestCase):
         self.assertIn('path = "vendor/transfection"', text)
         self.assertIn("transfection", text)
         self.assertIn("package = false", text)
-        self.assertIn('version = "0.1.1"', text)
+        self.assertIn('version = "0.1.2"', text)
         self.assertNotIn("apps/studio", text)
         self.assertNotIn("git =", text)
         self.assertNotIn("git+", text)
@@ -77,7 +81,7 @@ class TestNotebooksBundle(unittest.TestCase):
         self.assertIn("vendor/lisca", lock)
         self.assertIn("vendor/transfection", lock)
         self.assertIn('name = "lisca-notebooks"', lock)
-        self.assertIn('version = "0.1.1"', lock)
+        self.assertIn('version = "0.1.2"', lock)
 
     def test_bundle_has_no_pyama_dependency(self) -> None:
         forbidden = ("pyama", "PYAMA", "Pyama")
@@ -105,7 +109,10 @@ class TestNotebooksBundle(unittest.TestCase):
     def test_readme_tells_users_not_to_clone_and_vendors_packages(self) -> None:
         readme = (BUNDLE / "README.md").read_text(encoding="utf-8")
         self.assertIn("notebooks-v", readme)
-        self.assertIn("Do **not** clone", readme)
+        self.assertIn("git clone --branch notebooks", readme)
+        self.assertIn("Do **not** clone `main`", readme)
+        self.assertIn("bash update.sh", readme)
+        self.assertIn("git pull --ff-only", readme)
         self.assertIn("bash scripts/jupyter-notebook.sh", readme)
         self.assertIn("bash scripts/jupyter-hub.sh", readme)
         self.assertIn("Config", readme)
@@ -114,14 +121,40 @@ class TestNotebooksBundle(unittest.TestCase):
         self.assertIn("vendor/lisca", readme)
         self.assertIn("vendor/transfection", readme)
         self.assertIn("PyPI", readme)
-        self.assertIn("0.1.1", readme)
+        self.assertIn("0.1.2", readme)
         self.assertNotIn("git+https", readme)
+
+    def test_update_pulls_notebooks_branch_not_release_zip(self) -> None:
+        sh = (BUNDLE / "update.sh").read_text(encoding="utf-8")
+        ps1 = (BUNDLE / "update.ps1").read_text(encoding="utf-8")
+        for text in (sh, ps1):
+            self.assertIn("git pull --ff-only", text)
+            self.assertIn("branch notebooks", text)
+            self.assertIn("sync --python 3.12 --extra notebook", text)
+            self.assertNotIn("api.github.com/repos/keejkrej/lisca/releases", text)
+            self.assertNotIn("lisca-notebooks-*.zip", text)
+        publish = (REPO / "scripts" / "publish-notebooks-branch.sh").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("HEAD:refs/heads/notebooks", publish)
+        self.assertIn("--dry-run", publish)
+        release = (REPO / ".github" / "workflows" / "notebooks-release.yml").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("workflow_dispatch", release)
+        self.assertIn("ref: main", release)
+        self.assertIn("publish-notebooks-branch.sh --tag", release)
 
     def test_vendor_readme_explains_sync_not_commit(self) -> None:
         readme = (BUNDLE / "vendor" / "README.md").read_text(encoding="utf-8")
         self.assertIn("sync-notebooks-vendor.sh", readme)
         self.assertIn("Do not commit", readme)
         self.assertIn("PyPI", readme)
+
+    def test_vendor_sync_rewrites_transfection_lisca_git_to_path(self) -> None:
+        text = (REPO / "scripts" / "sync-notebooks-vendor.sh").read_text(encoding="utf-8")
+        self.assertIn('lisca = { path = "../lisca" }', text)
+        self.assertIn("strips any git/GitHub lisca source", text)
 
     def test_copied_notebooks_keep_config_cells(self) -> None:
         crop = (BUNDLE / "notebooks" / "crop.ipynb").read_text(encoding="utf-8")
