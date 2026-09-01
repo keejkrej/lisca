@@ -152,9 +152,9 @@ if [[ "$DRY_RUN" -eq 0 && -n "$origin_url" ]]; then
 fi
 
 cp -a "$TREE/." "$REPO/"
-# Keep .venv / .uv untracked on the export branch.
+# Keep .venv / .uv / .tools / sibling *.bak-* backups untracked on the export branch.
 if [[ ! -f "$REPO/.gitignore" ]]; then
-  printf '%s\n' ".venv/" ".uv/" ".tools/" ".ipynb_checkpoints/" "__pycache__/" "*.pyc" "*.pyo" >"$REPO/.gitignore"
+  printf '%s\n' ".venv/" ".uv/" ".tools/" ".ipynb_checkpoints/" "__pycache__/" "*.pyc" "*.pyo" "*.bak-*" >"$REPO/.gitignore"
 fi
 
 git -C "$REPO" add -A

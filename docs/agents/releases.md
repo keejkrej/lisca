@@ -76,8 +76,11 @@ installers and must not be hooked into `.github/workflows/release.yml`.
   Release still attaches `lisca-notebooks-X.Y.Z.zip` for a manual download; scripts do not
   treat that zip as a get/update path.
 - Update: `bash update.sh` uses the same portable git under `.tools/git`. No `.git` → bootstrap onto
-  branch `notebooks` (`.venv` / `.uv` / `.tools` kept). Already on `notebooks` → `git pull --ff-only`
-  then `uv sync`. Update does not download a notebooks zip and does not pull `main`.
+  branch `notebooks` (`.venv` / `.uv` / `.tools` kept). Already on `notebooks` → if dirty, sibling
+  `*.bak-<UTC>` copies of dirty `notebooks/*.ipynb` then `git fetch` + `reset --hard origin/notebooks`
+  (other local files discarded; untracked cleaned except `.venv` / `.uv` / `.tools` / `*.bak-*`);
+  if clean, `git pull --ff-only`. Then `uv sync`. Update does not download a notebooks zip and does not
+  pull `main`.
 - Never reuse a notebooks tag. A notebook-only hotfix is the next patch (for example `0.1.2`), not a
   desktop bump and not a moved `notebooks-v0.1.0`.
 - The export vendors Lisca crop (`vendor/lisca` from this repo’s `python/`) and the transfection
