@@ -15,18 +15,18 @@ Do not scatter layout tint tokens (`railChrome`, `panel`, `stat`, etc.); shell s
 
 ## Instrument stage shell
 
-Studio, Aligner, and Annotator use `AppShell variant="stage"` as the live product chrome. The reference desktop is 1440×900 with fixed columns **256px / 928px / 256px** (`w-64` rails, no `w-72` overrides). The center column begins with a 56px `AppShell.TopBar`, then the main sheet.
+Studio, Aligner, Annotator, and the instrument **mock** share one `AppShell`: muted stage surround, 16px gutters, floating paper main sheet, 256px rails, and a 56px `AppShell.TopBar`. There is no classic Header variant. The reference desktop is 1440×900 with fixed columns **256px / 928px / 256px** (`w-64` rails, no `w-72` overrides).
 
 ```tsx
-<AppShell variant="stage">
+<AppShell>
   <AppShell.Body>
     <AppShell.Left>
       <RailSidebar>{/* nav + instrument */}</RailSidebar>
     </AppShell.Left>
     <AppShell.MainColumn>
-      <AppShell.TopBar>{/* ShellNavbar or demo chrome */}</AppShell.TopBar>
+      <AppShell.TopBar>{/* ShellNavbar or mock chrome */}</AppShell.TopBar>
       <AppShell.Main>
-        <ViewportCard variant="stage">
+        <ViewportCard>
           <StageCanvas aspect="wide" captionLeft="…" captionRight="…">
             {/* canvas */}
           </StageCanvas>
@@ -49,7 +49,7 @@ Do **not** put instrument tools or save actions in `AppShell.Dock` / `DockStrip`
 | `RailSidebar`                                           | Full 256px overflow viewport; centers a fixed 200px `RailSectionStack` with 16px section rhythm |
 | `PanelSection appearance="rail"`                        | Collapsible rail section (vertical carets)                                                      |
 | `RailControlStack` / `RailActionPair` / `RailFieldPair` | Body layout inside rail sections                                                                |
-| `ViewportCard variant="stage"`                          | Padded main sheet around the canvas                                                             |
+| `ViewportCard`                                          | Padded main sheet around the canvas                                                             |
 | `StageCanvas`                                           | Shared muted well + tracked captions (`aspect="wide"` for Align, `square` for Annotate)         |
 
 Stage shells keep both 256px rails inline at 1024px and wider. Below 1024px—or in portrait orientation—the same mounted rail content moves into body-owned overlays so the scientific workspace retains at least 512px.
@@ -70,12 +70,12 @@ Compose apps from shell primitives, not exported class strings:
 
 | Component                      | Role                                                                                                                                                                              |
 | ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `AppShell`                     | Root layout; `variant="stage"` for instrument chrome, default for classic document shells                                                                                         |
-| `AppShell.TopBar`              | Floating 56px stage header inside `MainColumn`                                                                                                                                    |
+| `AppShell`                     | Root layout: muted surround, 16px gutters, floating paper sheet, rails, `TopBar`                                                                                                  |
+| `AppShell.TopBar`              | Floating 56px header inside `MainColumn`                                                                                                                                          |
 | `AppShell.MainScroll`          | Full-sheet document scroll viewport with a separately centered, non-scrolling content measure                                                                                     |
 | `StageCanvas`                  | Shared stage well + caption row for Align/Annotate viewports                                                                                                                      |
-| `Panel`                        | Bordered in-app frame (nav rail, sidebar cards, classic panels)                                                                                                                   |
-| `ViewportCard`                 | Padded main column; `variant="stage"` for the instrument sheet                                                                                                                    |
+| `Panel`                        | Bordered in-app frame (nav rail, sidebar cards)                                                                                                                                   |
+| `ViewportCard`                 | Padded main-sheet frame around the canvas                                                                                                                                         |
 | `Section`                      | Collapsible in-app section inside a `Panel` (rare direct use). Title is an accordion-style trigger (hover underline); `chevron="vertical"` (up/down) or `horizontal` (left/right) |
 | `PanelSection`                 | Sidebar/rail placement variant of `Section`; full width, height hugs content; vertical carets                                                                                     |
 | `RailControlStack`             | Default full-width vertical composition for independent controls in a stage rail                                                                                                  |
@@ -223,15 +223,17 @@ instrument stage:
 
 ## Rules
 
-1. **One layout background:** stage uses muted surround + paper sheet; classic shells use `bg-background` on AppShell and viewport padding bands.
+1. **One layout background:** muted surround + paper sheet. There is no classic full-bleed `AppShell`.
 2. **Structure = border, not tint:** panels and sections use `rounded-xl border border-border bg-background`.
 3. **Apps use shell components** — do not import layout class strings; `DockSection` / `PanelSection` / `RailSidebar` own their placement styles.
 4. **Instrument chrome is stage rails** — 256px `RailSidebar`, `StageCanvas`, top-bar Expert; not bottom docks.
 5. **Read-only path chips** may use `bg-muted/20` (`ReadonlyPathField`) as the one subtle inset.
 
-## Demo shells
+## Demo vs mock
 
-Standalone **Aligner** and **Annotator** demos (`apps/aligner/demo`, `apps/annotator/demo`) use the same stage shell, 256px rails, shared rail primitives, and `StageCanvas` as the real apps. Embedded landing previews keep a compact classic `AppShell` + inline toolbar so the marketing page is not restyled. The Studio analysis demo may still use a classic horizontal dock for assay actions; treat that as a leftover, not the Align/Annotate instrument pattern. `@lisca/web-demo` supplies demo state and `DemoNavbar` only — it does not own shell layout.
+Landing **demos** (`apps/*/demo`, ports 5175/5176/5177) are browser/marketing surfaces. They use demo-owned `DemoShell` chrome and may deviate from the instrument. They are not a second `AppShell` variant.
+
+The instrument **mock** (`apps/mock/web`, `vp run dev:mock`) composes the same paper-pane `AppShell` as the real apps, filled with static/fixture content so layout can be iterated without Tauri or a Rust server.
 
 ## Out of scope
 

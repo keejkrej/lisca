@@ -1,8 +1,9 @@
 import { AlignGridShapeToggle } from "@lisca/ui/features";
-import { AppShell, RailSidebar } from "@lisca/ui/shell";
+import { RailSidebar } from "@lisca/ui/shell";
 import {
   DemoAlignRoot,
   DemoNavbar,
+  DemoShell,
   DEMO_SAMPLE_IMAGES,
   resolveSelectedSampleId,
   useDemoAlignState,
@@ -75,42 +76,42 @@ function AlignDemoView(props: { embedded: boolean }) {
     <Show
       when={!props.embedded}
       fallback={
-        <AppShell>
-          <AppShell.Header>{navbar}</AppShell.Header>
-          <AppShell.Body>
-            <AppShell.MainColumn>
-              <AppShell.Main>
+        <DemoShell>
+          <DemoShell.Header>{navbar}</DemoShell.Header>
+          <DemoShell.Body>
+            <DemoShell.MainColumn>
+              <DemoShell.Main>
                 <DemoAlignMain embedded state={state} />
-              </AppShell.Main>
+              </DemoShell.Main>
               <DemoInlineAlignToolbar showDownload={false} showShapeToggle={false} state={state} />
-            </AppShell.MainColumn>
-          </AppShell.Body>
-        </AppShell>
+            </DemoShell.MainColumn>
+          </DemoShell.Body>
+        </DemoShell>
       }
     >
-      <AppShell variant="stage">
-        <AppShell.Body>
-          <AppShell.Left>
+      <DemoShell>
+        <DemoShell.Header>{navbar}</DemoShell.Header>
+        <DemoShell.Body>
+          <DemoShell.Left widthClass="w-64">
             <RailSidebar>
               <DemoAlignContrastControls state={state} />
               <DemoAlignToolSection state={state} />
             </RailSidebar>
-          </AppShell.Left>
-          <AppShell.MainColumn>
-            <AppShell.TopBar>{navbar}</AppShell.TopBar>
-            <AppShell.Main>
+          </DemoShell.Left>
+          <DemoShell.MainColumn>
+            <DemoShell.Main>
               <DemoAlignMain state={state} />
-            </AppShell.Main>
-          </AppShell.MainColumn>
-          <AppShell.Right>
+            </DemoShell.Main>
+          </DemoShell.MainColumn>
+          <DemoShell.Right widthClass="w-64">
             <RailSidebar>
               <DemoAlignGridControls state={state} />
               <DemoAlignSelectionControls state={state} />
               <DemoAlignSaveSection state={state} />
             </RailSidebar>
-          </AppShell.Right>
-        </AppShell.Body>
-      </AppShell>
+          </DemoShell.Right>
+        </DemoShell.Body>
+      </DemoShell>
     </Show>
   );
 

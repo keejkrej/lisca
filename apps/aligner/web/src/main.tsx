@@ -23,7 +23,7 @@ function AlignApp() {
   return (
     <AlignerWorkSessionGate>
       <AlignPageProvider>
-        <AppShell variant="stage">
+        <AppShell>
           <AppShell.Body>
             <AppShell.Left>
               <AlignerLeft />

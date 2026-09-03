@@ -1,4 +1,4 @@
-import { StageCanvas, ViewportCard } from "@lisca/ui/shell";
+import { Panel, StageCanvas, ViewportCard } from "@lisca/ui/shell";
 import {
   AnnotationCanvas,
   SmartSegmentModelDialog,
@@ -105,7 +105,7 @@ export function DemoAnnotatorMain(props: {
     <Show
       when={props.embedded}
       fallback={
-        <ViewportCard variant="stage">
+        <ViewportCard>
           <SmartSegmentModelDialog
             busy={smartSegment.busy()}
             state={smartSegment.downloadState()}
@@ -123,15 +123,17 @@ export function DemoAnnotatorMain(props: {
         </ViewportCard>
       }
     >
-      <ViewportCard>
-        <SmartSegmentModelDialog
-          busy={smartSegment.busy()}
-          state={smartSegment.downloadState()}
-          onCancel={smartSegment.cancelDownload}
-          onConfirm={() => void smartSegment.confirmDownload()}
-        />
-        {canvas}
-      </ViewportCard>
+      <div class="flex h-full min-h-0 flex-1 flex-col p-2.5">
+        <Panel class="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+          <SmartSegmentModelDialog
+            busy={smartSegment.busy()}
+            state={smartSegment.downloadState()}
+            onCancel={smartSegment.cancelDownload}
+            onConfirm={() => void smartSegment.confirmDownload()}
+          />
+          {canvas}
+        </Panel>
+      </div>
     </Show>
   );
 }

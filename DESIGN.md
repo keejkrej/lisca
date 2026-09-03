@@ -166,7 +166,7 @@ components:
 
 LiSCA should feel like a precise scientific instrument: quiet, legible, and direct. High-contrast neutral surfaces keep image data primary. Each product app borrows one accent from its icon — Studio mint, Aligner blue, Annotator coral — and uses it only on the highest-emphasis chrome. Restrained GFP green identifies biological signal, not general interaction. The stage shell and all instrument controls use Outfit Variable.
 
-Studio, Aligner, and Annotator share this language. Reuse the same shell, section, field, navigation, toggle, slider, and action primitives rather than introducing app-local variants.
+Studio, Aligner, and Annotator share this language. Reuse the same shell, section, field, navigation, toggle, slider, and action primitives rather than introducing app-local variants. The instrument `AppShell` is that language. Local **mocks** (`vp run dev:mock`) fill it with static fixtures for layout iteration. Landing **demos** are a separate browser surface and may deviate.
 
 ## Colors
 

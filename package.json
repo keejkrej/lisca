@@ -10,6 +10,7 @@
     "dev:studio": "vp run --parallel --filter @lisca/studio-server --filter @lisca/studio-web dev",
     "dev:studio-desktop": "vp run --filter @lisca/studio-desktop dev",
     "dev:studio-demo": "vp run --filter @lisca/studio-demo dev",
+    "dev:mock": "vp run --filter @lisca/instrument-mock dev",
     "fixture:workspace": "vp run --filter @lisca/fixtures fixture",
     "dev:landing": "vp run --filter @lisca/landing-web dev",
     "build": "vp run --filter ./packages/* build && vp run --filter @lisca/*-web build",

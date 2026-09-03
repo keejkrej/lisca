@@ -12,8 +12,8 @@ import {
   type FixtureAssayId,
 } from "@lisca/analysis/fixtures";
 import { ResultPlotGallery } from "@lisca/studio-web/result";
-import { AppShell, Panel, SidebarStack } from "@lisca/ui/shell";
-import { DemoNavbar } from "@lisca/web-demo";
+import { Panel, SidebarStack } from "@lisca/ui/shell";
+import { DemoNavbar, DemoShell } from "@lisca/web-demo";
 import { createMemo, createSignal, Show } from "solid-js";
 
 import { DemoAnalysisDock } from "./components/demo-analysis-dock";
@@ -42,8 +42,8 @@ export function AnalysisDemo(props: AnalysisDemoProps) {
   };
 
   const shell = (
-    <AppShell>
-      <AppShell.Header>
+    <DemoShell>
+      <DemoShell.Header>
         <DemoNavbar
           allowOpenFile={false}
           fileName={fixture().title}
@@ -58,14 +58,14 @@ export function AnalysisDemo(props: AnalysisDemoProps) {
             if (value === "transfection" || value === "killing") switchAssay(value);
           }}
         />
-      </AppShell.Header>
-      <AppShell.Body>
+      </DemoShell.Header>
+      <DemoShell.Body>
         <Show
           when={!props.embedded}
           fallback={
-            <AppShell.MainColumn>
-              <AppShell.Main>
-                <AppShell.MainScroll contentClass="p-2.5">
+            <DemoShell.MainColumn>
+              <DemoShell.Main>
+                <DemoShell.MainScroll contentClass="p-2.5">
                   <Panel class="min-h-full w-full">
                     <p class="border-b px-4 py-2 text-xs text-muted-foreground">
                       {fixtureBanner()}
@@ -77,8 +77,8 @@ export function AnalysisDemo(props: AnalysisDemoProps) {
                       section={section()}
                     />
                   </Panel>
-                </AppShell.MainScroll>
-              </AppShell.Main>
+                </DemoShell.MainScroll>
+              </DemoShell.Main>
               <DemoAnalysisDock
                 compact
                 section={section()}
@@ -88,17 +88,17 @@ export function AnalysisDemo(props: AnalysisDemoProps) {
                 }}
                 onSectionChange={setSection}
               />
-            </AppShell.MainColumn>
+            </DemoShell.MainColumn>
           }
         >
-          <AppShell.Left widthClass="w-72">
+          <DemoShell.Left widthClass="w-72">
             <SidebarStack>
               <DemoAnalysisLeft fixture={fixture()} />
             </SidebarStack>
-          </AppShell.Left>
-          <AppShell.MainColumn>
-            <AppShell.Main>
-              <AppShell.MainScroll contentClass="p-2.5">
+          </DemoShell.Left>
+          <DemoShell.MainColumn>
+            <DemoShell.Main>
+              <DemoShell.MainScroll contentClass="p-2.5">
                 <Panel class="min-h-full w-full">
                   <p class="border-b px-4 py-2 text-xs text-muted-foreground">{fixtureBanner()}</p>
                   <ResultPlotGallery
@@ -108,9 +108,9 @@ export function AnalysisDemo(props: AnalysisDemoProps) {
                     section={section()}
                   />
                 </Panel>
-              </AppShell.MainScroll>
-            </AppShell.Main>
-            <AppShell.Dock>
+              </DemoShell.MainScroll>
+            </DemoShell.Main>
+            <DemoShell.Dock>
               <DemoAnalysisDock
                 section={section()}
                 sectionLabels={{
@@ -119,18 +119,18 @@ export function AnalysisDemo(props: AnalysisDemoProps) {
                 }}
                 onSectionChange={setSection}
               />
-            </AppShell.Dock>
-          </AppShell.MainColumn>
-          <AppShell.Right widthClass="w-72">
+            </DemoShell.Dock>
+          </DemoShell.MainColumn>
+          <DemoShell.Right widthClass="w-72">
             <DemoAnalysisRight
               fileCount={fixture().plots.length}
               instruction={resultSectionInstruction(section(), assayKind())}
               title={fixture().title}
             />
-          </AppShell.Right>
+          </DemoShell.Right>
         </Show>
-      </AppShell.Body>
-    </AppShell>
+      </DemoShell.Body>
+    </DemoShell>
   );
 
   return (
