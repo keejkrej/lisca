@@ -102,7 +102,7 @@ describe("AppShell stage layout", () => {
     hasClass(sidebar, "w-72");
   });
 
-  it("renders the Paper stage geometry without clipping its central shadows", () => {
+  it("renders the Paper stage geometry with a hairline sheet and top bar", () => {
     stubViewport(1440, 900);
     const view = render(() => (
       <AppShell variant="stage">
@@ -132,7 +132,13 @@ describe("AppShell stage layout", () => {
     hasClass(topBar, "h-14");
     hasClass(topBar, "px-5");
     hasClass(topBar, "rounded-2xl");
+    hasClass(topBar, "border");
+    hasClass(topBar, "border-border");
+    expect(topBar.className).not.toContain("shadow-[");
     hasClass(main, "rounded-2xl");
+    hasClass(main, "border");
+    hasClass(main, "border-border");
+    expect(main.className).not.toContain("shadow-[");
     hasClass(main, "overflow-clip");
   });
 
