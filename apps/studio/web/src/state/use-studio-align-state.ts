@@ -37,7 +37,6 @@ import {
 import {
   studioAlignUiActions,
   studioAlignUiAtom,
-  type ExcludedByPosition,
 } from "./studio-align-store";
 import { useStudioStore } from "./studio-store";
 
@@ -64,7 +63,6 @@ export type StudioAlignState = {
   setPatternZoomLocked: (locked: boolean) => void;
   manualExclusionEnabled: boolean;
   setManualExclusionEnabled: (enabled: boolean) => void;
-  excludedCellsByPosition: ExcludedByPosition;
   setExcludedCellsForCurrentPosition: (cells: Iterable<AlignGridCellCoord>) => void;
   currentExcludedCells: AlignGridCellCoord[];
   displayedExcludedCells: AlignGridCellCoord[];
@@ -90,8 +88,6 @@ export type StudioAlignState = {
   cancelCropConfirm: () => void;
   cancelCrop: () => Promise<void>;
   variationExcludePreview: VariationExcludePreview | null;
-  variationExcludeLoading: boolean;
-  variationExclude: () => Promise<void>;
   setVariationExcludeThreshold: (threshold: number) => void;
   cancelVariationExclude: () => void;
   dismissVariationExcludePreview: () => void;
@@ -317,9 +313,6 @@ export function useStudioAlignState(): StudioAlignState {
       return ui().manualExclusionEnabled;
     },
     setManualExclusionEnabled,
-    get excludedCellsByPosition() {
-      return ui().excludedCellsByPosition;
-    },
     setExcludedCellsForCurrentPosition,
     get currentExcludedCells() {
       return session.derived().currentExcludedCells;
@@ -366,10 +359,6 @@ export function useStudioAlignState(): StudioAlignState {
     get variationExcludePreview() {
       return session.variation.preview();
     },
-    get variationExcludeLoading() {
-      return session.variation.loading();
-    },
-    variationExclude: session.variation.exclude,
     setVariationExcludeThreshold: session.variation.setThreshold,
     cancelVariationExclude: session.variation.cancel,
     dismissVariationExcludePreview: session.variation.dismiss,
