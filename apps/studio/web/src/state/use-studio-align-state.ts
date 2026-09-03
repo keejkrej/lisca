@@ -34,10 +34,7 @@ import {
   collectAssayPositions,
   filterScanPositionsForAssay,
 } from "@lisca/client/studio/sample-positions";
-import {
-  studioAlignUiActions,
-  studioAlignUiAtom,
-} from "./studio-align-store";
+import { studioAlignUiActions, studioAlignUiAtom } from "./studio-align-store";
 import { useStudioStore } from "./studio-store";
 
 export type StudioAlignState = {
