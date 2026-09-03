@@ -15,7 +15,7 @@ Do not scatter layout tint tokens (`railChrome`, `panel`, `stat`, etc.); shell s
 
 ## Instrument stage shell
 
-Studio, Aligner, and Annotator use `AppShell variant="stage"` as the live product chrome. The reference desktop is 1440×900 with fixed columns **256px / 928px / 256px** (`w-64` rails, no `w-72` overrides). The center column begins with a 56px `AppShell.TopBar`, then the main sheet.
+Studio, Aligner, and Annotator use `AppShell variant="stage"` as the live product chrome. The reference desktop is 1440×900 with fixed columns **256px / 928px / 256px** (`w-64` rails, no `w-72` overrides). The center column begins with a 56px `AppShell.TopBar`, then the main sheet. Stage `Body` and `MainColumn` keep overflow visible and raise the center stack above the rails so that sheet elevation paints onto the muted surround; do not clip those shadows at the rail join. `AppShell.Main` still clips its contents internally so portrait controls stay fixed.
 
 ```tsx
 <AppShell variant="stage">
@@ -179,9 +179,10 @@ so action pairs do not unexpectedly stack.
 
 ## Main document scrolling
 
-`AppShell.Main` stays clipped in the stage shell so portrait panel controls remain fixed. Put forms,
-sample lists, and result documents in its direct `AppShell.MainScroll` child. The module keeps the
-scroll viewport at the full main-sheet edge and gives callers a centered `contentClass` measure:
+`AppShell.Main` keeps overflow visible in the stage shell so the sheet shadow can reach the rails.
+An inner clip holds portrait panel controls fixed. Put forms, sample lists, and result documents in
+`AppShell.MainScroll` inside that clip. The module keeps the scroll viewport at the full main-sheet
+edge and gives callers a centered `contentClass` measure:
 
 ```tsx
 <AppShell.Main>

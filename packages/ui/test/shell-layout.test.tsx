@@ -42,6 +42,23 @@ function hasClass(element: Element, className: string) {
   expect(element.classList.contains(className)).toBe(true);
 }
 
+const overflowClipClasses = [
+  "overflow-hidden",
+  "overflow-clip",
+  "overflow-auto",
+  "overflow-scroll",
+  "overflow-x-hidden",
+  "overflow-y-hidden",
+] as const;
+
+function doesNotClipPaintedOverflow(element: Element) {
+  for (const className of overflowClipClasses) {
+    expect(element.classList.contains(className)).toBe(false);
+  }
+}
+
+const stageSheetShadowClass = "shadow-[0_8px_40px_#0000000c,0_20px_56px_#0000000a]";
+
 function stageTopBar(): Element {
   const element = document.querySelector('[data-slot="app-shell-top-bar"]');
   expect(element).not.toBeNull();
@@ -121,19 +138,37 @@ describe("AppShell stage layout", () => {
     const topBar = stageTopBar();
     const main = screen.getByRole("main");
     const mainColumn = main.parentElement!;
+    const body = mainColumn.parentElement!;
+    const mainClip = main.querySelector('[data-slot="app-shell-main-clip"]');
     hasClass(root, "bg-muted");
     hasClass(root, "py-4");
     hasClass(root, "overflow-clip");
     hasClass(screen.getByLabelText("Left panel"), "w-64");
     expect(screen.getByLabelText("Left panel").classList.contains("border-r")).toBe(false);
+    expect(screen.getByLabelText("Left panel").className).not.toMatch(/shadow-/);
     hasClass(screen.getByLabelText("Right panel"), "w-64");
+    expect(screen.getByLabelText("Right panel").className).not.toMatch(/shadow-/);
+    hasClass(body, "overflow-visible");
+    doesNotClipPaintedOverflow(body);
     hasClass(mainColumn, "gap-3");
     hasClass(mainColumn, "overflow-visible");
+    hasClass(mainColumn, "z-10");
+    doesNotClipPaintedOverflow(mainColumn);
     hasClass(topBar, "h-14");
     hasClass(topBar, "px-5");
     hasClass(topBar, "rounded-2xl");
+    hasClass(topBar, "overflow-visible");
+    hasClass(topBar, stageSheetShadowClass);
+    expect(topBar.className).not.toMatch(/\bring\b/);
+    expect(topBar.classList.contains("border")).toBe(false);
     hasClass(main, "rounded-2xl");
-    hasClass(main, "overflow-clip");
+    hasClass(main, "overflow-visible");
+    hasClass(main, stageSheetShadowClass);
+    expect(main.className).not.toMatch(/\bring\b/);
+    expect(main.classList.contains("border")).toBe(false);
+    expect(mainClip).not.toBeNull();
+    hasClass(mainClip!, "overflow-clip");
+    hasClass(mainClip!, "rounded-[inherit]");
   });
 
   it("keeps a stage document scrollbar at the full main-sheet edge", () => {
@@ -153,10 +188,12 @@ describe("AppShell stage layout", () => {
     ));
 
     const main = screen.getByRole("main");
+    const clip = main.querySelector('[data-slot="app-shell-main-clip"]');
     const scroll = main.querySelector('[data-slot="app-shell-main-scroll"]');
     const content = scroll?.firstElementChild;
+    expect(clip).not.toBeNull();
     expect(scroll).not.toBeNull();
-    expect(scroll?.parentElement).toBe(main);
+    expect(scroll?.parentElement).toBe(clip);
     hasClass(scroll!, "w-full");
     hasClass(scroll!, "overflow-y-auto");
     expect(content).not.toBeNull();

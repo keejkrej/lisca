@@ -15,8 +15,9 @@ import { ShellPortraitPanelControls, ShellPortraitPanelOverlays } from "./shell-
 
 const shellDivider = "border-border";
 const shellSurface = "bg-background";
+/** 18px radius (`rounded-2xl` via `--radius-2xl`) and a wide, low-contrast elevation. */
 const shellStageSurface =
-  "rounded-2xl bg-background shadow-[0_1px_2px_#0000000a,0_8px_24px_#0000000f]";
+  "rounded-2xl bg-background shadow-[0_8px_40px_#0000000c,0_20px_56px_#0000000a]";
 
 export type AppShellVariant = "default" | "stage";
 
@@ -144,13 +145,13 @@ function AppShellTopBar(props: { children?: JSX.Element; class?: string }) {
   return (
     <div
       class={cn(
-        "flex h-14 w-full shrink-0 flex-col overflow-hidden px-5",
+        "flex h-14 w-full shrink-0 flex-col overflow-visible px-5",
         shellStageSurface,
         props.class,
       )}
       data-slot="app-shell-top-bar"
     >
-      <div class="min-h-0 flex-1 overflow-auto">{props.children}</div>
+      <div class="min-h-0 flex-1 overflow-auto rounded-[inherit]">{props.children}</div>
     </div>
   );
 }
@@ -166,8 +167,8 @@ function AppShellBody(props: { children?: JSX.Element }) {
   return (
     <div
       class={cn(
-        "relative flex min-h-0 flex-1 overflow-hidden",
-        variant === "stage" ? "bg-muted" : shellSurface,
+        "relative flex min-h-0 flex-1",
+        variant === "stage" ? "overflow-visible bg-muted" : `overflow-hidden ${shellSurface}`,
       )}
     >
       {props.children}
@@ -185,7 +186,9 @@ function AppShellMainColumn(props: { children?: JSX.Element }) {
     <div
       class={cn(
         "flex min-h-0 min-w-0 flex-1 flex-col",
-        variant === "stage" ? "gap-3 overflow-visible bg-muted" : `overflow-hidden ${shellSurface}`,
+        variant === "stage"
+          ? "relative z-10 gap-3 overflow-visible bg-muted"
+          : `overflow-hidden ${shellSurface}`,
       )}
     >
       {props.children}
@@ -234,19 +237,29 @@ AppShellRight.displayName = "AppShell.Right";
 
 function AppShellMain(props: { children?: JSX.Element }) {
   const variant = useAppShellVariant();
+  const stage = variant === "stage";
 
   return (
     <main
       class={cn(
         "relative min-h-0 flex-1",
-        variant === "stage"
-          ? cn("flex min-w-0 flex-col overflow-clip", shellStageSurface)
+        stage
+          ? cn("flex min-w-0 flex-col overflow-visible", shellStageSurface)
           : `overflow-auto ${shellSurface}`,
       )}
       id="main-content"
     >
-      {props.children}
-      <ShellPortraitPanelControls placement={variant === "stage" ? "top" : "center"} />
+      <div
+        class={
+          stage
+            ? "relative flex min-h-0 min-w-0 flex-1 flex-col overflow-clip rounded-[inherit]"
+            : "contents"
+        }
+        data-slot={stage ? "app-shell-main-clip" : undefined}
+      >
+        {props.children}
+        <ShellPortraitPanelControls placement={stage ? "top" : "center"} />
+      </div>
     </main>
   );
 }
@@ -255,9 +268,10 @@ AppShellMain.displayName = "AppShell.Main";
 /**
  * Full-sheet document scrolling with a separately constrained content measure.
  *
- * Stage `Main` stays clipped so portrait controls remain fixed; this direct child owns the
- * scrollbar at the sheet edge. Classic `Main` already owns scrolling, so the same interface
- * contributes document flow without creating a nested scroll viewport.
+ * Stage `Main` keeps overflow visible so the sheet elevation can paint onto the rails; an inner
+ * clip holds portrait controls fixed. This child owns the scrollbar at the sheet edge. Classic
+ * `Main` already owns scrolling, so the same interface contributes document flow without creating
+ * a nested scroll viewport.
  */
 function AppShellMainScroll(props: {
   children?: JSX.Element;
