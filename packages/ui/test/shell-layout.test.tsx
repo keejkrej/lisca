@@ -70,59 +70,11 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-describe("AppShell stage layout", () => {
-  it("keeps the classic presentation unchanged by default", () => {
-    stubViewport(1200, 800);
-    const view = render(() => (
-      <AppShell>
-        <AppShell.Header>Header</AppShell.Header>
-        <AppShell.Body>
-          <AppShell.Left>Left</AppShell.Left>
-          <AppShell.MainColumn>
-            <AppShell.Main>Main</AppShell.Main>
-          </AppShell.MainColumn>
-          <AppShell.Right>Right</AppShell.Right>
-        </AppShell.Body>
-      </AppShell>
-    ));
-
-    const root = view.container.firstElementChild!;
-    const main = screen.getByRole("main");
-    hasClass(root, "bg-background");
-    hasClass(root, "overflow-hidden");
-    expect(root.classList.contains("py-4")).toBe(false);
-    hasClass(screen.getByLabelText("Left panel"), "w-56");
-    hasClass(screen.getByLabelText("Left panel"), "border-r");
-    hasClass(screen.getByLabelText("Right panel"), "w-56");
-    hasClass(main, "overflow-auto");
-    hasClass(main.parentElement!, "overflow-hidden");
-  });
-
-  it("updates a sidebar width class passed from reactive state", () => {
-    stubViewport(1200, 800);
-    const [widthClass, setWidthClass] = createSignal("w-56");
-    render(() => (
-      <AppShell>
-        <AppShell.Body>
-          <AppShell.Left widthClass={widthClass()}>Left</AppShell.Left>
-          <AppShell.MainColumn>
-            <AppShell.Main>Main</AppShell.Main>
-          </AppShell.MainColumn>
-        </AppShell.Body>
-      </AppShell>
-    ));
-
-    const sidebar = screen.getByLabelText("Left panel");
-    hasClass(sidebar, "w-56");
-    setWidthClass("w-72");
-    expect(screen.getByLabelText("Left panel")).toBe(sidebar);
-    hasClass(sidebar, "w-72");
-  });
-
-  it("renders the Paper stage geometry without clipping its central shadows", () => {
+describe("AppShell layout", () => {
+  it("renders the paper-pane geometry without clipping its central shadows", () => {
     stubViewport(1440, 900);
     const view = render(() => (
-      <AppShell variant="stage">
+      <AppShell>
         <AppShell.Body>
           <AppShell.Left>Left</AppShell.Left>
           <AppShell.MainColumn>
@@ -177,7 +129,7 @@ describe("AppShell stage layout", () => {
   it("keeps a stage document scrollbar at the full main-sheet edge", () => {
     stubViewport(1440, 900);
     render(() => (
-      <AppShell variant="stage">
+      <AppShell>
         <AppShell.Body>
           <AppShell.MainColumn>
             <AppShell.Main>
@@ -209,7 +161,7 @@ describe("AppShell stage layout", () => {
   it("keeps stage rails registered as 256px portrait overlays owned by Body", () => {
     stubViewport(600, 900);
     render(() => (
-      <AppShell variant="stage">
+      <AppShell>
         <AppShell.Body>
           <AppShell.Left>
             <div>Left content</div>
@@ -260,7 +212,7 @@ describe("AppShell stage layout", () => {
   ])("uses body-owned stage overlays at constrained landscape size %ix%i", (width, height) => {
     stubViewport(width, height);
     render(() => (
-      <AppShell variant="stage">
+      <AppShell>
         <AppShell.Body>
           <AppShell.Left>Left content</AppShell.Left>
           <AppShell.MainColumn>
@@ -289,26 +241,25 @@ describe("AppShell stage layout", () => {
     expect(scrim.parentElement).toBe(stageTopBar().parentElement?.parentElement);
   });
 
-  it("preserves inline classic rails at the same constrained landscape width", () => {
-    stubViewport(900, 700);
+  it("updates a sidebar width class passed from reactive state", () => {
+    stubViewport(1200, 800);
+    const [widthClass, setWidthClass] = createSignal("w-56");
     render(() => (
       <AppShell>
         <AppShell.Body>
-          <AppShell.Left>Left content</AppShell.Left>
+          <AppShell.Left widthClass={widthClass()}>Left</AppShell.Left>
           <AppShell.MainColumn>
             <AppShell.Main>Main</AppShell.Main>
           </AppShell.MainColumn>
-          <AppShell.Right>Right content</AppShell.Right>
         </AppShell.Body>
       </AppShell>
     ));
 
-    expect(screen.getByLabelText("Left panel").hasAttribute("aria-hidden")).toBe(false);
-    expect(screen.getByLabelText("Right panel").hasAttribute("aria-hidden")).toBe(false);
-    expect(screen.queryByRole("button", { name: "Open left panel" })).toBeNull();
-    expect(screen.getByRole("main").parentElement!.parentElement!.classList.contains("px-4")).toBe(
-      false,
-    );
+    const sidebar = screen.getByLabelText("Left panel");
+    hasClass(sidebar, "w-56");
+    setWidthClass("w-72");
+    expect(screen.getByLabelText("Left panel")).toBe(sidebar);
+    hasClass(sidebar, "w-72");
   });
 
   it("moves a mounted stage rail across the inline threshold without remounting it", () => {
@@ -321,7 +272,7 @@ describe("AppShell stage layout", () => {
     }
 
     render(() => (
-      <AppShell variant="stage">
+      <AppShell>
         <AppShell.Body>
           <AppShell.Left>
             <RailContent />
@@ -392,28 +343,6 @@ describe("AppShell stage layout", () => {
 
     view.unmount();
     expect(cleanedUp).toHaveBeenCalledTimes(1);
-  });
-
-  it("preserves the classic portrait panel framing", () => {
-    stubViewport(600, 900);
-    render(() => (
-      <AppShell>
-        <AppShell.Body>
-          <AppShell.Left>Left content</AppShell.Left>
-          <AppShell.MainColumn>
-            <AppShell.Main>Main</AppShell.Main>
-          </AppShell.MainColumn>
-        </AppShell.Body>
-      </AppShell>
-    ));
-
-    const leftOverlay = screen.getByLabelText("Left panel");
-    hasClass(leftOverlay, "border-r");
-    hasClass(leftOverlay, "bg-background");
-    expect(leftOverlay.classList.contains("bg-muted")).toBe(false);
-    expect(screen.getByRole("main").parentElement!.parentElement!.classList.contains("px-4")).toBe(
-      false,
-    );
   });
 });
 

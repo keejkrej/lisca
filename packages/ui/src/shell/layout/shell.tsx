@@ -1,11 +1,9 @@
 import {
   children as resolveChildren,
-  createContext,
   createEffect,
   createUniqueId,
   onCleanup,
   Show,
-  useContext,
   type JSX,
 } from "solid-js";
 
@@ -15,17 +13,9 @@ import { ShellPortraitPanelControls, ShellPortraitPanelOverlays } from "./shell-
 
 const shellDivider = "border-border";
 const shellSurface = "bg-background";
-/** 18px radius (`rounded-2xl` via `--radius-2xl`) and one restrained stage elevation. */
-const shellStageSurface =
+/** 18px radius (`rounded-2xl` via `--radius-2xl`) and one restrained sheet elevation. */
+const shellSheetSurface =
   "rounded-2xl bg-background shadow-[0_8px_24px_#0000000c] ring-1 ring-foreground/5";
-
-export type AppShellVariant = "default" | "stage";
-
-const AppShellVariantContext = createContext<AppShellVariant>("default");
-
-function useAppShellVariant(): AppShellVariant {
-  return useContext(AppShellVariantContext);
-}
 
 /** Fixed-height header strip (`h-16`); scrolls inside if content overflows. */
 const shellHeaderFixed = "flex h-16 shrink-0 flex-col overflow-hidden";
@@ -50,19 +40,11 @@ function ShellSidebarInner(props: {
   children?: JSX.Element;
   widthClass?: string;
 }) {
-  const variant = useAppShellVariant();
-  const edge = props.side === "left" ? `border-r ${shellDivider}` : `border-l ${shellDivider}`;
-  const widthClass = () => props.widthClass ?? (variant === "stage" ? "w-64" : "w-56");
+  const widthClass = () => props.widthClass ?? "w-64";
   return (
     <aside
       aria-label={props.side === "left" ? "Left panel" : "Right panel"}
-      class={cn(
-        "flex min-h-0 shrink-0 flex-col",
-        widthClass(),
-        variant === "stage"
-          ? "h-full overflow-hidden bg-muted"
-          : `overflow-y-auto ${shellSurface} ${edge}`,
-      )}
+      class={cn("flex h-full min-h-0 shrink-0 flex-col overflow-hidden bg-muted", widthClass())}
     >
       {props.children}
     </aside>
@@ -75,9 +57,8 @@ function useRegisterShellPanel(props: {
   widthClass?: string;
 }) {
   const layout = useShellLayout();
-  const variant = useAppShellVariant();
   const id = createUniqueId();
-  const widthClass = () => props.widthClass ?? (variant === "stage" ? "w-64" : "w-56");
+  const widthClass = () => props.widthClass ?? "w-64";
 
   createEffect(() => {
     if (!layout.isPortrait) {
@@ -104,25 +85,18 @@ function SkipToMainLink() {
   );
 }
 
-function AppShellRoot(props: { children?: JSX.Element; variant?: AppShellVariant }) {
-  const variant = () => props.variant ?? "default";
-
+function AppShellRoot(props: {
+  children?: JSX.Element;
+  /** Ignored. AppShell is the paper-pane instrument shell. */
+  variant?: string;
+}) {
   return (
-    <AppShellVariantContext.Provider value={variant()}>
-      <ShellLayoutProvider layout={variant()}>
-        <div
-          class={
-            variant() === "stage"
-              ? "lisca-instrument-shell flex h-full min-h-0 flex-col overflow-clip bg-muted py-4 text-xs leading-4 text-foreground"
-              : "flex h-full min-h-0 flex-col overflow-hidden bg-background text-foreground"
-          }
-          data-variant={variant()}
-        >
-          <SkipToMainLink />
-          {props.children}
-        </div>
-      </ShellLayoutProvider>
-    </AppShellVariantContext.Provider>
+    <ShellLayoutProvider>
+      <div class="lisca-instrument-shell flex h-full min-h-0 flex-col overflow-clip bg-muted py-4 text-xs leading-4 text-foreground">
+        <SkipToMainLink />
+        {props.children}
+      </div>
+    </ShellLayoutProvider>
   );
 }
 AppShellRoot.displayName = "AppShell";
@@ -140,13 +114,13 @@ function AppShellHeader(props: { children?: JSX.Element }) {
 }
 AppShellHeader.displayName = "AppShell.Header";
 
-/** Floating header surface for the `stage` composition. Place it inside `MainColumn`. */
+/** Floating header surface. Place it inside `MainColumn`. */
 function AppShellTopBar(props: { children?: JSX.Element; class?: string }) {
   return (
     <div
       class={cn(
         "flex h-14 w-full shrink-0 flex-col overflow-visible px-5",
-        shellStageSurface,
+        shellSheetSurface,
         props.class,
       )}
       data-slot="app-shell-top-bar"
@@ -162,19 +136,17 @@ AppShellTopBar.displayName = "AppShell.TopBar";
  * Use `flex-1` so it fills remaining height when a `Header` is present.
  */
 function AppShellBody(props: { children?: JSX.Element }) {
-  const variant = useAppShellVariant();
   const layout = useShellLayout();
 
   return (
     <div
       class={cn(
-        "relative flex min-h-0 flex-1",
-        variant === "stage" ? "overflow-visible bg-muted" : `overflow-hidden ${shellSurface}`,
-        variant === "stage" && layout.isPortrait && "px-4",
+        "relative flex min-h-0 flex-1 overflow-visible bg-muted",
+        layout.isPortrait && "px-4",
       )}
     >
       {props.children}
-      <ShellPortraitPanelOverlays appearance={variant} />
+      <ShellPortraitPanelOverlays />
     </div>
   );
 }
@@ -182,17 +154,8 @@ AppShellBody.displayName = "AppShell.Body";
 
 /** Center stack: scrollable `Main` plus optional fixed-height `Dock`. */
 function AppShellMainColumn(props: { children?: JSX.Element }) {
-  const variant = useAppShellVariant();
-
   return (
-    <div
-      class={cn(
-        "flex min-h-0 min-w-0 flex-1 flex-col",
-        variant === "stage"
-          ? "relative z-10 gap-3 overflow-visible bg-muted"
-          : `overflow-hidden ${shellSurface}`,
-      )}
-    >
+    <div class="relative z-10 flex min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-visible bg-muted">
       {props.children}
     </div>
   );
@@ -201,7 +164,7 @@ AppShellMainColumn.displayName = "AppShell.MainColumn";
 
 function AppShellLeft(props: {
   children?: JSX.Element;
-  /** Tailwind width utility; defaults to `w-56`, or `w-64` in the stage variant. */
+  /** Tailwind width utility; defaults to `w-64`. */
   widthClass?: string;
 }) {
   const content = resolveChildren(() => props.children);
@@ -220,7 +183,7 @@ AppShellLeft.displayName = "AppShell.Left";
 
 function AppShellRight(props: {
   children?: JSX.Element;
-  /** Tailwind width utility; defaults to `w-56`, or `w-64` in the stage variant. */
+  /** Tailwind width utility; defaults to `w-64`. */
   widthClass?: string;
 }) {
   const content = resolveChildren(() => props.children);
@@ -238,29 +201,20 @@ function AppShellRight(props: {
 AppShellRight.displayName = "AppShell.Right";
 
 function AppShellMain(props: { children?: JSX.Element }) {
-  const variant = useAppShellVariant();
-  const stage = variant === "stage";
-
   return (
     <main
       class={cn(
-        "relative min-h-0 flex-1",
-        stage
-          ? cn("flex min-w-0 flex-col overflow-visible", shellStageSurface)
-          : `overflow-auto ${shellSurface}`,
+        "relative flex min-h-0 min-w-0 flex-1 flex-col overflow-visible",
+        shellSheetSurface,
       )}
       id="main-content"
     >
       <div
-        class={
-          stage
-            ? "relative flex min-h-0 min-w-0 flex-1 flex-col overflow-clip rounded-[inherit]"
-            : "contents"
-        }
-        data-slot={stage ? "app-shell-main-clip" : undefined}
+        class="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-clip rounded-[inherit]"
+        data-slot="app-shell-main-clip"
       >
         {props.children}
-        <ShellPortraitPanelControls placement={stage ? "top" : "center"} />
+        <ShellPortraitPanelControls placement="top" />
       </div>
     </main>
   );
@@ -270,25 +224,18 @@ AppShellMain.displayName = "AppShell.Main";
 /**
  * Full-sheet document scrolling with a separately constrained content measure.
  *
- * Stage `Main` keeps overflow visible so the sheet elevation can paint onto the rails; an inner
- * clip holds portrait controls fixed. This child owns the scrollbar at the sheet edge. Classic
- * `Main` already owns scrolling, so the same interface contributes document flow without creating
- * a nested scroll viewport.
+ * `Main` keeps overflow visible so the sheet elevation can paint onto the rails; an inner clip
+ * holds portrait controls fixed. This child owns the scrollbar at the sheet edge.
  */
 function AppShellMainScroll(props: {
   children?: JSX.Element;
   class?: string;
   contentClass?: string;
 }) {
-  const variant = useAppShellVariant();
-
   return (
     <div
       class={cn(
-        "flex min-w-0 w-full flex-1 flex-col",
-        variant === "stage"
-          ? "h-full min-h-0 overflow-x-hidden overflow-y-auto"
-          : "min-h-full overflow-visible",
+        "flex h-full min-h-0 min-w-0 w-full flex-1 flex-col overflow-x-hidden overflow-y-auto",
         props.class,
       )}
       data-slot="app-shell-main-scroll"
@@ -322,15 +269,14 @@ export type AppShellCompound = typeof AppShellRoot & {
 };
 
 /**
- * Full-viewport app layout: **explicit composition** (no slot parsing).
+ * Full-viewport paper-pane instrument shell: **explicit composition** (no slot parsing).
  *
  * Structure:
- * - `Header` — classic fixed-height header strip
- * - `TopBar` — floating stage header; place it inside `MainColumn`
+ * - `TopBar` — floating header; place it inside `MainColumn`
  * - `Body` — `flex-1` row containing optional `Left`, `MainColumn`, optional `Right`
  * - `MainColumn` — `Main` (grows, scrolls) and optional `Dock` (fixed-height strip)
  *
- * In portrait, or when the stage cannot preserve a usable center workspace, left/right panels
+ * In portrait, or when the shell cannot preserve a usable center workspace, left/right panels
  * collapse and open as overlays above main.
  *
  * Wrap the app in `ShellThemeProvider` so `dark:` Tailwind utilities work.
@@ -338,12 +284,11 @@ export type AppShellCompound = typeof AppShellRoot & {
  * @example
  * ```tsx
  * <AppShell>
- *   <AppShell.Header><Header /></AppShell.Header>
  *   <AppShell.Body>
  *     <AppShell.Left><Nav /></AppShell.Left>
  *     <AppShell.MainColumn>
+ *       <AppShell.TopBar><Header /></AppShell.TopBar>
  *       <AppShell.Main><Editor /></AppShell.Main>
- *       <AppShell.Dock><Logs /></AppShell.Dock>
  *     </AppShell.MainColumn>
  *     <AppShell.Right><Inspector /></AppShell.Right>
  *   </AppShell.Body>
