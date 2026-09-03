@@ -15,9 +15,9 @@ import { ShellPortraitPanelControls, ShellPortraitPanelOverlays } from "./shell-
 
 const shellDivider = "border-border";
 const shellSurface = "bg-background";
-/** 18px radius (`rounded-2xl` via `--radius-2xl`) and a wide, low-contrast elevation. */
+/** 18px radius (`rounded-2xl` via `--radius-2xl`) and one restrained stage elevation. */
 const shellStageSurface =
-  "rounded-2xl bg-background shadow-[0_8px_40px_#0000000c,0_20px_56px_#0000000a]";
+  "rounded-2xl bg-background shadow-[0_8px_24px_#0000000c] ring-1 ring-foreground/5";
 
 export type AppShellVariant = "default" | "stage";
 

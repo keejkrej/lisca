@@ -57,7 +57,7 @@ function doesNotClipPaintedOverflow(element: Element) {
   }
 }
 
-const stageSheetShadowClass = "shadow-[0_8px_40px_#0000000c,0_20px_56px_#0000000a]";
+const stageSheetShadowClass = "shadow-[0_8px_24px_#0000000c]";
 
 function stageTopBar(): Element {
   const element = document.querySelector('[data-slot="app-shell-top-bar"]');
@@ -160,12 +160,14 @@ describe("AppShell stage layout", () => {
     hasClass(topBar, "rounded-2xl");
     hasClass(topBar, "overflow-visible");
     hasClass(topBar, stageSheetShadowClass);
-    expect(topBar.className).not.toMatch(/\bring\b/);
+    hasClass(topBar, "ring-1");
+    hasClass(topBar, "ring-foreground/5");
     expect(topBar.classList.contains("border")).toBe(false);
     hasClass(main, "rounded-2xl");
     hasClass(main, "overflow-visible");
     hasClass(main, stageSheetShadowClass);
-    expect(main.className).not.toMatch(/\bring\b/);
+    hasClass(main, "ring-1");
+    hasClass(main, "ring-foreground/5");
     expect(main.classList.contains("border")).toBe(false);
     expect(mainClip).not.toBeNull();
     hasClass(mainClip!, "overflow-clip");
