@@ -52,7 +52,7 @@ Do **not** put instrument tools or save actions in `AppShell.Dock` / `DockStrip`
 | `ViewportCard variant="stage"`                          | Padded main sheet around the canvas                                                             |
 | `StageCanvas`                                           | Shared muted well + tracked captions (`aspect="wide"` for Align, `square` for Annotate)         |
 
-Stage shells keep both 256px rails inline at 1024px and wider. Below 1024px—or in portrait orientation—the same mounted rail content moves into body-owned overlays so the scientific workspace retains at least 512px.
+Stage shells keep both 256px rails inline at 1024px and wider. Below 1024px—or in portrait orientation—the same mounted rail content moves into body-owned overlays so the scientific workspace retains at least 512px. Overlay stage `Body` uses the same 16px horizontal inset as the vertical `py-4` surround so the floating sheet does not go full-bleed; rail overlays cover that inset sheet.
 
 ### App rail mapping
 

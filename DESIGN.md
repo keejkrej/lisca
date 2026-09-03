@@ -199,7 +199,7 @@ Rail density follows task relationships, not a global one- or two-column rule. F
 
 Rail sections follow task order, not implementation order. In Aligner, Geometry mirrors Tool: Offset X/Y for Pan, Rotation for Rotate, Spacing X/Y for Zoom spacing, then Pattern Width/Height for Zoom pattern. Magnifier is view-only and therefore has no Geometry field.
 
-At narrower widths, preserve the center workspace and move rails into body-owned overlays. Do not duplicate or remount stateful rail content when an overlay opens.
+At narrower widths, preserve the center workspace and move rails into body-owned overlays. Do not duplicate or remount stateful rail content when an overlay opens. When rails collapse, keep the same 16px horizontal inset as the vertical stage surround so the top bar and main sheet stay floating; overlays cover that inset sheet rather than requiring it to go full-bleed.
 
 ## Elevation & Depth
 

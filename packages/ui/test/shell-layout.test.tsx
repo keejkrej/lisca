@@ -150,6 +150,7 @@ describe("AppShell stage layout", () => {
     expect(screen.getByLabelText("Right panel").className).not.toMatch(/shadow-/);
     hasClass(body, "overflow-visible");
     doesNotClipPaintedOverflow(body);
+    expect(body.classList.contains("px-4")).toBe(false);
     hasClass(mainColumn, "gap-3");
     hasClass(mainColumn, "overflow-visible");
     hasClass(mainColumn, "z-10");
@@ -225,6 +226,14 @@ describe("AppShell stage layout", () => {
     const leftOverlay = screen.getByLabelText("Left panel");
     const rightOverlay = screen.getByLabelText("Right panel");
     const topBar = stageTopBar();
+    const main = screen.getByRole("main");
+    const mainColumn = main.parentElement!;
+    const body = mainColumn.parentElement!;
+    hasClass(body, "px-4");
+    doesNotClipPaintedOverflow(body);
+    hasClass(mainColumn, "overflow-visible");
+    hasClass(main, "overflow-visible");
+    hasClass(main, stageSheetShadowClass);
     hasClass(leftOverlay.firstElementChild!, "w-64");
     hasClass(rightOverlay.firstElementChild!, "w-64");
     expect(leftOverlay.getAttribute("aria-hidden")).toBe("true");
@@ -263,6 +272,9 @@ describe("AppShell stage layout", () => {
 
     const leftOverlay = screen.getByLabelText("Left panel");
     const rightOverlay = screen.getByLabelText("Right panel");
+    const body = screen.getByRole("main").parentElement!.parentElement!;
+    hasClass(body, "px-4");
+    doesNotClipPaintedOverflow(body);
     expect(leftOverlay.getAttribute("aria-hidden")).toBe("true");
     expect(rightOverlay.getAttribute("aria-hidden")).toBe("true");
     expect((leftOverlay as HTMLElement & { inert: boolean }).inert).toBe(true);
@@ -292,6 +304,9 @@ describe("AppShell stage layout", () => {
     expect(screen.getByLabelText("Left panel").hasAttribute("aria-hidden")).toBe(false);
     expect(screen.getByLabelText("Right panel").hasAttribute("aria-hidden")).toBe(false);
     expect(screen.queryByRole("button", { name: "Open left panel" })).toBeNull();
+    expect(screen.getByRole("main").parentElement!.parentElement!.classList.contains("px-4")).toBe(
+      false,
+    );
   });
 
   it("moves a mounted stage rail across the inline threshold without remounting it", () => {
@@ -318,18 +333,23 @@ describe("AppShell stage layout", () => {
 
     expect(mounted).toHaveBeenCalledTimes(1);
     expect(screen.getByLabelText("Left panel").hasAttribute("aria-hidden")).toBe(false);
+    const body = screen.getByRole("main").parentElement!.parentElement!;
+    expect(body.classList.contains("px-4")).toBe(false);
 
     viewport.resize(900, 700);
 
     expect(screen.getByLabelText("Left panel").getAttribute("aria-hidden")).toBe("true");
     expect(screen.getByRole("button", { name: "Open left panel" })).toBeTruthy();
     expect(mounted).toHaveBeenCalledTimes(1);
+    hasClass(body, "px-4");
+    doesNotClipPaintedOverflow(body);
 
     viewport.resize(1200, 700);
 
     expect(screen.getByLabelText("Left panel").hasAttribute("aria-hidden")).toBe(false);
     expect(screen.queryByRole("button", { name: "Open left panel" })).toBeNull();
     expect(mounted).toHaveBeenCalledTimes(1);
+    expect(body.classList.contains("px-4")).toBe(false);
   });
 
   it("resolves each landscape rail child once without duplicating listeners", () => {
@@ -389,6 +409,9 @@ describe("AppShell stage layout", () => {
     hasClass(leftOverlay, "border-r");
     hasClass(leftOverlay, "bg-background");
     expect(leftOverlay.classList.contains("bg-muted")).toBe(false);
+    expect(screen.getByRole("main").parentElement!.parentElement!.classList.contains("px-4")).toBe(
+      false,
+    );
   });
 });
 

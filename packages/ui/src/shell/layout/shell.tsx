@@ -163,12 +163,14 @@ AppShellTopBar.displayName = "AppShell.TopBar";
  */
 function AppShellBody(props: { children?: JSX.Element }) {
   const variant = useAppShellVariant();
+  const layout = useShellLayout();
 
   return (
     <div
       class={cn(
         "relative flex min-h-0 flex-1",
         variant === "stage" ? "overflow-visible bg-muted" : `overflow-hidden ${shellSurface}`,
+        variant === "stage" && layout.isPortrait && "px-4",
       )}
     >
       {props.children}
