@@ -75,7 +75,7 @@ export function StudioAlignMain() {
 
   return (
     <>
-      <ViewportCard variant="stage">
+      <ViewportCard>
         <StageCanvas
           aspect="wide"
           captionLeft={`Position ${positionLabel()}`}

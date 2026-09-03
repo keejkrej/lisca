@@ -38,6 +38,7 @@ export {
 } from "./atoms/demo-annotator-ui";
 export { DemoAlignRoot, DemoAnnotatorRoot, DemoRegistryProvider } from "./atoms/demo-session-sync";
 export { useDemoAlignState, type DemoAlignState } from "./hooks/use-demo-align-state";
+export { DemoShell, type DemoShellCompound } from "./demo-shell";
 export { useEmbeddedDemoPreset } from "./hooks/use-embedded-demo-preset";
 export {
   useDemoAnnotatorState,

@@ -1,0 +1,22 @@
+{
+  "name": "@lisca/instrument-mock",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vp dev",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@lisca/analysis": "workspace:*",
+    "@lisca/ui": "workspace:*",
+    "@lisca/web-app": "workspace:*",
+    "solid-js": "catalog:"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "catalog:",
+    "tailwindcss": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vite-plugin-solid": "catalog:"
+  }
+}
