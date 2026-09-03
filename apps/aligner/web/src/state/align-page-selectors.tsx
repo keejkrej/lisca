@@ -72,25 +72,6 @@ export function useAlignCanvas() {
   };
 }
 
-export function useAlignCrop() {
-  const { state } = useAlignPage();
-  return {
-    get cropConfirm() {
-      return state().cropConfirm;
-    },
-    get cropProgress() {
-      return state().cropProgress;
-    },
-    get cropping() {
-      return state().cropping;
-    },
-    confirmCropOverwrite: () => state().confirmCropOverwrite(),
-    skipExistingCrop: () => state().skipExistingCrop(),
-    cancelCropConfirm: () => state().cancelCropConfirm(),
-    cancelCrop: () => state().cancelCrop(),
-  };
-}
-
 export function useAlignNav() {
   const { state } = useAlignPage();
   return {
