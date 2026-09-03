@@ -203,7 +203,7 @@ At narrower widths, preserve the center workspace and move rails into body-owned
 
 ## Elevation & Depth
 
-Use tonal layering, rules, and one restrained stage elevation. Muted stage rails stay flat; the white top bar and main sheet use `0 1px 2px #0000000A, 0 8px 24px #0000000F`. Dialogs may use a scrim, but their surface stays flat and uses the 18px radius. Avoid ad hoc shadows and floating-card stacks.
+Use tonal layering plus a 1px hairline on the sheet. Muted stage rails stay flat; the white top bar and main sheet use `border border-border` with no drop shadow. Dialogs may use a scrim, but their surface stays flat and uses the 18px radius. Avoid ad hoc shadows and floating-card stacks.
 
 ## Shapes
 

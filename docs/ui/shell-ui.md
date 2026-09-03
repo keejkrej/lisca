@@ -15,7 +15,7 @@ Do not scatter layout tint tokens (`railChrome`, `panel`, `stat`, etc.); shell s
 
 ## Instrument stage shell
 
-Studio, Aligner, and Annotator use `AppShell variant="stage"` as the live product chrome. The reference desktop is 1440×900 with fixed columns **256px / 928px / 256px** (`w-64` rails, no `w-72` overrides). The center column begins with a 56px `AppShell.TopBar`, then the main sheet.
+Studio, Aligner, and Annotator use `AppShell variant="stage"` as the live product chrome. The reference desktop is 1440×900 with fixed columns **256px / 928px / 256px** (`w-64` rails, no `w-72` overrides). The center column begins with a 56px `AppShell.TopBar`, then the main sheet. The top bar and paper sheet are flat (`rounded-2xl border border-border`); rails stay flat.
 
 ```tsx
 <AppShell variant="stage">
