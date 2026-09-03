@@ -71,9 +71,8 @@ export function ShellPortraitPanelControls(props: { placement?: "center" | "top"
   );
 }
 
-export function ShellPortraitPanelOverlays(props: { appearance?: "default" | "stage" }) {
+export function ShellPortraitPanelOverlays() {
   const layout = useShellLayout();
-  const stage = () => props.appearance === "stage";
 
   return (
     <Show when={layout.isPortrait}>
@@ -92,14 +91,13 @@ export function ShellPortraitPanelOverlays(props: { appearance?: "default" | "st
             aria-label="Left panel"
             inert={!layout.leftOpen}
             class={cn(
-              "absolute inset-y-0 left-0 z-50 flex max-w-[min(100%,20rem)] flex-col overflow-y-auto shadow-xl transition-transform duration-200 ease-out",
-              stage() ? "bg-muted" : "border-r border-border bg-background",
+              "absolute inset-y-0 left-0 z-50 flex max-w-[min(100%,20rem)] flex-col overflow-y-auto bg-muted shadow-xl transition-transform duration-200 ease-out",
               layout.leftOpen ? "translate-x-0" : "-translate-x-full pointer-events-none",
             )}
           >
             <For each={layout.leftPanels}>
               {(panel) => (
-                <div class={cn("flex min-h-0 flex-1 flex-col", panel.widthClass ?? "w-56")}>
+                <div class={cn("flex min-h-0 flex-1 flex-col", panel.widthClass ?? "w-64")}>
                   {panel.content}
                 </div>
               )}
@@ -112,14 +110,13 @@ export function ShellPortraitPanelOverlays(props: { appearance?: "default" | "st
             aria-label="Right panel"
             inert={!layout.rightOpen}
             class={cn(
-              "absolute inset-y-0 right-0 z-50 flex max-w-[min(100%,20rem)] flex-col overflow-y-auto shadow-xl transition-transform duration-200 ease-out",
-              stage() ? "bg-muted" : "border-l border-border bg-background",
+              "absolute inset-y-0 right-0 z-50 flex max-w-[min(100%,20rem)] flex-col overflow-y-auto bg-muted shadow-xl transition-transform duration-200 ease-out",
               layout.rightOpen ? "translate-x-0" : "translate-x-full pointer-events-none",
             )}
           >
             <For each={layout.rightPanels}>
               {(panel) => (
-                <div class={cn("flex min-h-0 flex-1 flex-col", panel.widthClass ?? "w-56")}>
+                <div class={cn("flex min-h-0 flex-1 flex-col", panel.widthClass ?? "w-64")}>
                   {panel.content}
                 </div>
               )}

@@ -17,7 +17,9 @@ describe("Studio workflow route composition", () => {
   it.each(workflowShells)("uses the stage shell on %s", (_route, sourcePath) => {
     const source = readSource(sourcePath);
 
-    expect(source).toMatch(/<AppShell variant="stage">/);
+    expect(source).toMatch(/<AppShell>/);
+    expect(source).not.toMatch(/variant="stage"/);
+    expect(source).not.toMatch(/<AppShell\.Header>/);
     expect(source).toMatch(/<StudioLeft\s*\/>/);
     expect(source).toMatch(/<AppShell\.TopBar>/);
     expect(source).toMatch(/<StudioTopBar(?:\s+showExpert)?\s*\/>/);
@@ -61,7 +63,9 @@ describe("Studio workflow route composition", () => {
     expect(samplesSource).not.toMatch(/max-h-\[58vh\]/);
     expect(resultPageSource).toMatch(/<AppShell\.MainScroll/);
     expect(resultGallerySource).not.toMatch(/overflow-y-auto/);
-    expect(analysisDemoSource.match(/<AppShell\.MainScroll/g)).toHaveLength(2);
+    expect(analysisDemoSource).toMatch(/<DemoShell>/);
+    expect(analysisDemoSource).not.toMatch(/<AppShell/);
+    expect(analysisDemoSource.match(/<DemoShell\.MainScroll/g)).toHaveLength(2);
   });
 
   it("reuses the standalone annotation rail and shared five-action tool grid", () => {

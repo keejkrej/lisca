@@ -11,7 +11,7 @@ const aspectClassByVariant: Record<StageCanvasAspect, string> = {
 
 /**
  * Shared stage framing: muted rounded well + tracked caption under the canvas.
- * Pair with `ViewportCard variant="stage"` so Aligner, Annotator, and Studio stay in sync.
+ * Pair with `ViewportCard` so Aligner, Annotator, and Studio stay in sync.
  */
 export function StageCanvas(props: {
   children?: JSX.Element;

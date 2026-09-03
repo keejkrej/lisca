@@ -65,7 +65,7 @@ export function StudioAnnotateMain() {
     <Switch
       fallback={
         <>
-          <ViewportCard variant="stage">
+          <ViewportCard>
             <StageCanvas
               aspect="square"
               captionLeft={`Site ${nav.selection.roi ?? "—"} · Channel ${nav.selection.channel ?? "—"}`}
@@ -98,7 +98,7 @@ export function StudioAnnotateMain() {
       }
     >
       <Match when={state.workspaceMissing}>
-        <ViewportCard contentClass="relative max-w-[480px]" variant="stage">
+        <ViewportCard contentClass="relative max-w-[480px]">
           <StudioEmptyState
             actionLabel="Go to Info"
             description="Choose a workspace on the Info step, then align and crop sites before annotating."
@@ -110,7 +110,7 @@ export function StudioAnnotateMain() {
         <StudioAnalysisProgressModal />
       </Match>
       <Match when={!state.scanLoading && state.scan && state.scan.positions.length === 0}>
-        <ViewportCard contentClass="relative max-w-[480px]" variant="stage">
+        <ViewportCard contentClass="relative max-w-[480px]">
           <StudioEmptyState
             actionLabel="Go to Align"
             description="Align the pattern and crop site images first. Annotation needs those ROI stacks."

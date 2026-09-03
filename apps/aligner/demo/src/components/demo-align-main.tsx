@@ -1,4 +1,4 @@
-import { StageCanvas, ViewportCard } from "@lisca/ui/shell";
+import { Panel, StageCanvas, ViewportCard } from "@lisca/ui/shell";
 import {
   AlignCanvas,
   useAlignCanvasPointerHandlers,
@@ -79,7 +79,7 @@ export function DemoAlignMain(props: { state: Accessor<DemoAlignState>; embedded
     <Show
       when={props.embedded}
       fallback={
-        <ViewportCard variant="stage">
+        <ViewportCard>
           <StageCanvas
             aspect="wide"
             captionLeft={captionLeft()}
@@ -91,7 +91,9 @@ export function DemoAlignMain(props: { state: Accessor<DemoAlignState>; embedded
         </ViewportCard>
       }
     >
-      <ViewportCard>{canvas}</ViewportCard>
+      <div class="flex h-full min-h-0 flex-1 flex-col p-2.5">
+        <Panel class="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">{canvas}</Panel>
+      </div>
     </Show>
   );
 }

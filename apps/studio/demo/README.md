@@ -1,9 +1,9 @@
 # Studio analysis demo
 
-Browser-only mock of Studio result visualization. It loads **fixture** PNG plot
-files for transfection and killing — the same filenames the Rust pipeline writes
-via mplot-rs — so the team can iterate on the result gallery without a workspace
-or real experiment.
+Browser-only **landing demo** of Studio result visualization. It is not the
+instrument mock (`vp run dev:mock`) and does not use the Tauri paper pane. It
+loads **fixture** PNG plot files for transfection and killing — the same filenames
+the Rust pipeline writes via mplot-rs.
 
 The images are tiny placeholder PNGs labeled as sample data. They are not drawn
 in the browser.
