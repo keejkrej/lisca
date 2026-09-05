@@ -676,6 +676,52 @@ mod tests {
         fs::remove_dir_all(root).expect("cleanup");
     }
 
+    #[test]
+    fn matches_subfolder_template_case_insensitively() {
+        let root = temp_workspace("series-subfolder-case");
+        let pos0 = root.join("POS0");
+        fs::create_dir_all(&pos0).expect("pos0");
+        fs::write(pos0.join("img_0_DAPI_0.png"), []).expect("dapi");
+
+        let scan = SeriesDataset::build(
+            root.to_str().expect("temp path"),
+            "Pos{p}",
+            "img_{t}_{c}_{z}",
+        )
+        .expect("dataset")
+        .workspace_scan();
+
+        assert_eq!(scan.positions, vec![0]);
+        assert_eq!(scan.channels, vec![0]);
+        assert_eq!(scan.channel_labels, vec!["DAPI"]);
+
+        fs::remove_dir_all(root).expect("cleanup");
+    }
+
+    #[test]
+    fn rejects_uppercase_literal_filenames_against_lowercase_template() {
+        let root = temp_workspace("series-filename-case");
+        let pos0 = root.join("Pos0");
+        fs::create_dir_all(&pos0).expect("pos0");
+        fs::write(pos0.join("IMG_0_DAPI_0.png"), []).expect("dapi");
+
+        let result = SeriesDataset::build(
+            root.to_str().expect("temp path"),
+            "Pos{p}",
+            "img_{t}_{c}_{z}",
+        );
+
+        let error = result.expect_err(
+            "uppercase-literal filenames must not match a case-sensitive filename template",
+        );
+        assert!(
+            error.contains("No files"),
+            "expected a no-files-matched error, got: {error}",
+        );
+
+        fs::remove_dir_all(root).expect("cleanup");
+    }
+
     fn temp_workspace(label: &str) -> PathBuf {
         let unique = SystemTime::now()
             .duration_since(UNIX_EPOCH)
