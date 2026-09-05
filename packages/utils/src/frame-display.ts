@@ -1,5 +1,5 @@
 import type { FrameResult } from "./frame";
-import { clamp } from "./frame";
+import { clamp, defaultContrastDomain, orderedContrastWindow } from "./frame";
 
 export function pixelToDisplayValue(frame: FrameResult, index: number): number {
   const raw = Number(frame.pixels[index] ?? 0);
@@ -7,8 +7,10 @@ export function pixelToDisplayValue(frame: FrameResult, index: number): number {
   if (!contrast || frame.pixelType === "uint8" || frame.pixelType === "uint8clamped") {
     return clamp(Math.round(raw), 0, 255);
   }
-  const span = Math.max(1, contrast.max - contrast.min);
-  return clamp(Math.round(((raw - contrast.min) / span) * 255), 0, 255);
+  const domain = frame.contrastDomain ?? defaultContrastDomain(frame.pixelType);
+  const ordered = orderedContrastWindow(contrast, domain);
+  const span = Math.max(1, ordered.max - ordered.min);
+  return clamp(Math.round(((raw - ordered.min) / span) * 255), 0, 255);
 }
 
 export function prepareFrameRgba(frame: FrameResult): Uint8Array {

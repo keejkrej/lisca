@@ -155,6 +155,29 @@ export function normalizeContrastWindow(
   };
 }
 
+/**
+ * Clamp a contrast window into `domain` and enforce `min < max`:
+ * - `min > max` (inverted drag) swaps the endpoints so the rescale renders a
+ *   legible gradient instead of collapsing to a single-value binary threshold.
+ * - `min === max` (zero-width drag) expands to a minimum-width ordered window
+ *   so the rescale span is non-zero and well-defined.
+ * Unlike {@link normalizeContrastWindow} (per-endpoint domain clamping only),
+ * this guarantees an ordered, non-degenerate window for the live slider path.
+ */
+export function orderedContrastWindow(
+  window: ContrastWindow,
+  domain: ContrastWindow,
+): ContrastWindow {
+  const min = clamp(Math.round(window.min), domain.min, domain.max);
+  const max = clamp(Math.round(window.max), domain.min, domain.max);
+  if (min > max) return { min: max, max: min };
+  if (min === max) {
+    if (min < domain.max) return { min, max: min + 1 };
+    if (min > domain.min) return { min: min - 1, max: min };
+  }
+  return { min, max };
+}
+
 export function normalizeFrameContrast(frame: FrameResult): FrameResult {
   const domain = frame.contrastDomain ?? defaultContrastDomain(frame.pixelType);
   const suggested = normalizeContrastWindow(frame.suggestedContrast ?? domain, domain);

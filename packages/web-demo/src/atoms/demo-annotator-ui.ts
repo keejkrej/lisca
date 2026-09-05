@@ -2,6 +2,7 @@ import type { AnnotationLabel, ContrastWindow } from "@lisca/contracts";
 import type { AnnotationMode, AnnotationTool } from "@lisca/ui/features";
 import type { FrameResult } from "@lisca/utils";
 import { Atom } from "effect/unstable/reactivity";
+import { defaultContrastDomain, orderedContrastWindow } from "@lisca/utils";
 
 import {
   annotationValuesEqual,
@@ -175,7 +176,16 @@ export const demoAnnotatorUiActions = {
     set: (update: StateUpdater<DemoAnnotatorUiState>) => void,
     contrast: ContrastWindow | null,
   ) {
-    patchDemoAnnotatorUi(set, { contrast });
+    patchDemoAnnotatorUi(set, (state) => ({
+      ...state,
+      contrast:
+        contrast === null
+          ? contrast
+          : orderedContrastWindow(
+              contrast,
+              state.frame?.contrastDomain ?? defaultContrastDomain(state.frame?.pixelType),
+            ),
+    }));
   },
   setLabelDialogOpen(
     set: (update: StateUpdater<DemoAnnotatorUiState>) => void,
