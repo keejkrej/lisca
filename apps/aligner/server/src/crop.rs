@@ -42,6 +42,7 @@ struct CropOperationBook {
     latest_by_workspace: HashMap<String, String>,
 }
 
+#[derive(Debug)]
 pub struct CropSubmission {
     pub record: CropOperationRecord,
     pub disposition: CropRoiDisposition,
@@ -120,6 +121,68 @@ impl CropJobState {
             record,
             disposition: CropRoiDisposition::Started,
         })
+    }
+
+    /// Resolve the attach decision for `request_id` against `workspace_path`
+    /// without creating a new operation.
+    ///
+    /// Mirrors the two attach short-circuits of [`Self::submit_or_attach`]
+    /// (request id already known; non-terminal operation already active for
+    /// the workspace) but performs no I/O and never invokes `create`. Returns
+    /// `Ok(Some(_))` with [`CropRoiDisposition::Attached`] when
+    /// `submit_or_attach` would attach the same request without creating,
+    /// `Ok(None)` when it would fall through to the `create` branch, and
+    /// `Err` on a request-id conflict (the request id belongs to another
+    /// workspace) or a state/scheduler error.
+    ///
+    /// Used by `crop_roi_handler` to recover an attachable request from a
+    /// planning-I/O failure (e.g. a [`lisca::aligner::scan_source`] error). The
+    /// `create` closure that consumes the planning result is provably skipped
+    /// on both attach short-circuits, so the planning output is irrelevant to
+    /// that decision and the planning error can be discarded in favor of
+    /// `Attached`.
+    pub fn peek_attach(
+        &self,
+        scheduler: &TaskScheduler,
+        workspace_path: &str,
+        request_id: &str,
+    ) -> Result<Option<CropSubmission>, CropJobStateError> {
+        let workspace_path = normalize_workspace_path(workspace_path);
+        let mut book = self.lock()?;
+        prune_evicted_operations(&mut book, scheduler);
+
+        if let Some(existing) = book.records.get(request_id) {
+            if existing.workspace_path != workspace_path {
+                return Err(CropJobStateError::RequestIdConflict);
+            }
+            scheduler
+                .operation(&existing.operation_id)
+                .map_err(CropJobStateError::Scheduler)?;
+            return Ok(Some(CropSubmission {
+                record: existing.clone(),
+                disposition: CropRoiDisposition::Attached,
+            }));
+        }
+
+        if let Some(active) = book
+            .latest_by_workspace
+            .get(&workspace_path)
+            .and_then(|latest| book.records.get(latest))
+            .and_then(|record| {
+                scheduler
+                    .operation(&record.operation_id)
+                    .ok()
+                    .filter(|detail| !operation_is_terminal(detail.operation.status))
+                    .map(|_| record.clone())
+            })
+        {
+            return Ok(Some(CropSubmission {
+                record: active,
+                disposition: CropRoiDisposition::Attached,
+            }));
+        }
+
+        Ok(None)
     }
 
     pub fn progress(
@@ -436,5 +499,177 @@ mod tests {
             state.submit_or_attach(&scheduler, "/other", "first", || unreachable!()),
             Err(CropJobStateError::RequestIdConflict)
         ));
+    }
+
+    /// Seed a non-terminal crop (a task that never resolves) for `workspace_path`
+    /// under `request_id` so the attach predicates have something to find. Used
+    /// by the `peek_attach` tests below.
+    fn seed_non_terminal_crop(
+        state: &CropJobState,
+        scheduler: &TaskScheduler,
+        workspace_path: &str,
+        request_id: &str,
+    ) -> CropOperationRecord {
+        state
+            .submit_or_attach(scheduler, workspace_path, request_id, || {
+                let task = TaskSpec::new("crop-roi/Pos1", 1, |_| async {
+                    std::future::pending::<Result<(), TaskFailure>>().await
+                });
+                let task_id = task.task_id().to_string();
+                scheduler
+                    .submit(OperationSpec::new(
+                        "crop-roi",
+                        workspace_path,
+                        true,
+                        vec![task],
+                    ))
+                    .map(|detail| {
+                        (
+                            detail,
+                            vec![CropTaskMetadata {
+                                task_id,
+                                position: 1,
+                                roi_pages: 1,
+                                skipped: false,
+                            }],
+                        )
+                    })
+            })
+            .expect("seed non-terminal crop")
+            .record
+    }
+
+    #[tokio::test]
+    async fn peek_attach_attaches_when_request_id_matches_an_existing_record() {
+        let scheduler = scheduler();
+        let state = CropJobState::new();
+        let seeded = seed_non_terminal_crop(&state, &scheduler, "/workspace", "first");
+
+        // Same request id, same workspace: `peek_attach` mirrors attach path A.
+        let attach = state
+            .peek_attach(&scheduler, "/workspace", "first")
+            .expect("peek resolves")
+            .expect("known request id attaches");
+        assert_eq!(attach.disposition, CropRoiDisposition::Attached);
+        assert_eq!(attach.record.request_id, "first");
+        assert_eq!(attach.record.operation_id, seeded.operation_id);
+    }
+
+    #[tokio::test]
+    async fn peek_attach_attaches_when_active_non_terminal_operation_exists_for_workspace() {
+        let scheduler = scheduler();
+        let state = CropJobState::new();
+        let seeded = seed_non_terminal_crop(&state, &scheduler, "/workspace", "first");
+
+        // Fresh request id, same workspace: `peek_attach` mirrors attach path B
+        // (a non-terminal operation is already running for the workspace).
+        let attach = state
+            .peek_attach(&scheduler, "/workspace", "second")
+            .expect("peek resolves")
+            .expect("active non-terminal operation attaches");
+        assert_eq!(attach.disposition, CropRoiDisposition::Attached);
+        assert_eq!(attach.record.request_id, "first");
+        assert_eq!(attach.record.operation_id, seeded.operation_id);
+    }
+
+    #[tokio::test]
+    async fn peek_attach_returns_none_when_no_operation_exists_for_workspace() {
+        let scheduler = scheduler();
+        let state = CropJobState::new();
+        let attach = state
+            .peek_attach(&scheduler, "/workspace", "first")
+            .expect("peek resolves");
+        assert!(
+            attach.is_none(),
+            "no prior record must fall through to create"
+        );
+    }
+
+    #[tokio::test]
+    async fn peek_attach_returns_none_when_latest_operation_is_terminal() {
+        let scheduler = scheduler();
+        let state = CropJobState::new();
+        let seeded = state
+            .submit_or_attach(&scheduler, "/workspace", "first", || {
+                let task = TaskSpec::new("crop-roi/Pos1", 1, |_| async {
+                    Err(TaskFailure::new("crop_failed", "boom"))
+                });
+                let task_id = task.task_id().to_string();
+                scheduler
+                    .submit(OperationSpec::new(
+                        "crop-roi",
+                        "/workspace",
+                        true,
+                        vec![task],
+                    ))
+                    .map(|detail| {
+                        (
+                            detail,
+                            vec![CropTaskMetadata {
+                                task_id,
+                                position: 1,
+                                roi_pages: 1,
+                                skipped: false,
+                            }],
+                        )
+                    })
+            })
+            .expect("seed terminal-bound crop");
+        for _ in 0..1_000 {
+            if operation_is_terminal(
+                scheduler
+                    .operation(&seeded.record.operation_id)
+                    .expect("operation")
+                    .operation
+                    .status,
+            ) {
+                break;
+            }
+            tokio::task::yield_now().await;
+        }
+        assert!(
+            operation_is_terminal(
+                scheduler
+                    .operation(&seeded.record.operation_id)
+                    .expect("operation")
+                    .operation
+                    .status
+            ),
+            "seeded crop must be terminal"
+        );
+
+        // Fresh request id for the same workspace: the latest operation is
+        // terminal so attach path B does not fire — `submit_or_attach` would
+        // create. `peek_attach` must report the same fall-through.
+        let attach = state
+            .peek_attach(&scheduler, "/workspace", "second")
+            .expect("peek resolves");
+        assert!(
+            attach.is_none(),
+            "terminal latest op must not attach a fresh request"
+        );
+
+        // Path A does not consult operation status, so a known request id still
+        // attaches even when its operation is terminal.
+        let known = state
+            .peek_attach(&scheduler, "/workspace", "first")
+            .expect("peek resolves")
+            .expect("known request id attaches regardless of status");
+        assert_eq!(known.disposition, CropRoiDisposition::Attached);
+        assert_eq!(known.record.request_id, "first");
+    }
+
+    #[tokio::test]
+    async fn peek_attach_reports_request_id_conflict_for_mismatched_workspace() {
+        let scheduler = scheduler();
+        let state = CropJobState::new();
+        let _ = seed_non_terminal_crop(&state, &scheduler, "/workspace-a", "dup");
+
+        // The request id exists but belongs to a different workspace; this is
+        // a real conflict, not an attach.
+        let error = state
+            .peek_attach(&scheduler, "/workspace-b", "dup")
+            .expect_err("request id conflict");
+        assert!(matches!(error, CropJobStateError::RequestIdConflict));
     }
 }
