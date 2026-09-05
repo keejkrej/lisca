@@ -4,7 +4,9 @@ import json
 from pathlib import Path
 
 import numpy as np
+import pytest
 import tifffile
+from PIL import Image
 
 from lisca.services.smart_exclusion_dataset import (
     CreateSmartExclusionDatasetOptions,
@@ -71,18 +73,21 @@ def _write_roi_stack(workspace: Path, position: int) -> None:
     (roi_dir / "index.json").write_text(json.dumps(index), encoding="utf-8")
 
 
-def _write_source_frame(source: Path, position: int) -> None:
+def _write_source_frame(source: Path, position: int, ext: str = "tif") -> None:
     pos_dir = source / f"Pos{position}"
     pos_dir.mkdir(parents=True, exist_ok=True)
     frame = np.linspace(0, 65535, 100 * 100, dtype=np.uint16).reshape(100, 100)
-    tifffile.imwrite(
-        pos_dir / f"img_channel000_position{position}_time000000000_z000.tif",
-        frame,
-    )
+    name = f"img_channel000_position{position}_time000000000_z000.{ext}"
+    if ext in ("tif", "tiff"):
+        tifffile.imwrite(pos_dir / name, frame)
+    else:
+        Image.fromarray(frame).save(pos_dir / name)
 
 
+@pytest.mark.parametrize("ext", ["tif", "png"])
 def test_create_smart_exclusion_dataset_filters_small_excluded_cells(
     tmp_path: Path,
+    ext: str,
 ) -> None:
     workspace = tmp_path / "workspace"
     source = tmp_path / "source"
@@ -92,7 +97,7 @@ def test_create_smart_exclusion_dataset_filters_small_excluded_cells(
     _write_align_state(workspace, position, excluded=[(-1, 0), (0, 0)])
     _write_bbox(workspace, position)
     _write_roi_stack(workspace, position)
-    _write_source_frame(source, position)
+    _write_source_frame(source, position, ext)
 
     manifest = create_smart_exclusion_dataset(
         CreateSmartExclusionDatasetOptions(
