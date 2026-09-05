@@ -4,7 +4,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use lisca_workspace::{ALIGN_DIR, BBOX_DIR, POS_PREFIX, ROI_DIR};
+use lisca_workspace::{bbox_csv_name, ALIGN_DIR, BBOX_DIR, POS_PREFIX, ROI_DIR};
 
 use crate::{
     migrations::migrate_workspace,
@@ -135,7 +135,11 @@ fn align_json_path(root: &str, pos: u32) -> PathBuf {
 
 fn parse_pos_csv_name(name: &str) -> Option<u32> {
     let rest = name.strip_prefix(POS_PREFIX)?.strip_suffix(".csv")?;
-    rest.parse().ok()
+    let pos: u32 = rest.parse().ok()?;
+    if name != bbox_csv_name(pos) {
+        return None;
+    }
+    Some(pos)
 }
 
 #[cfg(test)]
@@ -244,5 +248,46 @@ mod tests {
         assert!(loaded.is_none());
         let text = fs::read_to_string(workspace.join("bbox/Pos1.csv")).expect("read");
         assert!(text.starts_with("roi,x,y,w,h"));
+    }
+
+    #[test]
+    fn parse_pos_csv_name_accepts_canonical_filenames() {
+        assert_eq!(parse_pos_csv_name("Pos0.csv"), Some(0));
+        assert_eq!(parse_pos_csv_name("Pos4.csv"), Some(4));
+        assert_eq!(parse_pos_csv_name("Pos12.csv"), Some(12));
+    }
+
+    #[test]
+    fn parse_pos_csv_name_rejects_noncanonical_filenames() {
+        assert_eq!(parse_pos_csv_name("Pos04.csv"), None);
+        assert_eq!(parse_pos_csv_name("Pos007.csv"), None);
+        assert_eq!(parse_pos_csv_name("Pos00.csv"), None);
+        assert_eq!(parse_pos_csv_name("Pos4.txt"), None);
+        assert_eq!(parse_pos_csv_name("Foo4.csv"), None);
+        assert_eq!(parse_pos_csv_name("Pos4a.csv"), None);
+    }
+
+    #[test]
+    fn list_saved_bbox_positions_skips_noncanonical_filenames() {
+        let root = tempfile::tempdir().expect("tempdir");
+        let workspace = root.path();
+        fs::create_dir_all(workspace.join("bbox")).expect("bbox dir");
+        fs::write(workspace.join("bbox/Pos04.csv"), "roi,x,y,w,h\n1,0,0,2,2\n").expect("write");
+
+        let positions = list_saved_bbox_positions(&workspace.to_string_lossy()).expect("list");
+        assert_eq!(positions, Vec::<u32>::new());
+        assert!(!bbox_csv_path(&workspace.to_string_lossy(), 4).exists());
+    }
+
+    #[test]
+    fn list_saved_bbox_positions_keeps_canonical_among_noncanonical() {
+        let root = tempfile::tempdir().expect("tempdir");
+        let workspace = root.path();
+        fs::create_dir_all(workspace.join("bbox")).expect("bbox dir");
+        fs::write(workspace.join("bbox/Pos04.csv"), "roi,x,y,w,h\n1,0,0,2,2\n").expect("write");
+        fs::write(workspace.join("bbox/Pos7.csv"), "roi,x,y,w,h\n1,0,0,2,2\n").expect("write");
+
+        let positions = list_saved_bbox_positions(&workspace.to_string_lossy()).expect("list");
+        assert_eq!(positions, vec![7]);
     }
 }
