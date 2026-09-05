@@ -288,4 +288,72 @@ mod tests {
         };
         assert_eq!(death_times.get(&key).copied(), Some(2));
     }
+
+    fn timeseries(crops: &[(u32, u32)]) -> Vec<PredictionRow> {
+        let mut rows = Vec::new();
+        for &(crop, last_alive_t) in crops {
+            for t in 0..=10 {
+                rows.push(row(t, crop, t <= last_alive_t));
+            }
+        }
+        rows
+    }
+
+    #[test]
+    fn polarity_correct_convention_yields_decreasing_kill_curve() {
+        let rows = timeseries(&[(1, 10), (2, 5), (3, 3)]);
+        let cleaned = clean_predictions(&rows);
+        let death_times = compute_death_times(&cleaned);
+        let curve = build_kill_curve(&death_times, 0);
+        assert_eq!(
+            curve,
+            vec![
+                (0, 3),
+                (1, 3),
+                (2, 3),
+                (3, 3),
+                (4, 2),
+                (5, 2),
+                (6, 1),
+                (7, 1),
+                (8, 1),
+                (9, 1),
+                (10, 1),
+            ]
+        );
+    }
+
+    #[test]
+    fn polarity_inverted_convention_all_alive_at_t0_yields_empty_curve() {
+        let rows = timeseries(&[(1, 10), (2, 5), (3, 3)])
+            .into_iter()
+            .map(|row| PredictionRow {
+                label: !row.label,
+                ..row
+            })
+            .collect::<Vec<_>>();
+        let cleaned = clean_predictions(&rows);
+        let death_times = compute_death_times(&cleaned);
+        let curve = build_kill_curve(&death_times, 0);
+        assert!(curve.is_empty());
+    }
+
+    #[test]
+    fn polarity_inverted_convention_with_always_dead_crop_is_silently_wrong() {
+        let mut rows = timeseries(&[(1, 10), (2, 5), (3, 3)])
+            .into_iter()
+            .map(|row| PredictionRow {
+                label: !row.label,
+                ..row
+            })
+            .collect::<Vec<_>>();
+        for t in 0..=10 {
+            rows.push(row(t, 4, true));
+        }
+        let cleaned = clean_predictions(&rows);
+        let death_times = compute_death_times(&cleaned);
+        let curve = build_kill_curve(&death_times, 0);
+        let expected: Vec<(u32, u32)> = (0..=10).map(|t| (t, 1)).collect();
+        assert_eq!(curve, expected);
+    }
 }
