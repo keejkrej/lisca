@@ -175,6 +175,11 @@ export function useSmartExclude(options: {
       return await consentPromise;
     } catch (cause) {
       if (runGeneration !== generation) return [];
+      if (cause instanceof Error && cause.message === "Smart exclude cancelled") {
+        onStatusRef.current?.("Smart exclude cancelled");
+        closeDownloadState();
+        throw cause;
+      }
       onErrorRef.current?.(cause instanceof Error ? cause.message : String(cause));
       onStatusRef.current?.(null);
       closeDownloadState();
