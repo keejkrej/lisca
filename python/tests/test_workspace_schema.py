@@ -15,10 +15,16 @@ from lisca.core.paths import (
     MASK_DIR,
     RESULTS_DIR,
     ROI_DIR,
+    align_dir,
     bbox_csv_path,
     roi_index_path,
 )
-from lisca.core.workspace import load_bbox_rows, load_position_index
+from lisca.core.workspace import (
+    list_align_positions,
+    load_bbox_rows,
+    load_position_index,
+    load_saved_align_state,
+)
 
 
 def test_workspace_folder_names() -> None:
@@ -114,3 +120,60 @@ def test_load_position_index_derives_shape_from_bbox(tmp_path: Path) -> None:
     assert entry.file_name == "Roi4.tif"
     assert entry.shape == (2, 3, 1, 9, 8)
     assert entry.bbox == RoiBbox(roi=4, x=1, y=2, w=8, h=9)
+
+
+def _write_align(path: Path) -> Path:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text('{"grid":{}}', encoding="utf-8")
+    return path
+
+
+def test_list_align_positions_enumerates_canonical_names(tmp_path: Path) -> None:
+    workspace = tmp_path / "workspace"
+    for pos in (0, 1, 12):
+        _write_align(align_dir(workspace) / f"Pos{pos}.json")
+    assert list_align_positions(workspace) == [0, 1, 12]
+
+
+def test_list_align_positions_no_duplicates_when_padded_also_present(
+    tmp_path: Path,
+) -> None:
+    workspace = tmp_path / "workspace"
+    _write_align(align_dir(workspace) / "Pos0.json")
+    _write_align(align_dir(workspace) / "Pos00.json")
+    _write_align(align_dir(workspace) / "Pos1.json")
+    _write_align(align_dir(workspace) / "Pos01.json")
+    assert list_align_positions(workspace) == [0, 1]
+
+
+def test_list_align_positions_no_phantom_when_only_padded_present(
+    tmp_path: Path,
+) -> None:
+    workspace = tmp_path / "workspace"
+    _write_align(align_dir(workspace) / "Pos007.json")
+    assert list_align_positions(workspace) == []
+
+
+def test_list_align_positions_each_returned_position_is_loadable(
+    tmp_path: Path,
+) -> None:
+    workspace = tmp_path / "workspace"
+    _write_align(align_dir(workspace) / "Pos0.json")
+    _write_align(align_dir(workspace) / "Pos1.json")
+    _write_align(align_dir(workspace) / "Pos00.json")
+    _write_align(align_dir(workspace) / "Pos007.json")
+    positions = list_align_positions(workspace)
+    assert positions == [0, 1]
+    for position in positions:
+        load_saved_align_state(workspace, position)
+
+
+def test_list_align_positions_and_discover_bbox_positions_share_contract(
+    tmp_path: Path,
+) -> None:
+    workspace = tmp_path / "workspace"
+    _write_align(align_dir(workspace) / "Pos0.json")
+    _write_align(align_dir(workspace) / "Pos00.json")
+    _write_bbox(workspace / "bbox" / "Pos0.csv", "roi,x,y,w,h\n0,0,0,2,2\n")
+    _write_bbox(workspace / "bbox" / "Pos00.csv", "roi,x,y,w,h\n0,0,0,2,2\n")
+    assert list_align_positions(workspace) == discover_bbox_positions(workspace) == [0]
