@@ -18,6 +18,7 @@ from lisca.core.paths import (
     RESULTS_DIR,
     ROI_DIR,
     align_dir,
+    align_json_name,
     align_json_path,
     analysis_dir,
     assay_json_path,
@@ -102,8 +103,11 @@ def list_align_positions(workspace: Path) -> list[int]:
     positions: list[int] = []
     for path in sorted(directory.glob(f"{POS_PREFIX}*.json")):
         suffix = path.stem.removeprefix(POS_PREFIX)
-        if suffix.isdigit():
-            positions.append(int(suffix))
+        if not suffix.isdigit():
+            continue
+        if path.name != align_json_name(int(suffix)):
+            continue
+        positions.append(int(suffix))
     return positions
 
 
