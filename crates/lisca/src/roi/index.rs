@@ -31,15 +31,10 @@ pub fn scan_roi_workspace(workspace_path: &str) -> Result<RoiWorkspaceScan, Stri
             continue;
         };
         let index = read_roi_index(workspace_path, pos)?;
-        let times = if index.time_indices.len() as u32 == index.time_count {
-            index.time_indices.clone()
-        } else {
-            axis_values(index.time_count)
-        };
         positions.push(RoiPositionScan {
             pos,
             channels: axis_values(index.channel_count),
-            times,
+            times: published_time_axis(&index.time_indices, index.time_count),
             z_slices: axis_values(index.z_count),
             rois: index.rois,
         });
@@ -57,9 +52,6 @@ pub fn load_roi_frame(workspace_path: &str, request: RoiFrameRequest) -> Result<
         .find(|entry| entry.roi == request.roi)
         .ok_or_else(|| format!("ROI {} not found for Pos{}", request.roi, request.pos))?;
 
-    if request.time >= index.time_count {
-        return Err(format!("Time index {} is out of range", request.time));
-    }
     if request.channel >= index.channel_count {
         return Err(format!("Channel index {} is out of range", request.channel));
     }
@@ -67,8 +59,19 @@ pub fn load_roi_frame(workspace_path: &str, request: RoiFrameRequest) -> Result<
         return Err(format!("Z index {} is out of range", request.z));
     }
 
-    let page = ((request.time * index.channel_count + request.channel) * index.z_count + request.z)
-        as usize;
+    let times = published_time_axis(&index.time_indices, index.time_count);
+    let plane_t = match times.iter().position(|&t| t == request.time) {
+        Some(plane_t) => plane_t as u32,
+        None => {
+            return Err(format!(
+                "Time index {} is not in the available time indices {:?}",
+                request.time, times
+            ))
+        }
+    };
+
+    let page =
+        ((plane_t * index.channel_count + request.channel) * index.z_count + request.z) as usize;
     let frame = tiff_io::load_tiff_frame_page(
         &roi_tiff_path(workspace_path, request.pos, request.roi),
         page,
@@ -126,6 +129,14 @@ fn parse_pos_dir_name(name: &str) -> Option<u32> {
 
 fn axis_values(count: u32) -> Vec<u32> {
     (0..count).collect()
+}
+
+fn published_time_axis(time_indices: &[u32], time_count: u32) -> Vec<u32> {
+    if time_indices.len() as u32 == time_count {
+        time_indices.to_vec()
+    } else {
+        axis_values(time_count)
+    }
 }
 
 fn roi_root_path(root: &str) -> PathBuf {
