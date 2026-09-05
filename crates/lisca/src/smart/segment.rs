@@ -321,8 +321,9 @@ fn extract_best_mask(
     )
     .ok_or_else(|| "invalid smart segment mask tensor".to_string())?;
 
-    let crop_width = prepared.resized_width.min(mask_width as u32);
-    let crop_height = prepared.resized_height.min(mask_height as u32);
+    let crop_width = (prepared.resized_width * mask_width as u32 / SAM_SIZE).min(mask_width as u32);
+    let crop_height =
+        (prepared.resized_height * mask_height as u32 / SAM_SIZE).min(mask_height as u32);
     let cropped = image::imageops::crop(&mut low_res, 0, 0, crop_width, crop_height).to_image();
     let resized = image::imageops::resize(&cropped, width, height, FilterType::Triangle);
 
@@ -388,5 +389,120 @@ mod tests {
         )
         .expect("segment");
         assert_eq!(response.mask.len(), 64 * 48);
+    }
+
+    /// `extract_best_mask` must crop the 256-scale decoder mask to its content
+    /// region — the unpadded area mapped from the 1024-resized encoder space —
+    /// before resizing to the original ROI size. Cutting the full 256-cell
+    /// short edge (including the zero-padding band) squashes padding into the
+    /// output. This crafts a decoder plane whose content is `1.0` and whose
+    /// padding band is `0.0`, so a region-correct crop yields an entirely-dense
+    /// output while a wrong-region crop leaves the short edge empty.
+    #[test]
+    fn extract_best_mask_crops_to_decoder_content_region() {
+        // (width, height, resized_width, resized_height) covering the common
+        // 4:3 landscape/portrait and the elongated >4:1 landscape/portrait
+        // regimes (the elongated regime keeps ~3x as much padding as content
+        // under the bug, so it must be covered too).
+        let cases = [
+            (64u32, 48u32, 1024u32, 768u32),
+            (48u32, 64u32, 768u32, 1024u32),
+            (128u32, 24u32, 1024u32, 192u32),
+            (24u32, 128u32, 192u32, 1024u32),
+        ];
+        let mask_width = 256usize;
+        let mask_height = 256usize;
+        for (width, height, resized_width, resized_height) in cases {
+            let content_width = resized_width as usize * mask_width / SAM_SIZE as usize;
+            let content_height = resized_height as usize * mask_height / SAM_SIZE as usize;
+            let mut pred_masks = vec![0.0f32; mask_height * mask_width];
+            for y in 0..content_height {
+                for x in 0..content_width {
+                    pred_masks[y * mask_width + x] = 1.0;
+                }
+            }
+            let prepared = PreparedSamImage {
+                pixel_values: vec![],
+                resized_width,
+                resized_height,
+            };
+            let mask = extract_best_mask(
+                &pred_masks,
+                &[1, 1, 1, mask_height, mask_width],
+                &[1.0f32],
+                width,
+                height,
+                &prepared,
+            )
+            .expect("extract");
+            assert_eq!(
+                mask.len(),
+                (width * height) as usize,
+                "{width}x{height} mask length"
+            );
+            let zero_rows = count_zero_rows(&mask, width as usize, height as usize);
+            let zero_cols = count_zero_cols(&mask, width as usize, height as usize);
+            assert_eq!(
+                zero_rows, 0,
+                "{width}x{height}: short/long edge rows must be populated"
+            );
+            assert_eq!(
+                zero_cols, 0,
+                "{width}x{height}: short/long edge cols must be populated"
+            );
+        }
+    }
+
+    /// A square ROI fills the entire 256x256 decoder mask with content
+    /// (`resized_* == SAM_SIZE` maps to `256 == mask_size`), so there is no
+    /// padding band and the crop is a no-op. The fix must not change square
+    /// behaviour.
+    #[test]
+    fn extract_best_mask_square_roi_has_no_padding_band() {
+        let width = 48u32;
+        let height = 48u32;
+        let mask_width = 256usize;
+        let mask_height = 256usize;
+        let pred_masks = vec![1.0f32; mask_height * mask_width];
+        let prepared = PreparedSamImage {
+            pixel_values: vec![],
+            resized_width: SAM_SIZE,
+            resized_height: SAM_SIZE,
+        };
+        let mask = extract_best_mask(
+            &pred_masks,
+            &[1, 1, 1, mask_height, mask_width],
+            &[1.0f32],
+            width,
+            height,
+            &prepared,
+        )
+        .expect("extract");
+        assert_eq!(mask.len(), (width * height) as usize);
+        assert!(
+            mask.iter().all(|value| *value == 1),
+            "square ROI with no padding band must be fully populated"
+        );
+    }
+
+    fn count_zero_rows(mask: &[u32], width: usize, height: usize) -> usize {
+        let mut zero_rows = 0;
+        for y in 0..height {
+            if mask[y * width..(y + 1) * width].iter().all(|v| *v == 0) {
+                zero_rows += 1;
+            }
+        }
+        zero_rows
+    }
+
+    fn count_zero_cols(mask: &[u32], width: usize, height: usize) -> usize {
+        let mut zero_cols = 0;
+        for x in 0..width {
+            let all_zero = (0..height).all(|y| mask[y * width + x] == 0);
+            if all_zero {
+                zero_cols += 1;
+            }
+        }
+        zero_cols
     }
 }
