@@ -204,6 +204,7 @@ fn operation_is_terminal(status: OperationStatus) -> bool {
             | OperationStatus::Failed
             | OperationStatus::PartiallyComplete
             | OperationStatus::Cancelled
+            | OperationStatus::CancellationRequested
     )
 }
 
@@ -436,5 +437,208 @@ mod tests {
             state.submit_or_attach(&scheduler, "/other", "first", || unreachable!()),
             Err(CropJobStateError::RequestIdConflict)
         ));
+    }
+
+    fn scheduler_terminal(status: OperationStatus) -> bool {
+        matches!(
+            status,
+            OperationStatus::Completed
+                | OperationStatus::Failed
+                | OperationStatus::PartiallyComplete
+                | OperationStatus::Cancelled
+        )
+    }
+
+    #[tokio::test]
+    async fn cancellation_requested_operation_is_not_attachable_starts_fresh_operation() {
+        let scheduler = scheduler();
+        let state = CropJobState::new();
+        let first = state
+            .submit_or_attach(&scheduler, "/workspace", "first", || {
+                let task = TaskSpec::new("crop-roi/Pos1", 1, |ctx| async move {
+                    loop {
+                        if ctx.is_cancellation_requested() {
+                            return Err(TaskFailure::cancelled());
+                        }
+                        ctx.report_work_progress("frame", 0, 1, None, None).ok();
+                        tokio::task::yield_now().await;
+                    }
+                });
+                let task_id = task.task_id().to_string();
+                scheduler
+                    .submit(OperationSpec::new(
+                        "crop-roi",
+                        "/workspace",
+                        true,
+                        vec![task],
+                    ))
+                    .map(|detail| {
+                        (
+                            detail,
+                            vec![CropTaskMetadata {
+                                task_id,
+                                position: 1,
+                                roi_pages: 1,
+                                skipped: false,
+                            }],
+                        )
+                    })
+            })
+            .expect("first submission");
+
+        for _ in 0..200 {
+            if scheduler
+                .operation(&first.record.operation_id)
+                .unwrap()
+                .operation
+                .status
+                == OperationStatus::Running
+            {
+                break;
+            }
+            tokio::task::yield_now().await;
+        }
+        assert_eq!(
+            scheduler
+                .operation(&first.record.operation_id)
+                .unwrap()
+                .operation
+                .status,
+            OperationStatus::Running,
+        );
+
+        scheduler
+            .cancel_operation(&first.record.operation_id)
+            .expect("cancel first");
+        assert_eq!(
+            scheduler
+                .operation(&first.record.operation_id)
+                .unwrap()
+                .operation
+                .status,
+            OperationStatus::CancellationRequested,
+        );
+
+        let created_second = AtomicBool::new(false);
+        let second = state
+            .submit_or_attach(&scheduler, "/workspace", "second", || {
+                created_second.store(true, Ordering::SeqCst);
+                let task = TaskSpec::new("crop-roi/Pos2", 1, |_| async { Ok(()) });
+                let task_id = task.task_id().to_string();
+                scheduler
+                    .submit(OperationSpec::new(
+                        "crop-roi",
+                        "/workspace",
+                        true,
+                        vec![task],
+                    ))
+                    .map(|detail| {
+                        (
+                            detail,
+                            vec![CropTaskMetadata {
+                                task_id,
+                                position: 2,
+                                roi_pages: 1,
+                                skipped: false,
+                            }],
+                        )
+                    })
+            })
+            .expect("second submission");
+
+        assert_eq!(second.disposition, CropRoiDisposition::Started);
+        assert_eq!(second.record.request_id, "second");
+        assert!(created_second.load(Ordering::SeqCst));
+
+        let second_op_id = second.record.operation_id.clone();
+        for _ in 0..800 {
+            if scheduler_terminal(scheduler.operation(&second_op_id).unwrap().operation.status) {
+                break;
+            }
+            tokio::task::yield_now().await;
+        }
+
+        let first_final = scheduler
+            .operation(&first.record.operation_id)
+            .unwrap()
+            .operation
+            .status;
+        let second_final = scheduler.operation(&second_op_id).unwrap().operation.status;
+        let visible = state
+            .progress(&scheduler, &second.record.request_id)
+            .unwrap()
+            .unwrap();
+
+        assert_eq!(first_final, OperationStatus::Cancelled);
+        assert_eq!(second_final, OperationStatus::Completed);
+        assert_eq!(visible.status, CropRoiStatus::Completed);
+        assert_eq!(visible.request_id, "second");
+        assert_eq!(visible.completed_positions, 1);
+    }
+
+    #[tokio::test]
+    async fn attaching_to_running_operation_still_attaches() {
+        let scheduler = scheduler();
+        let state = CropJobState::new();
+        let first = state
+            .submit_or_attach(&scheduler, "/workspace", "first", || {
+                let task = TaskSpec::new("crop-roi/Pos1", 1, |_| async {
+                    std::future::pending::<Result<(), TaskFailure>>().await
+                });
+                let task_id = task.task_id().to_string();
+                scheduler
+                    .submit(OperationSpec::new(
+                        "crop-roi",
+                        "/workspace",
+                        true,
+                        vec![task],
+                    ))
+                    .map(|detail| {
+                        (
+                            detail,
+                            vec![CropTaskMetadata {
+                                task_id,
+                                position: 1,
+                                roi_pages: 1,
+                                skipped: false,
+                            }],
+                        )
+                    })
+            })
+            .expect("first submission");
+
+        for _ in 0..200 {
+            if scheduler
+                .operation(&first.record.operation_id)
+                .unwrap()
+                .operation
+                .status
+                == OperationStatus::Running
+            {
+                break;
+            }
+            tokio::task::yield_now().await;
+        }
+        assert_eq!(
+            scheduler
+                .operation(&first.record.operation_id)
+                .unwrap()
+                .operation
+                .status,
+            OperationStatus::Running,
+        );
+
+        let created_second = AtomicBool::new(false);
+        let attached = state
+            .submit_or_attach(&scheduler, "/workspace", "second", || {
+                created_second.store(true, Ordering::SeqCst);
+                unreachable!("running workspace must attach")
+            })
+            .expect("attach running workspace");
+
+        assert_eq!(attached.disposition, CropRoiDisposition::Attached);
+        assert_eq!(attached.record.request_id, "first");
+        assert_eq!(attached.record.operation_id, first.record.operation_id);
+        assert!(!created_second.load(Ordering::SeqCst));
     }
 }
