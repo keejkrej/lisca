@@ -42,7 +42,11 @@ export function StudioBasicInfoLeaveGuard() {
 
   const saveAssay = async (overwrite: boolean) => {
     const current = wizard();
-    if (!current.assayId || !workspacePath() || saving()) return false;
+    if (!workspacePath()) {
+      setSaveError("Pick a workspace folder before saving.");
+      return false;
+    }
+    if (!current.assayId || saving()) return false;
     setSaving(true);
     setSaveError(null);
     try {
