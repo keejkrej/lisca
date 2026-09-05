@@ -57,6 +57,11 @@ pub fn build_slide_mapping_from_parts(
             ));
         }
         let positions = parse_positions(&row.positions)?;
+        if mapping.contains_key(&slide_channel) {
+            return Err(format!(
+                "duplicate slideChannel {slide_channel} in samples: each sample must map to a unique slideChannel"
+            ));
+        }
         mapping.insert(
             slide_channel,
             SlideChannelMapping {
@@ -207,5 +212,72 @@ mod tests {
     fn expands_inclusive_position_ranges() {
         assert_eq!(parse_positions("1:4").unwrap(), vec![1, 2, 3, 4]);
         assert_eq!(parse_positions("3").unwrap(), vec![3]);
+    }
+
+    fn sample_analysis() -> crate::protocol::AssayAnalysisConfig {
+        use crate::protocol::{AssayAnalysisConfig, AssayChannels, AssaySignalChannels};
+        AssayAnalysisConfig {
+            channels: Some(AssayChannels {
+                mask: 0,
+                signal: AssaySignalChannels(vec![1]),
+            }),
+            sample_channels: vec![],
+            skip_segment: None,
+            max_onset_minutes: None,
+        }
+    }
+
+    #[test]
+    fn duplicate_slide_channel_is_rejected() {
+        use crate::protocol::{AssaySampleRow, AssaySamples};
+        let samples = AssaySamples(vec![
+            AssaySampleRow {
+                name: "sampleA".into(),
+                positions: "1:3".into(),
+                slide_channel: 0,
+            },
+            AssaySampleRow {
+                name: "sampleB".into(),
+                positions: "4:6".into(),
+                slide_channel: 0,
+            },
+        ]);
+        let analysis = sample_analysis();
+        let err = build_slide_mapping_from_parts(&samples, Some(&analysis))
+            .expect_err("duplicate slideChannel must be rejected");
+        assert!(
+            err.contains("duplicate slideChannel 0"),
+            "error should name the offending channel: {err}"
+        );
+        assert!(
+            err.contains("unique slideChannel"),
+            "error should explain the uniqueness requirement: {err}"
+        );
+    }
+
+    #[test]
+    fn distinct_slide_channels_build_mapping() {
+        use crate::protocol::{AssaySampleRow, AssaySamples};
+        let samples = AssaySamples(vec![
+            AssaySampleRow {
+                name: "sampleA".into(),
+                positions: "1:3".into(),
+                slide_channel: 0,
+            },
+            AssaySampleRow {
+                name: "sampleB".into(),
+                positions: "4:6".into(),
+                slide_channel: 1,
+            },
+        ]);
+        let analysis = sample_analysis();
+        let mapping = build_slide_mapping_from_parts(&samples, Some(&analysis)).expect("mapping");
+        assert_eq!(mapping.len(), 2);
+        let a = mapping.get(&0).expect("channel 0 present");
+        assert_eq!(a.sample_name, "sampleA");
+        assert_eq!(a.positions, vec![1, 2, 3]);
+        let b = mapping.get(&1).expect("channel 1 present");
+        assert_eq!(b.sample_name, "sampleB");
+        assert_eq!(b.positions, vec![4, 5, 6]);
     }
 }
