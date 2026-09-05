@@ -1,6 +1,6 @@
 use std::{collections::HashSet, sync::Arc};
 
-use crate::crop::{CropJobStateError, CropTaskMetadata, HasCropJobs};
+use crate::crop::{CropJobState, CropJobStateError, CropSubmission, CropTaskMetadata, HasCropJobs};
 use axum::{
     extract::{Query, State},
     routing::{get, post},
@@ -157,18 +157,47 @@ async fn crop_roi_handler<S: HasCropJobs + HasTaskScheduler>(
     if request.workspace_path.trim().is_empty() {
         return Err(FsError::new("crop workspace path is required"));
     }
+    // Resolve the shared planner/scheduler handles and the identifying request
+    // fields once, before any planning I/O, so the planning error paths can
+    // re-check the attach decision in-memory without re-deriving them.
+    let crop = state.crop_jobs();
+    let scheduler = state.task_scheduler();
+    let request_id = request.request_id.clone();
+    let workspace_path = request.workspace_path.clone();
+
     let migrate_workspace_path = request.workspace_path.clone();
-    run_blocking("workspace migration", move || {
+    if let Err(migrate_error) = run_blocking("workspace migration", move || {
         lisca::migrations::migrate_workspace(std::path::Path::new(&migrate_workspace_path))
             .map(|_| ())
     })
-    .await?;
+    .await
+    {
+        return attach_or_propagate_planning_error(
+            crop,
+            scheduler,
+            &workspace_path,
+            &request_id,
+            migrate_error,
+        );
+    }
     let positions = if request.positions.is_empty() {
-        let workspace_path = request.workspace_path.clone();
-        run_blocking("crop position scan", move || {
-            aligner::list_saved_bbox_positions(&workspace_path)
+        let position_scan_path = request.workspace_path.clone();
+        match run_blocking("crop position scan", move || {
+            aligner::list_saved_bbox_positions(&position_scan_path)
         })
-        .await?
+        .await
+        {
+            Ok(positions) => positions,
+            Err(position_scan_error) => {
+                return attach_or_propagate_planning_error(
+                    crop,
+                    scheduler,
+                    &workspace_path,
+                    &request_id,
+                    position_scan_error,
+                );
+            }
+        }
     } else {
         request.positions.clone()
     };
@@ -185,27 +214,75 @@ async fn crop_roi_handler<S: HasCropJobs + HasTaskScheduler>(
         )));
     }
     let source = request.source.clone();
-    let scan = Arc::new(
-        tokio::task::spawn_blocking(move || aligner::scan_source(source))
-            .await
-            .map_err(|error| FsError::internal(format!("crop planning worker failed: {error}")))?
-            .map_err(FsError::new)?,
-    );
+    let scan = match tokio::task::spawn_blocking(move || aligner::scan_source(source)).await {
+        Ok(Ok(scan)) => Arc::new(scan),
+        Ok(Err(scan_error)) => {
+            return attach_or_propagate_planning_error(
+                crop,
+                scheduler,
+                &workspace_path,
+                &request_id,
+                FsError::new(scan_error),
+            );
+        }
+        Err(join_error) => {
+            return attach_or_propagate_planning_error(
+                crop,
+                scheduler,
+                &workspace_path,
+                &request_id,
+                FsError::internal(format!("crop planning worker failed: {join_error}")),
+            );
+        }
+    };
 
-    let crop = state.crop_jobs();
-    let scheduler = state.task_scheduler();
-    let request_id = request.request_id.clone();
-    let workspace_path = request.workspace_path.clone();
     let submission = crop
         .submit_or_attach(scheduler, &workspace_path, &request_id, || {
             build_crop_operation(scheduler, request, scan, positions)
         })
         .map_err(crop_state_error)?;
+    finalize_crop_response(crop, scheduler, submission)
+}
+
+/// Decide whether a planning-I/O failure should instead surface as an
+/// attach to an already-running (non-terminal) crop for the same workspace
+/// (or request id), discarding the planning error when it should.
+///
+/// `peek_attach` reproduces the two attach short-circuits of
+/// [`crate::crop::CropJobState::submit_or_attach`] purely in-memory: no
+/// planning I/O runs, no operation is created. When the request would attach,
+/// the planning output that the eager scan produces is provably unused
+/// (`submit_or_attach` skips the `create` closure that consumes it), so the
+/// planning failure is irrelevant to the attach decision and is discarded,
+/// returning [`CropRoiDisposition::Attached`]. When the request would not
+/// attach, the Started path genuinely needs the planning output and the
+/// original `planning_error` is propagated unchanged.
+fn attach_or_propagate_planning_error(
+    crop: &CropJobState,
+    scheduler: &lisca_server::TaskScheduler,
+    workspace_path: &str,
+    request_id: &str,
+    planning_error: FsError,
+) -> Result<Json<lisca::protocol::CropRoiResponse>, FsError> {
+    match crop.peek_attach(scheduler, workspace_path, request_id) {
+        Ok(Some(submission)) => finalize_crop_response(crop, scheduler, submission),
+        Ok(None) => Err(planning_error),
+        Err(state_error) => Err(crop_state_error(state_error)),
+    }
+}
+
+/// Project the current progress of `submission` into the HTTP response shape
+/// shared by the fresh-start path and the planning-error attach-recovery
+/// path.
+fn finalize_crop_response(
+    crop: &CropJobState,
+    scheduler: &lisca_server::TaskScheduler,
+    submission: CropSubmission,
+) -> Result<Json<lisca::protocol::CropRoiResponse>, FsError> {
     let progress = crop
         .progress(scheduler, &submission.record.request_id)
         .map_err(crop_state_error)?
         .ok_or_else(|| FsError::internal("submitted crop is missing from the operation index"))?;
-
     Ok(Json(lisca::protocol::CropRoiResponse {
         request_id: submission.record.request_id,
         status: progress.status,
@@ -497,5 +574,258 @@ mod crop_task_tests {
             sibling_index
         );
         assert!(Path::new(&workspace).join("roi/Pos2/index.json").is_file());
+    }
+
+    // A small state shim implementing the two route-level extractor traits so a
+    // test can drive `crop_roi_handler` directly without spinning up an HTTP
+    // server. The handler only needs the crop job planner and the task
+    // scheduler, both shared via `Arc`.
+    #[derive(Clone)]
+    struct HandlerState {
+        crop: Arc<crate::CropJobState>,
+        scheduler: Arc<TaskScheduler>,
+    }
+    impl HasCropJobs for HandlerState {
+        fn crop_jobs(&self) -> &crate::CropJobState {
+            &self.crop
+        }
+    }
+    impl HasTaskScheduler for HandlerState {
+        fn task_scheduler(&self) -> &TaskScheduler {
+            &self.scheduler
+        }
+    }
+
+    fn seeded_non_terminal_crop(
+        crop: &Arc<crate::CropJobState>,
+        scheduler: &Arc<TaskScheduler>,
+        workspace_path: &str,
+        request_id: &str,
+    ) -> crate::crop::CropSubmission {
+        crop.submit_or_attach(scheduler, workspace_path, request_id, || {
+            let task = TaskSpec::new("crop-roi/Pos1", 1, |_| async {
+                std::future::pending::<Result<(), TaskFailure>>().await
+            });
+            let task_id = task.task_id().to_string();
+            scheduler
+                .submit(OperationSpec::new(
+                    "crop-roi",
+                    workspace_path,
+                    true,
+                    vec![task],
+                ))
+                .map(|detail| {
+                    (
+                        detail,
+                        vec![CropTaskMetadata {
+                            task_id,
+                            position: 1,
+                            roi_pages: 1,
+                            skipped: false,
+                        }],
+                    )
+                })
+        })
+        .expect("seed non-terminal crop")
+    }
+
+    /// Regression for the eager-scan bug: a fresh crop request made against a
+    /// workspace that already has a non-terminal crop must attach (return
+    /// `CropRoiDisposition::Attached`) even when `aligner::scan_source` fails.
+    /// Before the fix the handler ran `scan_source` before `submit_or_attach`,
+    /// so the scan error aborted the request even though the scan's result is
+    /// provably only consumed by the `create` closure that `submit_or_attach`
+    /// skips on the attach path.
+    #[tokio::test]
+    async fn crop_roi_handler_attaches_when_source_scan_fails_under_non_terminal_crop() {
+        use std::sync::atomic::{AtomicBool, Ordering};
+
+        let workspace = tempfile::tempdir().expect("workspace tempdir");
+        let workspace_path = workspace.path().to_string_lossy().into_owned();
+        let scheduler = Arc::new(
+            TaskScheduler::new(SchedulerConfig {
+                capacity: 1,
+                history_cap: 10,
+            })
+            .expect("scheduler"),
+        );
+        let crop = Arc::new(crate::CropJobState::new());
+        let state = HandlerState {
+            crop: crop.clone(),
+            scheduler: scheduler.clone(),
+        };
+
+        let seeded = seeded_non_terminal_crop(&crop, &scheduler, &workspace_path, "crop-1");
+        assert_eq!(
+            seeded.disposition,
+            lisca::protocol::CropRoiDisposition::Started
+        );
+
+        // A fresh request id with a source folder that does not exist; this
+        // forces the handler's eager `scan_source` to error.
+        let request = CropRoiRequest {
+            output_format: None,
+            overwrite: true,
+            positions: vec![1],
+            request_id: "crop-2".to_string(),
+            source: AlignerSource::Folder {
+                path: "/definitely/does/not/exist/source".to_string(),
+                subfolder_template: "Pos{p}".to_string(),
+                filename_template: "img_{t}_{c}_{z}".to_string(),
+            },
+            workspace_path: workspace_path.clone(),
+        };
+        let Json(response) = crop_roi_handler(State(state.clone()), Json(request))
+            .await
+            .expect("attach-path request must succeed when an active crop exists, even if scan_source errors");
+        assert_eq!(
+            response.disposition,
+            lisca::protocol::CropRoiDisposition::Attached
+        );
+        assert_eq!(response.request_id, "crop-1");
+
+        // Counter-evidence: the same request id attaches to the running crop
+        // via `submit_or_attach` *without invoking `create`*, confirming that
+        // the eager scan's result was provably unused on this path all along.
+        let created_second = AtomicBool::new(false);
+        let attached = crop
+            .submit_or_attach(&scheduler, &workspace_path, "crop-2", || {
+                created_second.store(true, Ordering::SeqCst);
+                unreachable!("active workspace must attach")
+            })
+            .expect("attach active workspace");
+        assert_eq!(
+            attached.disposition,
+            lisca::protocol::CropRoiDisposition::Attached
+        );
+        assert_eq!(attached.record.request_id, "crop-1");
+        assert!(!created_second.load(Ordering::SeqCst));
+    }
+
+    /// The Started path genuinely needs the eager `scan_source` result: when no
+    /// attachable crop exists for the workspace, a `scan_source` failure must
+    /// still surface as an error (the recovery may not swallow it).
+    #[tokio::test]
+    async fn crop_roi_handler_propagates_scan_error_when_no_active_crop() {
+        let workspace = tempfile::tempdir().expect("workspace tempdir");
+        let workspace_path = workspace.path().to_string_lossy().into_owned();
+        let scheduler = Arc::new(
+            TaskScheduler::new(SchedulerConfig {
+                capacity: 1,
+                history_cap: 10,
+            })
+            .expect("scheduler"),
+        );
+        let crop = Arc::new(crate::CropJobState::new());
+        let state = HandlerState {
+            crop: crop.clone(),
+            scheduler: scheduler.clone(),
+        };
+
+        let request = CropRoiRequest {
+            output_format: None,
+            overwrite: true,
+            positions: vec![1],
+            request_id: "crop-solo".to_string(),
+            source: AlignerSource::Folder {
+                path: "/definitely/does/not/exist/source".to_string(),
+                subfolder_template: "Pos{p}".to_string(),
+                filename_template: "img_{t}_{c}_{z}".to_string(),
+            },
+            workspace_path: workspace_path.clone(),
+        };
+        let error = crop_roi_handler(State(state), Json(request))
+            .await
+            .expect_err("scan_source error must propagate when no crop to attach to");
+        assert!(
+            !error.message().is_empty(),
+            "scan_source error message must be preserved"
+        );
+
+        // Nothing was registered for the fresh request id: the handler short-
+        // circuited on the planning error before `submit_or_attach` ran.
+        let attach = crop
+            .peek_attach(&scheduler, &workspace_path, "crop-solo")
+            .expect("peek resolves");
+        assert!(attach.is_none(), "no record must have been created");
+    }
+
+    /// Symmetric regression for the `migrate_workspace` planning step: a fresh
+    /// crop request made against a workspace that already has a non-terminal
+    /// crop must attach even when `migrate_workspace` errors. The malformed
+    /// bbox header normally makes the first Start fail at migration; here it
+    /// is introduced after a non-terminal crop has already been seeded (the
+    /// stand-in for "an active crop is running") to exercise the recovery.
+    #[tokio::test]
+    async fn crop_roi_handler_attaches_when_workspace_migration_fails_under_non_terminal_crop() {
+        use std::sync::atomic::{AtomicBool, Ordering};
+
+        let workspace = tempfile::tempdir().expect("workspace tempdir");
+        let workspace_path = workspace.path().to_string_lossy().into_owned();
+        // A bbox header containing both `crop` and `roi` columns makes
+        // `migrate_workspace` error. The seeded non-terminal crop never reaches
+        // migrate (its task is `pending`), so seeding is unaffected.
+        fs::create_dir_all(workspace.path().join("bbox")).expect("bbox dir");
+        fs::write(
+            workspace.path().join("bbox").join("Pos1.csv"),
+            "crop,roi,x,y,w,h\n0,0,1,2,3,4\n",
+        )
+        .expect("malformed bbox");
+
+        let scheduler = Arc::new(
+            TaskScheduler::new(SchedulerConfig {
+                capacity: 1,
+                history_cap: 10,
+            })
+            .expect("scheduler"),
+        );
+        let crop = Arc::new(crate::CropJobState::new());
+        let state = HandlerState {
+            crop: crop.clone(),
+            scheduler: scheduler.clone(),
+        };
+
+        let _ = seeded_non_terminal_crop(&crop, &scheduler, &workspace_path, "crop-1");
+
+        let request = CropRoiRequest {
+            output_format: None,
+            overwrite: true,
+            positions: vec![1],
+            request_id: "crop-2".to_string(),
+            source: AlignerSource::Folder {
+                path: workspace
+                    .path()
+                    .join("source")
+                    .to_string_lossy()
+                    .into_owned(),
+                subfolder_template: "Pos{p}".to_string(),
+                filename_template: "img_{t}_{c}_{z}".to_string(),
+            },
+            workspace_path: workspace_path.clone(),
+        };
+        // Sanity-check the precondition: migrate_workspace does error.
+        assert!(lisca::migrations::migrate_workspace(workspace.path()).is_err());
+        let Json(response) = crop_roi_handler(State(state.clone()), Json(request))
+            .await
+            .expect("attach-path request must succeed even when migrate_workspace errors under an active crop");
+        assert_eq!(
+            response.disposition,
+            lisca::protocol::CropRoiDisposition::Attached
+        );
+        assert_eq!(response.request_id, "crop-1");
+
+        let created_second = AtomicBool::new(false);
+        let attached = crop
+            .submit_or_attach(&scheduler, &workspace_path, "crop-2", || {
+                created_second.store(true, Ordering::SeqCst);
+                unreachable!("active workspace must attach")
+            })
+            .expect("attach active workspace");
+        assert_eq!(
+            attached.disposition,
+            lisca::protocol::CropRoiDisposition::Attached
+        );
+        assert_eq!(attached.record.request_id, "crop-1");
+        assert!(!created_second.load(Ordering::SeqCst));
     }
 }
