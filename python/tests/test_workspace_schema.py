@@ -93,6 +93,21 @@ def test_load_bbox_rows_uses_parse_bbox_csv(tmp_path: Path) -> None:
     assert discover_bbox_positions(workspace) == [2]
 
 
+def test_discover_bbox_positions_rejects_noncanonical_filenames(tmp_path: Path) -> None:
+    workspace = tmp_path / "workspace"
+    _write_bbox(workspace / "bbox" / "Pos04.csv", "roi,x,y,w,h\n1,0,0,2,2\n")
+    _write_bbox(workspace / "bbox" / "Pos007.csv", "roi,x,y,w,h\n1,0,0,2,2\n")
+    _write_bbox(workspace / "bbox" / "Pos00.csv", "roi,x,y,w,h\n1,0,0,2,2\n")
+    assert discover_bbox_positions(workspace) == []
+
+
+def test_discover_bbox_positions_keeps_canonical_among_padded(tmp_path: Path) -> None:
+    workspace = tmp_path / "workspace"
+    _write_bbox(workspace / "bbox" / "Pos04.csv", "roi,x,y,w,h\n1,0,0,2,2\n")
+    _write_bbox(workspace / "bbox" / "Pos7.csv", "roi,x,y,w,h\n1,0,0,2,2\n")
+    assert discover_bbox_positions(workspace) == [7]
+
+
 def test_load_position_index_derives_shape_from_bbox(tmp_path: Path) -> None:
     workspace = tmp_path / "workspace"
     index_path = roi_index_path(workspace, 1)
