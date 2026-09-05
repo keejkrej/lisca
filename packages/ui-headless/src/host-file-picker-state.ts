@@ -129,16 +129,17 @@ export function useHostFilePickerState(options: () => UseHostFilePickerStateOpti
     if (!currentList?.path) return;
     try {
       await hostPort.createDirectory(currentList.path, name);
-      await loadPath(currentList.path);
     } catch (cause) {
-      setError(
+      throw new Error(
         cause instanceof Error && cause.message.includes("Could not parse JSON")
           ? "Could not reach the API server. Ensure the Rust backend is running."
           : cause instanceof Error
             ? cause.message
             : String(cause),
+        { cause },
       );
     }
+    await loadPath(currentList.path);
   };
   const navigateToEntry = (entry: HostFsEntry) => {
     if (entry.isDirectory) void loadPath(entry.path);
