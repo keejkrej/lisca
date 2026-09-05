@@ -492,6 +492,7 @@ export function createStudioPersist(sessionKey: string): AlignUiPersist {
           spacingZoomLocked?: boolean;
           patternZoomLocked?: boolean;
         });
+      if (!session.workspacePath?.trim() || !session.source) return null;
       return {
         workspacePath: session.workspacePath,
         source: session.source,
