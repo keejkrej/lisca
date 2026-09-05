@@ -36,19 +36,29 @@ function entropyFromProbabilities(probabilities: readonly number[]): number {
   return entropy;
 }
 
-/** Kapur maximum-entropy threshold on a histogram. */
+/** Kapur maximum-entropy threshold on a histogram.
+ *
+ * `counts[i]` is the population of bin `i`; `edges[i]` is the boundary at the
+ * low side of bin `i` and `edges[counts.length]` is the high side of the last
+ * bin (i.e. `edges` has one more entry than `counts`). The Kapur partition
+ * `slice(0, split + 1)` assigns every value in bin `split` to the background
+ * class, so the returned threshold is the bin edge `edges[split + 1]` — the
+ * boundary between the last background bin and the first foreground bin — so
+ * that `score <= threshold` excludes exactly the bins Kapur classed as
+ * background. Returning the bin center instead is a half-bin-low bug.
+ */
 export function maxEntropyThresholdOnHistogram(
   counts: readonly number[],
-  centers: readonly number[],
+  edges: readonly number[],
 ): number {
-  if (counts.length === 0 || centers.length === 0) return 0;
+  if (counts.length === 0 || edges.length === 0) return 0;
 
   const total = sum(counts) ?? 0;
-  if (total <= 0) return centers[0] ?? 0;
+  if (total <= 0) return edges[0] ?? 0;
 
   const probabilities = counts.map((count) => count / total);
   let bestEntropy = Number.NEGATIVE_INFINITY;
-  let bestThreshold = centers[0] ?? 0;
+  let bestThreshold = edges[0] ?? 0;
 
   for (let split = 0; split < counts.length - 1; split += 1) {
     const background = probabilities.slice(0, split + 1);
@@ -63,7 +73,7 @@ export function maxEntropyThresholdOnHistogram(
 
     if (totalEntropy > bestEntropy) {
       bestEntropy = totalEntropy;
-      bestThreshold = centers[split] ?? bestThreshold;
+      bestThreshold = edges[split + 1] ?? bestThreshold;
     }
   }
 
@@ -121,13 +131,13 @@ function buildHistogram(scores: number[]): {
   }));
 
   const counts = bins.map((entry) => entry.count);
-  const centers = bins.map((entry) => (entry.start + entry.end) / 2);
+  const edges = bins.length === 0 ? [] : [bins[0].start, ...bins.map((entry) => entry.end)];
 
   return {
     bins,
     scoreMin,
     scoreMax,
-    threshold: maxEntropyThresholdOnHistogram(counts, centers),
+    threshold: maxEntropyThresholdOnHistogram(counts, edges),
   };
 }
 
