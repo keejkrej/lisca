@@ -105,15 +105,20 @@ export async function resumeStudioPendingRuns(
     options.onRestoredCropTerminal?.(crop.progress);
     acknowledgeCropRecovery(options.serverIdentity, options.workspacePath, crop.progress.requestId);
   }
-  stops.push(
-    await resumeAnalysisPendingRun({
+  let analysisStop: (() => void) | null = null;
+  try {
+    analysisStop = await resumeAnalysisPendingRun({
       workspacePath: options.workspacePath,
       getLatestAnalysisProgress: (path) =>
         runClientEffect(options.client.getLatestAnalysisProgress(path)),
       onAnalysisProgress: options.client.onAnalysisProgress,
       onProgress: options.onAnalysisProgress,
-    }),
-  );
+    });
+  } catch (cause) {
+    for (const stop of stops) stop?.();
+    throw cause;
+  }
+  stops.push(analysisStop);
   let stopped = false;
   return () => {
     if (stopped) return;
