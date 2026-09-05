@@ -228,12 +228,12 @@ mod scheduler_stage_tests {
         }
         fs::write(
             first.join("results/predictions.csv"),
-            "t,crop,p_dead,label,pos,slide\n0,1,0.1,false,0,0\n",
+            "t,crop,p_dead,label,pos,slide\n0,1,0.1,true,0,0\n",
         )
         .unwrap();
         fs::write(
             second.join("results/predictions.csv"),
-            "t,crop,p_dead,label,pos,slide\n0,1,0.9,true,1,0\n",
+            "t,crop,p_dead,label,pos,slide\n0,1,0.9,false,1,0\n",
         )
         .unwrap();
 
@@ -246,8 +246,8 @@ mod scheduler_stage_tests {
                 .count(),
             1
         );
-        assert!(merged.contains("false,0,0"));
-        assert!(merged.contains("true,1,0"));
+        assert!(merged.contains("true,0,0"));
+        assert!(merged.contains("false,1,0"));
         fs::remove_dir_all(root).unwrap();
     }
 }
