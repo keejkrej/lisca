@@ -1,18 +1,22 @@
 import type { ContrastWindow } from "@lisca/contracts";
 import type { FrameResult } from "@lisca/utils";
-import { clamp, defaultContrastDomain } from "@lisca/utils";
+import { clamp, defaultContrastDomain, orderedContrastWindow } from "@lisca/utils";
 
 export function frameWithContrast(
   frame: FrameResult,
   contrast: ContrastWindow | null,
 ): FrameResult {
   if (!contrast) return frame;
-  return { ...frame, appliedContrast: contrast };
+  const domain = frame.contrastDomain ?? defaultContrastDomain(frame.pixelType);
+  return { ...frame, appliedContrast: orderedContrastWindow(contrast, domain) };
 }
 
 export function toDisplayFrame(frame: FrameResult, contrast: ContrastWindow | null): FrameResult {
   const domain = frame.contrastDomain ?? defaultContrastDomain(frame.pixelType);
-  const applied = contrast ?? frame.appliedContrast ?? frame.suggestedContrast ?? domain;
+  const applied = orderedContrastWindow(
+    contrast ?? frame.appliedContrast ?? frame.suggestedContrast ?? domain,
+    domain,
+  );
   if (frame.pixelType === "uint8" || frame.pixelType === "uint8clamped") {
     return frameWithContrast(frame, applied);
   }
