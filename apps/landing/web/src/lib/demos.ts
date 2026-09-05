@@ -21,7 +21,7 @@ export const landingDemos = [
     description:
       "ibidi micropattern brightfield field — align the grid on the full acquisition frame, mark occupied micropatterns, and switch square or hex layout. Annotator previews below crop the same files to a single ROI per cell.",
     href: ALIGNER_DEMO_PATH,
-    linkLabel: "Try Aligner in your browser",
+    linkLabel: "Use your own file",
     Demo: AlignDemo,
   },
   {
@@ -30,7 +30,7 @@ export const landingDemos = [
     description:
       "ibidi fluorescence composite cropped to a single ROI — the cell-level frame you annotate after alignment. Switch sample files from the dropdown; use label chips to change colours. Segmentation draws outlines; Classification assigns one label to the whole cell.",
     href: ANNOTATOR_DEMO_PATH,
-    linkLabel: "Try Annotator in your browser",
+    linkLabel: "Use your own file",
     Demo: AnnotatorDemo,
   },
   {
