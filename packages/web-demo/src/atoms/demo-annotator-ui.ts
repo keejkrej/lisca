@@ -149,6 +149,35 @@ function resetAnnotationState(
   };
 }
 
+function createMaskRemap(
+  oldLabels: AnnotationLabel[],
+  newLabels: AnnotationLabel[],
+): (mask: Uint8Array) => Uint8Array {
+  const newByteById = new Map(newLabels.map((label, index) => [label.id, index + 1]));
+  const oldIds = new Set(oldLabels.map((label) => label.id));
+  const byteMap = new Map<number, number>();
+  for (let oldIndex = 0; oldIndex < oldLabels.length; oldIndex += 1) {
+    const oldByte = oldIndex + 1;
+    const oldId = oldLabels[oldIndex]!.id;
+    const survivedByte = newByteById.get(oldId);
+    if (survivedByte !== undefined) {
+      byteMap.set(oldByte, survivedByte);
+    } else {
+      const replacement = newLabels[oldIndex];
+      const renamedInPlace = replacement !== undefined && !oldIds.has(replacement.id);
+      byteMap.set(oldByte, renamedInPlace ? oldByte : 0);
+    }
+  }
+  return (mask) => {
+    const next = new Uint8Array(mask.length);
+    for (let index = 0; index < mask.length; index += 1) {
+      const value = mask[index] ?? 0;
+      next[index] = value === 0 ? 0 : (byteMap.get(value) ?? 0);
+    }
+    return next;
+  };
+}
+
 export const demoAnnotatorUiActions = {
   setActiveLabelId(
     set: (update: StateUpdater<DemoAnnotatorUiState>) => void,
@@ -205,15 +234,23 @@ export const demoAnnotatorUiActions = {
     patchDemoAnnotatorUi(set, { status });
   },
   saveLabels(set: (update: StateUpdater<DemoAnnotatorUiState>) => void, labels: AnnotationLabel[]) {
-    patchDemoAnnotatorUi(set, (state) => ({
-      ...state,
-      labels,
-      activeLabelId: labels.some((label) => label.id === state.activeLabelId)
-        ? state.activeLabelId
-        : (labels[0]?.id ?? null),
-      labelDialogOpen: false,
-      labelError: null,
-    }));
+    patchDemoAnnotatorUi(set, (state) => {
+      const remap = createMaskRemap(state.labels, labels);
+      return {
+        ...state,
+        labels,
+        annotationHistory: state.annotationHistory.map((value) => ({
+          ...value,
+          mask: remap(value.mask),
+        })),
+        annotationSaved: { ...state.annotationSaved, mask: remap(state.annotationSaved.mask) },
+        activeLabelId: labels.some((label) => label.id === state.activeLabelId)
+          ? state.activeLabelId
+          : (labels[0]?.id ?? null),
+        labelDialogOpen: false,
+        labelError: null,
+      };
+    });
   },
   applyLoadedImage(
     set: (update: StateUpdater<DemoAnnotatorUiState>) => void,
