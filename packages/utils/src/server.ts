@@ -187,7 +187,7 @@ export function resolveLiscaHttpBaseUrl(options: {
 }): string {
   const fromHttpQuery = options.searchParams?.get("liscaHttp");
   if (fromHttpQuery?.trim()) {
-    return decodeURIComponent(fromHttpQuery.trim());
+    return fromHttpQuery.trim();
   }
   const active = options.activeAddress ?? getLiscaActiveServerAddress();
   if (active) {
