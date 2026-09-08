@@ -4,7 +4,6 @@ import { describe, expect, it } from "vitest";
 import {
   allAlignPositionsSaved,
   applyDockVariationExcludeWithEdge,
-  applyVariationExcludePreview,
   applyVariationExcludeWithEdge,
   cellsBelowVariationThreshold,
   cropPositionsAfterSkip,
@@ -80,32 +79,6 @@ describe("align-session helpers", () => {
       threshold: 3,
     });
     expect(updateVariationExcludeThreshold(null, 3)).toBeNull();
-  });
-
-  it("applyVariationExcludePreview merges variation cells into current exclusions", () => {
-    const applied = applyVariationExcludePreview([{ i: 2, j: 2 }], {
-      preview: {
-        threshold: 5,
-        eligibleCellCount: 2,
-        cellScores: [
-          { i: 0, j: 0, score: 1 },
-          { i: 1, j: 1, score: 9 },
-        ],
-        histogramBins: [],
-        scoreMin: 1,
-        scoreMax: 9,
-      },
-      threshold: 5,
-    });
-    expect(applied.variationCells).toEqual([{ i: 0, j: 0 }]);
-    expect(applied.eligibleCellCount).toBe(2);
-    expect(applied.cells).toEqual(
-      expect.arrayContaining([
-        { i: 0, j: 0 },
-        { i: 2, j: 2 },
-      ]),
-    );
-    expect(applied.cells).toHaveLength(2);
   });
 
   it("mergeAlignGridEdgeExclusion adds visible edge cells", () => {
