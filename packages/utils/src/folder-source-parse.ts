@@ -10,12 +10,12 @@ function escapeRegex(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-export function templateRegex(template: string): RegExp {
+export function templateRegex(template: string, caseInsensitive = true): RegExp {
   const source = template
     .split(/(\{(?:p|position|t|time|c|channel|z)\})/g)
     .map((part) => (part.startsWith("{") && part.endsWith("}") ? "(.+?)" : escapeRegex(part)))
     .join("");
-  return new RegExp(`^${source}$`, "i");
+  return new RegExp(`^${source}$`, caseInsensitive ? "i" : "");
 }
 
 export function filenameStem(name: string): string {
@@ -67,8 +67,8 @@ export async function detectPresetAtIndex(
   if (presetIndex >= FOLDER_SOURCE_TEMPLATE_PRESETS.length) return null;
 
   const preset = FOLDER_SOURCE_TEMPLATE_PRESETS[presetIndex];
-  const subfolderRegex = templateRegex(preset.subfolderTemplate);
-  const filenameRegex = templateRegex(preset.filenameTemplate);
+  const subfolderRegex = templateRegex(preset.subfolderTemplate, true);
+  const filenameRegex = templateRegex(preset.filenameTemplate, false);
   const matchingDirectories = directories.filter((entry) => subfolderRegex.test(entry.name));
   const matched = await findMatchingDirectory(
     matchingDirectories.slice(0, 12),
