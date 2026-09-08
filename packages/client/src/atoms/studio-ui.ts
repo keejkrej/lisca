@@ -399,11 +399,15 @@ export const studioWizardActions = {
   setAssayId(set: (update: StateUpdater<StudioWizardState>) => void, assayId: AssayId | null) {
     const nextAssayId = enabledAssayId(assayId);
     patchStudioWizard(set, (current) => {
-      const defaultInterval = defaultIntervalMinutesForAssay(nextAssayId);
+      const priorDefault = defaultIntervalMinutesForAssay(current.assayId);
+      const nextDefault = defaultIntervalMinutesForAssay(nextAssayId);
       return {
         ...current,
         assayId: nextAssayId,
-        intervalValue: current.intervalValue ?? defaultInterval ?? current.intervalValue,
+        intervalValue:
+          current.intervalValue == null || current.intervalValue === priorDefault
+            ? nextDefault
+            : current.intervalValue,
         analysis: analysisConfigForAssay(nextAssayId, current.analysis) ?? null,
       };
     });

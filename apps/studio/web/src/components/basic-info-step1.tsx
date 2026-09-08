@@ -68,8 +68,10 @@ export function BasicInfoStep1(props: { hostPort: HostFilePickerOperations }) {
     studioWizardActions.setAnalysis(setWizard, p);
   const setDataSourceKind = (kind: StudioDataSourceKind) =>
     studioWizardActions.setDataSourceKind(setWizard, kind);
-  const intervalPlaceholder = () =>
-    `e.g. ${defaultIntervalMinutesForAssay(wizard().assayId) ?? 10}…`;
+  const intervalPlaceholder = () => {
+    const defaultMinutes = defaultIntervalMinutesForAssay(wizard().assayId);
+    return defaultMinutes != null ? `e.g. ${defaultMinutes}…` : "Enter interval…";
+  };
   const [openDataModalOpen, setOpenDataModalOpen] = createSignal(false);
   const [pathPicker, setPathPicker] = createSignal<StudioPathPickerState>(null);
   const [folderSourcePath, setFolderSourcePath] = createSignal<string | null>(null);
