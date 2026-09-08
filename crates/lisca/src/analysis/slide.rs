@@ -37,10 +37,10 @@ pub fn build_slide_mapping_from_parts(
 
     let mut mapping = BTreeMap::new();
     for row in samples.iter() {
+        // Empty/whitespace names are kept (trimmed) so analysis stages still run
+        // for the channel; parity with the Python goal source, which defers the
+        // empty-name filter to plot/results grouping (`named_sample_mapping`).
         let sample_name = row.name.trim().to_string();
-        if sample_name.is_empty() {
-            continue;
-        }
         let slide_channel = row.slide_channel;
         let (mask, signal) = if let Some((mask, signal)) = overrides.get(&slide_channel) {
             (*mask, signal.clone())
@@ -183,6 +183,92 @@ fn parse_position(raw: &str) -> Result<u32, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::protocol::{
+        AssayAnalysisConfig, AssayChannels, AssaySampleRow, AssaySignalChannels,
+    };
+
+    fn sample_row(slide_channel: u32, name: &str, positions: &str) -> AssaySampleRow {
+        AssaySampleRow {
+            name: name.to_string(),
+            positions: positions.to_string(),
+            slide_channel,
+        }
+    }
+
+    fn analysis_with_channels(mask: u32, signal: Vec<u32>) -> AssayAnalysisConfig {
+        AssayAnalysisConfig {
+            channels: Some(AssayChannels {
+                mask,
+                signal: AssaySignalChannels(signal),
+            }),
+            ..Default::default()
+        }
+    }
+
+    #[test]
+    fn keeps_empty_name_sample_in_mapping() {
+        // Scenario A from the bug report: the Python goal source keeps an
+        // empty-named row and runs analysis for it; the Rust driver must not
+        // drop it (nor error out) at mapping-construction time.
+        let samples = AssaySamples(vec![sample_row(2, "   ", "1:3")]);
+        let analysis = analysis_with_channels(0, vec![1]);
+        let mapping = build_slide_mapping_from_parts(&samples, Some(&analysis))
+            .expect("empty-name row produces a mapping");
+        assert_eq!(mapping.keys().copied().collect::<Vec<_>>(), vec![2]);
+        let entry = mapping.get(&2).expect("channel 2 present");
+        assert_eq!(entry.sample_name, "");
+        assert_eq!(entry.positions, vec![1, 2, 3]);
+        assert_eq!(entry.mask, 0);
+        assert_eq!(entry.signal, vec![1]);
+    }
+
+    #[test]
+    fn keeps_empty_name_channel_alongside_named_channel() {
+        // Scenario B: an empty-name channel must remain in the mapping next to
+        // a named one, so its `analysis/Pos{N}` tree is still produced.
+        let samples = AssaySamples(vec![sample_row(1, "   ", "1"), sample_row(2, "condB", "2")]);
+        let analysis = analysis_with_channels(0, vec![1]);
+        let mapping = build_slide_mapping_from_parts(&samples, Some(&analysis))
+            .expect("both channels present");
+        assert_eq!(mapping.keys().copied().collect::<Vec<_>>(), vec![1, 2]);
+        assert_eq!(mapping.get(&1).unwrap().sample_name, "");
+        assert_eq!(mapping.get(&2).unwrap().sample_name, "condB");
+    }
+
+    #[test]
+    fn empty_name_row_wins_for_duplicate_slide_channel() {
+        // Scenario C: duplicate `slideChannel` is last-writer-wins in both the
+        // Rust driver and the Python goal source. With the skip removed, the
+        // later (empty-named) row overwrites the earlier named row, so the
+        // later row's positions are the ones analyzed.
+        let samples = AssaySamples(vec![sample_row(3, "condA", "1"), sample_row(3, "", "2")]);
+        let analysis = analysis_with_channels(0, vec![1]);
+        let mapping = build_slide_mapping_from_parts(&samples, Some(&analysis))
+            .expect("duplicate channel resolves");
+        assert_eq!(mapping.keys().copied().collect::<Vec<_>>(), vec![3]);
+        let entry = mapping.get(&3).unwrap();
+        assert_eq!(entry.sample_name, "");
+        assert_eq!(entry.positions, vec![2]);
+    }
+
+    #[test]
+    fn errors_when_samples_array_is_empty() {
+        // The empty-mapping error still fires only when there are no sample
+        // rows at all (the goal source's `validate_slide_mapping`).
+        let samples = AssaySamples(vec![]);
+        let analysis = analysis_with_channels(0, vec![1]);
+        let error = build_slide_mapping_from_parts(&samples, Some(&analysis))
+            .expect_err("empty samples array errors");
+        assert_eq!(error, "no samples for selected slide channel");
+    }
+
+    #[test]
+    fn trims_whitespace_only_name_but_keeps_row() {
+        let samples = AssaySamples(vec![sample_row(4, "\t name with space \n", "5")]);
+        let analysis = analysis_with_channels(0, vec![1]);
+        let mapping = build_slide_mapping_from_parts(&samples, Some(&analysis)).unwrap();
+        assert_eq!(mapping.get(&4).unwrap().sample_name, "name with space");
+    }
 
     #[test]
     fn slide_mapping_serializes_snake_case() {

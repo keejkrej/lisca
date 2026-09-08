@@ -9,9 +9,17 @@ use crate::analysis::timeseries::resolve_slide_channel;
 /// Auto layout (`columns = None`) prefers [`subplot_grid_shape`] instead.
 pub const DEFAULT_PLOT_COLUMNS: usize = 3;
 
+/// Display labels for the in-tree killing plot path: one entry per slide
+/// channel whose `sample_name` is non-empty (after trimming in
+/// [`build_slide_mapping_from_parts`]). Channels with an empty name are
+/// omitted here so their subplot titles fall back to the channel id at the
+/// call sites (`labels.get(&ch).unwrap_or_else(...)`). This mirrors the
+/// Python goal source's `named_sample_mapping`, which drops empty names for
+/// plot/results grouping while analysis stages still ran for every channel.
 pub fn slide_channel_labels(mapping: &SlideMapping) -> BTreeMap<u32, String> {
     mapping
         .iter()
+        .filter(|(_, entry)| !entry.sample_name.is_empty())
         .map(|(channel, entry)| (*channel, entry.sample_name.clone()))
         .collect()
 }
@@ -236,6 +244,44 @@ fn quartile(values: &[f64], q: f64) -> Option<f64> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn slide_channel_labels_drop_empty_names_for_plot_grouping() {
+        // Mirrors the Python goal source's `named_sample_mapping`: empty-name
+        // channels are omitted from the plot labels so their subplot titles
+        // fall back to the channel id (analysis still ran for them).
+        use crate::analysis::slide::SlideChannelMapping;
+        let mut mapping = SlideMapping::new();
+        mapping.insert(
+            1,
+            SlideChannelMapping {
+                positions: vec![1],
+                signal: vec![1],
+                mask: 0,
+                sample_name: "condA".to_string(),
+            },
+        );
+        mapping.insert(
+            2,
+            SlideChannelMapping {
+                positions: vec![1, 2, 3],
+                signal: vec![1],
+                mask: 0,
+                sample_name: "".to_string(),
+            },
+        );
+        let labels = slide_channel_labels(&mapping);
+        assert_eq!(labels.keys().copied().collect::<Vec<_>>(), vec![1]);
+        assert_eq!(labels.get(&1), Some(&"condA".to_string()));
+        assert!(labels.get(&2).is_none());
+        // The killing plot title resolution falls back to the channel id when
+        // the empty-name label is absent.
+        assert_eq!(sample_subplot_title(1, 4, &mapping), "condA (4 traces)");
+        assert_eq!(
+            sample_subplot_title(2, 4, &mapping),
+            "slide channel 2 (4 traces)"
+        );
+    }
 
     #[test]
     fn subplot_grid_shape_one_to_twelve() {
