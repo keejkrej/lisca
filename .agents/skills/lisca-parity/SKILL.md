@@ -67,7 +67,7 @@ Prefer this order:
    ```sh
    # golden
    uv run --directory ../lisca-transfection-assay transfection <stage> WORKSPACE …
-   cp WORKSPACE/results/<artifact>.csv /tmp/<artifact>-python.csv
+   cp WORKSPACE/analysis/PosN/<artifact>.csv /tmp/<artifact>-python.csv
 
    # candidate
    cargo build -p lisca --release --bin lisca-analyze
