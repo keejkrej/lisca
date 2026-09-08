@@ -292,6 +292,7 @@ export const demoAnnotatorUiActions = {
       frame: null,
       error: null,
       status: null,
+      ...resetAnnotationState(emptyAnnotationValue(null)),
     }));
   },
   commitAnnotation(
