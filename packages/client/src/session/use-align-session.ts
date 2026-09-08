@@ -33,7 +33,6 @@ import {
 } from "solid-js";
 import { useSelectedAtomValue } from "../atoms/selected-atom-value";
 import {
-  applyVariationExcludePreview,
   applyVariationExcludeWithEdge,
   cropPositionsAfterSkip,
   cropRequestIdForCancellation,

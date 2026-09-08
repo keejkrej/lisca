@@ -127,22 +127,6 @@ export function updateVariationExcludeThreshold(
   return current ? { ...current, threshold } : null;
 }
 
-export function applyVariationExcludePreview(
-  currentExcludedCells: AlignGridCellCoord[],
-  preview: VariationExcludePreview,
-): {
-  cells: AlignGridCellCoord[];
-  variationCells: AlignGridCellCoord[];
-  eligibleCellCount: number;
-} {
-  const variationCells = cellsBelowVariationThreshold(preview.preview, preview.threshold);
-  return {
-    cells: mergeExcludedAlignGridCells(currentExcludedCells, variationCells),
-    variationCells,
-    eligibleCellCount: preview.preview.eligibleCellCount,
-  };
-}
-
 /** Var-exclude apply paired with edge exclude (same merge as auto-exclude). */
 export function applyVariationExcludeWithEdge(
   currentExcludedCells: AlignGridCellCoord[],
