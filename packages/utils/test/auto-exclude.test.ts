@@ -3,12 +3,17 @@ import { describe, expect, it } from "vitest";
 import { computeAutoExcludePreview, maxEntropyThresholdOnHistogram } from "../src/auto-exclude";
 
 describe("maxEntropyThresholdOnHistogram", () => {
-  it("splits a bimodal histogram", () => {
+  it("splits a bimodal histogram at the bin edge between the modes", () => {
     const counts = [25, 25, 25, 25];
-    const centers = [5, 15, 185, 205];
-    const threshold = maxEntropyThresholdOnHistogram(counts, centers);
-    expect(threshold).toBeGreaterThanOrEqual(15);
-    expect(threshold).toBeLessThanOrEqual(185);
+    const edges = [0, 10, 20, 30, 40];
+    const threshold = maxEntropyThresholdOnHistogram(counts, edges);
+    // Kapur's argmax assigns bins [0,1] to the background class and bins [2,3]
+    // to the foreground class; the threshold is the boundary edge between bin 1
+    // and bin 2 (20), NOT the center of bin 1 (15). Returning a bin center would
+    // exclude only the lower half of the boundary background bin.
+    expect(threshold).toBe(20);
+    expect(threshold).toBeGreaterThanOrEqual(10);
+    expect(threshold).toBeLessThanOrEqual(30);
   });
 });
 
