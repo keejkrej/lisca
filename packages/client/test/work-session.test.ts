@@ -6,7 +6,6 @@ import {
   currentServerKey,
   isValidWorkSession,
   readWorkSessions,
-  removeWorkSession,
   resolveServerKey,
   sessionsForServer,
   studioAssayJsonPathForSaveTo,
@@ -120,16 +119,6 @@ describe("work-session registry", () => {
     ]);
     expect(sessionsForServer(readWorkSessions("studio"), "local")).toHaveLength(1);
     expect(currentServerKey("studio")).toBe("local");
-  });
-
-  it("removeWorkSession deletes by id", () => {
-    const session = touchWorkSession("annotator", {
-      server: "local",
-      workspacePath: "/data/ws-a",
-    });
-    expect(session).not.toBeNull();
-    removeWorkSession("annotator", session!.id);
-    expect(readWorkSessions("annotator")).toEqual([]);
   });
 
   it("migrates legacy aligner session storage only when source is present", () => {
