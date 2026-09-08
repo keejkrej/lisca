@@ -60,19 +60,3 @@ export function decodeJsonEither<S extends Schema.ConstraintDecoder<unknown>>(
 ) {
   return schemaDecoderEither(schema)(input);
 }
-
-export async function readJsonResponse<S extends Schema.ConstraintDecoder<unknown>>(
-  response: Response,
-  schema: S,
-): Promise<S["Type"]> {
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(text || `Request failed with ${response.status}`);
-  }
-  const json: unknown = await response.json();
-  const result = schemaDecoderEither(schema)(json);
-  if (Result.isFailure(result)) {
-    throw new Error(formatSchemaError(result.failure));
-  }
-  return result.success;
-}
