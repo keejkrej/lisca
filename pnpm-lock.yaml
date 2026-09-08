@@ -331,12 +331,18 @@ importers:
         specifier: ^1.9.0
         version: 1.9.14
     devDependencies:
+      '@solidjs/testing-library':
+        specifier: 'catalog:'
+        version: 0.8.10(solid-js@1.9.14)
       '@tailwindcss/vite':
         specifier: 'catalog:'
         version: 4.3.3(@voidzero-dev/vite-plus-core@0.3.0(@types/node@26.1.2)(esbuild@0.28.1)(jiti@2.7.0)(typescript@5.9.3))
       '@tanstack/router-plugin':
         specifier: 'catalog:'
         version: 1.168.23(@voidzero-dev/vite-plus-core@0.3.0(@types/node@26.1.2)(esbuild@0.28.1)(jiti@2.7.0)(typescript@5.9.3))(esbuild@0.28.1)(rollup@4.62.4)(vite-plugin-solid@2.11.14(@voidzero-dev/vite-plus-core@0.3.0(@types/node@26.1.2)(esbuild@0.28.1)(jiti@2.7.0)(typescript@5.9.3))(solid-js@1.9.14))
+      jsdom:
+        specifier: ^26.1.0
+        version: 26.1.0
       tailwindcss:
         specifier: 'catalog:'
         version: 4.3.3
@@ -349,6 +355,9 @@ importers:
       vite-plugin-solid:
         specifier: 'catalog:'
         version: 2.11.14(@voidzero-dev/vite-plus-core@0.3.0(@types/node@26.1.2)(esbuild@0.28.1)(jiti@2.7.0)(typescript@5.9.3))(solid-js@1.9.14)
+      vitest:
+        specifier: 'catalog:'
+        version: 3.2.7(@types/node@26.1.2)(esbuild@0.28.1)(jiti@2.7.0)(jsdom@26.1.0)(typescript@5.9.3)
 
   apps/studio/demo:
     dependencies:

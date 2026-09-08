@@ -4,7 +4,8 @@ import IconArrowUpRightRegular from "phosphor-icons-solid/IconArrowUpRightRegula
 
 /**
  * Inline demo frame — mounts immediately with a preloaded sample frame. File upload
- * and export are disabled here; the link opens the full demo route for your own data.
+ * and export are disabled here; the link opens the full demo route, and its label
+ * (`props.demo.linkLabel`) reflects what the destination actually supports.
  */
 export function DemoEmbed(props: { demo: LandingDemo; index: number }) {
   const Demo = props.demo.Demo;
@@ -22,7 +23,7 @@ export function DemoEmbed(props: { demo: LandingDemo; index: number }) {
           to={props.demo.href}
           class="landing-control inline-flex shrink-0 items-center gap-1 px-2 py-1 font-mono text-xs"
         >
-          Use your own file
+          {props.demo.linkLabel}
           <IconArrowUpRightRegular class="size-3.5" />
         </Link>
       </header>
