@@ -51,9 +51,10 @@ export function useAlignCanvasSelectionHandlers(
 
   const handlePointerDown = (event: AlignCanvasPointerEvent): boolean => {
     const { disabled = false, enabled = false, frame, grid } = options();
-    excludedRef.current = options().excludedCells;
     if (!enabled || disabled || !frame || !grid.enabled) return false;
     if (event.pointerType === "mouse" && event.button !== 0) return false;
+    if (strokeRef.current) return false;
+    excludedRef.current = options().excludedCells;
     event.preventDefault();
     if (!event.framePoint) return true;
     const cell = findAlignGridCellAtPoint(frame, grid, event.framePoint.x, event.framePoint.y);
