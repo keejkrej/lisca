@@ -1,7 +1,7 @@
 import type { AnalysisProgress, StudioAnalysisCsvFile } from "@lisca/contracts";
 import { useAnnotateStateCore } from "@lisca/client/use-annotate-state-core";
 import { useCanvasResourceTransaction, useCanvasTransientStatus } from "@lisca/ui/features";
-import { useAtom } from "@effect/atom-solid";
+import { useAtom, useAtomSet } from "@effect/atom-solid";
 import { createEffect, onCleanup } from "solid-js";
 import { useNavigate } from "@tanstack/solid-router";
 import { runClientEffect } from "@lisca/client/runtime";
@@ -16,6 +16,7 @@ import {
   saveAnnotationLabelsAtom,
   saveRoiFrameAnnotationAtom,
 } from "../atoms/studio-query-atoms";
+import { startAnalysisMutationAtom } from "../atoms/studio-analysis-atoms";
 import { studioAnnotateUiActions, studioAnnotateUiAtom } from "./studio-annotate-store";
 import {
   buildStudioAssayJsonFromWizard,
@@ -67,6 +68,7 @@ export function useStudioAnnotateState(): StudioAnnotateState {
   const navigate = useNavigate();
   const [ui, setUi] = useAtom(() => studioAnnotateUiAtom);
   const workspace = useStudioWorkspaceSync(activeWorkspacePath);
+  const runStartAnalysis = useAtomSet(() => startAnalysisMutationAtom, { mode: "promise" });
   const annotate = useAnnotateStateCore({
     annotatorClient: studioClient,
     toErrorMessage,
@@ -200,12 +202,10 @@ export function useStudioAnnotateState(): StudioAnnotateState {
           resultFiles: [],
           error: null,
         });
-        const initialProgress = await runClientEffect(
-          studioClient.startAnalysis({
-            workspacePath,
-            requestId,
-          }),
-        );
+        const initialProgress = await runStartAnalysis({
+          workspacePath,
+          requestId,
+        });
         if (!isCurrentRun()) return;
         setAnalysisProgress(initialProgress);
         const stop = studioClient.onAnalysisProgress(requestId, onProgress);
