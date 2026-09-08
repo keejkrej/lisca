@@ -6,9 +6,10 @@ from pathlib import Path
 
 import numpy as np
 import tifffile
+from PIL import Image
 
 FILENAME_PATTERN = re.compile(
-    r"^img_channel(?P<channel>\d+)_position(?P<position>\d+)_time(?P<time>\d+)_z(?P<z>\d+)\.(?:tif|tiff)$",
+    r"^img_channel(?P<channel>\d+)_position(?P<position>\d+)_time(?P<time>\d+)_z(?P<z>\d+)\.(?:tif|tiff|png|jpg|jpeg)$",
     re.IGNORECASE,
 )
 
@@ -62,5 +63,9 @@ def find_source_frame_path(source_root: Path, request: SourceFrameRequest) -> Pa
 
 
 def load_source_frame(path: Path) -> np.ndarray:
-    frame = tifffile.imread(path)
+    ext = path.suffix.lower().lstrip(".")
+    if ext in ("tif", "tiff"):
+        frame = tifffile.imread(path)
+    else:
+        frame = np.asarray(Image.open(path))
     return np.asarray(frame, dtype=np.float64)
