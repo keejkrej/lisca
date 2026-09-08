@@ -2,10 +2,11 @@
 name: lisca-parity
 description: >
   Ensure scientific and contract parity between mature Python assay packages
-  (lisca-*-assay) and their Rust rewrites in this monorepo. Use when the user
-  mentions parity, rust-parity, Python vs Rust analysis, lisca-analyze,
-  transfection/killing/binding assay ports, rewriting a lisca-* assay into
-  crates/lisca, comparing stage CSVs, or runs /lisca-parity.
+  (lisca-*-assay) and their Rust implementations (assay sidecar or this
+  monorepo). Use when the user mentions parity, rust-parity, Python vs Rust
+  analysis, lisca-analyze, transfection/killing/binding assay ports, importing
+  or porting a lisca-* assay into Rust, comparing stage CSVs, or runs
+  /lisca-parity.
 ---
 
 # LiSCA assay parity
