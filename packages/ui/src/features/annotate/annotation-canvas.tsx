@@ -166,7 +166,7 @@ export function AnnotationCanvas(props: AnnotationCanvasProps) {
       const points = lassoPoints();
       if (points.length > 1) {
         ctx.strokeStyle = eraseMode() ? "rgba(248,113,113,0.95)" : "rgba(250,204,21,0.95)";
-        ctx.lineWidth = brushMode() ? props.brushSize * rect.scale : 2;
+        ctx.lineWidth = brushMode() ? props.brushSize * 2 * rect.scale : 2;
         ctx.lineCap = "round";
         ctx.lineJoin = "round";
         ctx.beginPath();
