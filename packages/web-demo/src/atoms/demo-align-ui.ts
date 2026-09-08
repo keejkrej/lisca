@@ -2,7 +2,12 @@ import type { AlignGridCellCoord, AlignGridState, ContrastWindow } from "@lisca/
 import type { VariationExcludePreviewState } from "@lisca/ui/features";
 import type { FrameResult } from "@lisca/utils";
 import { Atom } from "effect/unstable/reactivity";
-import { createDefaultAlignGrid, type AlignGridToolMode } from "@lisca/utils";
+import {
+  createDefaultAlignGrid,
+  defaultContrastDomain,
+  orderedContrastWindow,
+  type AlignGridToolMode,
+} from "@lisca/utils";
 
 import type { SourceImageFormat } from "../browser/source-image-format";
 import type { StateUpdater } from "./state-utils";
@@ -123,7 +128,16 @@ export const demoAlignUiActions = {
     set: (update: StateUpdater<DemoAlignUiState>) => void,
     contrast: ContrastWindow | null,
   ) {
-    patchDemoAlignUi(set, { contrast });
+    patchDemoAlignUi(set, (state) => ({
+      ...state,
+      contrast:
+        contrast === null
+          ? contrast
+          : orderedContrastWindow(
+              contrast,
+              state.frame?.contrastDomain ?? defaultContrastDomain(state.frame?.pixelType),
+            ),
+    }));
   },
   setGrid(
     set: (update: StateUpdater<DemoAlignUiState>) => void,
