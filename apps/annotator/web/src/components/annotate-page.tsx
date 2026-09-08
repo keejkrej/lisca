@@ -12,7 +12,7 @@ export function AnnotatePage() {
   const shell = useAnnotateShell();
 
   return (
-    <AppShell variant="stage">
+    <AppShell>
       <AppShell.Body>
         <AppShell.Left>
           <AnnotatorLeft />

@@ -53,7 +53,7 @@ function AssayPage() {
   };
 
   return (
-    <AppShell variant="stage">
+    <AppShell>
       <AppShell.Body>
         <AppShell.Left widthClass="w-64">
           <StudioLeft />

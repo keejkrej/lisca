@@ -67,7 +67,7 @@ export function AlignerMain() {
   });
   return (
     <>
-      <ViewportCard variant="stage">
+      <ViewportCard>
         <StageCanvas
           aspect="wide"
           captionLeft={`Position ${positionLabel()}`}

@@ -1,8 +1,9 @@
 import { AnnotationModeToggle, LabelCreationDialog } from "@lisca/ui/features";
-import { AppShell, RailSidebar } from "@lisca/ui/shell";
+import { RailSidebar } from "@lisca/ui/shell";
 import {
   DemoAnnotatorRoot,
   DemoNavbar,
+  DemoShell,
   DEMO_SAMPLE_IMAGES,
   resolveSelectedSampleId,
   useDemoAnnotatorState,
@@ -67,37 +68,37 @@ function AnnotatorDemoView(props: { embedded: boolean }) {
     <Show
       when={!props.embedded}
       fallback={
-        <AppShell>
-          <AppShell.Header>{navbar}</AppShell.Header>
-          <AppShell.Body>
-            <AppShell.MainColumn>
-              <AppShell.Main>
+        <DemoShell>
+          <DemoShell.Header>{navbar}</DemoShell.Header>
+          <DemoShell.Body>
+            <DemoShell.MainColumn>
+              <DemoShell.Main>
                 <DemoAnnotatorMain embedded state={state} />
-              </AppShell.Main>
+              </DemoShell.Main>
               <DemoInlineAnnotatorToolbar embedded state={state} />
-            </AppShell.MainColumn>
-          </AppShell.Body>
-        </AppShell>
+            </DemoShell.MainColumn>
+          </DemoShell.Body>
+        </DemoShell>
       }
     >
-      <AppShell variant="stage">
-        <AppShell.Body>
-          <AppShell.Left>
+      <DemoShell>
+        <DemoShell.Header>{navbar}</DemoShell.Header>
+        <DemoShell.Body>
+          <DemoShell.Left widthClass="w-64">
             <DemoAnnotatorLeft state={state} />
-          </AppShell.Left>
-          <AppShell.MainColumn>
-            <AppShell.TopBar>{navbar}</AppShell.TopBar>
-            <AppShell.Main>
+          </DemoShell.Left>
+          <DemoShell.MainColumn>
+            <DemoShell.Main>
               <DemoAnnotatorMain state={state} />
-            </AppShell.Main>
-          </AppShell.MainColumn>
-          <AppShell.Right>
+            </DemoShell.Main>
+          </DemoShell.MainColumn>
+          <DemoShell.Right widthClass="w-64">
             <RailSidebar>
               <DemoAnnotatorRight state={state} />
               <DemoAnnotatorSaveSection state={state} />
             </RailSidebar>
-          </AppShell.Right>
-        </AppShell.Body>
+          </DemoShell.Right>
+        </DemoShell.Body>
         <LabelCreationDialog
           error={state().labelError}
           labels={state().labels}
@@ -108,7 +109,7 @@ function AnnotatorDemoView(props: { embedded: boolean }) {
           onOpenChange={state().setLabelDialogOpen}
           onSave={state().saveLabels}
         />
-      </AppShell>
+      </DemoShell>
     </Show>
   );
 

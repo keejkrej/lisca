@@ -57,7 +57,7 @@ export function AnnotatorMain() {
   );
 
   return (
-    <ViewportCard variant="stage">
+    <ViewportCard>
       <StageCanvas
         aspect="square"
         captionLeft={`Site ${nav.selection.roi ?? "—"} · Channel ${nav.selection.channel ?? "—"}`}
