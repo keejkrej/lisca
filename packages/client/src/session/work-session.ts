@@ -4,7 +4,6 @@ import {
   LISCA_APP_DEFAULT_PORTS,
   parseLiscaServerAddress,
   readLiscaActiveServerForApp,
-  writeLiscaActiveServerForApp,
   type LiscaAppId,
 } from "@lisca/utils";
 import {
@@ -56,10 +55,6 @@ export function resolveServerKey(
 
 export function readPersistedActiveServerAddress(appId: LiscaAppId): string | null {
   return readLiscaActiveServerForApp(appId);
-}
-
-export function writePersistedActiveServerAddress(appId: LiscaAppId, address: string | null): void {
-  writeLiscaActiveServerForApp(appId, address);
 }
 
 function pathLabel(path: string): string {
@@ -165,13 +160,6 @@ export function touchWorkSession(
   const updated = [draft, ...sessions].slice(0, WORK_SESSIONS_CAP);
   writeWorkSessions(appId, updated);
   return draft;
-}
-
-export function removeWorkSession(appId: LiscaAppId, sessionId: string): void {
-  writeWorkSessions(
-    appId,
-    readWorkSessions(appId).filter((session) => session.id !== sessionId),
-  );
 }
 
 export function currentServerKey(appId: LiscaAppId): string {
