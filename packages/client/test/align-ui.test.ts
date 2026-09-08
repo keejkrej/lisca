@@ -290,17 +290,70 @@ describe("align session persistence", () => {
     expect(persist.read()).toBeNull();
   });
 
-  it("round-trips both zoom locks in Studio session storage", () => {
+  it("round-trips workspace, source, selection, and both zoom locks in Studio session storage", () => {
     const persist = createStudioPersist("test-studio-align-session");
+    const source = {
+      kind: "folder" as const,
+      path: "/data/src",
+      subfolderTemplate: "Pos{pos}",
+      filenameTemplate: "img.tif",
+    };
+    const selection = { pos: 1, channel: 2, time: 3, z: 4 };
     persist.write({
       ...createInitialAlignUiState(),
+      workspacePath: "/data/ws",
+      source,
+      selection,
       spacingZoomLocked: false,
       patternZoomLocked: false,
     });
 
-    expect(persist.read()).toMatchObject({
+    expect(persist.read()).toEqual({
+      workspacePath: "/data/ws",
+      source,
+      selection,
       spacingZoomLocked: false,
       patternZoomLocked: false,
     });
+  });
+
+  it("Studio persist returns null when source is missing but workspace is set", () => {
+    const persist = createStudioPersist("test-studio-align-session");
+    persist.write({
+      ...createInitialAlignUiState(),
+      workspacePath: "/data/ws",
+      source: null,
+    });
+    expect(persist.read()).toBeNull();
+  });
+
+  it("Studio persist returns null when workspacePath is missing", () => {
+    const persist = createStudioPersist("test-studio-align-session");
+    persist.write({
+      ...createInitialAlignUiState(),
+      workspacePath: null,
+      source: {
+        kind: "folder" as const,
+        path: "/data/src",
+        subfolderTemplate: "Pos{pos}",
+        filenameTemplate: "img.tif",
+      },
+    });
+    expect(persist.read()).toBeNull();
+  });
+
+  it("Studio persist returns null when workspacePath is blank", () => {
+    const persist = createStudioPersist("test-studio-align-session");
+    persist.write({
+      ...createInitialAlignUiState(),
+      workspacePath: "   ",
+      source: {
+        kind: "folder" as const,
+        path: "/data/src",
+        subfolderTemplate: "Pos{pos}",
+        filenameTemplate: "img.tif",
+      },
+    });
+    expect(persist.read()).toBeNull();
   });
 });
