@@ -89,6 +89,14 @@ fn dead_probability_from_logits(absent_logit: f32, present_logit: f32) -> f64 {
     first_class_probability(absent_logit, present_logit)
 }
 
+/// `label` follows the mupattern / `clean` contract: `true` means a present
+/// (alive) cell — a surviving cell on the micropattern. The model's
+/// `p_dead = P(absent)`, so a crop is alive when `p_dead` is below the
+/// threshold and dead once it meets or exceeds it.
+fn alive_label(p_dead: f64) -> bool {
+    p_dead < DEAD_LABEL_THRESHOLD
+}
+
 fn collect_position_frames(
     workspace: &Path,
     slide_channel: u32,
@@ -238,7 +246,7 @@ pub fn run_predict_to(
                             t: frame.t,
                             roi: frame.roi,
                             p_dead,
-                            label: p_dead >= DEAD_LABEL_THRESHOLD,
+                            label: alive_label(p_dead),
                             pos: frame.pos,
                             slide_channel: frame.slide_channel,
                         });
@@ -302,5 +310,19 @@ mod tests {
     fn dead_probability_prefers_present_label() {
         let probability = dead_probability_from_logits(0.0, 2.0);
         assert!(probability < 0.2);
+    }
+
+    #[test]
+    fn alive_label_true_when_dead_probability_below_threshold() {
+        assert!(alive_label(0.1));
+        assert!(alive_label(0.49));
+        assert!(alive_label(0.0));
+    }
+
+    #[test]
+    fn alive_label_false_when_dead_probability_meets_threshold() {
+        assert!(!alive_label(0.5));
+        assert!(!alive_label(0.9));
+        assert!(!alive_label(1.0));
     }
 }
