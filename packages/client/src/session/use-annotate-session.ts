@@ -1,7 +1,7 @@
 import type { AnnotationLabel, RoiWorkspaceScan } from "@lisca/contracts";
 import type { AsyncResult } from "effect/unstable/reactivity";
 import { clamp } from "@lisca/utils";
-import { createEffect, type Accessor } from "solid-js";
+import { createEffect, untrack, type Accessor } from "solid-js";
 import type {
   AnnotatorUiActions,
   AnnotatorUiState,
@@ -109,9 +109,9 @@ export function useAnnotateSessionCore<State extends AnnotatorUiState>(
   });
 
   createEffect(() => {
-    const currentUi = ui();
     const shellWorkspacePath = scan.shellWorkspacePath();
-    if (currentUi.workspacePath !== shellWorkspacePath) return;
+    const workspacePath = untrack(() => ui().workspacePath);
+    if (workspacePath !== shellWorkspacePath) return;
     const scanLoadError = resultFailureMessage(scan.scanResult());
     const labelsLoadError = resultFailureMessage(scan.labelsResult());
     const error = scanLoadError ?? labelsLoadError;
