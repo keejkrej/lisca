@@ -26,10 +26,6 @@ export {
   type SmartExcludeModelDialogProps,
 } from "./align/smart-exclude-model-dialog";
 export {
-  AlignSelectionPanelSection,
-  type AlignSelectionPanelSectionProps,
-} from "./align/align-selection-panel-section";
-export {
   AlignGridShapeToggle,
   type AlignGridShapeToggleProps,
 } from "./align/align-grid-shape-toggle";
