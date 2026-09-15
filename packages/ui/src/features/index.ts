@@ -26,10 +26,6 @@ export {
   type SmartExcludeModelDialogProps,
 } from "./align/smart-exclude-model-dialog";
 export {
-  AlignSelectionDockSection,
-  type AlignSelectionDockSectionProps,
-} from "./align/align-selection-dock-section";
-export {
   AlignSelectionPanelSection,
   type AlignSelectionPanelSectionProps,
 } from "./align/align-selection-panel-section";
