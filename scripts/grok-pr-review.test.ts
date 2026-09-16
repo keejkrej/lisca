@@ -57,6 +57,26 @@ describe("collectRightSideLines", () => {
 `;
     expect(collectRightSideLines(diff).get("a.ts")).toEqual(new Set([42, 43]));
   });
+
+  it("unquotes git paths before stripping the b/ prefix", () => {
+    const diff = `--- /dev/null
++++ "b/foo bar.ts"
+@@ -0,0 +1,2 @@
++export const ok = true
++export const tab = 1
+`;
+    expect(collectRightSideLines(diff).get("foo bar.ts")).toEqual(new Set([1, 2]));
+    expect(collectRightSideLines(diff).has("b/foo bar.ts")).toBe(false);
+  });
+
+  it("decodes git C-escaped tabs in quoted paths", () => {
+    const diff = `--- /dev/null
++++ "b/foo\\tbar.ts"
+@@ -0,0 +1,1 @@
++ok
+`;
+    expect(collectRightSideLines(diff).has("foo\tbar.ts")).toBe(true);
+  });
 });
 
 describe("extractReview", () => {
@@ -76,6 +96,23 @@ describe("extractReview", () => {
 
   it("reads structured_output from a grok json envelope", () => {
     expect(extractReview({ text: "ignored", structured_output: valid })).toEqual(valid);
+  });
+
+  it("prefers camelCase structuredOutput from headless json", () => {
+    expect(
+      extractReview({
+        text: '{ "summary": "progress", "issues": [] }',
+        structuredOutput: valid,
+      }),
+    ).toEqual(valid);
+  });
+
+  it("uses the last concatenated JSON object in text", () => {
+    expect(
+      extractReview({
+        text: `{ "summary": "progress", "issues": [] }${JSON.stringify(valid)}`,
+      }),
+    ).toEqual(valid);
   });
 
   it("parses fenced JSON in the text field", () => {

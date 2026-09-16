@@ -25,10 +25,12 @@ inline notes. Bug-severity findings fail the check; suggestions and nits do not.
 Set repository variable `GROK_REVIEW_FAIL_ON` to `none` to keep the review
 informational.
 
-The Grok step is review-only: edit/write tools are denied, and `GITHUB_TOKEN`
-is unset. (Grok's kernel `--sandbox read-only` cannot start on GitHub-hosted
-Linux runners.) Posting uses `GITHUB_TOKEN` in a later step that does not see
-the Grok session.
+The Grok step is review-only: tools are allowlisted to `read_file` / `grep` /
+`list_dir`, `~/.grok/**` is not readable via tools, subagents are off, and
+`GITHUB_TOKEN` is unset. (Grok's kernel `--sandbox read-only` cannot start on
+GitHub-hosted Linux runners.) The poster script is copied to `$RUNNER_TEMP`
+before Grok runs. Posting uses `GITHUB_TOKEN` in a later step that does not see
+the Grok session. The CLI install is pinned via `GROK_CLI_VERSION`.
 
 ## Auth (required)
 

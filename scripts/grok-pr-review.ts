@@ -112,13 +112,20 @@ function plusPath(target: string): string | undefined {
   if (target === "/dev/null") {
     return undefined;
   }
-  const stripped = target.startsWith("b/") ? target.slice(2) : target;
-  return unquoteGitPath(stripped);
+  const stripped = unquoteGitPath(target);
+  return stripped.startsWith("b/") ? stripped.slice(2) : stripped;
 }
+
+const GIT_C_ESCAPES: Record<string, string> = {
+  n: "\n",
+  t: "\t",
+  '"': '"',
+  "\\": "\\",
+};
 
 function unquoteGitPath(path: string): string {
   if (path.length >= 2 && path.startsWith('"') && path.endsWith('"')) {
-    return path.slice(1, -1).replace(/\\"/g, '"').replace(/\\n/g, "\n");
+    return path.slice(1, -1).replace(/\\([nt"\\])/g, (_, ch: string) => GIT_C_ESCAPES[ch] ?? ch);
   }
   return path;
 }
@@ -144,38 +151,90 @@ export function extractReview(raw: unknown): ReviewResult {
 }
 
 function collectCandidates(raw: unknown): unknown[] {
-  const out: unknown[] = [raw];
+  const out: unknown[] = [];
   if (raw && typeof raw === "object") {
     const record = raw as Record<string, unknown>;
+    // Headless --output-format json uses camelCase; some streams use snake_case.
+    if ("structuredOutput" in record) {
+      out.push(record.structuredOutput);
+    }
     if ("structured_output" in record) {
       out.push(record.structured_output);
     }
+    out.push(raw);
     if (typeof record.text === "string") {
-      out.push(parseMaybeJson(record.text));
+      out.push(...parseMaybeJsonObjects(record.text));
     }
+  } else {
+    out.push(raw);
   }
   if (typeof raw === "string") {
-    out.push(parseMaybeJson(raw));
+    out.push(...parseMaybeJsonObjects(raw));
   }
   return out;
 }
 
-function parseMaybeJson(text: string): unknown {
+function parseMaybeJsonObjects(text: string): unknown[] {
   const trimmed = stripFence(text.trim());
   try {
-    return JSON.parse(trimmed);
+    return [JSON.parse(trimmed)];
   } catch {
-    const start = trimmed.indexOf("{");
-    const end = trimmed.lastIndexOf("}");
-    if (start >= 0 && end > start) {
+    const objects: unknown[] = [];
+    let i = 0;
+    while (i < trimmed.length) {
+      const start = trimmed.indexOf("{", i);
+      if (start < 0) {
+        break;
+      }
+      const end = matchingBrace(trimmed, start);
+      if (end < 0) {
+        break;
+      }
       try {
-        return JSON.parse(trimmed.slice(start, end + 1));
+        objects.push(JSON.parse(trimmed.slice(start, end + 1)) as unknown);
       } catch {
-        return text;
+        // Skip malformed slices and continue scanning.
+      }
+      i = end + 1;
+    }
+    return objects.length > 0 ? objects.reverse() : [text];
+  }
+}
+
+function matchingBrace(text: string, start: number): number {
+  let depth = 0;
+  let inString = false;
+  let escape = false;
+  for (let i = start; i < text.length; i += 1) {
+    const ch = text[i];
+    if (inString) {
+      if (escape) {
+        escape = false;
+        continue;
+      }
+      if (ch === "\\") {
+        escape = true;
+        continue;
+      }
+      if (ch === '"') {
+        inString = false;
+      }
+      continue;
+    }
+    if (ch === '"') {
+      inString = true;
+      continue;
+    }
+    if (ch === "{") {
+      depth += 1;
+    } else if (ch === "}") {
+      depth -= 1;
+      if (depth === 0) {
+        return i;
       }
     }
-    return text;
   }
+  return -1;
 }
 
 function stripFence(text: string): string {

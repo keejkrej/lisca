@@ -8,9 +8,7 @@ This is review-only. Do not edit files, commit, push, run formatters, or try to 
 - PR: `$PR_TITLE` (`$PR_URL`)
 - Head SHA: `$HEAD_SHA`
 
-Read the diff first. Then `read_file` the changed source files (not lockfiles or binaries) so you understand call sites, types, and surrounding logic before flagging anything.
-
-If useful, spawn specialist subagents — one per lens below — then merge and deduplicate their findings. Prefer fewer high-signal issues over a long list.
+Read the diff first. Then `read_file` the changed source files (not lockfiles or binaries) so you understand call sites, types, and surrounding logic before flagging anything. Prefer fewer high-signal issues over a long list. Do not spawn subagents.
 
 ## Lenses
 

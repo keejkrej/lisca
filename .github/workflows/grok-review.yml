@@ -22,6 +22,7 @@ jobs:
     timeout-minutes: 25
     env:
       GROK_DISABLE_AUTOUPDATER: "1"
+      GROK_CLI_VERSION: "1.0.30"
       PR_NUMBER: ${{ github.event.pull_request.number }}
       HEAD_SHA: ${{ github.event.pull_request.head.sha }}
       PR_URL: ${{ github.event.pull_request.html_url }}
@@ -44,7 +45,7 @@ jobs:
       - name: Install Grok CLI
         run: |
           set -euo pipefail
-          curl -fsSL https://x.ai/cli/install.sh | bash
+          curl -fsSL https://x.ai/cli/install.sh | bash -s "$GROK_CLI_VERSION"
           echo "$HOME/.grok/bin" >> "$GITHUB_PATH"
 
       - name: Authenticate Grok
@@ -59,15 +60,22 @@ jobs:
             printf '%s' "$GROK_AUTH_JSON" > "$HOME/.grok/auth.json"
             echo "Using GROK_AUTH_JSON (SuperGrok session)."
           elif [ -n "${XAI_API_KEY:-}" ]; then
+            {
+              echo "XAI_API_KEY<<GROK_EOF"
+              printf '%s\n' "$XAI_API_KEY"
+              echo "GROK_EOF"
+            } >> "$GITHUB_ENV"
             echo "Using XAI_API_KEY."
           else
             echo "::error::Set repository secret GROK_AUTH_JSON to the contents of ~/.grok/auth.json (from \`grok login\`). XAI_API_KEY is the fallback."
             exit 1
           fi
 
+      - name: Stage poster
+        run: cp scripts/grok-pr-review.ts "$RUNNER_TEMP/grok-pr-review.ts"
+
       - name: Run Grok review
         env:
-          XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
           GITHUB_TOKEN: ""
           GH_TOKEN: ""
           DIFF_FILE: ${{ runner.temp }}/pr.diff
@@ -83,17 +91,17 @@ jobs:
           PY
           # GitHub-hosted Linux runners cannot apply grok's kernel sandbox
           # (bwrap cannot resolve /run/podman/podman.sock). Keep the step
-          # review-only with tool denials and no GITHUB_TOKEN instead.
+          # review-only with an allowlisted toolset and no GITHUB_TOKEN instead.
           grok --no-auto-update \
             --prompt-file "$RUNNER_TEMP/grok-review.prompt.md" \
             --json-schema "$(cat scripts/grok-pr-review.schema.json)" \
             --always-approve \
             --disable-web-search \
+            --no-subagents \
             --max-turns 50 \
             --reasoning-effort high \
-            --disallowed-tools "search_replace" \
-            --deny "Edit(**)" \
-            --deny "Write(**)" \
+            --tools "read_file,grep,list_dir" \
+            --deny "Read(**/.grok/**)" \
             --output-format json \
             > "$RUNNER_TEMP/grok-review.json"
 
@@ -118,7 +126,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GROK_REVIEW_FAIL_ON: ${{ vars.GROK_REVIEW_FAIL_ON }}
         run: |
-          node --experimental-strip-types scripts/grok-pr-review.ts \
+          node --experimental-strip-types "$RUNNER_TEMP/grok-pr-review.ts" \
             --review "$RUNNER_TEMP/grok-review.json" \
             --diff "$RUNNER_TEMP/pr.diff" \
             --pr "$PR_NUMBER" \
