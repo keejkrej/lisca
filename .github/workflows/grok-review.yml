@@ -81,15 +81,19 @@ jobs:
               text = text.replace("$" + key, os.environ[key])
           Path(os.environ["RUNNER_TEMP"], "grok-review.prompt.md").write_text(text)
           PY
+          # GitHub-hosted Linux runners cannot apply grok's kernel sandbox
+          # (bwrap cannot resolve /run/podman/podman.sock). Keep the step
+          # review-only with tool denials and no GITHUB_TOKEN instead.
           grok --no-auto-update \
             --prompt-file "$RUNNER_TEMP/grok-review.prompt.md" \
             --json-schema "$(cat scripts/grok-pr-review.schema.json)" \
-            --sandbox read-only \
             --always-approve \
             --disable-web-search \
             --max-turns 50 \
             --reasoning-effort high \
             --disallowed-tools "search_replace" \
+            --deny "Edit(**)" \
+            --deny "Write(**)" \
             --output-format json \
             > "$RUNNER_TEMP/grok-review.json"
 

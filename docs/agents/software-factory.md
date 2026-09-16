@@ -25,8 +25,10 @@ inline notes. Bug-severity findings fail the check; suggestions and nits do not.
 Set repository variable `GROK_REVIEW_FAIL_ON` to `none` to keep the review
 informational.
 
-The Grok step is read-only (`--sandbox read-only`, no `GITHUB_TOKEN`). Posting
-uses `GITHUB_TOKEN` in a later step that does not see the Grok session.
+The Grok step is review-only: edit/write tools are denied, and `GITHUB_TOKEN`
+is unset. (Grok's kernel `--sandbox read-only` cannot start on GitHub-hosted
+Linux runners.) Posting uses `GITHUB_TOKEN` in a later step that does not see
+the Grok session.
 
 ## Auth (required)
 
