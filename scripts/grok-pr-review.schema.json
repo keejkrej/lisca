@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["summary", "issues"],
+  "properties": {
+    "summary": {
+      "type": "string",
+      "description": "2-4 sentence assessment of the change: what it does, whether it looks correct, dominant risks."
+    },
+    "issues": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["severity", "lens", "file", "line", "description", "suggestion"],
+        "properties": {
+          "severity": {
+            "type": "string",
+            "enum": ["bug", "suggestion", "nit"]
+          },
+          "lens": {
+            "type": "string",
+            "enum": ["correctness", "security", "conventions"]
+          },
+          "file": {
+            "type": "string",
+            "description": "Repo-relative path of the post-change file."
+          },
+          "line": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Right-side (new file) line number present in the diff."
+          },
+          "description": {
+            "type": "string"
+          },
+          "suggestion": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}
