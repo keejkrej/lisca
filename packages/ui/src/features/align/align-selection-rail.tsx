@@ -43,6 +43,7 @@ export type AlignSelectionRailProps = {
   sectionContentClassName?: string;
   sectionAppearance?: "framed" | "rail";
   occupancyHint?: string | null;
+  occupancyPackReady?: boolean | null;
   /** When false, the caller mounts `VariationExcludeDialog` elsewhere (e.g. dock-driven exclude). */
   showVariationExcludeDialog?: boolean;
 };
@@ -63,6 +64,15 @@ export function AlignSelectionRail(props: AlignSelectionRailProps) {
   const hasVisibleCells = () => visibleCells().length > 0;
   const hasExcludedCells = () => props.excludedCells.length > 0;
 
+  const OccupancyHint = () => (
+    <Show when={props.occupancyHint}>
+      {(hint) => (
+        <p class="text-muted-foreground px-0.5 text-[11px] leading-snug" data-slot="occupancy-hint">
+          {hint()}
+        </p>
+      )}
+    </Show>
+  );
   const EditControl = () => (
     <AlignEditToggle
       disabled={disabled()}
@@ -129,10 +139,12 @@ export function AlignSelectionRail(props: AlignSelectionRailProps) {
   const SmartExcludeControl = () => (
     <Button
       class="w-full justify-center text-xs"
+      data-occupancy-ready={props.occupancyPackReady ? "true" : "false"}
       disabled={
         disabled() || !hasVisibleCells() || variationExcludeLoading() || smartExcludeLoading()
       }
       size="sm"
+      title={props.occupancyHint ?? undefined}
       type="button"
       variant="outline"
       onClick={() => void props.onSmartExclude()}
@@ -171,6 +183,7 @@ export function AlignSelectionRail(props: AlignSelectionRailProps) {
                 <VariationExcludeControl />
                 <SmartExcludeControl />
               </div>
+              <OccupancyHint />
             </>
           }
         >
@@ -187,11 +200,7 @@ export function AlignSelectionRail(props: AlignSelectionRailProps) {
               <VariationExcludeControl />
               <SmartExcludeControl />
             </RailActionPair>
-            <Show when={props.occupancyHint}>
-              {(hint) => (
-                <p class="text-muted-foreground px-0.5 text-[11px] leading-snug">{hint()}</p>
-              )}
-            </Show>
+            <OccupancyHint />
           </div>
         </Show>
       </PanelSection>

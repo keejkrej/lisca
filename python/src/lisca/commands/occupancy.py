@@ -8,6 +8,8 @@ import typer
 
 from lisca.app import app
 from lisca.core.occupancy import (
+    OCCUPANCY_MIN_EMPTY_EXAMPLES,
+    OCCUPANCY_MIN_OCCUPIED_EXAMPLES,
     append_occupancy_examples,
     build_occupancy_pack,
     embed_occupancy_image,
@@ -25,10 +27,15 @@ occupancy_app = typer.Typer(no_args_is_help=True)
 app.add_typer(occupancy_app, name="occupancy")
 
 
-def _echo_pack_status(pack: dict | None) -> None:
+def _echo_pack_status(
+    pack: dict | None,
+    *,
+    min_occupied: int = OCCUPANCY_MIN_OCCUPIED_EXAMPLES,
+    min_empty: int = OCCUPANCY_MIN_EMPTY_EXAMPLES,
+) -> None:
     occupied, empty = pack_counts(pack or {"examples": []})
     typer.echo(f"examples: occupied={occupied} empty={empty}")
-    typer.echo(pack_gate_message(pack))
+    typer.echo(pack_gate_message(pack, min_occupied=min_occupied, min_empty=min_empty))
 
 
 @occupancy_app.command("pack")
@@ -105,7 +112,19 @@ def occupancy_status_cmd(
         ...,
         exists=True,
         file_okay=False,
-        help="Workspace folder.",
+        help="Workspace folder for this assay only (align/occupancy-pack.json).",
+    ),
+    min_occupied: int = typer.Option(
+        OCCUPANCY_MIN_OCCUPIED_EXAMPLES,
+        "--min-occupied",
+        min=1,
+        help="Occupied examples required before promptable Smart exclude.",
+    ),
+    min_empty: int = typer.Option(
+        OCCUPANCY_MIN_EMPTY_EXAMPLES,
+        "--min-empty",
+        min=1,
+        help="Empty examples required before promptable Smart exclude.",
     ),
 ) -> None:
     """Show whether this assay pack has enough examples to leave ResNet."""
@@ -116,8 +135,16 @@ def occupancy_status_cmd(
     else:
         typer.echo(f"Occupancy pack: {path}")
         typer.echo(f"embedder={pack.get('embedder', '')}")
-    _echo_pack_status(pack)
-    raise typer.Exit(0 if pack_is_ready(pack or {"examples": []}) else 2)
+    _echo_pack_status(pack, min_occupied=min_occupied, min_empty=min_empty)
+    raise typer.Exit(
+        0
+        if pack_is_ready(
+            pack or {"examples": []},
+            min_occupied=min_occupied,
+            min_empty=min_empty,
+        )
+        else 2
+    )
 
 
 @occupancy_app.command("score")
@@ -125,6 +152,18 @@ def occupancy_score_cmd(
     crop: Path = typer.Option(..., exists=True, dir_okay=False),
     workspace: Path | None = typer.Option(None, exists=True, file_okay=False),
     pack: Path | None = typer.Option(None, exists=True, dir_okay=False),
+    min_occupied: int = typer.Option(
+        OCCUPANCY_MIN_OCCUPIED_EXAMPLES,
+        "--min-occupied",
+        min=1,
+        help="Occupied examples required before scoring with the pack.",
+    ),
+    min_empty: int = typer.Option(
+        OCCUPANCY_MIN_EMPTY_EXAMPLES,
+        "--min-empty",
+        min=1,
+        help="Empty examples required before scoring with the pack.",
+    ),
 ) -> None:
     """Score one crop against a saved prompt pack (empty vs occupied prototypes)."""
     import json
@@ -139,13 +178,17 @@ def occupancy_score_cmd(
         if loaded_pack is None:
             raise typer.BadParameter(
                 f"No occupancy pack at {pack_path}. "
-                "Bootstrap with manual include/exclude or `lisca occupancy pack`."
+                "Bootstrap with Var exclude / manual include-exclude "
+                "or `lisca occupancy pack`."
             )
         loaded = loaded_pack
     else:
         loaded = json.loads(pack_path.read_text(encoding="utf-8"))
-    if not pack_is_ready(loaded):
-        typer.echo(pack_gate_message(loaded), err=True)
+    if not pack_is_ready(loaded, min_occupied=min_occupied, min_empty=min_empty):
+        typer.echo(
+            pack_gate_message(loaded, min_occupied=min_occupied, min_empty=min_empty),
+            err=True,
+        )
         raise typer.Exit(2)
     embedding = embed_occupancy_image(crop)
     score = score_embedding_against_pack(embedding, loaded)

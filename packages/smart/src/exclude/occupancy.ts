@@ -184,14 +184,28 @@ export function packGateMessage(
 ): string {
   const { occupied, empty } = pack ? packCounts(pack) : { occupied: 0, empty: 0 };
   if (occupied >= minOccupied && empty >= minEmpty) {
-    return `Prompt pack ready (${occupied} occupied, ${empty} empty).`;
+    return `Prompt pack ready (${occupied} occupied, ${empty} empty). Further edits still grow this assay's pack.`;
   }
   const needed: string[] = [];
   const needOccupied = Math.max(0, minOccupied - occupied);
   const needEmpty = Math.max(0, minEmpty - empty);
   if (needOccupied > 0) needed.push(`${needOccupied} more occupied`);
   if (needEmpty > 0) needed.push(`${needEmpty} more empty`);
-  return `Not ready yet — need ${needed.join(" and ")} examples (have ${occupied} occupied, ${empty} empty). Using ResNet until then.`;
+  return `Not ready yet — need ${needed.join(" and ")} examples (have ${occupied} occupied, ${empty} empty). Bootstrap with Var exclude or mark sites on the canvas. Smart exclude stays on ResNet until then.`;
+}
+
+/** Cold-start rail/CLI status before this assay has a pack (or before it is loaded). */
+export function occupancyColdStartStatus(
+  minOccupied = OCCUPANCY_MIN_OCCUPIED_EXAMPLES,
+  minEmpty = OCCUPANCY_MIN_EMPTY_EXAMPLES,
+) {
+  return {
+    engine: "resnet" as const,
+    packReady: false,
+    occupiedCount: 0,
+    emptyCount: 0,
+    message: packGateMessage(null, minOccupied, minEmpty),
+  };
 }
 
 function exampleKey(example: OccupancyPromptExample): string | null {

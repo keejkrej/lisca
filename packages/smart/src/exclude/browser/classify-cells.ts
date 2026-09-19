@@ -45,7 +45,20 @@ export async function classifyExclusionCandidates(
     });
     return excluded;
   }
-  if (cells.length === 0) return [];
+  const reportResnet = () => {
+    const counts = promptPack ? packCounts(promptPack) : { occupied: 0, empty: 0 };
+    options.onOccupancy?.({
+      engine: "resnet",
+      packReady: false,
+      occupiedCount: counts.occupied,
+      emptyCount: counts.empty,
+      message: packGateMessage(promptPack),
+    });
+  };
+  if (cells.length === 0) {
+    reportResnet();
+    return [];
+  }
 
   const threshold = options.threshold ?? DEFAULT_THRESHOLD;
   const batchSize = options.batchSize ?? DEFAULT_BATCH_SIZE;
@@ -64,16 +77,7 @@ export async function classifyExclusionCandidates(
     await Promise.resolve();
   }
 
-  if (promptPack) {
-    const counts = packCounts(promptPack);
-    options.onOccupancy?.({
-      engine: "resnet",
-      packReady: false,
-      occupiedCount: counts.occupied,
-      emptyCount: counts.empty,
-      message: packGateMessage(promptPack),
-    });
-  }
+  reportResnet();
 
   return excluded;
 }

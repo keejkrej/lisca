@@ -12,6 +12,7 @@ export { useSmartExclude, type SmartExcludeDownloadState } from "./use-smart-exc
 export {
   OCCUPANCY_MIN_EMPTY_EXAMPLES,
   OCCUPANCY_MIN_OCCUPIED_EXAMPLES,
+  occupancyColdStartStatus,
   packGateMessage,
   packIsReady,
 } from "./occupancy";

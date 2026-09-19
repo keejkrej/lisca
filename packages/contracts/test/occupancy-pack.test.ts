@@ -53,7 +53,7 @@ describe("occupancy prompt pack contract", () => {
       occupiedCount: 1,
       emptyCount: 1,
       message:
-        "Not ready yet — need 1 more occupied and 1 more empty examples (have 1 occupied, 1 empty). Using ResNet until then.",
+        "Not ready yet — need 1 more occupied and 1 more empty examples (have 1 occupied, 1 empty). Bootstrap with Var exclude or mark sites on the canvas. Smart exclude stays on ResNet until then.",
     });
     expect(response.engine).toBe("resnet");
     expect(response.packReady).toBe(false);

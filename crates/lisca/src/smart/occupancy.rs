@@ -186,18 +186,36 @@ pub fn pack_has_both_classes(pack: &OccupancyPromptPack) -> bool {
     occupied > 0 && empty > 0
 }
 
-pub fn pack_is_ready(pack: &OccupancyPromptPack) -> bool {
+pub fn pack_is_ready_with(
+    pack: &OccupancyPromptPack,
+    min_occupied: usize,
+    min_empty: usize,
+) -> bool {
     let (occupied, empty) = pack_counts(pack);
-    occupied >= OCCUPANCY_MIN_OCCUPIED_EXAMPLES && empty >= OCCUPANCY_MIN_EMPTY_EXAMPLES
+    occupied >= min_occupied && empty >= min_empty
 }
 
-pub fn pack_gate_message(pack: Option<&OccupancyPromptPack>) -> String {
+pub fn pack_is_ready(pack: &OccupancyPromptPack) -> bool {
+    pack_is_ready_with(
+        pack,
+        OCCUPANCY_MIN_OCCUPIED_EXAMPLES,
+        OCCUPANCY_MIN_EMPTY_EXAMPLES,
+    )
+}
+
+pub fn pack_gate_message_with(
+    pack: Option<&OccupancyPromptPack>,
+    min_occupied: usize,
+    min_empty: usize,
+) -> String {
     let (occupied, empty) = pack.map(pack_counts).unwrap_or((0, 0));
-    if occupied >= OCCUPANCY_MIN_OCCUPIED_EXAMPLES && empty >= OCCUPANCY_MIN_EMPTY_EXAMPLES {
-        return format!("Prompt pack ready ({occupied} occupied, {empty} empty).");
+    if occupied >= min_occupied && empty >= min_empty {
+        return format!(
+            "Prompt pack ready ({occupied} occupied, {empty} empty). Further edits still grow this assay's pack."
+        );
     }
-    let need_occupied = OCCUPANCY_MIN_OCCUPIED_EXAMPLES.saturating_sub(occupied);
-    let need_empty = OCCUPANCY_MIN_EMPTY_EXAMPLES.saturating_sub(empty);
+    let need_occupied = min_occupied.saturating_sub(occupied);
+    let need_empty = min_empty.saturating_sub(empty);
     let mut needed = Vec::new();
     if need_occupied > 0 {
         needed.push(format!("{need_occupied} more occupied"));
@@ -206,8 +224,16 @@ pub fn pack_gate_message(pack: Option<&OccupancyPromptPack>) -> String {
         needed.push(format!("{need_empty} more empty"));
     }
     format!(
-        "Not ready yet — need {} examples (have {occupied} occupied, {empty} empty). Using ResNet until then.",
+        "Not ready yet — need {} examples (have {occupied} occupied, {empty} empty). Bootstrap with Var exclude or mark sites on the canvas. Smart exclude stays on ResNet until then.",
         needed.join(" and ")
+    )
+}
+
+pub fn pack_gate_message(pack: Option<&OccupancyPromptPack>) -> String {
+    pack_gate_message_with(
+        pack,
+        OCCUPANCY_MIN_OCCUPIED_EXAMPLES,
+        OCCUPANCY_MIN_EMPTY_EXAMPLES,
     )
 }
 
@@ -475,6 +501,8 @@ mod tests {
         assert_eq!(loaded.embedder, OCCUPANCY_EMBEDDER_ID);
         assert!(pack_has_both_classes(&loaded));
         assert!(!pack_is_ready(&loaded));
+        assert!(pack_is_ready_with(&loaded, 1, 1));
+        assert!(pack_gate_message(None).contains("Bootstrap with Var exclude"));
     }
 
     #[test]
@@ -529,5 +557,8 @@ mod tests {
             None,
         );
         assert!(pack_is_ready(&pack));
+        assert!(
+            pack_gate_message(Some(&pack)).contains("Further edits still grow this assay's pack")
+        );
     }
 }

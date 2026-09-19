@@ -4,11 +4,12 @@ import type {
   OccupancyPromptExampleInput,
 } from "@lisca/contracts";
 import { alignGridCellCoordKey, type FrameResult } from "@lisca/utils";
-import { createMemo, createSignal, onCleanup, type Accessor } from "solid-js";
+import { createEffect, createMemo, createSignal, on, onCleanup, type Accessor } from "solid-js";
 
 import type { SmartModelDownloadState, SmartModelGate } from "../shared/model-gate";
 import { useLatestRef } from "../shared/use-latest-ref";
 import {
+  occupancyColdStartStatus,
   occupancyCorrectionsFromExclusionChange,
   promptExamplesFromCorrections,
 } from "./occupancy";
@@ -25,6 +26,7 @@ export type SmartExcludeDownloadState = SmartModelDownloadState;
 export type { OccupancyPackStatus, OccupancyRescoreMode };
 
 const RECORD_DEBOUNCE_MS = 400;
+const STATUS_FRAME: FrameResult = { width: 0, height: 0, pixels: new Uint8Array() };
 
 type PendingRun = {
   resolve: (modelCells: AlignGridCellCoord[]) => void;
@@ -54,7 +56,9 @@ export function useSmartExclude(options: {
     progress: 0,
     message: "",
   });
-  const [occupancyStatus, setOccupancyStatus] = createSignal<OccupancyPackStatus | null>(null);
+  const [occupancyStatus, setOccupancyStatus] = createSignal<OccupancyPackStatus | null>(
+    options.workspacePath?.() ? occupancyColdStartStatus() : null,
+  );
   const active = createMemo(() => busy() || (options.model ? downloadState().open : false));
 
   let runGeneration = 0;
@@ -316,6 +320,42 @@ export function useSmartExclude(options: {
       onStatusRef.current?.(null);
     }
   };
+
+  const refreshOccupancyStatus = async () => {
+    const workspacePath = options.workspacePath?.();
+    if (disposed || !workspacePath) return;
+    try {
+      await options.provider.classify(
+        classifyInput(options.frame() ?? STATUS_FRAME, [], {
+          workspacePath,
+          persistPromptPack: false,
+        }),
+        {
+          onOccupancy: (status) => {
+            if (disposed) return;
+            setOccupancyStatus(status);
+          },
+        },
+      );
+    } catch {
+      // Source may not be selected yet; keep the seeded not-ready hint.
+    }
+  };
+
+  createEffect(
+    on(
+      () => options.workspacePath?.() ?? null,
+      (path) => {
+        if (disposed) return;
+        if (!path) {
+          setOccupancyStatus(null);
+          return;
+        }
+        setOccupancyStatus(occupancyColdStartStatus());
+        void refreshOccupancyStatus();
+      },
+    ),
+  );
 
   const flushRecord = async () => {
     const examples = pendingRecord;

@@ -150,7 +150,10 @@ def pack_gate_message(
     else:
         occupied, empty = pack_counts(pack)
     if occupied >= min_occupied and empty >= min_empty:
-        return f"Prompt pack ready ({occupied} occupied, {empty} empty)."
+        return (
+            f"Prompt pack ready ({occupied} occupied, {empty} empty). "
+            "Further edits still grow this assay's pack."
+        )
     need_occupied = max(0, min_occupied - occupied)
     need_empty = max(0, min_empty - empty)
     needed: list[str] = []
@@ -162,7 +165,8 @@ def pack_gate_message(
         "Not ready yet — need "
         + " and ".join(needed)
         + f" examples (have {occupied} occupied, {empty} empty). "
-        + "Using ResNet until then."
+        "Bootstrap with Var exclude or mark sites on the canvas. "
+        "Smart exclude stays on ResNet until then."
     )
 
 

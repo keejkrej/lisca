@@ -60,7 +60,10 @@ describe("occupancy prompt pack", () => {
       [embedOccupancyCrop(emptyCrop().values, 32, 32)],
     );
     expect(packIsReady(oneEach)).toBe(false);
+    expect(packIsReady(oneEach, 1, 1)).toBe(true);
     expect(packGateMessage(oneEach)).toContain("Not ready yet");
+    expect(packGateMessage(oneEach)).toContain("Bootstrap with Var exclude");
+    expect(packGateMessage(null)).toContain("need 2 more occupied and 2 more empty");
     const ready = mergeOccupancyPacks(
       oneEach,
       buildOccupancyPack(
@@ -69,6 +72,7 @@ describe("occupancy prompt pack", () => {
       ),
     );
     expect(packIsReady(ready)).toBe(true);
+    expect(packGateMessage(ready)).toContain("Further edits still grow this assay's pack");
   });
 
   it("maps a single include/exclude toggle to one support example", () => {

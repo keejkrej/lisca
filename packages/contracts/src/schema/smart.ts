@@ -16,8 +16,9 @@ export const OccupancyExcludeEngineSchema = Schema.Literals(["resnet", "promptPa
 /**
  * On-disk `align/occupancy-pack.json` for one assay/workspace. Frozen embedder
  * plus accumulating occupied/empty crops. Smart exclude uses this instead of
- * the ResNet once the pack is ready (≥2 occupied and ≥2 empty by default).
- * No lab-wide or cross-assay memory.
+ * the ResNet once the pack is ready (≥2 occupied and ≥2 empty by default;
+ * `lisca occupancy status --min-occupied/--min-empty`). No lab-wide or
+ * user-global memory, and no carry-over between assays.
  */
 export const OccupancyPromptExampleSchema = Schema.Struct({
   label: OccupancyPromptLabelSchema,

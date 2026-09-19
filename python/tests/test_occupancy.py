@@ -72,13 +72,17 @@ def test_pack_gate_requires_two_of_each_class() -> None:
     )
     assert pack_counts(one_each) == (1, 1)
     assert not pack_is_ready(one_each)
+    assert pack_is_ready(one_each, min_occupied=1, min_empty=1)
     assert "Not ready yet" in pack_gate_message(one_each)
+    assert "Bootstrap with Var exclude" in pack_gate_message(one_each)
+    assert "need 2 more occupied and 2 more empty" in pack_gate_message(None)
     ready = build_occupancy_pack(
         [embed_occupancy_crop(_blob_crop()), embed_occupancy_crop(_blob_crop(36))],
         [embed_occupancy_crop(_empty_crop()), embed_occupancy_crop(_empty_crop(36))],
     )
     assert pack_is_ready(ready)
     assert "Prompt pack ready" in pack_gate_message(ready)
+    assert "Further edits still grow this assay's pack" in pack_gate_message(ready)
 
 
 def test_append_accumulates_and_replaces_same_site(tmp_path: Path) -> None:

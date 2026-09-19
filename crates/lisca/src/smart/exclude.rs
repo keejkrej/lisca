@@ -31,6 +31,18 @@ struct OccupancyExcludeArgs<'a> {
 }
 
 pub fn classify_exclusion(request: SmartExcludeRequest) -> Result<SmartExcludeResponse, String> {
+    let status_only = request.cells.is_empty()
+        && request.prompt_examples.is_empty()
+        && request.prompt_pack.is_none()
+        && request.persist_prompt_pack != Some(true);
+    if status_only {
+        let pack = match request.workspace_path.as_deref() {
+            Some(workspace) => super::occupancy::load_occupancy_pack(Path::new(workspace))?,
+            None => None,
+        };
+        return Ok(occupancy_response(Vec::new(), None, pack.as_ref()));
+    }
+
     let pos = request.request.pos;
     let frame = aligner::load_frame_payload(request.source, request.request, request.contrast)?;
     classify_exclusion_on_frame(

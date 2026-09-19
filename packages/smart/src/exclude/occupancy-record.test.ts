@@ -69,9 +69,12 @@ describe("occupancy correction recording", () => {
         onOccupancyRescore,
       });
       recordExclusionChange = smart.recordExclusionChange;
+      expect(smart.occupancyStatus()?.message).toContain("Not ready yet");
+      expect(smart.occupancyStatus()?.packReady).toBe(false);
       return dispose;
     });
 
+    await Promise.resolve();
     recordExclusionChange([], [{ i: marked.i, j: marked.j }]);
     await vi.runAllTimersAsync();
 
@@ -79,6 +82,11 @@ describe("occupancy correction recording", () => {
     expect(persist?.persistPromptPack).toBe(true);
     expect(persist?.appendPromptExamples).toBe(true);
     expect(persist?.promptExamples?.some((example) => example.label === "empty")).toBe(true);
+    expect(
+      calls.some(
+        (input) => input.persistPromptPack === false && (input.promptExamples?.length ?? 0) === 0,
+      ),
+    ).toBe(true);
     expect(onOccupancyRescore).toHaveBeenCalledWith([{ i: 1, j: 0 }]);
   });
 
@@ -117,10 +125,11 @@ describe("occupancy correction recording", () => {
       return dispose;
     });
 
+    await Promise.resolve();
     recordExclusionChange([], [{ i: marked.i, j: marked.j }]);
     await vi.runAllTimersAsync();
 
-    expect(classify).toHaveBeenCalledTimes(1);
+    expect(classify).toHaveBeenCalledTimes(2);
     expect(onOccupancyRescore).not.toHaveBeenCalled();
   });
 });
