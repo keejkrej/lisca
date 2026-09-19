@@ -109,4 +109,26 @@ describe("setAssayId interval handling", () => {
     expect(restored?.assayId).toBe(ASSAY_TYPE.KILLING);
     expect(restored?.intervalValue).toBeNull();
   });
+
+  test("killing extra-channel roles persist into assay.json without joining signal", () => {
+    const { set, get } = drive(createInitialStudioWizardState());
+    studioWizardActions.setAssayId(set, ASSAY_TYPE.KILLING);
+    studioWizardActions.setAnalysis(set, { channelRoles: { effector: 2, deathMarker: 3 } });
+    studioWizardActions.updateSample(set, 0, {
+      name: "CAR-T",
+      slideChannel: "0",
+      positionStart: "1",
+      positionFinish: "2",
+      mask: "0",
+      signal: "1",
+    });
+
+    const json = buildStudioAssayJsonFromWizard(get());
+    expect(json.analysis?.channelRoles).toEqual({
+      brightfield: 0,
+      effector: 2,
+      deathMarker: 3,
+    });
+    expect(json.analysis?.channels).toEqual({ mask: 0, signal: [1] });
+  });
 });

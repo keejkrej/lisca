@@ -18,8 +18,8 @@ const ASSAY_CHOICE_DETAIL: Record<AssayId, { description: string; readout: strin
     readout: "Fluorescence",
   },
   killing: {
-    description: "Cytotoxicity over time",
-    readout: "Brightfield",
+    description: "T-cell / tumor killing on micropatterns",
+    readout: "Brightfield + optional fluorescence",
   },
   "lnp-binding": {
     description: "Nanoparticle binding over time",

@@ -23,14 +23,22 @@ and ln(2)/β. Writers use the names below.
   assay.json
   bbox/Pos{n}.csv
   align/Pos{n}.json
+  align/occupancy-pack.json    # assay-scoped few-shot occupancy; see occupancy-prompt-pack.md
   roi/Pos{n}/index.json
   roi/Pos{n}/Roi{k}.tif
   mask/Pos{n}/
   analysis/Pos{n}/
   results/
+  annotations/labels.json
+  annotations/roi/Pos{n}/Roi{k}/
+  timeseries/Pos{n}/          # killing in-tree tables until a sidecar exists
+  sidecar/                    # reserved for workstation / future killing sidecar
 ```
 
-Constants: `bbox/`, `roi/`, `align/`, `mask/`, `analysis/`, `results/`, `assay.json`.
+Constants: `bbox/`, `roi/`, `align/`, `mask/`, `analysis/`, `results/`,
+`annotations/`, `timeseries/`, `sidecar/`, `assay.json`. Occupancy support
+examples persist at `align/occupancy-pack.json` (workspace-level, not per
+Pos).
 
 ## `bbox/Pos{n}.csv` (lisca crop/align)
 
@@ -58,12 +66,61 @@ Cropped stacks live under `roi/Pos{n}/`:
 - `index.json` — slim position index
 
 `index.json` fields: `position`, `axisOrder` (always `TCZYX`), `timeCount`,
-`channelCount`, `zCount`, optional `timeIndices`, `rois[]` with `roi`,
-`fileName`, `bbox` (`roi, x, y, w, h`). Stack shape is **derived** as
+`channelCount`, `zCount`, optional `timeIndices`, optional `channelIndices`,
+optional `channelLabels`, `rois[]` with `roi`, `fileName`, `bbox`
+(`roi, x, y, w, h`). Stack shape is **derived** as
 `[timeCount, channelCount, zCount, bbox.h, bbox.w]` — not stored per ROI.
+
+`timeIndices` / `channelIndices` are the source acquisition indices for each
+T / C plane (length equals `timeCount` / `channelCount`). Crop writes every
+selected source channel; when omitted, consumers default to `0..count-1`.
+`channelLabels` holds source names when the reader has them (folder `BF` /
+`GFP`; ND2 when metadata exposes names). Numeric-only ND2/CZI labels are
+omitted.
+
+TIFF pages are grayscale, one page per TCZYX plane. There is no OME or ImageJ
+hyperstack tag; consumers should use `index.json`, not embedded TIFF metadata.
 
 Python readers: `lisca.core.workspace.load_position_index` (other packages should
 import this instead of re-parsing). Path helper: `roi/Pos{n}/index.json`.
+
+## `annotations/`
+
+Open label catalog plus per-frame classification / mask files:
+
+- `annotations/labels.json` — `{ labels: [{ id, name, color }, ...] }` (not a
+  closed alive/dead enum)
+- `annotations/roi/Pos{n}/Roi{k}/C{c}_T{t}_Z{z}.{json,png}` — one frame
+
+Killing workspaces may use ids `alive`, `dead`, `tumor`, `tcell` (see
+`KILLING_ANNOTATION_LABELS`). Studio killing analysis does not read these
+labels.
+
+## `timeseries/` (killing, in-tree)
+
+Until `lisca-killing-assay` exists, killing writes `timeseries/Pos{n}/ch{c}.csv`
+(`roi,t,p_dead`) from the ResNet presence classifier. Import the folder name
+from `lisca.core.paths.TIMESERIES_DIR` / `lisca_workspace::TIMESERIES_DIR`.
+
+## `sidecar/` (reserved)
+
+lisca does not write this folder. A workstation or future killing sidecar
+should use these stable names under `sidecar/`:
+
+| File              | Intended contents                                         |
+| ----------------- | --------------------------------------------------------- |
+| `events.json`     | Death / engagement event table per ROI                    |
+| `traces.parquet`  | Per-ROI time traces (`health_tumor`, `health_T`, contact) |
+| `tracks.csv`      | T-cell tracks inside an ROI                               |
+| `engagements.csv` | Contact episodes (`t_engage_on` / `t_engage_off`)         |
+
+Path helpers: `sidecar_dir` / `sidecar_path`. Do not invent a second results
+tree for those artifacts.
+
+Killing `assay.json` may also set optional `analysis.channelRoles`
+(`brightfield`, `effector`, `deathMarker`) so extra fluorescence planes stay
+named without joining `analysis.channels.signal` (the in-tree classifier still
+reads `signal` only).
 
 ## `analysis/Pos{n}/` (CSV only; written by transfection sidecar)
 

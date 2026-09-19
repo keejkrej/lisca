@@ -118,6 +118,30 @@ mod contract_tests {
     }
 
     #[test]
+    fn roi_index_file_preserves_channel_identity() {
+        let value = json!({
+            "position": 1,
+            "axisOrder": "TCZYX",
+            "timeCount": 1,
+            "channelCount": 3,
+            "zCount": 1,
+            "channelIndices": [0, 1, 2],
+            "channelLabels": ["BF", "signal", "tcell"],
+            "rois": [{
+                "roi": 1,
+                "fileName": "Roi1.tif",
+                "bbox": { "roi": 1, "x": 0, "y": 0, "w": 2, "h": 2 }
+            }]
+        });
+        let index: RoiIndexFile = serde_json::from_value(value).unwrap();
+        assert_eq!(index.channel_indices, vec![0, 1, 2]);
+        assert_eq!(
+            index.channel_labels,
+            vec!["BF".to_string(), "signal".to_string(), "tcell".to_string()]
+        );
+    }
+
+    #[test]
     fn task_detail_preserves_operation_task_and_attempt_ids() {
         let value = json!({
             "operation": {

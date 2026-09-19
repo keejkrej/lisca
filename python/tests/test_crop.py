@@ -105,11 +105,59 @@ def test_frame_major_crop_reads_each_plane_once(tmp_path: Path) -> None:
     assert index["timeCount"] == 2
     assert index["channelCount"] == 2
     assert index["zCount"] == 1
+    assert index["channelIndices"] == [0, 1]
+    assert "channelLabels" not in index
 
     stack0 = _read_roi_stack(result.output_dir / "Roi0.tif", (2, 2, 1, 2, 2))
     stack1 = _read_roi_stack(result.output_dir / "Roi1.tif", (2, 2, 1, 2, 2))
     assert stack0[1, 0, 0, 0, 0] == 1000
     assert stack1[1, 0, 0, 0, 0] == 1002
+
+
+def test_three_channel_crop_preserves_channel_identity(tmp_path: Path) -> None:
+    workspace = tmp_path / "workspace"
+    source = tmp_path / "source.nd2"
+    source.write_bytes(b"placeholder")
+    (workspace / "bbox").mkdir(parents=True)
+    (workspace / "bbox" / "Pos0.csv").write_text(
+        "roi,x,y,w,h\n0,0,0,2,2\n",
+        encoding="utf-8",
+    )
+
+    def read_frame(_p: int, t: int, c: int, z: int) -> np.ndarray:
+        _yy, xx = np.mgrid[0:2, 0:2]
+        return (100 * c + 10 * t + z + xx).astype(np.uint16)
+
+    info = ImageInfo(
+        n_pos=1,
+        n_time=2,
+        n_chan=3,
+        n_z=1,
+        channel_names=("BF", "tcell", "PI"),
+    )
+    result = crop._crop_position_with_reader(
+        workspace=workspace,
+        source=source,
+        pos=0,
+        bboxes=[RoiBbox(roi=0, x=0, y=0, w=2, h=2)],
+        info=info,
+        read_frame=read_frame,
+        times=None,
+        channels=None,
+        z_slices=None,
+        on_progress=None,
+    )
+
+    index = json.loads((result.output_dir / "index.json").read_text(encoding="utf-8"))
+    assert index["channelCount"] == 3
+    assert index["channelIndices"] == [0, 1, 2]
+    assert index["channelLabels"] == ["BF", "tcell", "PI"]
+    assert index["timeIndices"] == [0, 1]
+
+    stack = _read_roi_stack(result.output_dir / "Roi0.tif", (2, 3, 1, 2, 2))
+    assert stack[0, 0, 0, 0, 0] == 0
+    assert stack[0, 1, 0, 0, 0] == 100
+    assert stack[1, 2, 0, 0, 0] == 210
 
 
 def _write_and_check_roi_tiffs(

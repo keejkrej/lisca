@@ -59,6 +59,13 @@ function kindFromMode(mode: HostFilePickerMode): StudioDataSourceKind {
   return null;
 }
 
+function parseOptionalChannelIndex(raw: string): number | "" | "invalid" {
+  const trimmed = raw.trim();
+  if (trimmed === "") return "";
+  if (!/^\d+$/.test(trimmed)) return "invalid";
+  return Number(trimmed);
+}
+
 export function BasicInfoStep1(props: { hostPort: HostFilePickerOperations }) {
   const wizard = useAtomValue(() => studioWizardAtom);
   const setWizard = useAtomSet(() => studioWizardAtom);
@@ -255,6 +262,64 @@ export function BasicInfoStep1(props: { hostPort: HostFilePickerOperations }) {
               <span>Use the full site (skip mask)</span>
             </label>
           </Field>
+        </Show>
+        <Show when={wizard().assayId === ASSAY_TYPE.KILLING}>
+          <div class="flex w-full min-w-0 flex-col gap-2">
+            <p class="text-[13px] leading-[18px] text-muted-foreground">
+              Optional extra fluorescence indices for coculture recordings. Crop keeps every source
+              channel; Studio killing analysis still uses mask and signal on the next step.
+            </p>
+            <div class="flex w-full min-w-0 flex-col gap-4 sm:flex-row">
+              <Field class="min-w-0 flex-1 gap-2">
+                <FieldLabel
+                  class="text-sm font-medium leading-[18px]"
+                  id="studio-effector-channel-label"
+                >
+                  Effector (T-cell)
+                </FieldLabel>
+                <Input
+                  autocomplete="off"
+                  aria-labelledby="studio-effector-channel-label"
+                  class="h-8 w-full rounded-full px-3 font-mono text-[13px]"
+                  inputMode="numeric"
+                  name="effector-channel"
+                  placeholder="optional, e.g. 2…"
+                  value={wizard().analysis?.channelRoles?.effector ?? ""}
+                  onChange={(event) => {
+                    const parsed = parseOptionalChannelIndex(event.currentTarget.value);
+                    if (parsed === "invalid") return;
+                    setAnalysis({
+                      channelRoles: { effector: parsed === "" ? undefined : parsed },
+                    });
+                  }}
+                />
+              </Field>
+              <Field class="min-w-0 flex-1 gap-2">
+                <FieldLabel
+                  class="text-sm font-medium leading-[18px]"
+                  id="studio-death-marker-channel-label"
+                >
+                  Death marker (PI / TOTO-3)
+                </FieldLabel>
+                <Input
+                  autocomplete="off"
+                  aria-labelledby="studio-death-marker-channel-label"
+                  class="h-8 w-full rounded-full px-3 font-mono text-[13px]"
+                  inputMode="numeric"
+                  name="death-marker-channel"
+                  placeholder="optional, e.g. 3…"
+                  value={wizard().analysis?.channelRoles?.deathMarker ?? ""}
+                  onChange={(event) => {
+                    const parsed = parseOptionalChannelIndex(event.currentTarget.value);
+                    if (parsed === "invalid") return;
+                    setAnalysis({
+                      channelRoles: { deathMarker: parsed === "" ? undefined : parsed },
+                    });
+                  }}
+                />
+              </Field>
+            </div>
+          </div>
         </Show>
       </div>
 

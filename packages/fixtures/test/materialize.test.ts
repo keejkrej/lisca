@@ -103,9 +103,24 @@ describe("workspace fixture smoke", () => {
     const index = decodeJson(RoiIndexFileSchema, JSON.parse(read(out, "roi/Pos1/index.json")));
     expect(index.axisOrder).toBe("TCZYX");
     expect(index.rois[0]?.fileName).toBe("Roi1.tif");
+    expect(index.channelCount).toBe(3);
+    expect(index.channelIndices).toEqual([0, 1, 2]);
+    expect(index.channelLabels).toEqual(["BF", "signal", "tcell"]);
     const tiff = readBytes(out, "roi/Pos1/Roi1.tif");
     expect(tiff.subarray(0, 4).equals(Buffer.from([0x49, 0x49, 0x2a, 0x00]))).toBe(true);
     expect(existsSync(join(out, "results"))).toBe(false);
+  });
+
+  it("writes killing extra channels, roles, and tumor/T-cell label hooks", () => {
+    const out = tempOut("kill-channels");
+    materializeFixture({ assay: "killing", stage: "annotated", out, force: true });
+    const assay = decodeJson(AssayJsonFileSchema, JSON.parse(read(out, "assay.json")));
+    expect(assay.analysis?.channelRoles).toEqual({ brightfield: 0, effector: 2 });
+    expect(existsSync(join(out, "source", "Pos1", sourceFileName(1, 2, 0, 0)))).toBe(true);
+    const labels = JSON.parse(read(out, "annotations/labels.json")) as {
+      labels: Array<{ id: string }>;
+    };
+    expect(labels.labels.map((label) => label.id)).toEqual(["alive", "dead", "tumor", "tcell"]);
   });
 
   it("writes transfection analysis CSVs and every catalog PNG in the sidecar tree", () => {

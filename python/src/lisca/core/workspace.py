@@ -9,6 +9,7 @@ from lisca.core.bbox import RoiBbox, parse_bbox_csv
 from lisca.core.paths import (
     ALIGN_DIR,
     ANALYSIS_DIR,
+    ANNOTATIONS_DIR,
     ASSAY_JSON,
     BBOX_COLUMNS,
     BBOX_DIR,
@@ -17,6 +18,8 @@ from lisca.core.paths import (
     POS_PREFIX,
     RESULTS_DIR,
     ROI_DIR,
+    SIDECAR_DIR,
+    TIMESERIES_DIR,
     align_dir,
     align_json_name,
     align_json_path,
@@ -39,6 +42,7 @@ from lisca.migrations import migrate_workspace
 __all__ = [
     "ALIGN_DIR",
     "ANALYSIS_DIR",
+    "ANNOTATIONS_DIR",
     "ASSAY_JSON",
     "BBOX_COLUMNS",
     "BBOX_DIR",
@@ -47,6 +51,8 @@ __all__ = [
     "POS_PREFIX",
     "RESULTS_DIR",
     "ROI_DIR",
+    "SIDECAR_DIR",
+    "TIMESERIES_DIR",
     "PositionIndex",
     "RoiEntry",
     "SavedAlignState",
@@ -94,6 +100,8 @@ class PositionIndex:
     z_count: int
     rois: list[RoiEntry]
     time_indices: list[int]
+    channel_indices: list[int]
+    channel_labels: list[str]
 
 
 def list_align_positions(workspace: Path) -> list[int]:
@@ -173,6 +181,26 @@ def load_position_index(workspace: Path, position: int) -> PositionIndex:
                 f"{path}: timeIndices length {len(time_indices)} "
                 f"does not match timeCount {time_count}"
             )
+    raw_channel_indices = raw.get("channelIndices")
+    if raw_channel_indices is None:
+        channel_indices = list(range(channel_count))
+    else:
+        channel_indices = [int(value) for value in raw_channel_indices]
+        if len(channel_indices) != channel_count:
+            raise ValueError(
+                f"{path}: channelIndices length {len(channel_indices)} "
+                f"does not match channelCount {channel_count}"
+            )
+    raw_channel_labels = raw.get("channelLabels")
+    if raw_channel_labels is None:
+        channel_labels: list[str] = []
+    else:
+        channel_labels = [str(value) for value in raw_channel_labels]
+        if len(channel_labels) != channel_count:
+            raise ValueError(
+                f"{path}: channelLabels length {len(channel_labels)} "
+                f"does not match channelCount {channel_count}"
+            )
     return PositionIndex(
         position=int(raw["position"]),
         axis_order=axis_order,
@@ -181,4 +209,6 @@ def load_position_index(workspace: Path, position: int) -> PositionIndex:
         z_count=z_count,
         rois=rois,
         time_indices=time_indices,
+        channel_indices=channel_indices,
+        channel_labels=channel_labels,
     )

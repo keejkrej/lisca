@@ -88,10 +88,28 @@ export const AssaySampleChannelsSchema = Schema.Struct({
 }).annotate({ identifier: "AssaySampleChannels" });
 
 /**
+ * Optional named channel roles for multi-fluor killing / coculture recordings.
+ * Indices refer to source / ROI-stack C planes (same numbering as
+ * `channels.mask` / `channels.signal`). lisca crop writes every channel;
+ * Studio killing analysis still reads `channels.signal` only. Extra roles are
+ * hooks for a workstation or future `lisca-killing-assay` sidecar — they do
+ * not change the in-tree ResNet presence classifier.
+ */
+export const AssayChannelRolesSchema = Schema.Struct({
+  /** Brightfield / morphology; often the same index as `channels.mask`. */
+  brightfield: Schema.optional(U32),
+  /** Effector (T-cell) fluorescence when acquired. */
+  effector: Schema.optional(U32),
+  /** Death stain (PI / TOTO-3) when acquired. */
+  deathMarker: Schema.optional(U32),
+}).annotate({ identifier: "AssayChannelRoles" });
+
+/**
  * Assay-dependent analysis options on assay.json.
  * `maxOnsetMinutes` (onset time t0 search cap) / `skipSegment` are transfection-oriented;
  * other assays ignore them.
  * `channels` / `sampleChannels` resolve mask (segmentation) and signal (intensity) indices.
+ * `channelRoles` names extra planes (T-cell / death stain) without putting them on `signal`.
  */
 export const AssayAnalysisConfigSchema = Schema.Struct({
   /** Cap on onset time t0 search (minutes). Default 120; 0 fixes onset at 0. */
@@ -100,6 +118,7 @@ export const AssayAnalysisConfigSchema = Schema.Struct({
   skipSegment: Schema.optional(Schema.Boolean),
   channels: Schema.optional(AssayChannelsSchema),
   sampleChannels: Schema.optional(Schema.mutable(Schema.Array(AssaySampleChannelsSchema))),
+  channelRoles: Schema.optional(AssayChannelRolesSchema),
 }).annotate({ identifier: "AssayAnalysisConfig" });
 
 export const AssayJsonFileSchema = Schema.Struct({
@@ -126,5 +145,6 @@ export type AssaySamples = typeof AssaySamplesSchema.Type;
 export type AssaySignalChannels = typeof AssaySignalChannelsSchema.Type;
 export type AssayChannels = typeof AssayChannelsSchema.Type;
 export type AssaySampleChannels = typeof AssaySampleChannelsSchema.Type;
+export type AssayChannelRoles = typeof AssayChannelRolesSchema.Type;
 export type AssayAnalysisConfig = typeof AssayAnalysisConfigSchema.Type;
 export type AssayJsonFile = typeof AssayJsonFileSchema.Type;

@@ -37,6 +37,20 @@ else:
 
 ProgressCallback = Callable[[str], None]
 
+
+def _channel_labels_for_indices(
+    names: tuple[str, ...] | None, channel_indices: list[int]
+) -> list[str] | None:
+    if names is None:
+        return None
+    labels: list[str] = []
+    for channel_index in channel_indices:
+        if channel_index < 0 or channel_index >= len(names):
+            return None
+        labels.append(names[channel_index])
+    return labels
+
+
 # Extra position workers each open another ND2/CZI reader on the same file
 # and contend for seeks (especially JupyterHub NFS). Default is one worker;
 # LISCA_CROP_WORKERS opts into parallelism but is an upper bound, not a
@@ -131,6 +145,8 @@ def _write_index(
     z_count: int,
     bboxes: list[RoiBbox],
     time_indices: list[int] | None = None,
+    channel_indices: list[int] | None = None,
+    channel_labels: list[str] | None = None,
 ) -> None:
     resolved_times = (
         list(time_indices) if time_indices is not None else list(range(time_count))
@@ -140,7 +156,17 @@ def _write_index(
             f"timeIndices length {len(resolved_times)} does not match "
             f"timeCount {time_count}"
         )
-    index = {
+    resolved_channels = (
+        list(channel_indices)
+        if channel_indices is not None
+        else list(range(channel_count))
+    )
+    if len(resolved_channels) != channel_count:
+        raise ValueError(
+            f"channelIndices length {len(resolved_channels)} does not match "
+            f"channelCount {channel_count}"
+        )
+    index: dict[str, object] = {
         "position": pos,
         "axisOrder": "TCZYX",
         "timeCount": time_count,
@@ -148,6 +174,7 @@ def _write_index(
         "zCount": z_count,
         # Source acquisition indices for each T plane (may skip frames).
         "timeIndices": resolved_times,
+        "channelIndices": resolved_channels,
         "rois": [
             {
                 "roi": bbox.roi,
@@ -163,6 +190,18 @@ def _write_index(
             for bbox in bboxes
         ],
     }
+    if channel_labels is not None:
+        labels = [str(label) for label in channel_labels]
+        if len(labels) != channel_count:
+            raise ValueError(
+                f"channelLabels length {len(labels)} does not match "
+                f"channelCount {channel_count}"
+            )
+        if any(
+            label != str(channel_index)
+            for label, channel_index in zip(labels, resolved_channels, strict=True)
+        ):
+            index["channelLabels"] = labels
     (output_dir / INDEX_JSON).write_text(
         json.dumps(index, indent=2) + "\n", encoding="utf-8"
     )
@@ -454,6 +493,10 @@ def _crop_position_with_reader(
             z_count=len(z_indices),
             bboxes=bboxes,
             time_indices=time_indices,
+            channel_indices=channel_indices,
+            channel_labels=_channel_labels_for_indices(
+                info.channel_names, channel_indices
+            ),
         )
         _publish_staged_directory(staging_dir, output_dir)
         staging.disarm()
