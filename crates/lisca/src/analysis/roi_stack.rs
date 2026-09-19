@@ -26,6 +26,11 @@ pub struct PositionIndex {
     /// Source acquisition time indices per T plane (`t` in metrics CSVs).
     /// Defaults to `0..time_count` when index.json omits `timeIndices`.
     pub time_indices: Vec<u32>,
+    /// Source acquisition channel indices per C plane.
+    /// Defaults to `0..channel_count` when index.json omits `channelIndices`.
+    pub channel_indices: Vec<u32>,
+    /// Source channel names aligned with `channel_indices` when present.
+    pub channel_labels: Vec<String>,
     pub rois: Vec<RoiCrop>,
 }
 
@@ -42,6 +47,10 @@ struct IndexJson {
     z_count: u32,
     #[serde(rename = "timeIndices", default)]
     time_indices: Option<Vec<u32>>,
+    #[serde(rename = "channelIndices", default)]
+    channel_indices: Option<Vec<u32>>,
+    #[serde(rename = "channelLabels", default)]
+    channel_labels: Option<Vec<String>>,
     rois: Vec<IndexRoiJson>,
 }
 
@@ -102,6 +111,14 @@ pub fn read_position_index(pos_dir: &Path) -> Result<PositionIndex, String> {
         return Err(format!("No ROI entries found in {}", index_path.display()));
     }
     let time_indices = resolve_time_indices(raw.time_indices, raw.time_count, &index_path)?;
+    let channel_indices = resolve_axis_indices(
+        raw.channel_indices,
+        raw.channel_count,
+        "channelIndices",
+        &index_path,
+    )?;
+    let channel_labels =
+        resolve_channel_labels(raw.channel_labels, raw.channel_count, &index_path)?;
     Ok(PositionIndex {
         position: raw.position,
         axis_order,
@@ -109,6 +126,8 @@ pub fn read_position_index(pos_dir: &Path) -> Result<PositionIndex, String> {
         channel_count: raw.channel_count,
         z_count: raw.z_count,
         time_indices,
+        channel_indices,
+        channel_labels,
         rois,
     })
 }
@@ -119,17 +138,46 @@ pub fn resolve_time_indices(
     time_count: u32,
     index_path: &Path,
 ) -> Result<Vec<u32>, String> {
+    resolve_axis_indices(explicit, time_count, "timeIndices", index_path)
+}
+
+fn resolve_axis_indices(
+    explicit: Option<Vec<u32>>,
+    count: u32,
+    field: &str,
+    index_path: &Path,
+) -> Result<Vec<u32>, String> {
     match explicit {
-        None => Ok((0..time_count).collect()),
+        None => Ok((0..count).collect()),
         Some(indices) => {
-            if indices.len() as u32 != time_count {
+            if indices.len() as u32 != count {
                 return Err(format!(
-                    "{}: timeIndices length {} does not match timeCount {time_count}",
+                    "{}: {field} length {} does not match expected {count}",
                     index_path.display(),
                     indices.len()
                 ));
             }
             Ok(indices)
+        }
+    }
+}
+
+fn resolve_channel_labels(
+    explicit: Option<Vec<String>>,
+    channel_count: u32,
+    index_path: &Path,
+) -> Result<Vec<String>, String> {
+    match explicit {
+        None => Ok(Vec::new()),
+        Some(labels) => {
+            if labels.len() as u32 != channel_count {
+                return Err(format!(
+                    "{}: channelLabels length {} does not match channelCount {channel_count}",
+                    index_path.display(),
+                    labels.len()
+                ));
+            }
+            Ok(labels)
         }
     }
 }

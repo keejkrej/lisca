@@ -11,6 +11,28 @@ import numpy as np
 from lisca.readers.base import ImageInfo, ReaderSession, ensure_2d
 
 
+def _nd2_channel_names(handle: Any, n_chan: int) -> tuple[str, ...] | None:
+    """Best-effort ND2 channel names; omit when the reader has no labels."""
+    try:
+        metadata = handle.metadata
+        channels = getattr(metadata, "channels", None)
+        if not channels or len(channels) != n_chan:
+            return None
+        names: list[str] = []
+        for item in channels:
+            channel = getattr(item, "channel", item)
+            name = getattr(channel, "name", None)
+            if name is None:
+                return None
+            text = str(name).strip()
+            if not text:
+                return None
+            names.append(text)
+        return tuple(names)
+    except (AttributeError, TypeError, ValueError):
+        return None
+
+
 @dataclass(frozen=True)
 class _FrameLookup:
     sequence_axes: tuple[str, ...]
@@ -32,7 +54,13 @@ class ND2Reader:
         n_chan = sizes.get("C", 1)
         n_z = sizes.get("Z", 1)
         frame_lookup = self._build_frame_lookup(handle)
-        info = ImageInfo(n_pos=n_pos, n_time=n_time, n_chan=n_chan, n_z=n_z)
+        info = ImageInfo(
+            n_pos=n_pos,
+            n_time=n_time,
+            n_chan=n_chan,
+            n_z=n_z,
+            channel_names=_nd2_channel_names(handle, n_chan),
+        )
 
         def read_frame(p: int, t: int, c: int, z: int) -> np.ndarray:
             return self._read_frame_2d(handle, frame_lookup, p, t, c, z)

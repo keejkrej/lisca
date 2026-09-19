@@ -12,12 +12,13 @@ import type {
 } from "@lisca/contracts/assay";
 import {
   ASSAY_DEFAULT_INTERVAL_MINUTES,
+  assayUsesChannelRoles,
   assayUsesMaxOnsetMinutes,
   assayUsesSkipSegment,
   DEFAULT_FOLDER_SOURCE_TEMPLATE,
   TRANSFECTION_DEFAULT_MAX_ONSET_MINUTES,
 } from "@lisca/contracts/assay";
-import type { AssaySampleRow } from "@lisca/contracts";
+import type { AssayChannelRoles, AssaySampleRow } from "@lisca/contracts";
 import * as Result from "effect/Result";
 
 import { analysisChannelsFromSamples } from "./sample-positions";
@@ -30,6 +31,7 @@ export const ASSAY_CHOICE_LABEL: Record<StudioAssayType, string> = {
 
 export {
   ASSAY_DEFAULT_INTERVAL_MINUTES,
+  assayUsesChannelRoles,
   assayUsesMaxOnsetMinutes,
   assayUsesSkipSegment,
   TRANSFECTION_DEFAULT_MAX_ONSET_MINUTES,
@@ -43,6 +45,19 @@ export function defaultIntervalMinutesForAssay(assayId: StudioAssayType | null):
 export function defaultMaxOnsetMinutesForAssay(assayId: StudioAssayType | null): number | null {
   if (!assayUsesMaxOnsetMinutes(assayId)) return null;
   return TRANSFECTION_DEFAULT_MAX_ONSET_MINUTES;
+}
+
+export function compactChannelRoles(
+  roles: AssayChannelRoles | null | undefined,
+  fallbackBrightfield?: number,
+): AssayChannelRoles | undefined {
+  const brightfield = roles?.brightfield ?? fallbackBrightfield;
+  const compact: AssayChannelRoles = {
+    ...(brightfield != null ? { brightfield } : {}),
+    ...(roles?.effector != null ? { effector: roles.effector } : {}),
+    ...(roles?.deathMarker != null ? { deathMarker: roles.deathMarker } : {}),
+  };
+  return Object.keys(compact).length > 0 ? compact : undefined;
 }
 
 export function analysisConfigForAssay(
@@ -59,11 +74,15 @@ export function analysisConfigForAssay(
 
   const channels = analysis?.channels;
   const sampleChannels = analysis?.sampleChannels;
+  const channelRoles = assayUsesChannelRoles(assayId)
+    ? compactChannelRoles(analysis?.channelRoles, channels?.mask)
+    : undefined;
 
   if (
     Object.keys(transfectionBits).length === 0 &&
     channels == null &&
-    (sampleChannels == null || sampleChannels.length === 0)
+    (sampleChannels == null || sampleChannels.length === 0) &&
+    channelRoles == null
   ) {
     return undefined;
   }
@@ -72,6 +91,7 @@ export function analysisConfigForAssay(
     ...transfectionBits,
     ...(channels != null ? { channels } : {}),
     ...(sampleChannels != null && sampleChannels.length > 0 ? { sampleChannels } : {}),
+    ...(channelRoles != null ? { channelRoles } : {}),
   };
 }
 

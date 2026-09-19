@@ -75,9 +75,14 @@ const { out } = materializeFixture({
 
 ## Layout (tiny, real shapes)
 
-- 2 positions (`Pos1`, `Pos2`), 2 ROIs, 3 timepoints, 2 channels, 1 Z
+- 2 positions (`Pos1`, `Pos2`), 2 ROIs, 3 timepoints, 1 Z
+- Transfection: 2 channels (`mask=0`, `signal=1`)
+- Killing: 3 channels (`mask=0` BF, `signal=1`, extra C2 T-cell) plus
+  `analysis.channelRoles.effector = 2`. Annotation labels include `tumor` /
+  `tcell` as open catalog hooks.
 - Folder template: `Pos{p}` / `img_channel{c}_position{p}_time{t}_z{z}`
-- ROI stacks: `roi/PosN/RoiN.tif` + slim `index.json` (`axisOrder: TCZYX`)
+- ROI stacks: `roi/PosN/RoiN.tif` + slim `index.json` (`axisOrder: TCZYX`,
+  `channelIndices`, `channelLabels` when named)
 - Alignment: `bbox/PosN.csv` (`roi,x,y,w,h`) and `align/PosN.json`
 - Transfection analysis CSVs: `analysis/PosN/chC.csv` (`roi,t,area,background,sum,corrected`), `auc.csv` (`roi,auc`), `fit.csv` (`roi,baseline_intensity,onset_time,expression_rate,mrna_lifetime,protein_lifetime,success`)
 - Killing timeseries: `timeseries/PosN/chN.csv` (`roi,t,p_dead`)

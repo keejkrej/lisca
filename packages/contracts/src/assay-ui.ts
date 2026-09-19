@@ -1,6 +1,8 @@
 import type { AlignerSource } from "./schema/shared";
+import type { AnnotationLabel } from "./schema/annotate";
 import type {
   AssayAnalysisConfig,
+  AssayChannelRoles,
   AssayChannels,
   AssayData,
   AssayInterval,
@@ -13,6 +15,7 @@ import type {
 
 export type {
   AssayAnalysisConfig,
+  AssayChannelRoles,
   AssayChannels,
   AssayData,
   AssayInterval,
@@ -82,6 +85,27 @@ export function assayUsesMaxOnsetMinutes(assayId: StudioAssayType | null): boole
 export function assayUsesSkipSegment(assayId: StudioAssayType | null): boolean {
   return assayId === ASSAY_TYPE.TRANSFECTION;
 }
+
+/**
+ * Whether the assay exposes optional named extra-channel roles (T-cell /
+ * death stain) in Studio basic info. Mask/signal stay on the Samples step.
+ */
+export function assayUsesChannelRoles(assayId: StudioAssayType | null): boolean {
+  return assayId === ASSAY_TYPE.KILLING;
+}
+
+/**
+ * Open classification catalog for killing / coculture workspaces. Annotator
+ * labels are not a closed alive/dead enum — add or rename freely. Tumor vs
+ * T-cell ids are extension points for later sidecar work; Studio killing
+ * analysis does not consume them.
+ */
+export const KILLING_ANNOTATION_LABELS: readonly AnnotationLabel[] = [
+  { id: "alive", name: "Alive", color: "#22c55e" },
+  { id: "dead", name: "Dead", color: "#ef4444" },
+  { id: "tumor", name: "Tumor", color: "#f97316" },
+  { id: "tcell", name: "T cell", color: "#3b82f6" },
+];
 
 export type StudioAssayId = StudioAssayType;
 

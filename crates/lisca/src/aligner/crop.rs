@@ -787,6 +787,22 @@ fn roi_index_entries(bboxes: &[RoiBbox]) -> Vec<RoiIndexEntry> {
         .collect()
 }
 
+fn channel_labels_for_scan(scan: &WorkspaceScan) -> Vec<String> {
+    if scan.channel_labels.len() != scan.channels.len() || scan.channel_labels.is_empty() {
+        return Vec::new();
+    }
+    let numeric_only = scan
+        .channel_labels
+        .iter()
+        .zip(&scan.channels)
+        .all(|(label, channel)| label == &channel.to_string());
+    if numeric_only {
+        Vec::new()
+    } else {
+        scan.channel_labels.clone()
+    }
+}
+
 fn write_roi_index(
     pos: u32,
     entries: Vec<RoiIndexEntry>,
@@ -800,6 +816,11 @@ fn write_roi_index(
     } else {
         scan.times.clone()
     };
+    let channel_indices = if scan.channels.is_empty() {
+        vec![0]
+    } else {
+        scan.channels.clone()
+    };
     let index = RoiIndexFile {
         position: pos,
         axis_order: RoiIndexFileAxisOrder::Tczyx,
@@ -807,6 +828,8 @@ fn write_roi_index(
         channel_count: scan.channels.len().max(1) as u32,
         z_count: scan.z_slices.len().max(1) as u32,
         time_indices,
+        channel_indices,
+        channel_labels: channel_labels_for_scan(scan),
         rois: entries,
     };
     let bytes = serde_json::to_vec_pretty(&index).map_err(|error| error.to_string())?;
@@ -1150,6 +1173,84 @@ mod tests {
         assert_eq!(
             index.get("timeCount").and_then(|value| value.as_u64()),
             Some(scan.times.len().max(1) as u64)
+        );
+        let channel_indices = index
+            .get("channelIndices")
+            .and_then(|value| value.as_array())
+            .expect("channelIndices present");
+        assert_eq!(
+            channel_indices
+                .iter()
+                .map(|value| value.as_u64().expect("u64"))
+                .collect::<Vec<_>>(),
+            scan.channels.iter().map(|&c| c as u64).collect::<Vec<_>>()
+        );
+    }
+
+    #[test]
+    fn crop_writes_named_channel_labels_into_index_json() {
+        let root = tempfile::tempdir().expect("temp workspace");
+        let workspace = root.path().join("workspace");
+        let source = root.path().join("source");
+        fs::create_dir_all(workspace.join("bbox")).expect("bbox dir");
+        let source_pos = source.join("Pos1");
+        fs::create_dir_all(&source_pos).expect("source position");
+        for name in ["BF", "signal", "tcell"] {
+            GrayImage::from_pixel(4, 4, Luma([8]))
+                .save(source_pos.join(format!("img_0_{name}_0.png")))
+                .expect("source frame");
+        }
+        fs::write(
+            workspace.join("bbox").join("Pos1.csv"),
+            "roi,x,y,w,h\n1,0,0,2,2\n",
+        )
+        .expect("bbox");
+        let request = CropRoiRequest {
+            output_format: Some(CropOutputFormat::Tiff),
+            overwrite: true,
+            positions: vec![1],
+            request_id: "crop-channels".to_string(),
+            source: AlignerSource::Folder {
+                path: source.to_string_lossy().into_owned(),
+                subfolder_template: "Pos{p}".to_string(),
+                filename_template: "img_{t}_{c}_{z}".to_string(),
+            },
+            workspace_path: workspace.to_string_lossy().into_owned(),
+        };
+        let scan = scan_source(request.source.clone()).expect("scan");
+        crop_roi_position(&request, &scan, 1, || false).expect("crop");
+        let index: serde_json::Value = serde_json::from_slice(
+            &fs::read(roi_pos_dir_path(&request.workspace_path, 1).join("index.json"))
+                .expect("index"),
+        )
+        .expect("json");
+        assert_eq!(
+            index.get("channelCount").and_then(|value| value.as_u64()),
+            Some(3)
+        );
+        assert_eq!(
+            index
+                .get("channelIndices")
+                .and_then(|value| value.as_array())
+                .map(|values| values
+                    .iter()
+                    .map(|value| value.as_u64().expect("u64"))
+                    .collect::<Vec<_>>()),
+            Some(vec![0, 1, 2])
+        );
+        assert_eq!(
+            index
+                .get("channelLabels")
+                .and_then(|value| value.as_array())
+                .map(|values| values
+                    .iter()
+                    .map(|value| value.as_str().expect("str").to_string())
+                    .collect::<Vec<_>>()),
+            Some(vec![
+                "BF".to_string(),
+                "signal".to_string(),
+                "tcell".to_string()
+            ])
         );
     }
 

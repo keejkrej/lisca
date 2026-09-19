@@ -417,16 +417,23 @@ export const studioWizardActions = {
     patch: Partial<AssayAnalysisConfig>,
   ) {
     patchStudioWizard(set, (current) => {
-      if (!isTransfectionAssay(current.assayId)) {
-        return { ...current, analysis: null };
-      }
-      const base = current.analysis ?? {
-        maxOnsetMinutes: defaultMaxOnsetMinutesForAssay(current.assayId) ?? undefined,
-        skipSegment: false,
+      const transfectionDefault = isTransfectionAssay(current.assayId)
+        ? {
+            maxOnsetMinutes: defaultMaxOnsetMinutesForAssay(current.assayId) ?? undefined,
+            skipSegment: false,
+          }
+        : {};
+      const base = current.analysis ?? transfectionDefault;
+      const merged: AssayAnalysisConfig = {
+        ...base,
+        ...patch,
+        ...(patch.channelRoles != null
+          ? { channelRoles: { ...base.channelRoles, ...patch.channelRoles } }
+          : {}),
       };
       return {
         ...current,
-        analysis: analysisConfigForAssay(current.assayId, { ...base, ...patch }) ?? null,
+        analysis: analysisConfigForAssay(current.assayId, merged) ?? null,
       };
     });
   },

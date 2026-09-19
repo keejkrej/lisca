@@ -836,6 +836,9 @@ impl ::std::convert::TryFrom<::std::string::String> for AppId {
 #[doc = "{"]
 #[doc = "  \"type\": \"object\","]
 #[doc = "  \"properties\": {"]
+#[doc = "    \"channelRoles\": {"]
+#[doc = "      \"$ref\": \"#/definitions/AssayChannelRoles\""]
+#[doc = "    },"]
 #[doc = "    \"channels\": {"]
 #[doc = "      \"$ref\": \"#/definitions/AssayChannels\""]
 #[doc = "    },"]
@@ -858,6 +861,12 @@ impl ::std::convert::TryFrom<::std::string::String> for AppId {
 #[doc = r" </details>"]
 #[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
 pub struct AssayAnalysisConfig {
+    #[serde(
+        rename = "channelRoles",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub channel_roles: ::std::option::Option<AssayChannelRoles>,
     #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
     pub channels: ::std::option::Option<AssayChannels>,
     #[serde(
@@ -882,6 +891,7 @@ pub struct AssayAnalysisConfig {
 impl ::std::default::Default for AssayAnalysisConfig {
     fn default() -> Self {
         Self {
+            channel_roles: Default::default(),
             channels: Default::default(),
             max_onset_minutes: Default::default(),
             sample_channels: Default::default(),
@@ -891,6 +901,60 @@ impl ::std::default::Default for AssayAnalysisConfig {
 }
 impl AssayAnalysisConfig {
     pub fn builder() -> builder::AssayAnalysisConfig {
+        Default::default()
+    }
+}
+#[doc = "`AssayChannelRoles`"]
+#[doc = r""]
+#[doc = r" <details><summary>JSON schema</summary>"]
+#[doc = r""]
+#[doc = r" ```json"]
+#[doc = "{"]
+#[doc = "  \"type\": \"object\","]
+#[doc = "  \"properties\": {"]
+#[doc = "    \"brightfield\": {"]
+#[doc = "      \"type\": \"integer\","]
+#[doc = "      \"format\": \"uint32\","]
+#[doc = "      \"minimum\": 0.0"]
+#[doc = "    },"]
+#[doc = "    \"deathMarker\": {"]
+#[doc = "      \"type\": \"integer\","]
+#[doc = "      \"format\": \"uint32\","]
+#[doc = "      \"minimum\": 0.0"]
+#[doc = "    },"]
+#[doc = "    \"effector\": {"]
+#[doc = "      \"type\": \"integer\","]
+#[doc = "      \"format\": \"uint32\","]
+#[doc = "      \"minimum\": 0.0"]
+#[doc = "    }"]
+#[doc = "  }"]
+#[doc = "}"]
+#[doc = r" ```"]
+#[doc = r" </details>"]
+#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
+pub struct AssayChannelRoles {
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub brightfield: ::std::option::Option<u32>,
+    #[serde(
+        rename = "deathMarker",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub death_marker: ::std::option::Option<u32>,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub effector: ::std::option::Option<u32>,
+}
+impl ::std::default::Default for AssayChannelRoles {
+    fn default() -> Self {
+        Self {
+            brightfield: Default::default(),
+            death_marker: Default::default(),
+            effector: Default::default(),
+        }
+    }
+}
+impl AssayChannelRoles {
+    pub fn builder() -> builder::AssayChannelRoles {
         Default::default()
     }
 }
@@ -4833,6 +4897,20 @@ impl RoiIndexEntry {
 #[doc = "      \"format\": \"uint32\","]
 #[doc = "      \"minimum\": 0.0"]
 #[doc = "    },"]
+#[doc = "    \"channelIndices\": {"]
+#[doc = "      \"type\": \"array\","]
+#[doc = "      \"items\": {"]
+#[doc = "        \"type\": \"integer\","]
+#[doc = "        \"format\": \"uint32\","]
+#[doc = "        \"minimum\": 0.0"]
+#[doc = "      }"]
+#[doc = "    },"]
+#[doc = "    \"channelLabels\": {"]
+#[doc = "      \"type\": \"array\","]
+#[doc = "      \"items\": {"]
+#[doc = "        \"type\": \"string\""]
+#[doc = "      }"]
+#[doc = "    },"]
 #[doc = "    \"position\": {"]
 #[doc = "      \"type\": \"integer\","]
 #[doc = "      \"format\": \"uint32\","]
@@ -4872,6 +4950,18 @@ pub struct RoiIndexFile {
     pub axis_order: RoiIndexFileAxisOrder,
     #[serde(rename = "channelCount")]
     pub channel_count: u32,
+    #[serde(
+        rename = "channelIndices",
+        default,
+        skip_serializing_if = "::std::vec::Vec::is_empty"
+    )]
+    pub channel_indices: ::std::vec::Vec<u32>,
+    #[serde(
+        rename = "channelLabels",
+        default,
+        skip_serializing_if = "::std::vec::Vec::is_empty"
+    )]
+    pub channel_labels: ::std::vec::Vec<::std::string::String>,
     pub position: u32,
     pub rois: ::std::vec::Vec<RoiIndexEntry>,
     #[serde(rename = "timeCount")]
@@ -7496,6 +7586,10 @@ pub mod builder {
     }
     #[derive(Clone, Debug)]
     pub struct AssayAnalysisConfig {
+        channel_roles: ::std::result::Result<
+            ::std::option::Option<super::AssayChannelRoles>,
+            ::std::string::String,
+        >,
         channels: ::std::result::Result<
             ::std::option::Option<super::AssayChannels>,
             ::std::string::String,
@@ -7510,6 +7604,7 @@ pub mod builder {
     impl ::std::default::Default for AssayAnalysisConfig {
         fn default() -> Self {
             Self {
+                channel_roles: Ok(Default::default()),
                 channels: Ok(Default::default()),
                 max_onset_minutes: Ok(Default::default()),
                 sample_channels: Ok(Default::default()),
@@ -7518,6 +7613,16 @@ pub mod builder {
         }
     }
     impl AssayAnalysisConfig {
+        pub fn channel_roles<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::option::Option<super::AssayChannelRoles>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.channel_roles = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for channel_roles: {e}"));
+            self
+        }
         pub fn channels<T>(mut self, value: T) -> Self
         where
             T: ::std::convert::TryInto<::std::option::Option<super::AssayChannels>>,
@@ -7565,6 +7670,7 @@ pub mod builder {
             value: AssayAnalysisConfig,
         ) -> ::std::result::Result<Self, super::error::ConversionError> {
             Ok(Self {
+                channel_roles: value.channel_roles?,
                 channels: value.channels?,
                 max_onset_minutes: value.max_onset_minutes?,
                 sample_channels: value.sample_channels?,
@@ -7575,10 +7681,79 @@ pub mod builder {
     impl ::std::convert::From<super::AssayAnalysisConfig> for AssayAnalysisConfig {
         fn from(value: super::AssayAnalysisConfig) -> Self {
             Self {
+                channel_roles: Ok(value.channel_roles),
                 channels: Ok(value.channels),
                 max_onset_minutes: Ok(value.max_onset_minutes),
                 sample_channels: Ok(value.sample_channels),
                 skip_segment: Ok(value.skip_segment),
+            }
+        }
+    }
+    #[derive(Clone, Debug)]
+    pub struct AssayChannelRoles {
+        brightfield: ::std::result::Result<::std::option::Option<u32>, ::std::string::String>,
+        death_marker: ::std::result::Result<::std::option::Option<u32>, ::std::string::String>,
+        effector: ::std::result::Result<::std::option::Option<u32>, ::std::string::String>,
+    }
+    impl ::std::default::Default for AssayChannelRoles {
+        fn default() -> Self {
+            Self {
+                brightfield: Ok(Default::default()),
+                death_marker: Ok(Default::default()),
+                effector: Ok(Default::default()),
+            }
+        }
+    }
+    impl AssayChannelRoles {
+        pub fn brightfield<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::option::Option<u32>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.brightfield = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for brightfield: {e}"));
+            self
+        }
+        pub fn death_marker<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::option::Option<u32>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.death_marker = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for death_marker: {e}"));
+            self
+        }
+        pub fn effector<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::option::Option<u32>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.effector = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for effector: {e}"));
+            self
+        }
+    }
+    impl ::std::convert::TryFrom<AssayChannelRoles> for super::AssayChannelRoles {
+        type Error = super::error::ConversionError;
+        fn try_from(
+            value: AssayChannelRoles,
+        ) -> ::std::result::Result<Self, super::error::ConversionError> {
+            Ok(Self {
+                brightfield: value.brightfield?,
+                death_marker: value.death_marker?,
+                effector: value.effector?,
+            })
+        }
+    }
+    impl ::std::convert::From<super::AssayChannelRoles> for AssayChannelRoles {
+        fn from(value: super::AssayChannelRoles) -> Self {
+            Self {
+                brightfield: Ok(value.brightfield),
+                death_marker: Ok(value.death_marker),
+                effector: Ok(value.effector),
             }
         }
     }
@@ -11565,6 +11740,9 @@ pub mod builder {
     pub struct RoiIndexFile {
         axis_order: ::std::result::Result<super::RoiIndexFileAxisOrder, ::std::string::String>,
         channel_count: ::std::result::Result<u32, ::std::string::String>,
+        channel_indices: ::std::result::Result<::std::vec::Vec<u32>, ::std::string::String>,
+        channel_labels:
+            ::std::result::Result<::std::vec::Vec<::std::string::String>, ::std::string::String>,
         position: ::std::result::Result<u32, ::std::string::String>,
         rois: ::std::result::Result<::std::vec::Vec<super::RoiIndexEntry>, ::std::string::String>,
         time_count: ::std::result::Result<u32, ::std::string::String>,
@@ -11576,6 +11754,8 @@ pub mod builder {
             Self {
                 axis_order: Err("no value supplied for axis_order".to_string()),
                 channel_count: Err("no value supplied for channel_count".to_string()),
+                channel_indices: Ok(Default::default()),
+                channel_labels: Ok(Default::default()),
                 position: Err("no value supplied for position".to_string()),
                 rois: Err("no value supplied for rois".to_string()),
                 time_count: Err("no value supplied for time_count".to_string()),
@@ -11603,6 +11783,26 @@ pub mod builder {
             self.channel_count = value
                 .try_into()
                 .map_err(|e| format!("error converting supplied value for channel_count: {e}"));
+            self
+        }
+        pub fn channel_indices<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::vec::Vec<u32>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.channel_indices = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for channel_indices: {e}"));
+            self
+        }
+        pub fn channel_labels<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::vec::Vec<::std::string::String>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.channel_labels = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for channel_labels: {e}"));
             self
         }
         pub fn position<T>(mut self, value: T) -> Self
@@ -11664,6 +11864,8 @@ pub mod builder {
             Ok(Self {
                 axis_order: value.axis_order?,
                 channel_count: value.channel_count?,
+                channel_indices: value.channel_indices?,
+                channel_labels: value.channel_labels?,
                 position: value.position?,
                 rois: value.rois?,
                 time_count: value.time_count?,
@@ -11677,6 +11879,8 @@ pub mod builder {
             Self {
                 axis_order: Ok(value.axis_order),
                 channel_count: Ok(value.channel_count),
+                channel_indices: Ok(value.channel_indices),
+                channel_labels: Ok(value.channel_labels),
                 position: Ok(value.position),
                 rois: Ok(value.rois),
                 time_count: Ok(value.time_count),

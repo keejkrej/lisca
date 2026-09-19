@@ -307,9 +307,7 @@ mod tests {
                 mask: 0,
                 signal: AssaySignalChannels(vec![1]),
             }),
-            sample_channels: vec![],
-            skip_segment: None,
-            max_onset_minutes: None,
+            ..Default::default()
         }
     }
 

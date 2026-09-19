@@ -75,11 +75,11 @@ pools, or bitwise float identity.
 
 ## Assay map
 
-| Studio `assayId`                                        | Goal source + Rust                                                           | This repo                                                             | Parity CLI                            | Notes                                                          |
-| ------------------------------------------------------- | ---------------------------------------------------------------------------- | --------------------------------------------------------------------- | ------------------------------------- | -------------------------------------------------------------- |
-| `transfection` (Studio wire id; science = transfection) | `lisca-transfection-assay` (`transfection` CLI + `lisca-transfection` crate) | Thin dispatch in `analysis/assays/transfection/` + local ONNX segment | `lisca-analyze` (calls the git crate) | Crop stays here. Python+Rust parity: sidecar `docs/parity.md`. |
-| `killing`                                               | mupattern / future `lisca-killing-assay`                                     | `analysis/assays/killing/`                                            | extend when stages need stage-CLI     | ONNX ResNet + kill-curve tables                                |
-| `lnp-binding` / binding                                 | future `lisca-binding-assay`                                                 | none until mature                                                     | —                                     | Closed enum: do not half-register                              |
+| Studio `assayId`                                        | Goal source + Rust                                                           | This repo                                                             | Parity CLI                            | Notes                                                                                                       |
+| ------------------------------------------------------- | ---------------------------------------------------------------------------- | --------------------------------------------------------------------- | ------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `transfection` (Studio wire id; science = transfection) | `lisca-transfection-assay` (`transfection` CLI + `lisca-transfection` crate) | Thin dispatch in `analysis/assays/transfection/` + local ONNX segment | `lisca-analyze` (calls the git crate) | Crop stays here. Python+Rust parity: sidecar `docs/parity.md`.                                              |
+| `killing`                                               | mupattern / future `lisca-killing-assay`                                     | `analysis/assays/killing/`                                            | extend when stages need stage-CLI     | ONNX ResNet + kill-curve tables. Workstation crop recipe: [`killing-workspace.md`](./killing-workspace.md). |
+| `lnp-binding` / binding                                 | future `lisca-binding-assay`                                                 | none until mature                                                     | —                                     | Closed enum: do not half-register                                                                           |
 
 Adding a Studio assay id is a **cross-cutting** change (`@lisca/contracts`,
 Rust, generated types). Unsupported ids fail explicitly — see `PRODUCT.md`.
@@ -125,8 +125,9 @@ crates); do not silently rewrite the sidecar to match this workspace.
   `slide_channel`; joined later from path + assay mapping). `background`
   and `sum` are QC columns. `t` uses `index.json` `timeIndices`. Segmented
   bg = median of `~mask`; `analysis.skipSegment` bg = 10th percentile.
-- Slim `index.json`: always `TCZYX`; keep `zCount`; drop `source` /
-  `pageOrder` / per-ROI `shape` (derive from counts + bbox).
+- Slim `index.json`: always `TCZYX`; keep `zCount`; optional `timeIndices` /
+  `channelIndices` / `channelLabels`; drop `source` / `pageOrder` / per-ROI
+  `shape` (derive from counts + bbox).
 - Output basenames Studio and Python both expect (`analysis/PosN/auc.csv`,
   `fit.csv`, `results/<sample>/traces.png`, workspace `auc.png`, …).
 - Analysis AUC / fit identity columns: `roi` (`channel` on auc/fit only when
@@ -241,7 +242,8 @@ Support kernels for tests: `crates/lisca/tests/support/transfection_reference.rs
 - Shared ROI I/O in this crate: `analysis/roi_stack.rs`, `csv_io.rs`, crop.
 - Killing (in-tree until its sidecar exists): ONNX (`ort`) + mplot-rs. The
   ResNet is HF `keejkrej/killing-assay-resnet18`; this repo curls it at
-  package time and does not own a third weights path.
+  package time and does not own a third weights path. Ingest → ROI stacks:
+  [`killing-workspace.md`](./killing-workspace.md).
 - Progress + HTTP remain in Studio; parity CLI calls the same stage functions.
 
 Sibling repos describe **goals** and, once imported, **own the kernels**.
@@ -262,6 +264,7 @@ They are not a licence to transliterate Python line-by-line.
 ## Related docs
 
 - Studio analysis layout and chart packages: [`analysis.md`](./analysis.md)
+- Killing workstation ingest → ROI stacks: [`killing-workspace.md`](./killing-workspace.md)
 - Product assay non-goals / closed enum: [`PRODUCT.md`](../../PRODUCT.md)
 - Domain language: [`CONTEXT.md`](../../CONTEXT.md)
 - Agent skill: [`.agents/skills/lisca-parity/SKILL.md`](../../.agents/skills/lisca-parity/SKILL.md)

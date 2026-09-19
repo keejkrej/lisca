@@ -14,11 +14,22 @@ ALIGN_DIR = "align"
 MASK_DIR = "mask"
 ANALYSIS_DIR = "analysis"
 RESULTS_DIR = "results"
+ANNOTATIONS_DIR = "annotations"
+ANNOTATION_LABELS_JSON = "labels.json"
+TIMESERIES_DIR = "timeseries"
+SIDECAR_DIR = "sidecar"
 ASSAY_JSON = "assay.json"
 INDEX_JSON = "index.json"
 POS_PREFIX = "Pos"
 
 BBOX_COLUMNS: tuple[str, ...] = ("roi", "x", "y", "w", "h")
+
+# Reserved filenames under `sidecar/` for a future killing sidecar / workstation.
+# lisca does not write these; they are stable import paths for downstream tools.
+SIDECAR_EVENTS_JSON = "events.json"
+SIDECAR_TRACES_PARQUET = "traces.parquet"
+SIDECAR_TRACKS_CSV = "tracks.csv"
+SIDECAR_ENGAGEMENTS_CSV = "engagements.csv"
 
 
 def pos_name(pos: int) -> str:
@@ -87,3 +98,27 @@ def results_dir(workspace: Path) -> Path:
 
 def assay_json_path(workspace: Path) -> Path:
     return Path(workspace) / ASSAY_JSON
+
+
+def annotations_dir(workspace: Path) -> Path:
+    return Path(workspace) / ANNOTATIONS_DIR
+
+
+def annotation_labels_path(workspace: Path) -> Path:
+    return annotations_dir(workspace) / ANNOTATION_LABELS_JSON
+
+
+def timeseries_dir(workspace: Path) -> Path:
+    return Path(workspace) / TIMESERIES_DIR
+
+
+def timeseries_pos_dir(workspace: Path, pos: int) -> Path:
+    return timeseries_dir(workspace) / pos_name(pos)
+
+
+def sidecar_dir(workspace: Path) -> Path:
+    return Path(workspace) / SIDECAR_DIR
+
+
+def sidecar_path(workspace: Path, file_name: str) -> Path:
+    return sidecar_dir(workspace) / file_name

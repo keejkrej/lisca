@@ -2072,6 +2072,26 @@
       },
       "required": ["slideChannel", "mask", "signal"]
     },
+    "AssayChannelRoles": {
+      "type": "object",
+      "properties": {
+        "brightfield": {
+          "type": "integer",
+          "minimum": 0,
+          "format": "uint32"
+        },
+        "effector": {
+          "type": "integer",
+          "minimum": 0,
+          "format": "uint32"
+        },
+        "deathMarker": {
+          "type": "integer",
+          "minimum": 0,
+          "format": "uint32"
+        }
+      }
+    },
     "AssayAnalysisConfig": {
       "type": "object",
       "properties": {
@@ -2090,6 +2110,9 @@
           "items": {
             "$ref": "#/definitions/AssaySampleChannels"
           }
+        },
+        "channelRoles": {
+          "$ref": "#/definitions/AssayChannelRoles"
         }
       }
     },
@@ -2157,6 +2180,20 @@
             "type": "integer",
             "minimum": 0,
             "format": "uint32"
+          }
+        },
+        "channelIndices": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 0,
+            "format": "uint32"
+          }
+        },
+        "channelLabels": {
+          "type": "array",
+          "items": {
+            "type": "string"
           }
         },
         "rois": {
