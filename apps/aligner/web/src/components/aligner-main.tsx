@@ -8,10 +8,12 @@ import { StageCanvas, ViewportCard } from "@lisca/ui/shell";
 import { createMemo } from "solid-js";
 
 import { useAlignCanvas, useAlignNav } from "../state/align-page-selectors";
+import { useAlignPage } from "../state/align-page-context";
 
 export function AlignerMain() {
   const canvas = useAlignCanvas();
   const nav = useAlignNav();
+  const { smartExclude } = useAlignPage();
   const pointer = useAlignCanvasPointerHandlers(() => ({
     grid: canvas.grid,
     setGrid: canvas.setGrid,
@@ -21,8 +23,11 @@ export function AlignerMain() {
     manualExclusionEnabled: canvas.manualExclusionEnabled,
     excludedCells: canvas.currentExcludedCells,
     frame: canvas.frame,
-    onExcludedCellsChange: (cells: AlignGridCellCoord[]) =>
-      canvas.setExcludedCellsForCurrentPosition(cells),
+    onExcludedCellsChange: (cells: AlignGridCellCoord[]) => {
+      const previous = canvas.currentExcludedCells;
+      canvas.setExcludedCellsForCurrentPosition(cells);
+      smartExclude.recordExclusionChange(previous, cells);
+    },
   }));
   const visibleStatus = useCanvasTransientStatus(() => canvas.status);
   const activeToastStatus = createMemo(() =>

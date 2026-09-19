@@ -3,7 +3,7 @@ import type {
   AlignGridState,
   OccupancyPromptExampleInput,
 } from "@lisca/contracts";
-import type { FrameResult } from "@lisca/utils";
+import { alignGridCellCoordKey, type FrameResult } from "@lisca/utils";
 import { createMemo, createSignal, onCleanup, type Accessor } from "solid-js";
 
 import type { SmartModelDownloadState, SmartModelGate } from "../shared/model-gate";
@@ -18,10 +18,11 @@ import type {
   ClassifyExclusionCandidatesOptions,
   ClassifyExclusionInput,
   OccupancyPackStatus,
+  OccupancyRescoreMode,
 } from "./types";
 
 export type SmartExcludeDownloadState = SmartModelDownloadState;
-export type { OccupancyPackStatus };
+export type { OccupancyPackStatus, OccupancyRescoreMode };
 
 const RECORD_DEBOUNCE_MS = 400;
 
@@ -38,7 +39,11 @@ export function useSmartExclude(options: {
   currentExcludedCells: Accessor<AlignGridCellCoord[]>;
   enabled: Accessor<boolean>;
   workspacePath?: Accessor<string | null>;
+  /** Default `onRecord`: after a debounced correction, re-score remaining sites if the pack is ready. `onRequest` waits for Smart exclude. */
+  occupancyRescore?: Accessor<OccupancyRescoreMode>;
+  occupancyRecordDebounceMs?: number;
   onComplete: (modelCells: AlignGridCellCoord[]) => void;
+  onOccupancyRescore?: (modelCells: AlignGridCellCoord[]) => void;
   onStatus?: (status: string | null) => void;
   onError?: (error: string | null) => void;
 }) {
@@ -60,6 +65,7 @@ export function useSmartExclude(options: {
   let recordTimer: ReturnType<typeof setTimeout> | null = null;
 
   const onCompleteRef = useLatestRef(() => options.onComplete);
+  const onOccupancyRescoreRef = useLatestRef(() => options.onOccupancyRescore);
   const onStatusRef = useLatestRef(() => options.onStatus);
   const onErrorRef = useLatestRef(() => options.onError);
 
@@ -319,6 +325,7 @@ export function useSmartExclude(options: {
     const workspacePath = options.workspacePath?.();
     if (disposed || !frame || !workspacePath || examples.length === 0) return;
     try {
+      let packReady = occupancyStatus()?.packReady ?? false;
       await options.provider.classify(
         classifyInput(frame, [], {
           workspacePath,
@@ -329,11 +336,24 @@ export function useSmartExclude(options: {
         {
           onOccupancy: (status) => {
             if (disposed) return;
+            packReady = status.packReady ?? false;
             setOccupancyStatus(status);
             onStatusRef.current?.(status.message ?? null);
           },
         },
       );
+      const rescoreMode = options.occupancyRescore?.() ?? "onRecord";
+      if (disposed || !packReady || rescoreMode !== "onRecord") return;
+      const skip = new Set(examples.map((example) => alignGridCellCoordKey(example.cell)));
+      const candidates = getSmartExcludeCandidateCells(
+        frame,
+        options.grid(),
+        options.currentExcludedCells(),
+      ).filter((cell) => !skip.has(alignGridCellCoordKey(cell)));
+      if (candidates.length === 0) return;
+      const modelCells = await options.provider.classify(classifyInput(frame, candidates));
+      if (disposed || modelCells.length === 0) return;
+      onOccupancyRescoreRef.current?.(modelCells);
     } catch (cause) {
       if (disposed) return;
       onErrorRef.current?.(cause instanceof Error ? cause.message : String(cause));
@@ -354,9 +374,10 @@ export function useSmartExclude(options: {
     if (examples.length === 0) return;
     pendingRecord.push(...examples);
     if (recordTimer) clearTimeout(recordTimer);
+    const debounceMs = options.occupancyRecordDebounceMs ?? RECORD_DEBOUNCE_MS;
     recordTimer = setTimeout(() => {
       void flushRecord();
-    }, RECORD_DEBOUNCE_MS);
+    }, debounceMs);
   };
 
   return {

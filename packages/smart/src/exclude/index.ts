@@ -2,6 +2,7 @@ export type {
   ClassifyExclusionCandidatesOptions,
   ClassifyExclusionInput,
   OccupancyPackStatus,
+  OccupancyRescoreMode,
   SmartExcludeCellScore,
   SmartExcludeDownloadProgress,
 } from "./types";

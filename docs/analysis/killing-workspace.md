@@ -28,7 +28,8 @@ kill curve see [`analysis.md`](./analysis.md).
 4. **Align.** Place the micropattern grid, exclude empty sites, save boxes
    (`bbox/PosN.csv` + `align/PosN.json`). Do not retrain Smart exclude per
    lab — bootstrap with Var exclude / manual edits; those corrections
-   accumulate on `align/occupancy-pack.json`. See
+   accumulate on `align/occupancy-pack.json` and remaining sites re-score
+   after each edit once the pack is ready. See
    [`occupancy-prompt-pack.md`](./occupancy-prompt-pack.md).
 5. **Crop.** Studio / `lisca-crop` writes `roi/PosN/RoiK.tif` (TCZYX pages) and
    `roi/PosN/index.json`.

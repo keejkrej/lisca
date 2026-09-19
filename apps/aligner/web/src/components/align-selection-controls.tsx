@@ -1,27 +1,12 @@
-import { runClientEffect } from "@lisca/client/runtime";
-import { createRequestSmartExcludeProvider, useSmartExclude } from "@lisca/smart/exclude/request";
 import { useVarExclude } from "@lisca/smart/var-exclude";
 import { createLocalVarExcludeProvider } from "@lisca/smart/var-exclude/local";
 import { AlignSelectionRail } from "@lisca/ui/features";
 import { createMemo } from "solid-js";
 
-import { alignerClient } from "../api/aligner-port";
 import { useAlignPage } from "../state/align-page-context";
 
 export function AlignSelectionControls() {
-  const { state } = useAlignPage();
-  const smartExcludeProvider = createRequestSmartExcludeProvider(
-    {
-      smartExclude: (request, signal) =>
-        runClientEffect(alignerClient.smartExclude(request), signal ? { signal } : undefined),
-    },
-    {
-      source: () => state().source,
-      selection: () => state().selection,
-      contrast: () => state().contrast,
-      workspacePath: () => state().workspacePath,
-    },
-  );
+  const { state, smartExclude } = useAlignPage();
   const disabled = createMemo(() => !state().frame);
   const varExclude = useVarExclude({
     provider: createLocalVarExcludeProvider(),
@@ -31,17 +16,6 @@ export function AlignSelectionControls() {
     enabled: () => !disabled(),
     onPreview: (preview) => state().showVariationExcludePreview(preview),
     onError: (error) => state().reportError(error),
-  });
-  const smartExclude = useSmartExclude({
-    provider: smartExcludeProvider,
-    frame: () => state().frame,
-    grid: () => state().grid,
-    currentExcludedCells: () => state().currentExcludedCells,
-    enabled: () => !disabled(),
-    workspacePath: () => state().workspacePath,
-    onComplete: (cells) => state().applySmartExclusion(cells),
-    onError: (error) => state().reportError(error),
-    onStatus: (status) => state().reportStatus(status),
   });
 
   return (

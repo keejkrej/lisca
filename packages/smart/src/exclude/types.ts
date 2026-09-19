@@ -27,6 +27,9 @@ export type OccupancyPackStatus = {
   message?: string;
 };
 
+/** When to re-score remaining sites after the assay pack is ready. */
+export type OccupancyRescoreMode = "onRequest" | "onRecord";
+
 export type ClassifyExclusionCandidatesOptions = {
   threshold?: number;
   batchSize?: number;

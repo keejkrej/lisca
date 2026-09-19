@@ -4,6 +4,7 @@ import {
 } from "@lisca/client/align-session";
 import { useSmartExclude } from "@lisca/smart/exclude/request";
 import { useVarExclude } from "@lisca/smart/var-exclude";
+import { mergeExcludedAlignGridCells } from "@lisca/utils";
 import { createMemo, createSignal, onCleanup } from "solid-js";
 import type { JSX } from "solid-js";
 
@@ -29,7 +30,14 @@ export function StudioAlignPageProvider(props: { children?: JSX.Element }) {
     currentExcludedCells: () => state.currentExcludedCells,
     enabled: () => Boolean(state.frame) && !state.saving,
     workspacePath: () => state.workspacePath,
+    occupancyRescore: () => "onRecord",
     onComplete: state.applySmartExclusion,
+    onOccupancyRescore: (modelCells) => {
+      if (modelCells.length === 0) return;
+      state.setExcludedCellsForCurrentPosition(
+        mergeExcludedAlignGridCells(state.currentExcludedCells, modelCells),
+      );
+    },
     onError: state.reportError,
     onStatus: state.reportStatus,
   });
