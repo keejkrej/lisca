@@ -21,6 +21,15 @@ const DEFAULT_THRESHOLD: f64 = 0.5;
 
 static EXCLUDE_SESSION: OnceLock<Result<Mutex<Session>, String>> = OnceLock::new();
 
+struct OccupancyExcludeArgs<'a> {
+    workspace_path: Option<&'a str>,
+    persist_prompt_pack: Option<bool>,
+    append_prompt_examples: Option<bool>,
+    prompt_examples: &'a [crate::protocol::OccupancyPromptExampleInput],
+    inline_pack: Option<&'a crate::protocol::OccupancyPromptPack>,
+    pos: Option<u32>,
+}
+
 pub fn classify_exclusion(request: SmartExcludeRequest) -> Result<SmartExcludeResponse, String> {
     let pos = request.request.pos;
     let frame = aligner::load_frame_payload(request.source, request.request, request.contrast)?;
@@ -28,12 +37,14 @@ pub fn classify_exclusion(request: SmartExcludeRequest) -> Result<SmartExcludeRe
         &frame,
         &request.cells,
         request.threshold,
-        request.workspace_path.as_deref(),
-        request.persist_prompt_pack,
-        request.append_prompt_examples,
-        &request.prompt_examples,
-        request.prompt_pack.as_ref(),
-        Some(pos),
+        OccupancyExcludeArgs {
+            workspace_path: request.workspace_path.as_deref(),
+            persist_prompt_pack: request.persist_prompt_pack,
+            append_prompt_examples: request.append_prompt_examples,
+            prompt_examples: &request.prompt_examples,
+            inline_pack: request.prompt_pack.as_ref(),
+            pos: Some(pos),
+        },
     )
 }
 
@@ -57,17 +68,12 @@ fn classify_exclusion_on_frame(
     frame: &FramePayload,
     cells: &[AutoExcludePreviewCell],
     threshold: Option<f64>,
-    workspace_path: Option<&str>,
-    persist_prompt_pack: Option<bool>,
-    append_prompt_examples: Option<bool>,
-    prompt_examples: &[crate::protocol::OccupancyPromptExampleInput],
-    inline_pack: Option<&crate::protocol::OccupancyPromptPack>,
-    pos: Option<u32>,
+    occupancy: OccupancyExcludeArgs<'_>,
 ) -> Result<SmartExcludeResponse, String> {
     if cells.is_empty()
-        && prompt_examples.is_empty()
-        && workspace_path.is_none()
-        && inline_pack.is_none()
+        && occupancy.prompt_examples.is_empty()
+        && occupancy.workspace_path.is_none()
+        && occupancy.inline_pack.is_none()
     {
         return Ok(occupancy_response(Vec::new(), None, None));
     }
@@ -76,25 +82,26 @@ fn classify_exclusion_on_frame(
     let width = frame.width as usize;
     let height = frame.height as usize;
 
-    let disk_pack = match workspace_path {
+    let disk_pack = match occupancy.workspace_path {
         Some(workspace) => super::occupancy::load_occupancy_pack(Path::new(workspace))?,
         None => None,
     };
-    let mut pack = inline_pack
+    let mut pack = occupancy
+        .inline_pack
         .cloned()
         .or(disk_pack)
         .unwrap_or_else(|| super::occupancy::empty_occupancy_pack(threshold));
 
-    if !prompt_examples.is_empty() {
+    if !occupancy.prompt_examples.is_empty() {
         let built = super::occupancy::pack_from_prompt_examples(
             &pixels,
             width,
             height,
-            prompt_examples,
+            occupancy.prompt_examples,
             threshold,
-            pos,
+            occupancy.pos,
         )?;
-        let append = append_prompt_examples.unwrap_or(true);
+        let append = occupancy.append_prompt_examples.unwrap_or(true);
         pack = if append {
             super::occupancy::merge_occupancy_packs(&pack, &built)
         } else {
@@ -102,10 +109,11 @@ fn classify_exclusion_on_frame(
         };
     }
 
-    let persist =
-        persist_prompt_pack.unwrap_or(!prompt_examples.is_empty() && workspace_path.is_some());
+    let persist = occupancy
+        .persist_prompt_pack
+        .unwrap_or(!occupancy.prompt_examples.is_empty() && occupancy.workspace_path.is_some());
     if persist {
-        if let Some(workspace) = workspace_path {
+        if let Some(workspace) = occupancy.workspace_path {
             super::occupancy::save_occupancy_pack(Path::new(workspace), &pack)?;
         }
     }
@@ -265,6 +273,17 @@ mod tests {
         assert!(probability > 0.8);
     }
 
+    fn occupancy_none() -> OccupancyExcludeArgs<'static> {
+        OccupancyExcludeArgs {
+            workspace_path: None,
+            persist_prompt_pack: None,
+            append_prompt_examples: None,
+            prompt_examples: &[],
+            inline_pack: None,
+            pos: None,
+        }
+    }
+
     #[test]
     fn classify_exclusion_returns_empty_for_no_cells() {
         use crate::protocol::{ContrastWindow, FramePayload, PixelType};
@@ -279,8 +298,7 @@ mod tests {
             applied_contrast: ContrastWindow { min: 0, max: 255 },
         };
         let response =
-            classify_exclusion_on_frame(&frame, &[], None, None, None, None, &[], None, None)
-                .expect("classify");
+            classify_exclusion_on_frame(&frame, &[], None, occupancy_none()).expect("classify");
         assert!(response.excluded_cells.is_empty());
     }
 
@@ -316,12 +334,7 @@ mod tests {
                 h: 4,
             }],
             Some(2.0),
-            None,
-            None,
-            None,
-            &[],
-            None,
-            None,
+            occupancy_none(),
         )
         .expect("classify");
         assert!(response.excluded_cells.is_empty());
@@ -356,19 +369,22 @@ mod tests {
             w: 4,
             h: 4,
         };
+        let examples = [OccupancyPromptExampleInput {
+            cell: cell.clone(),
+            label: OccupancyPromptLabel::Empty,
+        }];
         let response = classify_exclusion_on_frame(
             &frame,
             &[],
             None,
-            root.path().to_str(),
-            Some(true),
-            Some(true),
-            &[OccupancyPromptExampleInput {
-                cell: cell.clone(),
-                label: OccupancyPromptLabel::Empty,
-            }],
-            None,
-            Some(3),
+            OccupancyExcludeArgs {
+                workspace_path: root.path().to_str(),
+                persist_prompt_pack: Some(true),
+                append_prompt_examples: Some(true),
+                prompt_examples: &examples,
+                inline_pack: None,
+                pos: Some(3),
+            },
         )
         .expect("record");
         assert!(response.excluded_cells.is_empty());
