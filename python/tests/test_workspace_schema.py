@@ -14,6 +14,7 @@ from lisca.core.paths import (
     BBOX_DIR,
     INDEX_JSON,
     MASK_DIR,
+    OCCUPANCY_PACK_JSON,
     RESULTS_DIR,
     ROI_DIR,
     SIDECAR_DIR,
@@ -21,6 +22,7 @@ from lisca.core.paths import (
     TIMESERIES_DIR,
     align_dir,
     bbox_csv_path,
+    occupancy_pack_path,
     roi_index_path,
     sidecar_path,
 )
@@ -42,6 +44,7 @@ def test_workspace_folder_names() -> None:
     assert ANNOTATIONS_DIR == "annotations"
     assert TIMESERIES_DIR == "timeseries"
     assert SIDECAR_DIR == "sidecar"
+    assert OCCUPANCY_PACK_JSON == "occupancy-pack.json"
     assert ASSAY_JSON == "assay.json"
     assert INDEX_JSON == "index.json"
     assert BBOX_COLUMNS == ("roi", "x", "y", "w", "h")
@@ -52,6 +55,7 @@ def test_path_builders() -> None:
     assert bbox_csv_path(root, 3) == root / "bbox" / "Pos3.csv"
     assert roi_index_path(root, 3) == root / "roi" / "Pos3" / "index.json"
     assert sidecar_path(root, SIDECAR_EVENTS_JSON) == root / "sidecar" / "events.json"
+    assert occupancy_pack_path(root) == root / "align" / "occupancy-pack.json"
 
 
 def _write_bbox(path: Path, text: str) -> Path:

@@ -76,6 +76,7 @@ export type AlignState = {
   autoExclude: () => Promise<void>;
   applySmartExclusion: (modelCells: AlignGridCellCoord[]) => void;
   reportError: (message: string | null) => void;
+  reportStatus: (message: string | null) => void;
 };
 
 export type UseAlignStateCoreDeps = {
@@ -183,6 +184,7 @@ export function useAlignStateCore(deps: UseAlignStateCoreDeps): Accessor<AlignSt
       autoExclude: variation.autoExclude,
       applySmartExclusion: session.applySmartExclusion,
       reportError: session.actions.reportError,
+      reportStatus: session.actions.reportStatus,
     };
   });
 }

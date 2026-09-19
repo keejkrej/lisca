@@ -20,6 +20,7 @@ pub const SIDECAR_EVENTS_JSON: &str = "events.json";
 pub const SIDECAR_TRACES_PARQUET: &str = "traces.parquet";
 pub const SIDECAR_TRACKS_CSV: &str = "tracks.csv";
 pub const SIDECAR_ENGAGEMENTS_CSV: &str = "engagements.csv";
+pub const OCCUPANCY_PACK_JSON: &str = "occupancy-pack.json";
 
 pub fn pos_name(pos: u32) -> String {
     format!("{POS_PREFIX}{pos}")
@@ -67,6 +68,10 @@ pub fn align_dir(workspace: impl AsRef<Path>) -> PathBuf {
 
 pub fn align_json_path(workspace: impl AsRef<Path>, pos: u32) -> PathBuf {
     align_dir(workspace).join(align_json_name(pos))
+}
+
+pub fn occupancy_pack_path(workspace: impl AsRef<Path>) -> PathBuf {
+    align_dir(workspace).join(OCCUPANCY_PACK_JSON)
 }
 
 pub fn mask_dir(workspace: impl AsRef<Path>) -> PathBuf {
@@ -142,6 +147,10 @@ mod tests {
         assert_eq!(
             sidecar_path(root, SIDECAR_EVENTS_JSON),
             Path::new("/tmp/ws/sidecar/events.json")
+        );
+        assert_eq!(
+            occupancy_pack_path(root),
+            Path::new("/tmp/ws/align/occupancy-pack.json")
         );
     }
 }

@@ -19,6 +19,7 @@ export function AlignSelectionControls() {
       source: () => state().source,
       selection: () => state().selection,
       contrast: () => state().contrast,
+      workspacePath: () => state().workspacePath,
     },
   );
   const disabled = createMemo(() => !state().frame);
@@ -37,8 +38,10 @@ export function AlignSelectionControls() {
     grid: () => state().grid,
     currentExcludedCells: () => state().currentExcludedCells,
     enabled: () => !disabled(),
+    workspacePath: () => state().workspacePath,
     onComplete: (cells) => state().applySmartExclusion(cells),
     onError: (error) => state().reportError(error),
+    onStatus: (status) => state().reportStatus(status),
   });
 
   return (
@@ -50,6 +53,7 @@ export function AlignSelectionControls() {
         grid={state().grid}
         manualExclusionEnabled={state().manualExclusionEnabled}
         sectionAppearance="rail"
+        occupancyHint={smartExclude.occupancyStatus()?.message ?? null}
         smartExcludeLoading={smartExclude.active()}
         visibleCounts={state().visibleCounts}
         variationExcludeLoading={varExclude.active()}

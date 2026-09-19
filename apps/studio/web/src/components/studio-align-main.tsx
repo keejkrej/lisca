@@ -9,6 +9,7 @@ import { StageCanvas, ViewportCard } from "@lisca/ui/shell";
 import { createMemo } from "solid-js";
 
 import { useStudioAlignCanvas, useStudioAlignNav } from "../state/studio-align-page-selectors";
+import { useStudioAlignPage } from "../state/studio-align-page-context";
 import { StudioCropConfirmModal } from "./studio-crop-confirm-modal";
 import { StudioCropStartModal } from "./studio-crop-start-modal";
 
@@ -29,6 +30,7 @@ function alignCanvasAlertText(error: string): string {
 export function StudioAlignMain() {
   const canvas = useStudioAlignCanvas();
   const nav = useStudioAlignNav();
+  const { smartExclude } = useStudioAlignPage();
   const pointer = useAlignCanvasPointerHandlers(() => ({
     grid: canvas.grid,
     setGrid: canvas.setGrid,
@@ -38,8 +40,11 @@ export function StudioAlignMain() {
     manualExclusionEnabled: canvas.manualExclusionEnabled,
     excludedCells: canvas.currentExcludedCells,
     frame: canvas.frame,
-    onExcludedCellsChange: (cells: AlignGridCellCoord[]) =>
-      canvas.setExcludedCellsForCurrentPosition(cells),
+    onExcludedCellsChange: (cells: AlignGridCellCoord[]) => {
+      const previous = canvas.currentExcludedCells;
+      canvas.setExcludedCellsForCurrentPosition(cells);
+      smartExclude.recordExclusionChange(previous, cells);
+    },
   }));
   const visibleStatus = useCanvasTransientStatus(() => canvas.status);
   const activeToastStatus = createMemo(() =>

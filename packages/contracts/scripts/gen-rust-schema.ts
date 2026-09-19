@@ -18,6 +18,7 @@ import {
   LoadAlignStateQuerySchema,
   MemoryRecentQuerySchema,
   MemoryTouchRequestSchema,
+  OccupancyPromptPackSchema,
   OperationDetailQuerySchema,
   OutputPathsQuerySchema,
   ReadTextFileQuerySchema,
@@ -79,6 +80,7 @@ foldDefs(AssayJsonFileSchema, "AssayJsonFile");
 foldDefs(AppIdSchema, "AppId");
 // On-disk ROI index container (not an HTTP payload).
 foldDefs(RoiIndexFileSchema, "RoiIndexFile");
+foldDefs(OccupancyPromptPackSchema, "OccupancyPromptPack");
 // HttpApi inlines top-level union payloads, so fold this union explicitly.
 foldDefs(MemoryTouchRequestSchema, "MemoryTouchRequest");
 // HttpApi v4 inlines query schemas instead of adding reusable components.

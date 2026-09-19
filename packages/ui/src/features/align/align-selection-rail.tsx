@@ -42,6 +42,7 @@ export type AlignSelectionRailProps = {
   sectionClassName?: string;
   sectionContentClassName?: string;
   sectionAppearance?: "framed" | "rail";
+  occupancyHint?: string | null;
   /** When false, the caller mounts `VariationExcludeDialog` elsewhere (e.g. dock-driven exclude). */
   showVariationExcludeDialog?: boolean;
 };
@@ -186,6 +187,11 @@ export function AlignSelectionRail(props: AlignSelectionRailProps) {
               <VariationExcludeControl />
               <SmartExcludeControl />
             </RailActionPair>
+            <Show when={props.occupancyHint}>
+              {(hint) => (
+                <p class="text-muted-foreground px-0.5 text-[11px] leading-snug">{hint()}</p>
+              )}
+            </Show>
           </div>
         </Show>
       </PanelSection>

@@ -5627,6 +5627,71 @@ impl ScanSourceRequest {
         Default::default()
     }
 }
+#[doc = "`OccupancyExcludeEngine`"]
+#[derive(
+    :: serde :: Deserialize,
+    :: serde :: Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum OccupancyExcludeEngine {
+    #[serde(rename = "resnet")]
+    Resnet,
+    #[serde(rename = "promptPack")]
+    PromptPack,
+}
+#[doc = "`OccupancyPromptLabel`"]
+#[derive(
+    :: serde :: Deserialize,
+    :: serde :: Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum OccupancyPromptLabel {
+    #[serde(rename = "occupied")]
+    Occupied,
+    #[serde(rename = "empty")]
+    Empty,
+}
+#[doc = "`OccupancyPromptExample`"]
+#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
+pub struct OccupancyPromptExample {
+    pub embedding: ::std::vec::Vec<f64>,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub i: ::std::option::Option<i32>,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub j: ::std::option::Option<i32>,
+    pub label: OccupancyPromptLabel,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub pos: ::std::option::Option<u32>,
+}
+#[doc = "`OccupancyPromptExampleInput`"]
+#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
+pub struct OccupancyPromptExampleInput {
+    pub cell: AutoExcludePreviewCell,
+    pub label: OccupancyPromptLabel,
+}
+#[doc = "`OccupancyPromptPack`"]
+#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
+pub struct OccupancyPromptPack {
+    pub embedder: ::std::string::String,
+    pub examples: ::std::vec::Vec<OccupancyPromptExample>,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub threshold: ::std::option::Option<f64>,
+    pub version: u32,
+}
 #[doc = "`SmartExcludeRequest`"]
 #[doc = r""]
 #[doc = r" <details><summary>JSON schema</summary>"]
@@ -5673,12 +5738,42 @@ impl ScanSourceRequest {
 #[doc = r" </details>"]
 #[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
 pub struct SmartExcludeRequest {
+    #[serde(
+        rename = "appendPromptExamples",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub append_prompt_examples: ::std::option::Option<bool>,
     pub cells: ::std::vec::Vec<AutoExcludePreviewCell>,
     pub contrast: ::std::option::Option<ContrastWindow>,
+    #[serde(
+        rename = "persistPromptPack",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub persist_prompt_pack: ::std::option::Option<bool>,
+    #[serde(
+        rename = "promptExamples",
+        default,
+        skip_serializing_if = "::std::vec::Vec::is_empty"
+    )]
+    pub prompt_examples: ::std::vec::Vec<OccupancyPromptExampleInput>,
+    #[serde(
+        rename = "promptPack",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub prompt_pack: ::std::option::Option<OccupancyPromptPack>,
     pub request: FrameRequest,
     pub source: AlignerSource,
     #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
     pub threshold: ::std::option::Option<f64>,
+    #[serde(
+        rename = "workspacePath",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub workspace_path: ::std::option::Option<::std::string::String>,
 }
 impl SmartExcludeRequest {
     pub fn builder() -> builder::SmartExcludeRequest {
@@ -5708,8 +5803,30 @@ impl SmartExcludeRequest {
 #[doc = r" </details>"]
 #[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
 pub struct SmartExcludeResponse {
+    #[serde(
+        rename = "emptyCount",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub empty_count: ::std::option::Option<u32>,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub engine: ::std::option::Option<OccupancyExcludeEngine>,
     #[serde(rename = "excludedCells")]
     pub excluded_cells: ::std::vec::Vec<AlignGridCellCoord>,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub message: ::std::option::Option<::std::string::String>,
+    #[serde(
+        rename = "occupiedCount",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub occupied_count: ::std::option::Option<u32>,
+    #[serde(
+        rename = "packReady",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub pack_ready: ::std::option::Option<bool>,
 }
 impl SmartExcludeResponse {
     pub fn builder() -> builder::SmartExcludeResponse {
@@ -12807,6 +12924,8 @@ pub mod builder {
     }
     #[derive(Clone, Debug)]
     pub struct SmartExcludeRequest {
+        append_prompt_examples:
+            ::std::result::Result<::std::option::Option<bool>, ::std::string::String>,
         cells: ::std::result::Result<
             ::std::vec::Vec<super::AutoExcludePreviewCell>,
             ::std::string::String,
@@ -12815,22 +12934,51 @@ pub mod builder {
             ::std::option::Option<super::ContrastWindow>,
             ::std::string::String,
         >,
+        persist_prompt_pack:
+            ::std::result::Result<::std::option::Option<bool>, ::std::string::String>,
+        prompt_examples: ::std::result::Result<
+            ::std::vec::Vec<super::OccupancyPromptExampleInput>,
+            ::std::string::String,
+        >,
+        prompt_pack: ::std::result::Result<
+            ::std::option::Option<super::OccupancyPromptPack>,
+            ::std::string::String,
+        >,
         request: ::std::result::Result<super::FrameRequest, ::std::string::String>,
         source: ::std::result::Result<super::AlignerSource, ::std::string::String>,
         threshold: ::std::result::Result<::std::option::Option<f64>, ::std::string::String>,
+        workspace_path: ::std::result::Result<
+            ::std::option::Option<::std::string::String>,
+            ::std::string::String,
+        >,
     }
     impl ::std::default::Default for SmartExcludeRequest {
         fn default() -> Self {
             Self {
+                append_prompt_examples: Ok(Default::default()),
                 cells: Err("no value supplied for cells".to_string()),
                 contrast: Err("no value supplied for contrast".to_string()),
+                persist_prompt_pack: Ok(Default::default()),
+                prompt_examples: Ok(Default::default()),
+                prompt_pack: Ok(Default::default()),
                 request: Err("no value supplied for request".to_string()),
                 source: Err("no value supplied for source".to_string()),
                 threshold: Ok(Default::default()),
+                workspace_path: Ok(Default::default()),
             }
         }
     }
     impl SmartExcludeRequest {
+        pub fn append_prompt_examples<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::option::Option<bool>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.append_prompt_examples = value.try_into().map_err(|e| {
+                format!("error converting supplied value for append_prompt_examples: {e}")
+            });
+            self
+        }
         pub fn cells<T>(mut self, value: T) -> Self
         where
             T: ::std::convert::TryInto<::std::vec::Vec<super::AutoExcludePreviewCell>>,
@@ -12849,6 +12997,36 @@ pub mod builder {
             self.contrast = value
                 .try_into()
                 .map_err(|e| format!("error converting supplied value for contrast: {e}"));
+            self
+        }
+        pub fn persist_prompt_pack<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::option::Option<bool>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.persist_prompt_pack = value.try_into().map_err(|e| {
+                format!("error converting supplied value for persist_prompt_pack: {e}")
+            });
+            self
+        }
+        pub fn prompt_examples<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::vec::Vec<super::OccupancyPromptExampleInput>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.prompt_examples = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for prompt_examples: {e}"));
+            self
+        }
+        pub fn prompt_pack<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::option::Option<super::OccupancyPromptPack>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.prompt_pack = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for prompt_pack: {e}"));
             self
         }
         pub fn request<T>(mut self, value: T) -> Self
@@ -12881,6 +13059,16 @@ pub mod builder {
                 .map_err(|e| format!("error converting supplied value for threshold: {e}"));
             self
         }
+        pub fn workspace_path<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::option::Option<::std::string::String>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.workspace_path = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for workspace_path: {e}"));
+            self
+        }
     }
     impl ::std::convert::TryFrom<SmartExcludeRequest> for super::SmartExcludeRequest {
         type Error = super::error::ConversionError;
@@ -12888,40 +13076,86 @@ pub mod builder {
             value: SmartExcludeRequest,
         ) -> ::std::result::Result<Self, super::error::ConversionError> {
             Ok(Self {
+                append_prompt_examples: value.append_prompt_examples?,
                 cells: value.cells?,
                 contrast: value.contrast?,
+                persist_prompt_pack: value.persist_prompt_pack?,
+                prompt_examples: value.prompt_examples?,
+                prompt_pack: value.prompt_pack?,
                 request: value.request?,
                 source: value.source?,
                 threshold: value.threshold?,
+                workspace_path: value.workspace_path?,
             })
         }
     }
     impl ::std::convert::From<super::SmartExcludeRequest> for SmartExcludeRequest {
         fn from(value: super::SmartExcludeRequest) -> Self {
             Self {
+                append_prompt_examples: Ok(value.append_prompt_examples),
                 cells: Ok(value.cells),
                 contrast: Ok(value.contrast),
+                persist_prompt_pack: Ok(value.persist_prompt_pack),
+                prompt_examples: Ok(value.prompt_examples),
+                prompt_pack: Ok(value.prompt_pack),
                 request: Ok(value.request),
                 source: Ok(value.source),
                 threshold: Ok(value.threshold),
+                workspace_path: Ok(value.workspace_path),
             }
         }
     }
     #[derive(Clone, Debug)]
     pub struct SmartExcludeResponse {
+        empty_count: ::std::result::Result<::std::option::Option<u32>, ::std::string::String>,
+        engine: ::std::result::Result<
+            ::std::option::Option<super::OccupancyExcludeEngine>,
+            ::std::string::String,
+        >,
         excluded_cells: ::std::result::Result<
             ::std::vec::Vec<super::AlignGridCellCoord>,
             ::std::string::String,
         >,
+        message: ::std::result::Result<
+            ::std::option::Option<::std::string::String>,
+            ::std::string::String,
+        >,
+        occupied_count: ::std::result::Result<::std::option::Option<u32>, ::std::string::String>,
+        pack_ready: ::std::result::Result<::std::option::Option<bool>, ::std::string::String>,
     }
     impl ::std::default::Default for SmartExcludeResponse {
         fn default() -> Self {
             Self {
+                empty_count: Ok(Default::default()),
+                engine: Ok(Default::default()),
                 excluded_cells: Err("no value supplied for excluded_cells".to_string()),
+                message: Ok(Default::default()),
+                occupied_count: Ok(Default::default()),
+                pack_ready: Ok(Default::default()),
             }
         }
     }
     impl SmartExcludeResponse {
+        pub fn empty_count<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::option::Option<u32>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.empty_count = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for empty_count: {e}"));
+            self
+        }
+        pub fn engine<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::option::Option<super::OccupancyExcludeEngine>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.engine = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for engine: {e}"));
+            self
+        }
         pub fn excluded_cells<T>(mut self, value: T) -> Self
         where
             T: ::std::convert::TryInto<::std::vec::Vec<super::AlignGridCellCoord>>,
@@ -12932,6 +13166,36 @@ pub mod builder {
                 .map_err(|e| format!("error converting supplied value for excluded_cells: {e}"));
             self
         }
+        pub fn message<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::option::Option<::std::string::String>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.message = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for message: {e}"));
+            self
+        }
+        pub fn occupied_count<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::option::Option<u32>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.occupied_count = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for occupied_count: {e}"));
+            self
+        }
+        pub fn pack_ready<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::option::Option<bool>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.pack_ready = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for pack_ready: {e}"));
+            self
+        }
     }
     impl ::std::convert::TryFrom<SmartExcludeResponse> for super::SmartExcludeResponse {
         type Error = super::error::ConversionError;
@@ -12939,14 +13203,24 @@ pub mod builder {
             value: SmartExcludeResponse,
         ) -> ::std::result::Result<Self, super::error::ConversionError> {
             Ok(Self {
+                empty_count: value.empty_count?,
+                engine: value.engine?,
                 excluded_cells: value.excluded_cells?,
+                message: value.message?,
+                occupied_count: value.occupied_count?,
+                pack_ready: value.pack_ready?,
             })
         }
     }
     impl ::std::convert::From<super::SmartExcludeResponse> for SmartExcludeResponse {
         fn from(value: super::SmartExcludeResponse) -> Self {
             Self {
+                empty_count: Ok(value.empty_count),
+                engine: Ok(value.engine),
                 excluded_cells: Ok(value.excluded_cells),
+                message: Ok(value.message),
+                occupied_count: Ok(value.occupied_count),
+                pack_ready: Ok(value.pack_ready),
             }
         }
     }

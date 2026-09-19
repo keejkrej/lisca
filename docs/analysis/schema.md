@@ -23,6 +23,7 @@ and ln(2)/β. Writers use the names below.
   assay.json
   bbox/Pos{n}.csv
   align/Pos{n}.json
+  align/occupancy-pack.json    # assay-scoped few-shot occupancy; see occupancy-prompt-pack.md
   roi/Pos{n}/index.json
   roi/Pos{n}/Roi{k}.tif
   mask/Pos{n}/
@@ -35,7 +36,9 @@ and ln(2)/β. Writers use the names below.
 ```
 
 Constants: `bbox/`, `roi/`, `align/`, `mask/`, `analysis/`, `results/`,
-`annotations/`, `timeseries/`, `sidecar/`, `assay.json`.
+`annotations/`, `timeseries/`, `sidecar/`, `assay.json`. Occupancy support
+examples persist at `align/occupancy-pack.json` (workspace-level, not per
+Pos).
 
 ## `bbox/Pos{n}.csv` (lisca crop/align)
 

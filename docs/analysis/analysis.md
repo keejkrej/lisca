@@ -81,10 +81,13 @@ Rust in this crate should stay idiomatic:
 
 - Shared ROI I/O in `roi_stack.rs` / `csv_io.rs`; crop in `lisca-crop`.
 - Transfection stages: call `lisca-transfection` (Otsu, timeseries, AUC, fit, plots). Do not keep a second full pipeline under `assays/transfection/`.
-- Product Smart exclude / Smart segment models stay in `models/`. Transfection
-  ONNX segment may stay as a Studio adapter (`segment_onnx.rs` + `ort`) until
-  the sidecar un-stubs it; resolve `keejkrej/single-cell-pattern-unet` via
-  `LISCA_PATTERN_SEG_MODEL`, not as a lisca-owned assay brain.
+- Product Smart exclude / Smart segment models stay in `models/`. Do not
+  retrain Smart exclude per user; prompt with assay examples
+  (`align/occupancy-pack.json`, [`occupancy-prompt-pack.md`](./occupancy-prompt-pack.md)).
+  Transfection ONNX segment may stay as a Studio adapter (`segment_onnx.rs` +
+  `ort`) until the sidecar un-stubs it; resolve
+  `keejkrej/single-cell-pattern-unet` via `LISCA_PATTERN_SEG_MODEL`, not as a
+  lisca-owned assay brain.
 - Killing: per-assay code under `assays/killing/`. Weights: HF
   `keejkrej/killing-assay-resnet18`, curl at package time.
 - Parity for transfection is judged in the sidecar; this repo’s wrapper tests check the dispatch still writes the workspace contract.

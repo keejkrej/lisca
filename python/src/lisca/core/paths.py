@@ -30,6 +30,7 @@ SIDECAR_EVENTS_JSON = "events.json"
 SIDECAR_TRACES_PARQUET = "traces.parquet"
 SIDECAR_TRACKS_CSV = "tracks.csv"
 SIDECAR_ENGAGEMENTS_CSV = "engagements.csv"
+OCCUPANCY_PACK_JSON = "occupancy-pack.json"
 
 
 def pos_name(pos: int) -> str:
@@ -78,6 +79,11 @@ def align_dir(workspace: Path) -> Path:
 
 def align_json_path(workspace: Path, pos: int) -> Path:
     return align_dir(workspace) / align_json_name(pos)
+
+
+def occupancy_pack_path(workspace: Path) -> Path:
+    """Workspace-level few-shot occupancy pack (not per Pos)."""
+    return align_dir(workspace) / OCCUPANCY_PACK_JSON
 
 
 def mask_dir(workspace: Path) -> Path:

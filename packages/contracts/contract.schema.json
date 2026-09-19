@@ -674,6 +674,79 @@
       },
       "required": ["i", "j", "x", "y", "w", "h"]
     },
+    "OccupancyPromptLabel": {
+      "type": "string",
+      "enum": ["occupied", "empty"]
+    },
+    "OccupancyExcludeEngine": {
+      "type": "string",
+      "enum": ["resnet", "promptPack"]
+    },
+    "OccupancyPromptExample": {
+      "type": "object",
+      "properties": {
+        "label": {
+          "$ref": "#/definitions/OccupancyPromptLabel"
+        },
+        "embedding": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "i": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "j": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "pos": {
+          "type": "integer",
+          "minimum": 0,
+          "format": "uint32"
+        }
+      },
+      "required": ["label", "embedding"]
+    },
+    "OccupancyPromptPack": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "type": "integer",
+          "minimum": 0,
+          "format": "uint32"
+        },
+        "embedder": {
+          "type": "string"
+        },
+        "threshold": {
+          "type": "number",
+          "format": "double"
+        },
+        "examples": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/OccupancyPromptExample"
+          }
+        }
+      },
+      "required": ["version", "embedder", "examples"]
+    },
+    "OccupancyPromptExampleInput": {
+      "type": "object",
+      "properties": {
+        "label": {
+          "$ref": "#/definitions/OccupancyPromptLabel"
+        },
+        "cell": {
+          "$ref": "#/definitions/AutoExcludePreviewCell"
+        }
+      },
+      "required": ["label", "cell"]
+    },
     "SmartExcludeRequest": {
       "type": "object",
       "properties": {
@@ -702,6 +775,24 @@
         "threshold": {
           "type": "number",
           "format": "double"
+        },
+        "workspacePath": {
+          "type": "string"
+        },
+        "persistPromptPack": {
+          "type": "boolean"
+        },
+        "appendPromptExamples": {
+          "type": "boolean"
+        },
+        "promptExamples": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/OccupancyPromptExampleInput"
+          }
+        },
+        "promptPack": {
+          "$ref": "#/definitions/OccupancyPromptPack"
         }
       },
       "required": ["source", "request", "contrast", "cells"]
@@ -714,6 +805,25 @@
           "items": {
             "$ref": "#/definitions/AlignGridCellCoord"
           }
+        },
+        "engine": {
+          "$ref": "#/definitions/OccupancyExcludeEngine"
+        },
+        "packReady": {
+          "type": "boolean"
+        },
+        "occupiedCount": {
+          "type": "integer",
+          "minimum": 0,
+          "format": "uint32"
+        },
+        "emptyCount": {
+          "type": "integer",
+          "minimum": 0,
+          "format": "uint32"
+        },
+        "message": {
+          "type": "string"
         }
       },
       "required": ["excludedCells"]

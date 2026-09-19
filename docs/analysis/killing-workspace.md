@@ -26,7 +26,10 @@ kill curve see [`analysis.md`](./analysis.md).
    mask, signal). Extra roles do **not** go on `signal` — that would run the
    ResNet on T-cell / PI planes.
 4. **Align.** Place the micropattern grid, exclude empty sites, save boxes
-   (`bbox/PosN.csv` + `align/PosN.json`).
+   (`bbox/PosN.csv` + `align/PosN.json`). Do not retrain Smart exclude per
+   lab — bootstrap with Var exclude / manual edits; those corrections
+   accumulate on `align/occupancy-pack.json`. See
+   [`occupancy-prompt-pack.md`](./occupancy-prompt-pack.md).
 5. **Crop.** Studio / `lisca-crop` writes `roi/PosN/RoiK.tif` (TCZYX pages) and
    `roi/PosN/index.json`.
 6. **Annotate (optional).** Labels are an open list. A killing fixture seeds
@@ -95,10 +98,14 @@ T-cell annotation ids.
 
 Leave these for `lisca-killing-assay` or a workstation notebook:
 
-- Promptable / foundation / embedding-distance classifiers
+- Killing-specific promptable / foundation classifiers (T vs tumor, death)
 - Tumor vs T-cell instance segmentation and Trackpy linking
 - Engagement multiplicity (`n_episodes`, `n_unique_T`) as first-class science
 - Stage XY / global T identities (source readers do not expose stage coordinates today)
+
+Occupancy (empty vs occupied **patterns**) is a lisca product path, not a
+killing sidecar: see [`occupancy-prompt-pack.md`](./occupancy-prompt-pack.md).
+Do not retrain the Smart exclude ResNet per user — prompt with examples.
 
 The reserved `sidecar/` filenames and `channelRoles` / open annotation labels
 are the hooks those tools should write against.

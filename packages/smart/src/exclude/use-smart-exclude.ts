@@ -1,13 +1,29 @@
-import type { AlignGridCellCoord, AlignGridState } from "@lisca/contracts";
+import type {
+  AlignGridCellCoord,
+  AlignGridState,
+  OccupancyPromptExampleInput,
+} from "@lisca/contracts";
 import type { FrameResult } from "@lisca/utils";
 import { createMemo, createSignal, onCleanup, type Accessor } from "solid-js";
 
 import type { SmartModelDownloadState, SmartModelGate } from "../shared/model-gate";
 import { useLatestRef } from "../shared/use-latest-ref";
+import {
+  occupancyCorrectionsFromExclusionChange,
+  promptExamplesFromCorrections,
+} from "./occupancy";
 import type { SmartExcludeProvider } from "./provider";
 import { getSmartExcludeCandidateCells } from "./shared";
+import type {
+  ClassifyExclusionCandidatesOptions,
+  ClassifyExclusionInput,
+  OccupancyPackStatus,
+} from "./types";
 
 export type SmartExcludeDownloadState = SmartModelDownloadState;
+export type { OccupancyPackStatus };
+
+const RECORD_DEBOUNCE_MS = 400;
 
 type PendingRun = {
   resolve: (modelCells: AlignGridCellCoord[]) => void;
@@ -21,6 +37,7 @@ export function useSmartExclude(options: {
   grid: Accessor<AlignGridState>;
   currentExcludedCells: Accessor<AlignGridCellCoord[]>;
   enabled: Accessor<boolean>;
+  workspacePath?: Accessor<string | null>;
   onComplete: (modelCells: AlignGridCellCoord[]) => void;
   onStatus?: (status: string | null) => void;
   onError?: (error: string | null) => void;
@@ -32,12 +49,15 @@ export function useSmartExclude(options: {
     progress: 0,
     message: "",
   });
+  const [occupancyStatus, setOccupancyStatus] = createSignal<OccupancyPackStatus | null>(null);
   const active = createMemo(() => busy() || (options.model ? downloadState().open : false));
 
   let runGeneration = 0;
   let disposed = false;
   let pendingRun: PendingRun | null = null;
   let consentPromise: Promise<AlignGridCellCoord[]> | null = null;
+  let pendingRecord: OccupancyPromptExampleInput[] = [];
+  let recordTimer: ReturnType<typeof setTimeout> | null = null;
 
   const onCompleteRef = useLatestRef(() => options.onComplete);
   const onStatusRef = useLatestRef(() => options.onStatus);
@@ -49,6 +69,11 @@ export function useSmartExclude(options: {
     pendingRun?.reject(new Error("Smart exclude cancelled"));
     pendingRun = null;
     consentPromise = null;
+    if (recordTimer) {
+      clearTimeout(recordTimer);
+      recordTimer = null;
+    }
+    pendingRecord = [];
   });
 
   const closeDownloadState = () => {
@@ -68,6 +93,29 @@ export function useSmartExclude(options: {
       file: progress.file,
     }));
   };
+
+  const occupancyOptions = (
+    generation: number,
+    extra?: ClassifyExclusionCandidatesOptions,
+  ): ClassifyExclusionCandidatesOptions => ({
+    ...extra,
+    onOccupancy: (status) => {
+      if (disposed || runGeneration !== generation) return;
+      setOccupancyStatus(status);
+      extra?.onOccupancy?.(status);
+    },
+  });
+
+  const classifyInput = (
+    frame: FrameResult,
+    cells: ClassifyExclusionInput["cells"],
+    extras?: Partial<ClassifyExclusionInput>,
+  ): ClassifyExclusionInput => ({
+    frame,
+    cells,
+    workspacePath: options.workspacePath?.() ?? null,
+    ...extras,
+  });
 
   const runClassify = async (generation: number): Promise<AlignGridCellCoord[]> => {
     const frame = options.frame();
@@ -91,14 +139,17 @@ export function useSmartExclude(options: {
     }
 
     const modelCells = await options.provider.classify(
-      { frame, cells },
-      options.model
-        ? {
-            onProgress: (progress) => {
-              if (!disposed && runGeneration === generation) updateDownloadProgress(progress);
-            },
-          }
-        : undefined,
+      classifyInput(frame, cells),
+      occupancyOptions(
+        generation,
+        options.model
+          ? {
+              onProgress: (progress) => {
+                if (!disposed && runGeneration === generation) updateDownloadProgress(progress);
+              },
+            }
+          : undefined,
+      ),
     );
     if (runGeneration !== generation) return [];
     closeDownloadState();
@@ -168,7 +219,10 @@ export function useSmartExclude(options: {
       if (cells.length === 0) return [];
 
       if (!options.model) {
-        return await options.provider.classify({ frame, cells });
+        return await options.provider.classify(
+          classifyInput(frame, cells),
+          occupancyOptions(generation),
+        );
       }
 
       consentPromise = classifyNow(generation);
@@ -245,7 +299,7 @@ export function useSmartExclude(options: {
       const modelCells = await ensureAndClassify();
       if (disposed) return;
       onCompleteRef.current(modelCells);
-      onStatusRef.current?.(null);
+      onStatusRef.current?.(occupancyStatus()?.message ?? null);
     } catch (cause) {
       if (disposed) return;
       if (cause instanceof Error && cause.message === "Smart exclude cancelled") {
@@ -257,11 +311,61 @@ export function useSmartExclude(options: {
     }
   };
 
+  const flushRecord = async () => {
+    const examples = pendingRecord;
+    pendingRecord = [];
+    recordTimer = null;
+    const frame = options.frame();
+    const workspacePath = options.workspacePath?.();
+    if (disposed || !frame || !workspacePath || examples.length === 0) return;
+    try {
+      await options.provider.classify(
+        classifyInput(frame, [], {
+          workspacePath,
+          persistPromptPack: true,
+          appendPromptExamples: true,
+          promptExamples: examples,
+        }),
+        {
+          onOccupancy: (status) => {
+            if (disposed) return;
+            setOccupancyStatus(status);
+            onStatusRef.current?.(status.message ?? null);
+          },
+        },
+      );
+    } catch (cause) {
+      if (disposed) return;
+      onErrorRef.current?.(cause instanceof Error ? cause.message : String(cause));
+    }
+  };
+
+  const recordExclusionChange = (
+    previous: readonly AlignGridCellCoord[],
+    next: readonly AlignGridCellCoord[],
+  ) => {
+    const frame = options.frame();
+    if (disposed || !frame || !options.workspacePath?.()) return;
+    const examples = promptExamplesFromCorrections(
+      frame,
+      options.grid(),
+      occupancyCorrectionsFromExclusionChange(previous, next),
+    );
+    if (examples.length === 0) return;
+    pendingRecord.push(...examples);
+    if (recordTimer) clearTimeout(recordTimer);
+    recordTimer = setTimeout(() => {
+      void flushRecord();
+    }, RECORD_DEBOUNCE_MS);
+  };
+
   return {
     busy,
     active,
     downloadState,
+    occupancyStatus,
     request,
+    recordExclusionChange,
     ensureAndClassify,
     confirmDownload,
     cancelDownload,

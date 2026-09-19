@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::{Mutex, OnceLock};
 
 use ndarray::{Array, ArrayView, Ix4};
@@ -11,8 +11,8 @@ use crate::onnx::{
     workspace_models_dir, IMAGE_SIZE,
 };
 use crate::protocol::{
-    AlignGridCellCoord, AutoExcludePreviewCell, FramePayload, SmartExcludeRequest,
-    SmartExcludeResponse,
+    AlignGridCellCoord, AutoExcludePreviewCell, FramePayload, OccupancyExcludeEngine,
+    SmartExcludeRequest, SmartExcludeResponse,
 };
 
 use super::frame::decode_frame_pixels;
@@ -22,25 +22,109 @@ const DEFAULT_THRESHOLD: f64 = 0.5;
 static EXCLUDE_SESSION: OnceLock<Result<Mutex<Session>, String>> = OnceLock::new();
 
 pub fn classify_exclusion(request: SmartExcludeRequest) -> Result<SmartExcludeResponse, String> {
+    let pos = request.request.pos;
     let frame = aligner::load_frame_payload(request.source, request.request, request.contrast)?;
-    classify_exclusion_on_frame(&frame, &request.cells, request.threshold)
+    classify_exclusion_on_frame(
+        &frame,
+        &request.cells,
+        request.threshold,
+        request.workspace_path.as_deref(),
+        request.persist_prompt_pack,
+        request.append_prompt_examples,
+        &request.prompt_examples,
+        request.prompt_pack.as_ref(),
+        Some(pos),
+    )
+}
+
+fn occupancy_response(
+    excluded_cells: Vec<AlignGridCellCoord>,
+    engine: Option<OccupancyExcludeEngine>,
+    pack: Option<&crate::protocol::OccupancyPromptPack>,
+) -> SmartExcludeResponse {
+    let (occupied, empty) = pack.map(super::occupancy::pack_counts).unwrap_or((0, 0));
+    SmartExcludeResponse {
+        empty_count: Some(empty as u32),
+        engine,
+        excluded_cells,
+        message: Some(super::occupancy::pack_gate_message(pack)),
+        occupied_count: Some(occupied as u32),
+        pack_ready: Some(pack.map(super::occupancy::pack_is_ready).unwrap_or(false)),
+    }
 }
 
 fn classify_exclusion_on_frame(
     frame: &FramePayload,
     cells: &[AutoExcludePreviewCell],
     threshold: Option<f64>,
+    workspace_path: Option<&str>,
+    persist_prompt_pack: Option<bool>,
+    append_prompt_examples: Option<bool>,
+    prompt_examples: &[crate::protocol::OccupancyPromptExampleInput],
+    inline_pack: Option<&crate::protocol::OccupancyPromptPack>,
+    pos: Option<u32>,
 ) -> Result<SmartExcludeResponse, String> {
-    if cells.is_empty() {
-        return Ok(SmartExcludeResponse {
-            excluded_cells: Vec::new(),
-        });
+    if cells.is_empty()
+        && prompt_examples.is_empty()
+        && workspace_path.is_none()
+        && inline_pack.is_none()
+    {
+        return Ok(occupancy_response(Vec::new(), None, None));
     }
 
-    let threshold = threshold.unwrap_or(DEFAULT_THRESHOLD);
     let pixels = decode_frame_pixels(frame)?;
     let width = frame.width as usize;
     let height = frame.height as usize;
+
+    let disk_pack = match workspace_path {
+        Some(workspace) => super::occupancy::load_occupancy_pack(Path::new(workspace))?,
+        None => None,
+    };
+    let mut pack = inline_pack
+        .cloned()
+        .or(disk_pack)
+        .unwrap_or_else(|| super::occupancy::empty_occupancy_pack(threshold));
+
+    if !prompt_examples.is_empty() {
+        let built = super::occupancy::pack_from_prompt_examples(
+            &pixels,
+            width,
+            height,
+            prompt_examples,
+            threshold,
+            pos,
+        )?;
+        let append = append_prompt_examples.unwrap_or(true);
+        pack = if append {
+            super::occupancy::merge_occupancy_packs(&pack, &built)
+        } else {
+            built
+        };
+    }
+
+    let persist =
+        persist_prompt_pack.unwrap_or(!prompt_examples.is_empty() && workspace_path.is_some());
+    if persist {
+        if let Some(workspace) = workspace_path {
+            super::occupancy::save_occupancy_pack(Path::new(workspace), &pack)?;
+        }
+    }
+
+    if super::occupancy::pack_is_ready(&pack) && !cells.is_empty() {
+        let excluded_cells =
+            super::occupancy::classify_cells_with_pack(&pixels, width, height, cells, &pack)?;
+        return Ok(occupancy_response(
+            excluded_cells,
+            Some(OccupancyExcludeEngine::PromptPack),
+            Some(&pack),
+        ));
+    }
+
+    if cells.is_empty() {
+        return Ok(occupancy_response(Vec::new(), None, Some(&pack)));
+    }
+
+    let threshold = threshold.unwrap_or(DEFAULT_THRESHOLD);
     let mut session = exclude_session()?;
     let input_name = "pixel_values";
     let mut excluded_cells = Vec::new();
@@ -55,7 +139,11 @@ fn classify_exclusion_on_frame(
         }
     }
 
-    Ok(SmartExcludeResponse { excluded_cells })
+    Ok(occupancy_response(
+        excluded_cells,
+        Some(OccupancyExcludeEngine::Resnet),
+        Some(&pack),
+    ))
 }
 
 fn exclude_session() -> Result<std::sync::MutexGuard<'static, Session>, String> {
@@ -120,7 +208,7 @@ fn exclude_probability_from_logits(logits: &ArrayView<f32, ndarray::IxDyn>) -> R
     Ok(first_class_probability(exclude_logit, include_logit))
 }
 
-fn crop_and_normalize_cell(
+pub(super) fn crop_and_normalize_cell(
     pixels: &[f64],
     frame_width: usize,
     frame_height: usize,
@@ -190,7 +278,9 @@ mod tests {
             suggested_contrast: ContrastWindow { min: 0, max: 255 },
             applied_contrast: ContrastWindow { min: 0, max: 255 },
         };
-        let response = classify_exclusion_on_frame(&frame, &[], None).expect("classify");
+        let response =
+            classify_exclusion_on_frame(&frame, &[], None, None, None, None, &[], None, None)
+                .expect("classify");
         assert!(response.excluded_cells.is_empty());
     }
 
@@ -226,8 +316,73 @@ mod tests {
                 h: 4,
             }],
             Some(2.0),
+            None,
+            None,
+            None,
+            &[],
+            None,
+            None,
         )
         .expect("classify");
         assert!(response.excluded_cells.is_empty());
+    }
+
+    #[test]
+    fn records_prompt_examples_on_the_workspace_without_resnet() {
+        use crate::protocol::{
+            ContrastWindow, FramePayload, OccupancyPromptExampleInput, OccupancyPromptLabel,
+            PixelType,
+        };
+
+        let root = tempfile::tempdir().expect("tmp");
+        let pixels = vec![40u8; 16];
+        let frame = FramePayload {
+            width: 4,
+            height: 4,
+            data_base64: {
+                use base64::prelude::{Engine as _, BASE64_STANDARD};
+                BASE64_STANDARD.encode(pixels)
+            },
+            pixel_type: PixelType::Uint8,
+            contrast_domain: ContrastWindow { min: 0, max: 255 },
+            suggested_contrast: ContrastWindow { min: 0, max: 255 },
+            applied_contrast: ContrastWindow { min: 0, max: 255 },
+        };
+        let cell = AutoExcludePreviewCell {
+            i: 0,
+            j: 1,
+            x: 0,
+            y: 0,
+            w: 4,
+            h: 4,
+        };
+        let response = classify_exclusion_on_frame(
+            &frame,
+            &[],
+            None,
+            root.path().to_str(),
+            Some(true),
+            Some(true),
+            &[OccupancyPromptExampleInput {
+                cell: cell.clone(),
+                label: OccupancyPromptLabel::Empty,
+            }],
+            None,
+            Some(3),
+        )
+        .expect("record");
+        assert!(response.excluded_cells.is_empty());
+        assert_eq!(response.pack_ready, Some(false));
+        assert_eq!(response.empty_count, Some(1));
+        assert!(response
+            .message
+            .as_deref()
+            .is_some_and(|message| message.contains("Not ready yet")));
+        let pack = super::super::occupancy::load_occupancy_pack(root.path())
+            .expect("load")
+            .expect("present");
+        assert_eq!(pack.examples.len(), 1);
+        assert_eq!(pack.examples[0].pos, Some(3));
+        assert_eq!(pack.examples[0].label, OccupancyPromptLabel::Empty);
     }
 }

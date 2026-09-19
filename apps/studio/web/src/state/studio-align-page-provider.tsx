@@ -20,6 +20,7 @@ export function StudioAlignPageProvider(props: { children?: JSX.Element }) {
     source: () => state.source,
     selection: () => state.selection,
     contrast: () => state.contrast,
+    workspacePath: () => state.workspacePath,
   });
   const smartExclude = useSmartExclude({
     provider: smartExcludeProvider,
@@ -27,8 +28,10 @@ export function StudioAlignPageProvider(props: { children?: JSX.Element }) {
     grid: () => state.grid,
     currentExcludedCells: () => state.currentExcludedCells,
     enabled: () => Boolean(state.frame) && !state.saving,
+    workspacePath: () => state.workspacePath,
     onComplete: state.applySmartExclusion,
     onError: state.reportError,
+    onStatus: state.reportStatus,
   });
   const varExclude = useVarExclude({
     provider: createStudioVarExcludeProvider(),

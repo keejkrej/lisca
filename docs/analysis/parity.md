@@ -20,7 +20,7 @@ shared across assays and is not part of `lisca-transfection-assay`.
 
 | Stay in this repo (product / any-assay)    | Assay brains (HF / sidecar; not long-term `models/` ownership)                                |
 | ------------------------------------------ | --------------------------------------------------------------------------------------------- |
-| Smart exclude (`smart-exclusion-resnet18`) | Transfection pattern U-Net: HF `keejkrej/single-cell-pattern-unet`, `LISCA_PATTERN_SEG_MODEL` |
+| Smart exclude (`smart-exclusion-resnet18`) + assay pack (`align/occupancy-pack.json`) | Transfection pattern U-Net: HF `keejkrej/single-cell-pattern-unet`, `LISCA_PATTERN_SEG_MODEL` |
 | Smart segment (`smart-segment-slimsam`)    | Killing ResNet: HF `keejkrej/killing-assay-resnet18`; curl at Studio package time             |
 | `mupattern-resnet18` (legacy reference)    | Do not add new assay-specific weights under `models/`                                         |
 
