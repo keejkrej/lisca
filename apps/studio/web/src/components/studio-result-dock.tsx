@@ -49,7 +49,7 @@ export function StudioResultControls(props: {
             <For each={props.toolActions}>
               {(action, index) => (
                 <Button
-                  class="w-full justify-center rounded-full"
+                  class="w-full justify-center"
                   disabled={action.disabled}
                   size="sm"
                   type="button"
@@ -66,7 +66,7 @@ export function StudioResultControls(props: {
       <PanelSection appearance="rail" title="Action">
         <RailControlStack>
           <Button
-            class="w-full justify-center rounded-full"
+            class="w-full justify-center"
             disabled={props.saveDisabled}
             size="sm"
             type="button"

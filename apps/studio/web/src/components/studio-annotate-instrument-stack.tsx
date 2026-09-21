@@ -108,7 +108,7 @@ function StudioAnnotateActionSection(props: { showShuffle: boolean }) {
     <PanelSection appearance="rail" title="Action">
       <RailControlStack>
         <Button
-          class="w-full justify-center rounded-full"
+          class="w-full justify-center"
           disabled={!dock.canSave}
           size="sm"
           type="button"
@@ -118,7 +118,7 @@ function StudioAnnotateActionSection(props: { showShuffle: boolean }) {
           {dock.saving ? "Saving…" : "Save"}
         </Button>
         <Button
-          class="w-full justify-center rounded-full"
+          class="w-full justify-center"
           disabled={!dock.canGoToNextSite}
           size="sm"
           type="button"
@@ -129,7 +129,7 @@ function StudioAnnotateActionSection(props: { showShuffle: boolean }) {
         </Button>
         <Show when={props.showShuffle}>
           <Button
-            class="w-full justify-center rounded-full"
+            class="w-full justify-center"
             disabled={disableShuffle()}
             size="sm"
             type="button"
@@ -140,7 +140,7 @@ function StudioAnnotateActionSection(props: { showShuffle: boolean }) {
           </Button>
         </Show>
         <Button
-          class="w-full justify-center rounded-full"
+          class="w-full justify-center"
           size="sm"
           type="button"
           onClick={dock.requestContinueToAnalysis}

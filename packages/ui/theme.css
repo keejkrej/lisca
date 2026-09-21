@@ -4,21 +4,21 @@
 
 /**
  * Zaidan/shadcn semantic tokens for `@lisca/ui` primitives.
- * Maia style, Neutral base, Outfit font, Phosphor icons.
+ * Lyra style, Neutral base, Outfit font, Phosphor icons.
  * Import after Tailwind in each app: `@import "@lisca/ui/theme.css";`
  */
 
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme inline {
-  /* DESIGN.md: sm=6 md=8 lg=14 xl=18. Keep --radius at 10px so sm/md calc stay correct. */
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: 0.875rem;
-  --radius-xl: 1.125rem;
-  --radius-2xl: calc(var(--radius) + 8px);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
+  /* DESIGN.md: Lyra is square. Every radius token is 0 so rounded-* utilities stay boxy. */
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
+  --radius-xl: 0px;
+  --radius-2xl: 0px;
+  --radius-3xl: 0px;
+  --radius-4xl: 0px;
 
   --font-sans: "Outfit Variable", ui-sans-serif, system-ui, sans-serif;
   --font-heading: var(--font-sans);
@@ -73,7 +73,7 @@
 }
 
 :root {
-  --radius: 0.625rem;
+  --radius: 0px;
   --background: #ffffff;
   --foreground: #171717;
   --card: #ffffff;
@@ -185,7 +185,7 @@
   --lisca-brand-foreground: #171717;
 }
 
-/* Lisca-owned utilities (not shipped by zaidan style-maia) */
+/* Lisca-owned utilities (not shipped by zaidan style-lyra) */
 .z-destructive-surface {
   @apply border-destructive/35 bg-destructive/10 text-destructive dark:border-destructive/40 dark:bg-destructive/20 dark:text-red-300;
 }
@@ -210,10 +210,6 @@
   --instrument-rule: var(--border);
   --instrument-stage: var(--muted);
   font-family: var(--font-sans);
-}
-
-.lisca-instrument-shell .z-button {
-  border-radius: 999px;
 }
 
 .lisca-instrument-shell .z-button-variant-outline {
@@ -285,7 +281,6 @@
 }
 
 .lisca-instrument-shell [data-slot="dialog-surface"] {
-  border-radius: 18px;
   box-shadow: none;
 }
 

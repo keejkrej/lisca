@@ -16,7 +16,7 @@ Do not add new assay brains under `models/`.
 
 ## Build, Test, and Development Commands
 
-Use Node 22+, pnpm 10+, and the `vp` wrapper for JavaScript workspace tasks.
+Use Node 22+, pnpm 12+, and the `vp` wrapper for JavaScript workspace tasks.
 
 - `vp install` installs workspace dependencies.
 - `vp run dev:studio` starts Studio's web and Rust server; replace `studio` with `aligner` or `annotator`.

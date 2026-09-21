@@ -57,7 +57,7 @@ describe("frame-navigation steppers", () => {
     expect(previousPosition.hasAttribute("disabled")).toBe(true);
     expect(nextPosition.hasAttribute("disabled")).toBe(false);
     expect(previousPosition.className).toContain("size-8");
-    expect(previousPosition.className).toContain("rounded-full");
+    expect(previousPosition.className).not.toContain("rounded-full");
     expect(previousPosition.className).toContain("text-foreground");
     expect(previousPosition.querySelector("svg")?.classList.contains("size-4")).toBe(true);
     expect(nextPosition.querySelector("svg")?.classList.contains("size-4")).toBe(true);

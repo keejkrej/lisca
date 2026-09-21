@@ -71,7 +71,7 @@ function OperationProgressRail(props: { operation: OperationSummary }) {
   return (
     <div
       aria-label={`${progress().completed} of ${progress().total} tasks completed`}
-      class="flex h-1.5 w-full overflow-hidden rounded-full bg-muted"
+      class="flex h-1.5 w-full overflow-hidden rounded-none bg-muted"
       role="progressbar"
       aria-valuemax={progress().total}
       aria-valuemin={0}
@@ -108,7 +108,7 @@ function WorkProgressRail(props: { label: string; work: NonNullable<TaskDetail["
         aria-valuemax={props.work.total}
         aria-valuemin={0}
         aria-valuenow={props.work.completed}
-        class="h-1.5 overflow-hidden rounded-full bg-muted"
+        class="h-1.5 overflow-hidden rounded-none bg-muted"
         role="progressbar"
       >
         <div class="h-full bg-primary" style={{ width: `${percent()}%` }} />
@@ -310,7 +310,7 @@ export function TaskCenter(props: TaskCenterProps) {
             aria-hidden="true"
             data-slot="task-badge"
             class={cn(
-              "flex min-w-4 items-center justify-center rounded-full px-1 text-[10px] leading-4",
+              "flex min-w-4 items-center justify-center rounded-none px-1 text-[10px] leading-4",
               statusLink()
                 ? "bg-foreground text-background"
                 : indicator().tone === "attention"
@@ -339,8 +339,8 @@ export function TaskCenter(props: TaskCenterProps) {
           class={cn(
             "fixed left-1/2 top-1/2 z-50 flex max-h-[calc(100%-2.5rem)] w-[calc(100%-3rem)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden border border-border bg-background text-foreground sm:max-h-[calc(100%-4rem)]",
             statusLink()
-              ? "max-w-[32.5rem] rounded-[18px] shadow-none"
-              : "max-w-2xl rounded-xl shadow-2xl",
+              ? "max-w-[32.5rem] rounded-none shadow-none"
+              : "max-w-2xl rounded-none shadow-2xl",
           )}
           onOpenAutoFocus={(event) => {
             event.preventDefault();

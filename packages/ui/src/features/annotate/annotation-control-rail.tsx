@@ -72,7 +72,7 @@ export function AnnotationControlRail(props: AnnotationControlRailProps) {
               : props.activeLabelId === label.id;
           return (
             <button
-              class="h-8 min-w-0 w-full truncate rounded-full border px-2 text-center text-xs font-medium disabled:cursor-not-allowed disabled:opacity-50"
+              class="h-8 min-w-0 w-full truncate border px-2 text-center text-xs font-medium disabled:cursor-not-allowed disabled:opacity-50"
               disabled={!props.canEdit}
               style={labelColorStyle(label, selected)}
               type="button"

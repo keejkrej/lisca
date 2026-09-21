@@ -10,7 +10,7 @@ const aspectClassByVariant: Record<StageCanvasAspect, string> = {
 };
 
 /**
- * Shared stage framing: muted rounded well + tracked caption under the canvas.
+ * Shared stage framing: muted square well + tracked caption under the canvas.
  * Pair with `ViewportCard` so Aligner, Annotator, and Studio stay in sync.
  */
 export function StageCanvas(props: {
@@ -25,7 +25,7 @@ export function StageCanvas(props: {
     <div class={cn("flex h-full w-full flex-col justify-center gap-3 self-center", props.class)}>
       <div
         class={cn(
-          "w-full overflow-hidden rounded-2xl bg-muted",
+          "w-full overflow-hidden rounded-none bg-muted",
           aspectClassByVariant[props.aspect ?? "wide"],
           props.wellClass,
         )}

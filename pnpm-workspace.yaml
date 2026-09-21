@@ -25,7 +25,7 @@ overrides:
   solid-js: "^1.9.0"
   vite: "npm:@voidzero-dev/vite-plus-core@latest"
 
-# pnpm 11: allow lifecycle scripts only for packages that need native builds.
+# pnpm 12: allow lifecycle scripts only for packages that need native builds.
 allowBuilds:
   core-js: true
   esbuild: true

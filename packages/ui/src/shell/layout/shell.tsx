@@ -13,7 +13,7 @@ import { ShellPortraitPanelControls, ShellPortraitPanelOverlays } from "./shell-
 
 const shellDivider = "border-border";
 const shellSurface = "bg-background";
-const shellSheetSurface = "rounded-2xl border border-border bg-background";
+const shellSheetSurface = "rounded-none border border-border bg-background";
 
 /** Fixed-height dock strip (`11rem`); scrolls inside if content overflows. */
 const shellDockFixed = "flex h-[11rem] shrink-0 flex-col overflow-hidden";

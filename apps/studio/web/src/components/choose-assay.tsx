@@ -47,7 +47,7 @@ export function ChooseAssay() {
             return (
               <Button
                 aria-pressed={selected()}
-                class="h-auto w-full items-center justify-start gap-3 rounded-[18px] px-5 py-[18px] text-left"
+                class="h-auto w-full items-center justify-start gap-3 rounded-none px-5 py-[18px] text-left"
                 type="button"
                 variant={selected() ? "default" : "secondary"}
                 onClick={() => setAssayId(id)}

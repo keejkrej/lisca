@@ -43,7 +43,7 @@ export function SmartSegmentModelDialog(props: SmartSegmentModelDialogProps) {
                 {props.state.message}
               </div>
             </div>
-            <div class="mt-4 h-2 overflow-hidden rounded-full bg-muted">
+            <div class="mt-4 h-2 overflow-hidden rounded-none bg-muted">
               <div
                 class="h-full bg-primary transition-[width]"
                 style={{ width: `${Math.max(0, Math.min(100, props.state.progress))}%` }}

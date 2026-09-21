@@ -8,7 +8,7 @@ ARG PRODUCT
 
 WORKDIR /app
 
-RUN corepack enable && corepack prepare pnpm@11.15.1 --activate \
+RUN corepack enable && corepack prepare pnpm@12.5.1 --activate \
   && npm install -g vite-plus@latest
 
 # Install deps with a cached pnpm store. Lockfile is copied first so the

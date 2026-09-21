@@ -6,7 +6,7 @@ export function StudioInfoActions(props: { onBack: () => void; onNext: () => voi
     <PanelSection appearance="rail" title="Action">
       <RailControlStack>
         <Button
-          class="w-full justify-center rounded-full"
+          class="w-full justify-center"
           size="sm"
           type="button"
           variant="outline"
@@ -14,12 +14,7 @@ export function StudioInfoActions(props: { onBack: () => void; onNext: () => voi
         >
           Back
         </Button>
-        <Button
-          class="w-full justify-center rounded-full"
-          size="sm"
-          type="button"
-          onClick={props.onNext}
-        >
+        <Button class="w-full justify-center" size="sm" type="button" onClick={props.onNext}>
           Continue
         </Button>
       </RailControlStack>

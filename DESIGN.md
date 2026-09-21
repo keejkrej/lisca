@@ -72,11 +72,11 @@ spacing:
   space-32: 32px
   space-48: 48px
 rounded:
-  sm: 6px
-  md: 8px
-  lg: 14px
-  xl: 18px
-  full: 999px
+  sm: 0px
+  md: 0px
+  lg: 0px
+  xl: 0px
+  full: 0px
 components:
   stage-shell:
     backgroundColor: "{colors.stage}"
@@ -139,7 +139,7 @@ components:
     backgroundColor: "{colors.gfp}"
     textColor: "{colors.ink}"
     size: 12px
-    rounded: "{rounded.full}"
+    rounded: 999px
   control-border:
     backgroundColor: "{colors.border}"
     height: 1px
@@ -203,15 +203,15 @@ At narrower widths, preserve the center workspace and move rails into body-owned
 
 ## Elevation & Depth
 
-Use tonal layering plus a 1px hairline on the sheet. Muted stage rails stay flat; the white top bar and main sheet use `border border-border` with no drop shadow. Dialogs may use a scrim, but their surface stays flat and uses the 18px radius. Avoid ad hoc shadows and floating-card stacks.
+Use tonal layering plus a 1px hairline on the sheet. Muted stage rails stay flat; the white top bar and main sheet use `border border-border` with no drop shadow. Dialogs may use a scrim, but their surface stays flat and square. Avoid ad hoc shadows and floating-card stacks.
 
 ## Shapes
 
-Use 6px and 8px radii for compact surfaces, 14px for secondary cards, and 18px for the main sheet and dialogs. Buttons, toggles, chips, navigation circles, and slider thumbs use the 999px pill/circle radius. Shapes communicate grouping and state; do not mix arbitrary radii in one control family.
+Every instrument surface is square: radius is 0px on sheets, dialogs, cards, inputs, buttons, toggles, chips, navigation steps, and slider thumbs. Radio dots, switch thumbs, avatars, and tiny status LEDs stay circular. Do not mix rounded and square corners in one control family.
 
 ## Components
 
-Use the installed Zaidan Maia catalog through `@lisca/ui/components` before creating a new primitive. Product code must not deep-import registry files or hand-roll a control already covered by the catalog. Keep LiSCA behavior and composition in shared feature or shell modules; refresh registry-owned primitives through `packages/ui/components.json` instead of editing their generated implementation ad hoc.
+Use the installed Zaidan Lyra catalog through `@lisca/ui/components` before creating a new primitive. Product code must not deep-import registry files or hand-roll a control already covered by the catalog. Keep LiSCA behavior and composition in shared feature or shell modules; refresh registry-owned primitives through `packages/ui/components.json` instead of editing their generated implementation ad hoc.
 
 State controls and actions must be distinguishable before interaction. **Show** and **Edit** are toggles: always render a persistent state indicator, set `aria-pressed`, and use the brand fill only when on. Save, Reset, Auto Range, Undo, and exclusion commands are momentary actions: never leave them looking selected.
 
@@ -225,7 +225,7 @@ Control height follows placement, not visual variant. Rail buttons and toggles a
 
 Tool rows are full-width and ordered by the operation they affect. Aligner uses Pan, Rotate, Zoom spacing, Zoom pattern, then Magnifier. Annotator appends Magnifier after its edit tools. Magnifier is always the bottom tool, operates on the view only, and never mutates a grid, mask, annotation, or saved output. Independent locks sit with Zoom spacing and Zoom pattern.
 
-Previous/next controls use the same regular caret family as section-collapse controls, rendered at 16px in dark ink and optically centered inside 32px circular buttons. Do not use text glyph arrows. Every slider renders a visible 16px circular thumb, including endpoint values.
+Previous/next controls use the same regular caret family as section-collapse controls, rendered at 16px in dark ink and optically centered inside 32px square buttons. Do not use text glyph arrows. Every slider renders a visible 16px square thumb, including endpoint values.
 
 App mapping:
 
@@ -246,7 +246,7 @@ Action is the final rail section. Output-path and included/excluded count labels
 - Do keep image navigation, overlays, and hit testing on the same viewport transform.
 - Do use each app's icon color only on primary CTAs, focus, selected nav/tool, and pressed toggles.
 - Don't use fallback or mixed font families inside the application interface.
-- Don't hand-roll or deep-import a control already provided by the installed Zaidan Maia catalog.
+- Don't hand-roll or deep-import a control already provided by the installed Zaidan Lyra catalog.
 - Don't pair controls with unrelated scope, mismatched emphasis, user-authored text, or labels that cannot scan comfortably in 96px.
 - Don't style a momentary action as selected, or a toggle as an ordinary outline action.
 - Don't use ad hoc shadows, text-glyph arrows, invisible slider thumbs, or app-specific control geometry.

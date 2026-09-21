@@ -32,7 +32,7 @@ export function StudioAnalysisProgressModal() {
               </div>
             </div>
           </div>
-          <div class="mt-4 h-2 overflow-hidden rounded-full bg-muted">
+          <div class="mt-4 h-2 overflow-hidden rounded-none bg-muted">
             <div class="h-full bg-primary" style={{ width: `${pct()}%` }} />
           </div>
           <div class="mt-2 text-muted-foreground text-xs tabular-nums">{Math.round(pct())}%</div>

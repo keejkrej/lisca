@@ -72,7 +72,7 @@ export function StudioAlignInstrumentStack() {
       <PanelSection appearance="rail" title="Action">
         <RailControlStack>
           <Button
-            class="w-full justify-center rounded-full"
+            class="w-full justify-center"
             disabled={actionBusy() || !frameReady() || excludeActive()}
             size="sm"
             type="button"
@@ -82,7 +82,7 @@ export function StudioAlignInstrumentStack() {
             Exclude
           </Button>
           <Button
-            class="w-full justify-center rounded-full"
+            class="w-full justify-center"
             disabled={actionBusy() || state.findingFirstUnaligned}
             size="sm"
             type="button"
@@ -92,7 +92,7 @@ export function StudioAlignInstrumentStack() {
             Jump
           </Button>
           <Button
-            class="w-full justify-center rounded-full"
+            class="w-full justify-center"
             disabled={actionBusy() || !state.canGoBack}
             size="sm"
             type="button"
@@ -102,7 +102,7 @@ export function StudioAlignInstrumentStack() {
             Back
           </Button>
           <Button
-            class="w-full justify-center rounded-full"
+            class="w-full justify-center"
             disabled={actionBusy() || !frameReady()}
             size="sm"
             type="button"

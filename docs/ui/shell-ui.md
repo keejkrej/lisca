@@ -15,7 +15,7 @@ Do not scatter layout tint tokens (`railChrome`, `panel`, `stat`, etc.); shell s
 
 ## Instrument stage shell
 
-Studio, Aligner, Annotator, and the instrument **mock** share one `AppShell`: muted stage surround, 16px gutters, floating paper main sheet, 256px rails, and a 56px `AppShell.TopBar`. There is no classic Header variant. The reference desktop is 1440×900 with fixed columns **256px / 928px / 256px** (`w-64` rails, no `w-72` overrides). The top bar and paper sheet are flat (`rounded-2xl border border-border`); rails stay flat.
+Studio, Aligner, Annotator, and the instrument **mock** share one `AppShell`: muted stage surround, 16px gutters, floating paper main sheet, 256px rails, and a 56px `AppShell.TopBar`. There is no classic Header variant. The reference desktop is 1440×900 with fixed columns **256px / 928px / 256px** (`w-64` rails, no `w-72` overrides). The top bar and paper sheet are flat (`rounded-none border border-border`); rails stay flat.
 
 ```tsx
 <AppShell>
@@ -224,7 +224,7 @@ instrument stage:
 ## Rules
 
 1. **One layout background:** muted surround + paper sheet. There is no classic full-bleed `AppShell`.
-2. **Structure = border, not tint:** panels and sections use `rounded-xl border border-border bg-background`.
+2. **Structure = border, not tint:** panels and sections use `rounded-none border border-border bg-background`.
 3. **Apps use shell components** — do not import layout class strings; `DockSection` / `PanelSection` / `RailSidebar` own their placement styles.
 4. **Instrument chrome is stage rails** — 256px `RailSidebar`, `StageCanvas`, top-bar Expert; not bottom docks.
 5. **Read-only path chips** may use `bg-muted/20` (`ReadonlyPathField`) as the one subtle inset.

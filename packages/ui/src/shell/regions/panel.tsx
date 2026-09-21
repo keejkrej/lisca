@@ -4,7 +4,7 @@ import { cn } from "../../lib/utils";
 
 /** Bordered in-app frame (dock, viewport, nav rail). Shell-internal; use Panel/ViewportCard in apps. */
 export const panelFrameClass =
-  "rounded-xl border border-border bg-background text-foreground shadow-none";
+  "rounded-none border border-border bg-background text-foreground shadow-none";
 
 export function Panel(props: JSX.HTMLAttributes<HTMLDivElement>) {
   const [local, rest] = splitProps(props, ["class"]);

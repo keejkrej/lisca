@@ -32,7 +32,7 @@ export {
 } from "./select";
 export { Slider, SliderValue } from "./slider";
 
-// Official Zaidan Maia component catalog. Keep these registry components
+// Official Zaidan Lyra component catalog. Keep these registry components
 // available through the package's public components entrypoint so products do
 // not need to deep-import generated files.
 export * from "./accordion";

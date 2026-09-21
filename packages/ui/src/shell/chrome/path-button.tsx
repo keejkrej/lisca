@@ -32,7 +32,7 @@ export function PathButton(props: {
       }}
       class={cn(
         "max-w-[min(100%,18rem)] justify-start gap-2 font-normal",
-        props.appearance === "stage" && "h-8 rounded-full border-0 px-2.5 shadow-none",
+        props.appearance === "stage" && "h-8 border-0 px-2.5 shadow-none",
       )}
     >
       {props.appearance === "stage" ? (

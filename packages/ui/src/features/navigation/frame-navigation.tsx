@@ -76,7 +76,7 @@ function NavigationStepButton(props: NavigationStepButtonProps) {
   return (
     <Button
       aria-label={`${isPrevious() ? "Previous" : "Next"} ${props.label}`}
-      class="size-8 rounded-full p-0 text-foreground"
+      class="size-8 p-0 text-foreground"
       disabled={props.disabled}
       size="icon-sm"
       type="button"

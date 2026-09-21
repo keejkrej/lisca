@@ -71,7 +71,7 @@ export function ResultPlotGallery(props: {
                 <Show
                   when={plot.src}
                   fallback={
-                    <div class="flex min-h-[240px] items-center justify-center rounded-[18px] border border-dashed text-sm text-muted-foreground">
+                    <div class="flex min-h-[240px] items-center justify-center rounded-none border border-dashed text-sm text-muted-foreground">
                       Plot image not found
                     </div>
                   }

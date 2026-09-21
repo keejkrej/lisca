@@ -1,7 +1,7 @@
 import { splitProps, type JSX } from "solid-js";
 
 const dialogSurfaceClass =
-  "rounded-xl border border-border bg-background text-foreground shadow-2xl";
+  "rounded-none border border-border bg-background text-foreground shadow-2xl";
 import { cn } from "../../lib/utils";
 
 const maxWidthClass = {

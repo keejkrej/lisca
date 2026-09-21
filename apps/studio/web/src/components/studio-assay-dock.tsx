@@ -19,7 +19,7 @@ export function StudioAssayActions(props: {
     <PanelSection appearance="rail" title="Action">
       <RailControlStack>
         <Button
-          class="w-full justify-center rounded-full"
+          class="w-full justify-center"
           disabled={props.openingAssay || props.assayPickerOpen}
           size="sm"
           type="button"
@@ -29,7 +29,7 @@ export function StudioAssayActions(props: {
           Open existing
         </Button>
         <Button
-          class="w-full justify-center rounded-full"
+          class="w-full justify-center"
           size="sm"
           type="button"
           onClick={() => {

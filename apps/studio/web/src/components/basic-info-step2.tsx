@@ -42,12 +42,7 @@ export function BasicInfoStep2() {
           )}
         </For>
       </div>
-      <Button
-        class="w-full justify-center rounded-full"
-        type="button"
-        variant="outline"
-        onClick={addSample}
-      >
+      <Button class="w-full justify-center" type="button" variant="outline" onClick={addSample}>
         Add sample
       </Button>
     </section>
@@ -87,7 +82,7 @@ function SampleCard(props: {
           <Input
             autocomplete="off"
             aria-label="Slide channel"
-            class="h-8 w-full rounded-full px-2 text-center font-mono text-[13px]"
+            class="h-8 w-full px-2 text-center font-mono text-[13px]"
             inputMode="numeric"
             name={`samples.${props.index}.slide-channel`}
             placeholder="e.g. 0…"
@@ -102,7 +97,7 @@ function SampleCard(props: {
           <Input
             autocomplete="off"
             aria-label="Name"
-            class="h-8 min-w-0 rounded-full px-3 text-[13px]"
+            class="h-8 min-w-0 px-3 text-[13px]"
             name={`samples.${props.index}.name`}
             placeholder="e.g. eGFP, 100 nM STS…"
             value={props.row.name}
@@ -111,7 +106,7 @@ function SampleCard(props: {
         </label>
         <Button
           aria-label="Remove sample"
-          class="size-8 shrink-0 rounded-full"
+          class="size-8 shrink-0"
           size="icon-sm"
           type="button"
           variant="ghost"
@@ -125,7 +120,7 @@ function SampleCard(props: {
           <Input
             autocomplete="off"
             aria-label="Position start"
-            class="h-8 w-full rounded-full px-3 text-center font-mono text-[13px]"
+            class="h-8 w-full px-3 text-center font-mono text-[13px]"
             inputMode="numeric"
             name={`samples.${props.index}.position-start`}
             placeholder="e.g. 0…"
@@ -137,7 +132,7 @@ function SampleCard(props: {
           <Input
             autocomplete="off"
             aria-label="Position finish"
-            class="h-8 w-full rounded-full px-3 text-center font-mono text-[13px]"
+            class="h-8 w-full px-3 text-center font-mono text-[13px]"
             inputMode="numeric"
             name={`samples.${props.index}.position-finish`}
             placeholder="e.g. 10…"
@@ -149,7 +144,7 @@ function SampleCard(props: {
           <Input
             autocomplete="off"
             aria-label="Mask channel"
-            class="h-8 w-full rounded-full px-2 text-center font-mono text-[13px]"
+            class="h-8 w-full px-2 text-center font-mono text-[13px]"
             inputMode="numeric"
             name={`samples.${props.index}.mask-channel`}
             placeholder="e.g. 0…"
@@ -161,7 +156,7 @@ function SampleCard(props: {
           <Input
             autocomplete="off"
             aria-label="Signal channels"
-            class="h-8 w-full rounded-full px-3 text-center font-mono text-[13px]"
+            class="h-8 w-full px-3 text-center font-mono text-[13px]"
             name={`samples.${props.index}.signal-channels`}
             placeholder="e.g. 1 or 1,2…"
             value={props.row.signal}

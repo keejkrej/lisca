@@ -210,7 +210,7 @@ function ResultBody(props: { screen: MockScreen; onScreen: (screen: MockScreen) 
                     <figcaption class="truncate text-[13px] font-medium leading-[18px]">
                       {plot.title}
                     </figcaption>
-                    <img alt={plot.title} class="w-full rounded-[18px]" src={plot.src} />
+                    <img alt={plot.title} class="w-full rounded-none" src={plot.src} />
                   </figure>
                 )}
               </For>

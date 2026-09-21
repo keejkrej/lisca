@@ -83,11 +83,11 @@ describe("AppShell paper pane", () => {
     hasClass(mainColumn, "overflow-visible");
     hasClass(topBar, "h-14");
     hasClass(topBar, "px-5");
-    hasClass(topBar, "rounded-2xl");
+    hasClass(topBar, "rounded-none");
     hasClass(topBar, "border");
     hasClass(topBar, "border-border");
     expect(topBar.className).not.toContain("shadow-[");
-    hasClass(main, "rounded-2xl");
+    hasClass(main, "rounded-none");
     hasClass(main, "border");
     hasClass(main, "border-border");
     expect(main.className).not.toContain("shadow-[");
@@ -313,7 +313,7 @@ describe("ViewportCard paper pane", () => {
 });
 
 describe("StageCanvas framing", () => {
-  it("renders a muted rounded well and tracked caption for wide and square aspects", () => {
+  it("renders a muted square well and tracked caption for wide and square aspects", () => {
     const wide = render(() => (
       <StageCanvas
         aspect="wide"
@@ -328,7 +328,7 @@ describe("StageCanvas framing", () => {
     hasClass(wideRoot, "max-w-[45rem]");
     hasClass(wideRoot, "gap-3");
     const wideWell = wideRoot.firstElementChild!;
-    hasClass(wideWell, "rounded-2xl");
+    hasClass(wideWell, "rounded-none");
     hasClass(wideWell, "bg-muted");
     hasClass(wideWell, "aspect-[12/7]");
     expect(screen.getByTestId("wide-child")).toBeTruthy();
@@ -353,7 +353,7 @@ describe("StageCanvas framing", () => {
     hasClass(squareRoot, "max-w-[30rem]");
     const squareWell = squareRoot.firstElementChild!;
     hasClass(squareWell, "aspect-square");
-    hasClass(squareWell, "rounded-2xl");
+    hasClass(squareWell, "rounded-none");
     hasClass(squareWell, "bg-muted");
     expect(screen.getByTestId("square-child")).toBeTruthy();
     expect(screen.getByText("Site 1 · Channel GFP")).toBeTruthy();

@@ -6,7 +6,7 @@ export function AlignStateToggleIndicator(props: { pressed: boolean }) {
   return (
     <span
       aria-hidden="true"
-      class="lisca-instrument-toggle-indicator hidden size-3.5 shrink-0 items-center justify-center rounded-full border border-current"
+      class="lisca-instrument-toggle-indicator hidden size-3.5 shrink-0 items-center justify-center rounded-none border border-current"
       data-slot="instrument-toggle-indicator"
       data-state={props.pressed ? "on" : "off"}
     >

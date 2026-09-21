@@ -69,7 +69,7 @@ const catalogModules = [
 const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const uiDirectory = resolve(packageRoot, "src/components/ui");
 
-describe("Zaidan Maia catalog", () => {
+describe("Zaidan Lyra catalog", () => {
   it("keeps the complete registry snapshot public", () => {
     const installedModules = readdirSync(uiDirectory)
       .filter((file) => file.endsWith(".tsx"))
@@ -90,8 +90,10 @@ describe("Zaidan Maia catalog", () => {
     expect(componentSource).not.toContain('from "@/');
 
     const config = JSON.parse(readFileSync(resolve(packageRoot, "components.json"), "utf8")) as {
+      style?: string;
       aliases: Record<string, string>;
     };
+    expect(config.style).toBe("lyra");
     expect(config.aliases).toMatchObject({
       components: "#components",
       hooks: "#hooks",

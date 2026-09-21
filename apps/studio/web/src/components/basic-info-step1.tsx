@@ -130,7 +130,7 @@ export function BasicInfoStep1(props: { hostPort: HostFilePickerOperations }) {
           </FieldLabel>
           <Input
             autocomplete="off"
-            class="h-8 w-full rounded-full px-3 text-[13px]"
+            class="h-8 w-full px-3 text-[13px]"
             id="studio-name"
             name="assay-name"
             placeholder="e.g. My assay…"
@@ -161,7 +161,7 @@ export function BasicInfoStep1(props: { hostPort: HostFilePickerOperations }) {
               <Input
                 autocomplete="off"
                 aria-labelledby="studio-timelapse-label"
-                class="h-8 w-20 shrink-0 rounded-full px-3 font-mono text-[13px]"
+                class="h-8 w-20 shrink-0 px-3 font-mono text-[13px]"
                 min={1}
                 name="timelapse-interval"
                 placeholder={intervalPlaceholder()}
@@ -188,7 +188,7 @@ export function BasicInfoStep1(props: { hostPort: HostFilePickerOperations }) {
               >
                 <SelectTrigger
                   aria-labelledby="studio-timelapse-label"
-                  class="h-8 min-w-0 flex-1 rounded-full px-3 text-[13px]"
+                  class="h-8 min-w-0 flex-1 px-3 text-[13px]"
                 >
                   <SelectValue<TimelapseUnit>>
                     {(state) =>
@@ -209,7 +209,7 @@ export function BasicInfoStep1(props: { hostPort: HostFilePickerOperations }) {
                 <Input
                   autocomplete="off"
                   aria-labelledby="studio-max-onset-label"
-                  class="h-8 w-full rounded-full px-3 pr-12 font-mono text-[13px]"
+                  class="h-8 w-full px-3 pr-12 font-mono text-[13px]"
                   min={0}
                   name="max-onset-minutes"
                   placeholder={`e.g. ${defaultMaxOnsetMinutesForAssay(ASSAY_TYPE.TRANSFECTION) ?? 120}…`}

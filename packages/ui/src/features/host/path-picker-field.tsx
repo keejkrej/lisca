@@ -24,7 +24,7 @@ export function PathPickerField(props: PathPickerFieldProps) {
       <Button
         aria-haspopup="dialog"
         aria-label={`${props.label}: ${displayValue()}. ${actionLabel()}`}
-        class="h-8 w-full min-w-0 justify-between gap-3 rounded-full !bg-input/30 px-3 hover:!bg-input/50"
+        class="h-8 w-full min-w-0 justify-between gap-3 !bg-input/30 px-3 hover:!bg-input/50"
         id={props.id}
         size="sm"
         title={props.value.trim() || props.placeholder}
