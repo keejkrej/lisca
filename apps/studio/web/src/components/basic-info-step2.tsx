@@ -27,7 +27,8 @@ export function BasicInfoStep2() {
           Samples
         </h1>
         <p class="text-[13px] leading-[18px] text-muted-foreground">
-          Each row is one condition: name, position range, and mask vs signal channels.
+          Each row is one condition: name, position range, and mask vs signal channels. Killing
+          assays can name extra T-cell or death-stain channels on the previous step.
         </p>
       </div>
       <div class="w-full min-w-0 border-y border-border">

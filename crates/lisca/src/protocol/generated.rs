@@ -836,6 +836,9 @@ impl ::std::convert::TryFrom<::std::string::String> for AppId {
 #[doc = "{"]
 #[doc = "  \"type\": \"object\","]
 #[doc = "  \"properties\": {"]
+#[doc = "    \"channelRoles\": {"]
+#[doc = "      \"$ref\": \"#/definitions/AssayChannelRoles\""]
+#[doc = "    },"]
 #[doc = "    \"channels\": {"]
 #[doc = "      \"$ref\": \"#/definitions/AssayChannels\""]
 #[doc = "    },"]
@@ -858,6 +861,12 @@ impl ::std::convert::TryFrom<::std::string::String> for AppId {
 #[doc = r" </details>"]
 #[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
 pub struct AssayAnalysisConfig {
+    #[serde(
+        rename = "channelRoles",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub channel_roles: ::std::option::Option<AssayChannelRoles>,
     #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
     pub channels: ::std::option::Option<AssayChannels>,
     #[serde(
@@ -882,6 +891,7 @@ pub struct AssayAnalysisConfig {
 impl ::std::default::Default for AssayAnalysisConfig {
     fn default() -> Self {
         Self {
+            channel_roles: Default::default(),
             channels: Default::default(),
             max_onset_minutes: Default::default(),
             sample_channels: Default::default(),
@@ -891,6 +901,60 @@ impl ::std::default::Default for AssayAnalysisConfig {
 }
 impl AssayAnalysisConfig {
     pub fn builder() -> builder::AssayAnalysisConfig {
+        Default::default()
+    }
+}
+#[doc = "`AssayChannelRoles`"]
+#[doc = r""]
+#[doc = r" <details><summary>JSON schema</summary>"]
+#[doc = r""]
+#[doc = r" ```json"]
+#[doc = "{"]
+#[doc = "  \"type\": \"object\","]
+#[doc = "  \"properties\": {"]
+#[doc = "    \"brightfield\": {"]
+#[doc = "      \"type\": \"integer\","]
+#[doc = "      \"format\": \"uint32\","]
+#[doc = "      \"minimum\": 0.0"]
+#[doc = "    },"]
+#[doc = "    \"deathMarker\": {"]
+#[doc = "      \"type\": \"integer\","]
+#[doc = "      \"format\": \"uint32\","]
+#[doc = "      \"minimum\": 0.0"]
+#[doc = "    },"]
+#[doc = "    \"effector\": {"]
+#[doc = "      \"type\": \"integer\","]
+#[doc = "      \"format\": \"uint32\","]
+#[doc = "      \"minimum\": 0.0"]
+#[doc = "    }"]
+#[doc = "  }"]
+#[doc = "}"]
+#[doc = r" ```"]
+#[doc = r" </details>"]
+#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
+pub struct AssayChannelRoles {
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub brightfield: ::std::option::Option<u32>,
+    #[serde(
+        rename = "deathMarker",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub death_marker: ::std::option::Option<u32>,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub effector: ::std::option::Option<u32>,
+}
+impl ::std::default::Default for AssayChannelRoles {
+    fn default() -> Self {
+        Self {
+            brightfield: Default::default(),
+            death_marker: Default::default(),
+            effector: Default::default(),
+        }
+    }
+}
+impl AssayChannelRoles {
+    pub fn builder() -> builder::AssayChannelRoles {
         Default::default()
     }
 }
@@ -4833,6 +4897,20 @@ impl RoiIndexEntry {
 #[doc = "      \"format\": \"uint32\","]
 #[doc = "      \"minimum\": 0.0"]
 #[doc = "    },"]
+#[doc = "    \"channelIndices\": {"]
+#[doc = "      \"type\": \"array\","]
+#[doc = "      \"items\": {"]
+#[doc = "        \"type\": \"integer\","]
+#[doc = "        \"format\": \"uint32\","]
+#[doc = "        \"minimum\": 0.0"]
+#[doc = "      }"]
+#[doc = "    },"]
+#[doc = "    \"channelLabels\": {"]
+#[doc = "      \"type\": \"array\","]
+#[doc = "      \"items\": {"]
+#[doc = "        \"type\": \"string\""]
+#[doc = "      }"]
+#[doc = "    },"]
 #[doc = "    \"position\": {"]
 #[doc = "      \"type\": \"integer\","]
 #[doc = "      \"format\": \"uint32\","]
@@ -4872,6 +4950,18 @@ pub struct RoiIndexFile {
     pub axis_order: RoiIndexFileAxisOrder,
     #[serde(rename = "channelCount")]
     pub channel_count: u32,
+    #[serde(
+        rename = "channelIndices",
+        default,
+        skip_serializing_if = "::std::vec::Vec::is_empty"
+    )]
+    pub channel_indices: ::std::vec::Vec<u32>,
+    #[serde(
+        rename = "channelLabels",
+        default,
+        skip_serializing_if = "::std::vec::Vec::is_empty"
+    )]
+    pub channel_labels: ::std::vec::Vec<::std::string::String>,
     pub position: u32,
     pub rois: ::std::vec::Vec<RoiIndexEntry>,
     #[serde(rename = "timeCount")]
@@ -5537,6 +5627,71 @@ impl ScanSourceRequest {
         Default::default()
     }
 }
+#[doc = "`OccupancyExcludeEngine`"]
+#[derive(
+    :: serde :: Deserialize,
+    :: serde :: Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum OccupancyExcludeEngine {
+    #[serde(rename = "resnet")]
+    Resnet,
+    #[serde(rename = "promptPack")]
+    PromptPack,
+}
+#[doc = "`OccupancyPromptLabel`"]
+#[derive(
+    :: serde :: Deserialize,
+    :: serde :: Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum OccupancyPromptLabel {
+    #[serde(rename = "occupied")]
+    Occupied,
+    #[serde(rename = "empty")]
+    Empty,
+}
+#[doc = "`OccupancyPromptExample`"]
+#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
+pub struct OccupancyPromptExample {
+    pub embedding: ::std::vec::Vec<f64>,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub i: ::std::option::Option<i32>,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub j: ::std::option::Option<i32>,
+    pub label: OccupancyPromptLabel,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub pos: ::std::option::Option<u32>,
+}
+#[doc = "`OccupancyPromptExampleInput`"]
+#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
+pub struct OccupancyPromptExampleInput {
+    pub cell: AutoExcludePreviewCell,
+    pub label: OccupancyPromptLabel,
+}
+#[doc = "`OccupancyPromptPack`"]
+#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
+pub struct OccupancyPromptPack {
+    pub embedder: ::std::string::String,
+    pub examples: ::std::vec::Vec<OccupancyPromptExample>,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub threshold: ::std::option::Option<f64>,
+    pub version: u32,
+}
 #[doc = "`SmartExcludeRequest`"]
 #[doc = r""]
 #[doc = r" <details><summary>JSON schema</summary>"]
@@ -5583,12 +5738,42 @@ impl ScanSourceRequest {
 #[doc = r" </details>"]
 #[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
 pub struct SmartExcludeRequest {
+    #[serde(
+        rename = "appendPromptExamples",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub append_prompt_examples: ::std::option::Option<bool>,
     pub cells: ::std::vec::Vec<AutoExcludePreviewCell>,
     pub contrast: ::std::option::Option<ContrastWindow>,
+    #[serde(
+        rename = "persistPromptPack",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub persist_prompt_pack: ::std::option::Option<bool>,
+    #[serde(
+        rename = "promptExamples",
+        default,
+        skip_serializing_if = "::std::vec::Vec::is_empty"
+    )]
+    pub prompt_examples: ::std::vec::Vec<OccupancyPromptExampleInput>,
+    #[serde(
+        rename = "promptPack",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub prompt_pack: ::std::option::Option<OccupancyPromptPack>,
     pub request: FrameRequest,
     pub source: AlignerSource,
     #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
     pub threshold: ::std::option::Option<f64>,
+    #[serde(
+        rename = "workspacePath",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub workspace_path: ::std::option::Option<::std::string::String>,
 }
 impl SmartExcludeRequest {
     pub fn builder() -> builder::SmartExcludeRequest {
@@ -5618,8 +5803,30 @@ impl SmartExcludeRequest {
 #[doc = r" </details>"]
 #[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
 pub struct SmartExcludeResponse {
+    #[serde(
+        rename = "emptyCount",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub empty_count: ::std::option::Option<u32>,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub engine: ::std::option::Option<OccupancyExcludeEngine>,
     #[serde(rename = "excludedCells")]
     pub excluded_cells: ::std::vec::Vec<AlignGridCellCoord>,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub message: ::std::option::Option<::std::string::String>,
+    #[serde(
+        rename = "occupiedCount",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub occupied_count: ::std::option::Option<u32>,
+    #[serde(
+        rename = "packReady",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub pack_ready: ::std::option::Option<bool>,
 }
 impl SmartExcludeResponse {
     pub fn builder() -> builder::SmartExcludeResponse {
@@ -7496,6 +7703,10 @@ pub mod builder {
     }
     #[derive(Clone, Debug)]
     pub struct AssayAnalysisConfig {
+        channel_roles: ::std::result::Result<
+            ::std::option::Option<super::AssayChannelRoles>,
+            ::std::string::String,
+        >,
         channels: ::std::result::Result<
             ::std::option::Option<super::AssayChannels>,
             ::std::string::String,
@@ -7510,6 +7721,7 @@ pub mod builder {
     impl ::std::default::Default for AssayAnalysisConfig {
         fn default() -> Self {
             Self {
+                channel_roles: Ok(Default::default()),
                 channels: Ok(Default::default()),
                 max_onset_minutes: Ok(Default::default()),
                 sample_channels: Ok(Default::default()),
@@ -7518,6 +7730,16 @@ pub mod builder {
         }
     }
     impl AssayAnalysisConfig {
+        pub fn channel_roles<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::option::Option<super::AssayChannelRoles>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.channel_roles = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for channel_roles: {e}"));
+            self
+        }
         pub fn channels<T>(mut self, value: T) -> Self
         where
             T: ::std::convert::TryInto<::std::option::Option<super::AssayChannels>>,
@@ -7565,6 +7787,7 @@ pub mod builder {
             value: AssayAnalysisConfig,
         ) -> ::std::result::Result<Self, super::error::ConversionError> {
             Ok(Self {
+                channel_roles: value.channel_roles?,
                 channels: value.channels?,
                 max_onset_minutes: value.max_onset_minutes?,
                 sample_channels: value.sample_channels?,
@@ -7575,10 +7798,79 @@ pub mod builder {
     impl ::std::convert::From<super::AssayAnalysisConfig> for AssayAnalysisConfig {
         fn from(value: super::AssayAnalysisConfig) -> Self {
             Self {
+                channel_roles: Ok(value.channel_roles),
                 channels: Ok(value.channels),
                 max_onset_minutes: Ok(value.max_onset_minutes),
                 sample_channels: Ok(value.sample_channels),
                 skip_segment: Ok(value.skip_segment),
+            }
+        }
+    }
+    #[derive(Clone, Debug)]
+    pub struct AssayChannelRoles {
+        brightfield: ::std::result::Result<::std::option::Option<u32>, ::std::string::String>,
+        death_marker: ::std::result::Result<::std::option::Option<u32>, ::std::string::String>,
+        effector: ::std::result::Result<::std::option::Option<u32>, ::std::string::String>,
+    }
+    impl ::std::default::Default for AssayChannelRoles {
+        fn default() -> Self {
+            Self {
+                brightfield: Ok(Default::default()),
+                death_marker: Ok(Default::default()),
+                effector: Ok(Default::default()),
+            }
+        }
+    }
+    impl AssayChannelRoles {
+        pub fn brightfield<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::option::Option<u32>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.brightfield = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for brightfield: {e}"));
+            self
+        }
+        pub fn death_marker<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::option::Option<u32>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.death_marker = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for death_marker: {e}"));
+            self
+        }
+        pub fn effector<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::option::Option<u32>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.effector = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for effector: {e}"));
+            self
+        }
+    }
+    impl ::std::convert::TryFrom<AssayChannelRoles> for super::AssayChannelRoles {
+        type Error = super::error::ConversionError;
+        fn try_from(
+            value: AssayChannelRoles,
+        ) -> ::std::result::Result<Self, super::error::ConversionError> {
+            Ok(Self {
+                brightfield: value.brightfield?,
+                death_marker: value.death_marker?,
+                effector: value.effector?,
+            })
+        }
+    }
+    impl ::std::convert::From<super::AssayChannelRoles> for AssayChannelRoles {
+        fn from(value: super::AssayChannelRoles) -> Self {
+            Self {
+                brightfield: Ok(value.brightfield),
+                death_marker: Ok(value.death_marker),
+                effector: Ok(value.effector),
             }
         }
     }
@@ -11565,6 +11857,9 @@ pub mod builder {
     pub struct RoiIndexFile {
         axis_order: ::std::result::Result<super::RoiIndexFileAxisOrder, ::std::string::String>,
         channel_count: ::std::result::Result<u32, ::std::string::String>,
+        channel_indices: ::std::result::Result<::std::vec::Vec<u32>, ::std::string::String>,
+        channel_labels:
+            ::std::result::Result<::std::vec::Vec<::std::string::String>, ::std::string::String>,
         position: ::std::result::Result<u32, ::std::string::String>,
         rois: ::std::result::Result<::std::vec::Vec<super::RoiIndexEntry>, ::std::string::String>,
         time_count: ::std::result::Result<u32, ::std::string::String>,
@@ -11576,6 +11871,8 @@ pub mod builder {
             Self {
                 axis_order: Err("no value supplied for axis_order".to_string()),
                 channel_count: Err("no value supplied for channel_count".to_string()),
+                channel_indices: Ok(Default::default()),
+                channel_labels: Ok(Default::default()),
                 position: Err("no value supplied for position".to_string()),
                 rois: Err("no value supplied for rois".to_string()),
                 time_count: Err("no value supplied for time_count".to_string()),
@@ -11603,6 +11900,26 @@ pub mod builder {
             self.channel_count = value
                 .try_into()
                 .map_err(|e| format!("error converting supplied value for channel_count: {e}"));
+            self
+        }
+        pub fn channel_indices<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::vec::Vec<u32>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.channel_indices = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for channel_indices: {e}"));
+            self
+        }
+        pub fn channel_labels<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::vec::Vec<::std::string::String>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.channel_labels = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for channel_labels: {e}"));
             self
         }
         pub fn position<T>(mut self, value: T) -> Self
@@ -11664,6 +11981,8 @@ pub mod builder {
             Ok(Self {
                 axis_order: value.axis_order?,
                 channel_count: value.channel_count?,
+                channel_indices: value.channel_indices?,
+                channel_labels: value.channel_labels?,
                 position: value.position?,
                 rois: value.rois?,
                 time_count: value.time_count?,
@@ -11677,6 +11996,8 @@ pub mod builder {
             Self {
                 axis_order: Ok(value.axis_order),
                 channel_count: Ok(value.channel_count),
+                channel_indices: Ok(value.channel_indices),
+                channel_labels: Ok(value.channel_labels),
                 position: Ok(value.position),
                 rois: Ok(value.rois),
                 time_count: Ok(value.time_count),
@@ -12603,6 +12924,8 @@ pub mod builder {
     }
     #[derive(Clone, Debug)]
     pub struct SmartExcludeRequest {
+        append_prompt_examples:
+            ::std::result::Result<::std::option::Option<bool>, ::std::string::String>,
         cells: ::std::result::Result<
             ::std::vec::Vec<super::AutoExcludePreviewCell>,
             ::std::string::String,
@@ -12611,22 +12934,51 @@ pub mod builder {
             ::std::option::Option<super::ContrastWindow>,
             ::std::string::String,
         >,
+        persist_prompt_pack:
+            ::std::result::Result<::std::option::Option<bool>, ::std::string::String>,
+        prompt_examples: ::std::result::Result<
+            ::std::vec::Vec<super::OccupancyPromptExampleInput>,
+            ::std::string::String,
+        >,
+        prompt_pack: ::std::result::Result<
+            ::std::option::Option<super::OccupancyPromptPack>,
+            ::std::string::String,
+        >,
         request: ::std::result::Result<super::FrameRequest, ::std::string::String>,
         source: ::std::result::Result<super::AlignerSource, ::std::string::String>,
         threshold: ::std::result::Result<::std::option::Option<f64>, ::std::string::String>,
+        workspace_path: ::std::result::Result<
+            ::std::option::Option<::std::string::String>,
+            ::std::string::String,
+        >,
     }
     impl ::std::default::Default for SmartExcludeRequest {
         fn default() -> Self {
             Self {
+                append_prompt_examples: Ok(Default::default()),
                 cells: Err("no value supplied for cells".to_string()),
                 contrast: Err("no value supplied for contrast".to_string()),
+                persist_prompt_pack: Ok(Default::default()),
+                prompt_examples: Ok(Default::default()),
+                prompt_pack: Ok(Default::default()),
                 request: Err("no value supplied for request".to_string()),
                 source: Err("no value supplied for source".to_string()),
                 threshold: Ok(Default::default()),
+                workspace_path: Ok(Default::default()),
             }
         }
     }
     impl SmartExcludeRequest {
+        pub fn append_prompt_examples<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::option::Option<bool>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.append_prompt_examples = value.try_into().map_err(|e| {
+                format!("error converting supplied value for append_prompt_examples: {e}")
+            });
+            self
+        }
         pub fn cells<T>(mut self, value: T) -> Self
         where
             T: ::std::convert::TryInto<::std::vec::Vec<super::AutoExcludePreviewCell>>,
@@ -12645,6 +12997,36 @@ pub mod builder {
             self.contrast = value
                 .try_into()
                 .map_err(|e| format!("error converting supplied value for contrast: {e}"));
+            self
+        }
+        pub fn persist_prompt_pack<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::option::Option<bool>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.persist_prompt_pack = value.try_into().map_err(|e| {
+                format!("error converting supplied value for persist_prompt_pack: {e}")
+            });
+            self
+        }
+        pub fn prompt_examples<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::vec::Vec<super::OccupancyPromptExampleInput>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.prompt_examples = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for prompt_examples: {e}"));
+            self
+        }
+        pub fn prompt_pack<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::option::Option<super::OccupancyPromptPack>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.prompt_pack = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for prompt_pack: {e}"));
             self
         }
         pub fn request<T>(mut self, value: T) -> Self
@@ -12677,6 +13059,16 @@ pub mod builder {
                 .map_err(|e| format!("error converting supplied value for threshold: {e}"));
             self
         }
+        pub fn workspace_path<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::option::Option<::std::string::String>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.workspace_path = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for workspace_path: {e}"));
+            self
+        }
     }
     impl ::std::convert::TryFrom<SmartExcludeRequest> for super::SmartExcludeRequest {
         type Error = super::error::ConversionError;
@@ -12684,40 +13076,86 @@ pub mod builder {
             value: SmartExcludeRequest,
         ) -> ::std::result::Result<Self, super::error::ConversionError> {
             Ok(Self {
+                append_prompt_examples: value.append_prompt_examples?,
                 cells: value.cells?,
                 contrast: value.contrast?,
+                persist_prompt_pack: value.persist_prompt_pack?,
+                prompt_examples: value.prompt_examples?,
+                prompt_pack: value.prompt_pack?,
                 request: value.request?,
                 source: value.source?,
                 threshold: value.threshold?,
+                workspace_path: value.workspace_path?,
             })
         }
     }
     impl ::std::convert::From<super::SmartExcludeRequest> for SmartExcludeRequest {
         fn from(value: super::SmartExcludeRequest) -> Self {
             Self {
+                append_prompt_examples: Ok(value.append_prompt_examples),
                 cells: Ok(value.cells),
                 contrast: Ok(value.contrast),
+                persist_prompt_pack: Ok(value.persist_prompt_pack),
+                prompt_examples: Ok(value.prompt_examples),
+                prompt_pack: Ok(value.prompt_pack),
                 request: Ok(value.request),
                 source: Ok(value.source),
                 threshold: Ok(value.threshold),
+                workspace_path: Ok(value.workspace_path),
             }
         }
     }
     #[derive(Clone, Debug)]
     pub struct SmartExcludeResponse {
+        empty_count: ::std::result::Result<::std::option::Option<u32>, ::std::string::String>,
+        engine: ::std::result::Result<
+            ::std::option::Option<super::OccupancyExcludeEngine>,
+            ::std::string::String,
+        >,
         excluded_cells: ::std::result::Result<
             ::std::vec::Vec<super::AlignGridCellCoord>,
             ::std::string::String,
         >,
+        message: ::std::result::Result<
+            ::std::option::Option<::std::string::String>,
+            ::std::string::String,
+        >,
+        occupied_count: ::std::result::Result<::std::option::Option<u32>, ::std::string::String>,
+        pack_ready: ::std::result::Result<::std::option::Option<bool>, ::std::string::String>,
     }
     impl ::std::default::Default for SmartExcludeResponse {
         fn default() -> Self {
             Self {
+                empty_count: Ok(Default::default()),
+                engine: Ok(Default::default()),
                 excluded_cells: Err("no value supplied for excluded_cells".to_string()),
+                message: Ok(Default::default()),
+                occupied_count: Ok(Default::default()),
+                pack_ready: Ok(Default::default()),
             }
         }
     }
     impl SmartExcludeResponse {
+        pub fn empty_count<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::option::Option<u32>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.empty_count = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for empty_count: {e}"));
+            self
+        }
+        pub fn engine<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::option::Option<super::OccupancyExcludeEngine>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.engine = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for engine: {e}"));
+            self
+        }
         pub fn excluded_cells<T>(mut self, value: T) -> Self
         where
             T: ::std::convert::TryInto<::std::vec::Vec<super::AlignGridCellCoord>>,
@@ -12728,6 +13166,36 @@ pub mod builder {
                 .map_err(|e| format!("error converting supplied value for excluded_cells: {e}"));
             self
         }
+        pub fn message<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::option::Option<::std::string::String>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.message = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for message: {e}"));
+            self
+        }
+        pub fn occupied_count<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::option::Option<u32>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.occupied_count = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for occupied_count: {e}"));
+            self
+        }
+        pub fn pack_ready<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::option::Option<bool>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.pack_ready = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for pack_ready: {e}"));
+            self
+        }
     }
     impl ::std::convert::TryFrom<SmartExcludeResponse> for super::SmartExcludeResponse {
         type Error = super::error::ConversionError;
@@ -12735,14 +13203,24 @@ pub mod builder {
             value: SmartExcludeResponse,
         ) -> ::std::result::Result<Self, super::error::ConversionError> {
             Ok(Self {
+                empty_count: value.empty_count?,
+                engine: value.engine?,
                 excluded_cells: value.excluded_cells?,
+                message: value.message?,
+                occupied_count: value.occupied_count?,
+                pack_ready: value.pack_ready?,
             })
         }
     }
     impl ::std::convert::From<super::SmartExcludeResponse> for SmartExcludeResponse {
         fn from(value: super::SmartExcludeResponse) -> Self {
             Self {
+                empty_count: Ok(value.empty_count),
+                engine: Ok(value.engine),
                 excluded_cells: Ok(value.excluded_cells),
+                message: Ok(value.message),
+                occupied_count: Ok(value.occupied_count),
+                pack_ready: Ok(value.pack_ready),
             }
         }
     }

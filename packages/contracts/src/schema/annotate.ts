@@ -37,6 +37,18 @@ export const RoiIndexFileSchema = Schema.Struct({
    * to get real minutes. When omitted, consumers default to `0..timeCount-1`.
    */
   timeIndices: Schema.optional(NumArray),
+  /**
+   * Source acquisition channel indices for each C plane (length ===
+   * channelCount). Crop writes every selected source channel in this order.
+   * When omitted, consumers default to `0..channelCount-1`.
+   */
+  channelIndices: Schema.optional(NumArray),
+  /**
+   * Source channel names aligned with `channelIndices` / C planes (length ===
+   * channelCount). Folder series often have real names (`BF`, `GFP`); ND2/CZI
+   * may omit this when the reader only exposes numeric indices.
+   */
+  channelLabels: Schema.optional(StrArray),
   rois: Schema.mutable(Schema.Array(RoiIndexEntrySchema)),
 }).annotate({ identifier: "RoiIndexFile" });
 

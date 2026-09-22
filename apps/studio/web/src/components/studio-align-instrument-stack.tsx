@@ -54,6 +54,8 @@ export function StudioAlignInstrumentStack() {
         grid={state.grid}
         manualExclusionEnabled={state.manualExclusionEnabled}
         sectionAppearance="rail"
+        occupancyHint={smartExclude.occupancyStatus()?.message ?? null}
+        occupancyPackReady={smartExclude.occupancyStatus()?.packReady ?? false}
         smartExcludeLoading={smartExclude.active()}
         visibleCounts={state.visibleCounts}
         variationExcludeLoading={varExclude.active()}

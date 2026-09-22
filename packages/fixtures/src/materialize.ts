@@ -17,6 +17,7 @@ import {
   type RoiIndexFile,
   type SavedAlignState,
 } from "@lisca/contracts";
+import { KILLING_ANNOTATION_LABELS } from "@lisca/contracts/assay";
 
 import { colorFromName, encodeGrayPng, encodeGrayTiffPages, encodeRgbPng } from "./images";
 
@@ -70,6 +71,10 @@ export const FIXTURE_LAYOUT = {
   ],
 } as const;
 
+/** Killing fixtures add an optional effector (T-cell) plane on C2. */
+export const KILLING_EXTRA_CHANNEL = 2;
+export const KILLING_CHANNEL_LABELS = ["BF", "signal", "tcell"] as const;
+
 const BANNER = "Sample fixture data — not a real experiment.";
 
 export function isFixtureAssay(value: string): value is FixtureAssay {
@@ -114,14 +119,14 @@ export function materializeFixture(options: MaterializeOptions): MaterializeResu
   );
 
   if (options.stage === "source") {
-    writeSourceFrames(write, "");
+    writeSourceFrames(write, "", options.assay);
     return { assay: options.assay, stage: options.stage, out, files };
   }
 
-  writeSourceFrames(write, "source");
+  writeSourceFrames(write, "source", options.assay);
   writeAssayJson(write, options.assay, out);
   if (stageAtLeast(options.stage, "aligned")) writeAlignment(write);
-  if (stageAtLeast(options.stage, "cropped")) writeRoiStacks(write);
+  if (stageAtLeast(options.stage, "cropped")) writeRoiStacks(write, options.assay);
   if (stageAtLeast(options.stage, "annotated")) writeAnnotations(write, options.assay);
   if (stageAtLeast(options.stage, "analyzed")) writeAnalysisOutputs(write, options.assay);
 
@@ -145,8 +150,19 @@ function prepareOut(out: string, force: boolean): void {
   }
 }
 
-function writeSourceFrames(write: WriteRel, prefix: string): void {
-  const { positions, channels, times, z, frameWidth, frameHeight } = FIXTURE_LAYOUT;
+function fixtureChannels(assay: FixtureAssay): readonly number[] {
+  return assay === "killing"
+    ? [...FIXTURE_LAYOUT.channels, KILLING_EXTRA_CHANNEL]
+    : FIXTURE_LAYOUT.channels;
+}
+
+function fixtureChannelLabels(assay: FixtureAssay): string[] {
+  return assay === "killing" ? [...KILLING_CHANNEL_LABELS] : ["BF", "signal"];
+}
+
+function writeSourceFrames(write: WriteRel, prefix: string, assay: FixtureAssay): void {
+  const { positions, times, z, frameWidth, frameHeight } = FIXTURE_LAYOUT;
+  const channels = fixtureChannels(assay);
   for (const pos of positions) {
     for (const channel of channels) {
       for (const time of times) {
@@ -160,7 +176,12 @@ function writeSourceFrames(write: WriteRel, prefix: string): void {
 function sourcePixels(channel: number, time: number): Uint8Array {
   const { frameWidth, frameHeight, boxes } = FIXTURE_LAYOUT;
   const pixels = new Uint8Array(frameWidth * frameHeight).fill(24);
-  const fill = channel === FIXTURE_LAYOUT.maskChannel ? 200 : 48 + time * 48;
+  const fill =
+    channel === FIXTURE_LAYOUT.maskChannel
+      ? 200
+      : channel === KILLING_EXTRA_CHANNEL
+        ? 160
+        : 48 + time * 48;
   for (const box of boxes) {
     fillRect(pixels, frameWidth, box.x, box.y, box.w, box.h, fill);
   }
@@ -194,6 +215,14 @@ function writeAssayJson(write: WriteRel, assay: FixtureAssay, workspacePath: str
         mask: FIXTURE_LAYOUT.maskChannel,
         signal: [FIXTURE_LAYOUT.signalChannel],
       },
+      ...(!transfection
+        ? {
+            channelRoles: {
+              brightfield: FIXTURE_LAYOUT.maskChannel,
+              effector: KILLING_EXTRA_CHANNEL,
+            },
+          }
+        : {}),
     },
   };
   decodeJson(AssayJsonFileSchema, assayJson);
@@ -228,8 +257,10 @@ function writeAlignment(write: WriteRel): void {
   }
 }
 
-function writeRoiStacks(write: WriteRel): void {
-  const { positions, times, channels, roiWidth, roiHeight, boxes } = FIXTURE_LAYOUT;
+function writeRoiStacks(write: WriteRel, assay: FixtureAssay): void {
+  const { positions, times, roiWidth, roiHeight, boxes } = FIXTURE_LAYOUT;
+  const channels = fixtureChannels(assay);
+  const channelLabels = fixtureChannelLabels(assay);
   const timeCount = times.length;
   const channelCount = channels.length;
   const zCount = 1;
@@ -242,6 +273,8 @@ function writeRoiStacks(write: WriteRel): void {
       channelCount,
       zCount,
       timeIndices: [...times],
+      channelIndices: [...channels],
+      channelLabels,
       rois: boxes.map((box) => ({
         roi: box.roi,
         fileName: `Roi${box.roi}.tif`,
@@ -271,7 +304,12 @@ function writeRoiStacks(write: WriteRel): void {
 function roiPage(channel: number, time: number, roi: number): Uint8Array {
   const { roiWidth, roiHeight, maskChannel } = FIXTURE_LAYOUT;
   const pixels = new Uint8Array(roiWidth * roiHeight).fill(12);
-  const fill = channel === maskChannel ? 220 : Math.min(40 + time * 50 + roi * 8, 255);
+  const fill =
+    channel === maskChannel
+      ? 220
+      : channel === KILLING_EXTRA_CHANNEL
+        ? 180
+        : Math.min(40 + time * 50 + roi * 8, 255);
   fillRect(pixels, roiWidth, 1, 1, 2, 2, fill);
   return pixels;
 }
@@ -279,10 +317,10 @@ function roiPage(channel: number, time: number, roi: number): Uint8Array {
 function writeAnnotations(write: WriteRel, assay: FixtureAssay): void {
   const labels =
     assay === "killing"
-      ? [
-          { id: "alive", name: "Alive (fixture)", color: "#22c55e" },
-          { id: "dead", name: "Dead (fixture)", color: "#ef4444" },
-        ]
+      ? KILLING_ANNOTATION_LABELS.map((label) => ({
+          ...label,
+          name: `${label.name} (fixture)`,
+        }))
       : [
           { id: "cell", name: "Cell (fixture)", color: "#22c55e" },
           { id: "empty", name: "Empty (fixture)", color: "#94a3b8" },
@@ -486,6 +524,9 @@ export function expectedKeyPaths(assay: FixtureAssay, stage: FixtureStage): stri
   const paths = ["FIXTURE.txt"];
   if (stage === "source") {
     paths.push(join("Pos1", sourceFileName(1, 0, 0, 0)));
+    if (assay === "killing") {
+      paths.push(join("Pos1", sourceFileName(1, KILLING_EXTRA_CHANNEL, 0, 0)));
+    }
     return paths.map((path) => path.replaceAll("\\", "/"));
   }
   paths.push("assay.json", join("source", "Pos1", sourceFileName(1, 0, 0, 0)));

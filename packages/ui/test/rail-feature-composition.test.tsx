@@ -63,7 +63,14 @@ const annotationProps = {
 
 describe("stage rail feature composition", () => {
   it("packs the Selection task cluster into three compact control pairs", () => {
-    render(() => <AlignSelectionRail {...selectionProps} sectionAppearance="rail" />);
+    render(() => (
+      <AlignSelectionRail
+        {...selectionProps}
+        occupancyHint="Not ready yet — need 2 more occupied and 2 more empty examples."
+        occupancyPackReady={false}
+        sectionAppearance="rail"
+      />
+    ));
 
     const section = sectionFor("Selection");
     const pairs = within(section).getAllByRole("group");
@@ -83,6 +90,15 @@ describe("stage rail feature composition", () => {
       ["Exclude all", "Edge exclude"],
       ["Var exclude", "Smart exclude"],
     ]);
+    expect(within(section).getByText(/Not ready yet/)).toBeTruthy();
+    expect(within(section).getByRole("button", { name: "Smart exclude" }).title).toContain(
+      "Not ready yet",
+    );
+    expect(
+      within(section)
+        .getByRole("button", { name: "Smart exclude" })
+        .getAttribute("data-occupancy-ready"),
+    ).toBe("false");
   });
 
   it("stacks user-authored Labels while packing fixed Edit peers", () => {

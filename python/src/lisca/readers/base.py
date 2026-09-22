@@ -14,6 +14,7 @@ class ImageInfo:
     n_time: int
     n_chan: int
     n_z: int
+    channel_names: tuple[str, ...] | None = None
 
 
 @dataclass(frozen=True)

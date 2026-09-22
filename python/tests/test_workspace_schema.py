@@ -8,16 +8,23 @@ from lisca.core.bbox import RoiBbox, discover_bbox_positions, parse_bbox_csv
 from lisca.core.paths import (
     ALIGN_DIR,
     ANALYSIS_DIR,
+    ANNOTATIONS_DIR,
     ASSAY_JSON,
     BBOX_COLUMNS,
     BBOX_DIR,
     INDEX_JSON,
     MASK_DIR,
+    OCCUPANCY_PACK_JSON,
     RESULTS_DIR,
     ROI_DIR,
+    SIDECAR_DIR,
+    SIDECAR_EVENTS_JSON,
+    TIMESERIES_DIR,
     align_dir,
     bbox_csv_path,
+    occupancy_pack_path,
     roi_index_path,
+    sidecar_path,
 )
 from lisca.core.workspace import (
     list_align_positions,
@@ -34,6 +41,10 @@ def test_workspace_folder_names() -> None:
     assert MASK_DIR == "mask"
     assert ANALYSIS_DIR == "analysis"
     assert RESULTS_DIR == "results"
+    assert ANNOTATIONS_DIR == "annotations"
+    assert TIMESERIES_DIR == "timeseries"
+    assert SIDECAR_DIR == "sidecar"
+    assert OCCUPANCY_PACK_JSON == "occupancy-pack.json"
     assert ASSAY_JSON == "assay.json"
     assert INDEX_JSON == "index.json"
     assert BBOX_COLUMNS == ("roi", "x", "y", "w", "h")
@@ -43,6 +54,8 @@ def test_path_builders() -> None:
     root = Path("/tmp/ws")
     assert bbox_csv_path(root, 3) == root / "bbox" / "Pos3.csv"
     assert roi_index_path(root, 3) == root / "roi" / "Pos3" / "index.json"
+    assert sidecar_path(root, SIDECAR_EVENTS_JSON) == root / "sidecar" / "events.json"
+    assert occupancy_pack_path(root) == root / "align" / "occupancy-pack.json"
 
 
 def _write_bbox(path: Path, text: str) -> Path:
@@ -129,12 +142,30 @@ def test_load_position_index_derives_shape_from_bbox(tmp_path: Path) -> None:
     assert index.channel_count == 3
     assert index.z_count == 1
     assert index.time_indices == [0, 6]
+    assert index.channel_indices == [0, 1, 2]
+    assert index.channel_labels == []
     assert len(index.rois) == 1
     entry = index.rois[0]
     assert entry.roi == 4
     assert entry.file_name == "Roi4.tif"
     assert entry.shape == (2, 3, 1, 9, 8)
     assert entry.bbox == RoiBbox(roi=4, x=1, y=2, w=8, h=9)
+
+
+def test_load_position_index_reads_channel_identity(tmp_path: Path) -> None:
+    workspace = tmp_path / "workspace"
+    index_path = roi_index_path(workspace, 1)
+    index_path.parent.mkdir(parents=True)
+    index_path.write_text(
+        '{"position":1,"axisOrder":"TCZYX","timeCount":1,"channelCount":3,'
+        '"zCount":1,"channelIndices":[0,2,5],"channelLabels":["BF","tcell","PI"],'
+        '"rois":[{"roi":1,"fileName":"Roi1.tif",'
+        '"bbox":{"roi":1,"x":0,"y":0,"w":2,"h":2}}]}\n',
+        encoding="utf-8",
+    )
+    index = load_position_index(workspace, 1)
+    assert index.channel_indices == [0, 2, 5]
+    assert index.channel_labels == ["BF", "tcell", "PI"]
 
 
 def _write_align(path: Path) -> Path:

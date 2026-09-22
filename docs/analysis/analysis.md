@@ -52,7 +52,8 @@ vp run fixture:workspace -- --assay killing --stage assay --out /tmp/kill-align
 ```
 
 Stages: `source`, `assay`, `aligned`, `cropped`, `annotated`, `analyzed`.
-See `packages/fixtures/README.md`.
+See `packages/fixtures/README.md`. Killing workstation recipe (open assay →
+align → crop → files on disk): [`killing-workspace.md`](./killing-workspace.md).
 
 ## Rust pipeline
 
@@ -80,10 +81,13 @@ Rust in this crate should stay idiomatic:
 
 - Shared ROI I/O in `roi_stack.rs` / `csv_io.rs`; crop in `lisca-crop`.
 - Transfection stages: call `lisca-transfection` (Otsu, timeseries, AUC, fit, plots). Do not keep a second full pipeline under `assays/transfection/`.
-- Product Smart exclude / Smart segment models stay in `models/`. Transfection
-  ONNX segment may stay as a Studio adapter (`segment_onnx.rs` + `ort`) until
-  the sidecar un-stubs it; resolve `keejkrej/single-cell-pattern-unet` via
-  `LISCA_PATTERN_SEG_MODEL`, not as a lisca-owned assay brain.
+- Product Smart exclude / Smart segment models stay in `models/`. Do not
+  retrain Smart exclude per user; prompt with assay examples
+  (`align/occupancy-pack.json`, [`occupancy-prompt-pack.md`](./occupancy-prompt-pack.md)).
+  Transfection ONNX segment may stay as a Studio adapter (`segment_onnx.rs` +
+  `ort`) until the sidecar un-stubs it; resolve
+  `keejkrej/single-cell-pattern-unet` via `LISCA_PATTERN_SEG_MODEL`, not as a
+  lisca-owned assay brain.
 - Killing: per-assay code under `assays/killing/`. Weights: HF
   `keejkrej/killing-assay-resnet18`, curl at package time.
 - Parity for transfection is judged in the sidecar; this repo’s wrapper tests check the dispatch still writes the workspace contract.
@@ -225,7 +229,7 @@ Summary — full process, tolerances table, and lifecycle in [`parity.md`](./par
 
 - Fit uses the two-pass pooled-protein strategy on the **basic translation–degradation model** (onset time t0, expression rate m0 k_TL, mRNA/protein lifetimes τ = ln(2)/rate; **no maturation**). Optional `analysis.maxOnsetMinutes` in `assay.json` is **transfection-only** (default **`120`** when omitted for that assay; set `0` to fix onset time t0 at 0). Other assays ignore it. Public CSV/UI names: `onset_time`, `expression_rate`, `mrna_lifetime`, `protein_lifetime`, `baseline_intensity` (no alternate aliases). `mrna_degradation_rate` (δ), `protein_degradation_rate` (β), and `expression_amplitude` are internal solver fields, not CSV. Stored times are minutes; plots may show hours. See [`CONTEXT.md`](../../CONTEXT.md).
 - Frame interval (`interval.value` / `interval.unit`) is **general**. Transfection defaults to **10 minutes** when omitted; other assays require an explicit positive interval. Optional `analysis.skipSegment` skips Otsu and uses full-ROI p10 background.
-- Channel indices live under `analysis`, not on sample rows: `analysis.channels.{mask,signal}` (default) and optional `analysis.sampleChannels[]` overrides keyed by `slideChannel` (int). `signal` is a non-empty int list (one timeseries CSV per channel). Samples keep `slideChannel` (int), `name`, `positions` only.
+- Channel indices live under `analysis`, not on sample rows: `analysis.channels.{mask,signal}` (default) and optional `analysis.sampleChannels[]` overrides keyed by `slideChannel` (int). `signal` is a non-empty int list (one timeseries CSV per channel). Samples keep `slideChannel` (int), `name`, `positions` only. Killing may also set `analysis.channelRoles` (`brightfield`, `effector`, `deathMarker`) for extra fluorescence that must **not** join `signal`. See [`killing-workspace.md`](./killing-workspace.md).
 
 ## Parity CLI (`lisca-analyze`)
 

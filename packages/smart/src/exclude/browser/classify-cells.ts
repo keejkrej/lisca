@@ -2,7 +2,8 @@ import type { AlignGridCellCoord, AutoExcludePreviewCell } from "@lisca/contract
 import type { FrameResult } from "@lisca/utils";
 import { loadTransformers } from "../../shared/transformers";
 
-import type { ClassifyExclusionCandidatesOptions } from "../types";
+import { classifyCellsWithPack, packCounts, packGateMessage, packIsReady } from "../occupancy";
+import type { ClassifyExclusionCandidatesOptions, ClassifyExclusionInput } from "../types";
 import { EXCLUDE_LABEL } from "../types";
 import { getSmartExcludeClassifier, SMART_EXCLUDE_IMAGE_SIZE } from "./exclude-engine";
 import { cropCellToCanvas, resizeCanvasToSquare } from "./preprocess";
@@ -30,8 +31,34 @@ export async function classifyExclusionCandidates(
   frame: FrameResult,
   cells: readonly AutoExcludePreviewCell[],
   options: ClassifyExclusionCandidatesOptions = {},
+  promptPack?: ClassifyExclusionInput["promptPack"],
 ): Promise<AlignGridCellCoord[]> {
-  if (cells.length === 0) return [];
+  if (promptPack && packIsReady(promptPack)) {
+    const excluded = classifyCellsWithPack(frame, cells, promptPack);
+    const counts = packCounts(promptPack);
+    options.onOccupancy?.({
+      engine: "promptPack",
+      packReady: true,
+      occupiedCount: counts.occupied,
+      emptyCount: counts.empty,
+      message: packGateMessage(promptPack),
+    });
+    return excluded;
+  }
+  const reportResnet = () => {
+    const counts = promptPack ? packCounts(promptPack) : { occupied: 0, empty: 0 };
+    options.onOccupancy?.({
+      engine: "resnet",
+      packReady: false,
+      occupiedCount: counts.occupied,
+      emptyCount: counts.empty,
+      message: packGateMessage(promptPack),
+    });
+  };
+  if (cells.length === 0) {
+    reportResnet();
+    return [];
+  }
 
   const threshold = options.threshold ?? DEFAULT_THRESHOLD;
   const batchSize = options.batchSize ?? DEFAULT_BATCH_SIZE;
@@ -49,6 +76,8 @@ export async function classifyExclusionCandidates(
     }
     await Promise.resolve();
   }
+
+  reportResnet();
 
   return excluded;
 }
