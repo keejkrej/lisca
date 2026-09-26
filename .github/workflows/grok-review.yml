@@ -1,0 +1,135 @@
+# Agentic PR review. Runs on every non-draft, same-repo pull request — not a
+# manual /review. See docs/agents/software-factory.md.
+name: Grok review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+concurrency:
+  group: grok-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  review:
+    name: review
+    if: github.event.pull_request.draft == false && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      GROK_DISABLE_AUTOUPDATER: "1"
+      GROK_CLI_VERSION: "1.0.30"
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      PR_URL: ${{ github.event.pull_request.html_url }}
+      PR_TITLE: ${{ github.event.pull_request.title }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Collect diff
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh pr diff "$PR_NUMBER" > "$RUNNER_TEMP/pr.diff"
+
+      - name: Install Grok CLI
+        run: |
+          set -euo pipefail
+          curl -fsSL https://x.ai/cli/install.sh | bash -s "$GROK_CLI_VERSION"
+          echo "$HOME/.grok/bin" >> "$GITHUB_PATH"
+
+      - name: Authenticate Grok
+        env:
+          GROK_AUTH_JSON: ${{ secrets.GROK_AUTH_JSON }}
+          XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -n "${GROK_AUTH_JSON:-}" ]; then
+            mkdir -p "$HOME/.grok"
+            umask 077
+            printf '%s' "$GROK_AUTH_JSON" > "$HOME/.grok/auth.json"
+            echo "Using GROK_AUTH_JSON (SuperGrok session)."
+          elif [ -n "${XAI_API_KEY:-}" ]; then
+            {
+              echo "XAI_API_KEY<<GROK_EOF"
+              printf '%s\n' "$XAI_API_KEY"
+              echo "GROK_EOF"
+            } >> "$GITHUB_ENV"
+            echo "Using XAI_API_KEY."
+          else
+            echo "::error::Set repository secret GROK_AUTH_JSON to the contents of ~/.grok/auth.json (from \`grok login\`). XAI_API_KEY is the fallback."
+            exit 1
+          fi
+
+      - name: Stage poster
+        run: cp scripts/grok-pr-review.ts "$RUNNER_TEMP/grok-pr-review.ts"
+
+      - name: Run Grok review
+        env:
+          GITHUB_TOKEN: ""
+          GH_TOKEN: ""
+          DIFF_FILE: ${{ runner.temp }}/pr.diff
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import os
+          text = Path("scripts/grok-pr-review.prompt.md").read_text()
+          for key in ("DIFF_FILE", "PR_TITLE", "PR_URL", "HEAD_SHA"):
+              text = text.replace("$" + key, os.environ[key])
+          Path(os.environ["RUNNER_TEMP"], "grok-review.prompt.md").write_text(text)
+          PY
+          # GitHub-hosted Linux runners cannot apply grok's kernel sandbox
+          # (bwrap cannot resolve /run/podman/podman.sock). Keep the step
+          # review-only with an allowlisted toolset and no GITHUB_TOKEN instead.
+          grok --no-auto-update \
+            --prompt-file "$RUNNER_TEMP/grok-review.prompt.md" \
+            --json-schema "$(cat scripts/grok-pr-review.schema.json)" \
+            --always-approve \
+            --disable-web-search \
+            --no-subagents \
+            --max-turns 50 \
+            --reasoning-effort high \
+            --tools "read_file,grep,list_dir" \
+            --deny "Read(**/.grok/**)" \
+            --output-format json \
+            > "$RUNNER_TEMP/grok-review.json"
+
+      - name: Stage review artifacts
+        if: always()
+        run: |
+          mkdir -p grok-review-artifacts
+          cp "$RUNNER_TEMP/pr.diff" grok-review-artifacts/ 2>/dev/null || true
+          cp "$RUNNER_TEMP/grok-review.json" grok-review-artifacts/ 2>/dev/null || true
+
+      - name: Upload review artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: grok-review-pr-${{ github.event.pull_request.number }}
+          path: grok-review-artifacts/
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Post GitHub review
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GROK_REVIEW_FAIL_ON: ${{ vars.GROK_REVIEW_FAIL_ON }}
+        run: |
+          node --experimental-strip-types "$RUNNER_TEMP/grok-pr-review.ts" \
+            --review "$RUNNER_TEMP/grok-review.json" \
+            --diff "$RUNNER_TEMP/pr.diff" \
+            --pr "$PR_NUMBER" \
+            --commit "$HEAD_SHA" \
+            --repo "$GITHUB_REPOSITORY" \
+            --payload "$RUNNER_TEMP/grok-review-payload.json"
