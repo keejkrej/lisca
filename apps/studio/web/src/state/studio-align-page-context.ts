@@ -13,13 +13,10 @@ export type StudioAlignPageContextValue = {
   smartExclude: StudioSmartExclude;
   varExclude: StudioVarExclude;
   excludeActive: () => boolean;
-  /** Dock action exclude — overwrites prior exclusions. */
-  runExclude: () => Promise<void>;
-  /** Expert rail var exclude — additive on current exclusions. */
-  requestExpertVarExclude: () => Promise<void>;
+  /** Selection var exclude — additive on current exclusions; applying also excludes edge cells. */
+  requestVarExclude: () => Promise<void>;
   applyExcludePreview: () => void;
   cancelExcludePreview: () => void;
-  saveAndAdvance: () => Promise<boolean>;
 };
 
 export const StudioAlignPageContext = createContext<StudioAlignPageContextValue | null>(null);

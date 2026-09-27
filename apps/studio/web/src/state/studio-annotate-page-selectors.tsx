@@ -112,6 +112,10 @@ export function useStudioAnnotateDock() {
       return state.canGoToNextSite;
     },
     goToNextSite: bindLive(() => state.goToNextSite),
+    get canGoToPreviousSite() {
+      return state.canGoToPreviousSite;
+    },
+    goToPreviousSite: bindLive(() => state.goToPreviousSite),
     shuffleSelection: bindLive(() => state.shuffleSelection),
     requestContinueToAnalysis: bindLive(() => state.requestContinueToAnalysis),
   };

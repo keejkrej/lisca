@@ -9,9 +9,18 @@ import {
 import { StageCanvas, ViewportCard } from "@lisca/ui/shell";
 import { createMemo } from "solid-js";
 
+import { useStudioAlignPage } from "../state/studio-align-page-context";
 import { useStudioAlignCanvas, useStudioAlignNav } from "../state/studio-align-page-selectors";
+import type { AlignPositionSaveState } from "../state/use-studio-align-state";
+import { StudioAlignUnsavedChangesModal } from "./studio-align-unsaved-changes-modal";
 import { StudioCropConfirmModal } from "./studio-crop-confirm-modal";
 import { StudioCropStartModal } from "./studio-crop-start-modal";
+
+const SAVE_STATE_LABEL: Record<AlignPositionSaveState, string> = {
+  saved: "Saved",
+  unsaved: "Not saved",
+  changed: "Unsaved changes",
+};
 
 function isSourceNotFoundError(message: string): boolean {
   const normalized = message.toLowerCase();
@@ -69,6 +78,7 @@ export function StudioAlignMain() {
     }
     return [];
   });
+  const { state } = useStudioAlignPage();
   const positionLabel = createMemo(() => {
     const label = formatSelectedAxisValueLabel(nav.alignPositions, nav.selection.pos);
     return label || String(nav.selection.pos).padStart(2, "0");
@@ -79,7 +89,7 @@ export function StudioAlignMain() {
       <ViewportCard>
         <StageCanvas
           captionCenter={<CanvasToastStack layout="inline" messages={toasts()} />}
-          captionLeft={`Position ${positionLabel()}`}
+          captionLeft={`Position ${positionLabel()} · ${SAVE_STATE_LABEL[state.positionSaveState]}`}
           captionRight={
             canvas.frame ? `${canvas.frame.width} × ${canvas.frame.height} px` : "No frame"
           }
@@ -100,6 +110,7 @@ export function StudioAlignMain() {
           />
         </StageCanvas>
       </ViewportCard>
+      <StudioAlignUnsavedChangesModal />
       <StudioCropStartModal />
       <StudioCropConfirmModal />
     </>

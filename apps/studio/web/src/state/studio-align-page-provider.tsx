@@ -1,10 +1,7 @@
-import {
-  applyDockVariationExcludeWithEdge,
-  mergeAlignGridEdgeExclusion,
-} from "@lisca/client/align-session";
+import { mergeAlignGridEdgeExclusion } from "@lisca/client/align-session";
 import { useSmartExclude } from "@lisca/smart/exclude/request";
 import { useVarExclude } from "@lisca/smart/var-exclude";
-import { createMemo, createSignal, onCleanup } from "solid-js";
+import { createMemo, onCleanup } from "solid-js";
 import type { JSX } from "solid-js";
 
 import { StudioAlignVariationExcludeDialog } from "../components/studio-align-variation-exclude-dialog";
@@ -15,7 +12,6 @@ import { createStudioVarExcludeProvider } from "./studio-var-exclude";
 
 export function StudioAlignPageProvider(props: { children?: JSX.Element }) {
   const state = useStudioAlignState();
-  const [dockExcludePreview, setDockExcludePreview] = createSignal(false);
   const smartExcludeProvider = createStudioSmartExcludeProvider({
     source: () => state.source,
     selection: () => state.selection,
@@ -43,46 +39,24 @@ export function StudioAlignPageProvider(props: { children?: JSX.Element }) {
 
   const excludeActive = createMemo(() => varExclude.active() || smartExclude.active());
 
-  /** Dock action: overwrite exclusions, then edge + var-exclude provider. */
-  const runExclude = async (): Promise<void> => {
-    const frame = state.frame;
-    if (!frame || state.saving) return;
-    setDockExcludePreview(true);
-    state.setExcludedCellsForCurrentPosition(mergeAlignGridEdgeExclusion([], frame, state.grid));
-    await varExclude.requestPreview();
-  };
-
-  /** Expert rail var exclude: additive on current exclusions. */
-  const requestExpertVarExclude = async (): Promise<void> => {
-    setDockExcludePreview(false);
+  /** Selection var exclude: additive on current exclusions, plus edge cells once applied. */
+  const requestVarExclude = async (): Promise<void> => {
     await varExclude.requestPreview();
   };
 
   const applyExcludePreview = () => {
     const preview = state.variationExcludePreview;
+    if (!preview) return;
+    state.applyVariationExclude();
     const frame = state.frame;
-    if (!preview || !frame) return;
-    if (dockExcludePreview()) {
-      const applied = applyDockVariationExcludeWithEdge(frame, state.grid, preview);
-      state.setExcludedCellsForCurrentPosition(applied.cells);
-      state.dismissVariationExcludePreview();
-      state.reportStatus(
-        `Var excluded ${applied.variationCells.length} of ${applied.eligibleCellCount} cells`,
-      );
-    } else {
-      state.applyVariationExclude();
-    }
-    setDockExcludePreview(false);
+    if (!frame) return;
+    state.setExcludedCellsForCurrentPosition(
+      mergeAlignGridEdgeExclusion(state.currentExcludedCells, frame, state.grid),
+    );
   };
 
   const cancelExcludePreview = () => {
     state.cancelVariationExclude();
-    setDockExcludePreview(false);
-  };
-
-  const saveAndAdvance = async (): Promise<boolean> => {
-    if (state.saving) return false;
-    return await state.saveAndAdvanceWithExcludedCells(state.currentExcludedCells);
   };
 
   onCleanup(() => {
@@ -97,11 +71,9 @@ export function StudioAlignPageProvider(props: { children?: JSX.Element }) {
         smartExclude,
         varExclude,
         excludeActive,
-        runExclude,
-        requestExpertVarExclude,
+        requestVarExclude,
         applyExcludePreview,
         cancelExcludePreview,
-        saveAndAdvance,
       }}
     >
       {props.children}

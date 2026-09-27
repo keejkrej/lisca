@@ -98,10 +98,10 @@ export function useStudioAlignNav() {
       return state.canGoBack;
     },
     setSelection: state.setSelection,
+    changePosition: state.changePosition,
     setContrast: state.setContrast,
     goBack: state.goBack,
     resetCurrent: state.resetCurrent,
-    goToFirstUnaligned: state.goToFirstUnaligned,
     get saving() {
       return state.saving;
     },

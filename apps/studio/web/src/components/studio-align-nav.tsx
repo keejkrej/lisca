@@ -43,7 +43,7 @@ export function StudioAlignNav() {
           get disabled() {
             return disabled();
           },
-          onChange: (pos) => nav.setSelection({ pos }),
+          onChange: (pos) => nav.changePosition(pos),
           get previousDisabled() {
             return disabled() || posIndex() <= 0;
           },
@@ -52,11 +52,11 @@ export function StudioAlignNav() {
           },
           onPrevious: () => {
             const next = stepNavigationValue(positionOptions(), nav.selection.pos, -1);
-            if (next != null) nav.setSelection({ pos: next });
+            if (next != null) nav.changePosition(next);
           },
           onNext: () => {
             const next = stepNavigationValue(positionOptions(), nav.selection.pos, 1);
-            if (next != null) nav.setSelection({ pos: next });
+            if (next != null) nav.changePosition(next);
           },
         }}
         channel={{

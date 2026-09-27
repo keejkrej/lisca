@@ -24,7 +24,7 @@ import {
   useStudioStore,
 } from "./studio-store";
 import { setStudioAnnotateDirty } from "./studio-annotate-guard";
-import { nextStudioAnnotateSite } from "./studio-annotate-navigation";
+import { nextStudioAnnotateSite, previousStudioAnnotateSite } from "./studio-annotate-navigation";
 
 const noop = () => {};
 
@@ -56,6 +56,8 @@ export type StudioAnnotateState = ReturnType<ReturnType<typeof useAnnotateStateC
   startAnalysis: () => void;
   canGoToNextSite: boolean;
   goToNextSite: () => void;
+  canGoToPreviousSite: boolean;
+  goToPreviousSite: () => void;
   shuffleSelection: () => void;
   requestContinueToAnalysis: () => void;
   workspaceMissing: boolean;
@@ -138,6 +140,16 @@ export function useStudioAnnotateState(): StudioAnnotateState {
   const goToNextSite = () => {
     const current = annotate();
     const target = nextStudioAnnotateSite(current.scan, current.selection);
+    if (!target) return;
+    current.changeSelection(() => current.setSelection(target));
+  };
+  const previousSite = () => {
+    const current = annotate();
+    return previousStudioAnnotateSite(current.scan, current.selection);
+  };
+  const goToPreviousSite = () => {
+    const current = annotate();
+    const target = previousStudioAnnotateSite(current.scan, current.selection);
     if (!target) return;
     current.changeSelection(() => current.setSelection(target));
   };
@@ -406,6 +418,10 @@ export function useStudioAnnotateState(): StudioAnnotateState {
       return nextSite() !== null;
     },
     goToNextSite,
+    get canGoToPreviousSite() {
+      return previousSite() !== null;
+    },
+    goToPreviousSite,
     shuffleSelection,
     requestContinueToAnalysis,
     get workspaceMissing() {

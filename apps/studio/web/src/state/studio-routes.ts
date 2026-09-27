@@ -19,7 +19,7 @@ export function instructionForStep(step: StudioStep): string {
     return "Name each sample and the microscope positions it covers. Align and Annotate use these ranges.";
   }
   if (step === "alignPattern") {
-    return "Drag the grid onto the micropattern for each position, then press Next to save and continue.";
+    return "Drag the grid onto the micropattern, exclude empty cells, then press Save. Continue moves to the next unsaved position.";
   }
   return "Finish the Info step before aligning.";
 }

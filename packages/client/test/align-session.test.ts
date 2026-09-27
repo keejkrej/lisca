@@ -2,6 +2,7 @@ import { createDefaultAlignGrid, normalizeAlignGridState } from "@lisca/utils";
 import { describe, expect, it } from "vite-plus/test";
 
 import {
+  alignSnapshotKey,
   allAlignPositionsSaved,
   applyDockVariationExcludeWithEdge,
   applyVariationExcludeWithEdge,
@@ -11,6 +12,7 @@ import {
   mergeAlignGridEdgeExclusion,
   mergeAutoExcludedAlignCells,
   nextAlignPosition,
+  nextUnsavedAlignPosition,
   resolveFirstUnalignedTarget,
   shouldApplySourceScan,
   updateVariationExcludeThreshold,
@@ -204,5 +206,36 @@ describe("align-session helpers", () => {
     expect(
       deriveVisibleCounts(null, normalizeAlignGridState(createDefaultAlignGrid()), []),
     ).toEqual({ included: 0, excluded: 0 });
+  });
+});
+
+describe("Studio Continue helpers", () => {
+  const positions = [67, 78, 90, 102];
+
+  it("nextUnsavedAlignPosition searches forward from the current position and wraps", () => {
+    expect(nextUnsavedAlignPosition(positions, 78, new Set([67, 78]))).toBe(90);
+    expect(nextUnsavedAlignPosition(positions, 102, new Set([90, 102]))).toBe(67);
+    expect(nextUnsavedAlignPosition(positions, 90, new Set([67, 78, 102]))).toBe(90);
+    expect(nextUnsavedAlignPosition(positions, 90, new Set(positions))).toBeNull();
+  });
+
+  it("alignSnapshotKey ignores exclusion order but tracks grid and cell changes", () => {
+    const grid = createDefaultAlignGrid();
+    const a = alignSnapshotKey(grid, [
+      { i: 1, j: 2 },
+      { i: 0, j: 5 },
+    ]);
+    const b = alignSnapshotKey(grid, [
+      { i: 0, j: 5 },
+      { i: 1, j: 2 },
+    ]);
+    expect(a).toBe(b);
+    expect(alignSnapshotKey(grid, [{ i: 0, j: 5 }])).not.toBe(a);
+    expect(
+      alignSnapshotKey({ ...grid, rotation: grid.rotation + 1 }, [
+        { i: 1, j: 2 },
+        { i: 0, j: 5 },
+      ]),
+    ).not.toBe(a);
   });
 });

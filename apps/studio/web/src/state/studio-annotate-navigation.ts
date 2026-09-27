@@ -36,3 +36,15 @@ export function nextStudioAnnotateSite(
 
   return null;
 }
+
+/** Returns the previous ROI in scan order without wrapping at the start. */
+export function previousStudioAnnotateSite(
+  scan: RoiWorkspaceScan | null | undefined,
+  selection: { pos: number | null; roi: number | null },
+): StudioAnnotateSite | null {
+  const sites = (scan?.positions ?? []).flatMap((position) =>
+    position.rois.map((entry) => ({ pos: position.pos, roi: entry.roi })),
+  );
+  const index = sites.findIndex((site) => site.pos === selection.pos && site.roi === selection.roi);
+  return index > 0 ? sites[index - 1]! : null;
+}
