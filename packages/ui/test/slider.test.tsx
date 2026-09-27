@@ -1,5 +1,5 @@
 import { cleanup, render } from "@solidjs/testing-library";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vite-plus/test";
 
 import { Slider } from "../src/components/ui/slider";
 import { AnnotationToolSlider } from "../src/features/annotate/annotation-tool-slider";

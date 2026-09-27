@@ -1,7 +1,7 @@
 import type { AlignGridCellCoord, AlignGridState } from "@lisca/contracts";
 import { createDefaultAlignGrid, type FrameResult } from "@lisca/utils";
 import { createRoot, createSignal } from "solid-js";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vite-plus/test";
 
 import { useSmartExclude } from "./exclude/use-smart-exclude";
 import type { SmartExcludeProvider } from "./exclude/provider";

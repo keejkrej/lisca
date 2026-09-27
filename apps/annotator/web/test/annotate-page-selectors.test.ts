@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vite-plus/test";
 
 const fixture = vi.hoisted(() => ({
   state: {} as Record<string, unknown>,

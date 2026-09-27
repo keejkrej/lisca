@@ -1,6 +1,6 @@
 import { ASSAY_TYPE } from "@lisca/contracts/assay";
 import { configureLiscaStorage, type LiscaStorageAdapter } from "@lisca/utils";
-import { beforeEach, describe, expect, test } from "vitest";
+import { beforeEach, describe, expect, test } from "vite-plus/test";
 
 import {
   buildStudioAssayJsonFromWizard,

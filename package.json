@@ -36,13 +36,11 @@
     "@voidzero-dev/vite-plus-core": "latest",
     "node-addon-api": "^8.9.2",
     "node-gyp": "^11.5.0",
-    "oxfmt": "^0.48.0",
-    "oxlint": "^1.63.0",
     "oxlint-plugin-eslint": "1.68.0",
     "rcedit": "^4.0.1",
     "typescript": "catalog:",
-    "vite-plus": "latest",
-    "vitest": "catalog:",
+    "vite": "catalog:",
+    "vite-plus": "catalog:",
     "wait-on": "^8.0.3"
   },
   "engines": {

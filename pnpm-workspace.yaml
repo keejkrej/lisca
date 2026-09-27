@@ -7,7 +7,7 @@ catalog:
   "@effect/atom-solid": "4.0.0-rc.112"
   "@types/node": "^22.15.21"
   typescript: "^5.9.2"
-  vitest: "^3.2.4"
+  vitest: 4.1.11
   "@tanstack/solid-router": "^1.169.2"
   "@tanstack/router-plugin": "^1.167.35"
   "@tailwindcss/vite": "^4.1.8"
@@ -17,13 +17,15 @@ catalog:
   "@kobalte/core": "^0.13.0"
   "phosphor-icons-solid": "^1.0.0"
   tailwindcss: "^4.1.8"
-  vite: "^6.3.5"
+  vite: npm:@voidzero-dev/vite-plus-core@0.3.3
   "@tauri-apps/cli": "^2.0.0"
+  vite-plus: 0.3.3
 
 overrides:
   effect: "catalog:"
   solid-js: "^1.9.0"
-  vite: "npm:@voidzero-dev/vite-plus-core@latest"
+  vite@*: "catalog:"
+  vitest@*: "catalog:"
 
 # pnpm 12: allow lifecycle scripts only for packages that need native builds.
 allowBuilds:
@@ -33,3 +35,10 @@ allowBuilds:
   onnxruntime-node: true
   protobufjs: true
   sharp: true
+peerDependencyRules:
+  allowAny:
+    - vite
+    - vitest
+  allowedVersions:
+    vite: "*"
+    vitest: "*"

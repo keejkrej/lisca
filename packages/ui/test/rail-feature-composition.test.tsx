@@ -1,6 +1,6 @@
 import { cleanup, render, screen, within } from "@solidjs/testing-library";
 import { createDefaultAlignGrid } from "@lisca/utils";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vite-plus/test";
 
 import { AlignSelectionRail } from "../src/features/align/align-selection-rail";
 import { AlignToolToolbar } from "../src/features/align/align-tools";

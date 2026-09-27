@@ -1,7 +1,7 @@
 import type { CropRoiProgress, CropRoiRequest } from "@lisca/contracts";
 import { configureLiscaStorage, type LiscaStorageAdapter } from "@lisca/utils";
 import { Effect } from "effect";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
 import { cropRequestIdForCancellation, runCropRoi } from "../src/session/align-session";
 import {

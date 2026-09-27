@@ -1,6 +1,6 @@
 import type { CropRoiProgress } from "@lisca/contracts";
 import { Effect } from "effect";
-import { describe, expect, test, vi } from "vitest";
+import { describe, expect, test, vi } from "vite-plus/test";
 
 import { pollProgressLoop } from "../src/session/progress-poll";
 

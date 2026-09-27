@@ -14,7 +14,7 @@ import {
   useRouterState,
 } from "@tanstack/solid-router";
 import { createSignal, onMount } from "solid-js";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
 const mocks = vi.hoisted(() => {
   const operation = (status: "running" | "cancelled", updatedAtMs: number) => ({

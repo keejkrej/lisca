@@ -1,5 +1,5 @@
 import { configureLiscaStorage, type LiscaStorageAdapter } from "@lisca/utils";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vite-plus/test";
 
 import { readStudioWizardMemoryRecent, touchStudioWizardMemory } from "../src/studio/wizard-memory";
 

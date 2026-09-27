@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 
 import { frameWithContrast, toDisplayFrame } from "../src/browser/contrast";
 import type { FrameResult } from "@lisca/utils";

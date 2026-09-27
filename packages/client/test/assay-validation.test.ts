@@ -1,5 +1,5 @@
 import { ASSAY_TYPE } from "@lisca/contracts/assay";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 
 import { createInitialStudioWizardState } from "../src/atoms/studio-ui";
 import {

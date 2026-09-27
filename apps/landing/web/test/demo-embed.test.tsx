@@ -7,7 +7,7 @@ import {
   createRouter,
 } from "@tanstack/solid-router";
 import type { JSX } from "solid-js";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
 vi.mock("@lisca/aligner-demo", () => ({ AlignDemo: () => null }));
 vi.mock("@lisca/annotator-demo", () => ({ AnnotatorDemo: () => null }));

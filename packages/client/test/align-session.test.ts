@@ -1,5 +1,5 @@
 import { createDefaultAlignGrid, normalizeAlignGridState } from "@lisca/utils";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 
 import {
   allAlignPositionsSaved,

@@ -1,6 +1,6 @@
 import { cleanup, render } from "@solidjs/testing-library";
 import { createEffect, createMemo, createSignal, onCleanup } from "solid-js";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
 import { useCanvasResourceTransaction } from "../src/canvas-resource-transaction";
 

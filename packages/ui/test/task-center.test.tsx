@@ -1,7 +1,7 @@
 import type { OperationDetail, OperationSummary, TaskAttempt, TaskDetail } from "@lisca/contracts";
 import type { TaskCenterGateway } from "@lisca/utils";
 import { cleanup, fireEvent, render, screen, waitFor } from "@solidjs/testing-library";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
 import { TaskCenter } from "../src/shell/task-center/task-center";
 

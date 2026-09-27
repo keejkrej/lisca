@@ -1,7 +1,7 @@
 import { cleanup, render, screen } from "@solidjs/testing-library";
 import type { ResultPlot } from "@lisca/analysis";
 import { createSignal } from "solid-js";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vite-plus/test";
 
 import { ResultPlotGallery } from "../src/result/result-panels-grid";
 

@@ -1,4 +1,4 @@
-import { describe, expect, test } from "vitest";
+import { describe, expect, test } from "vite-plus/test";
 
 import { createInitialStudioWizardState } from "../src/atoms/studio-ui";
 import { isBasicInfoDirty, serializeBasicInfoSnapshot } from "../src/studio/wizard-state";

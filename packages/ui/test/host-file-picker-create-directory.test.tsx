@@ -1,7 +1,7 @@
 import type { HostListDirectoryResult } from "@lisca/contracts";
 import type { HostFilePickerOperations } from "@lisca/utils";
 import { cleanup, fireEvent, render, screen, waitFor } from "@solidjs/testing-library";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
 import { HostFilePickerDialog } from "../src/features/host/host-file-picker-dialog";
 

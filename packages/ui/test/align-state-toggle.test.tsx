@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, render, screen } from "@solidjs/testing-library";
 import { createDefaultAlignGrid } from "@lisca/utils";
 import { createSignal } from "solid-js";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
 import { AlignEditToggle } from "../src/features/align/align-edit-toggle";
 import { AlignGrid } from "../src/features/align/align-grid";

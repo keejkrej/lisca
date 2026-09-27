@@ -1,6 +1,6 @@
 import { Reactivity } from "effect/unstable/reactivity";
 import { Effect } from "effect";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 
 import { invalidateAfter, ReactivityKeys } from "../src/atoms/reactivity";
 

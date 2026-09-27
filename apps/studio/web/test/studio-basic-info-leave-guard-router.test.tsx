@@ -8,7 +8,7 @@ import {
   createRoute,
   createRouter,
 } from "@tanstack/solid-router";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
 import { createInitialStudioWizardState, studioWizardAtom } from "../src/state/studio-store";
 

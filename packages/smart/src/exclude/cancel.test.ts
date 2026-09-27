@@ -1,6 +1,6 @@
 import { createDefaultAlignGrid, type FrameResult } from "@lisca/utils";
 import { createRoot } from "solid-js";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vite-plus/test";
 
 import type { SmartExcludeProvider } from "./provider";
 import type { SmartModelGate } from "../shared/model-gate";

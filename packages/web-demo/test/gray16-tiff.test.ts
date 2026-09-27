@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import UTIF from "utif";
 
 import { encodeGrayTiff } from "../src/browser/encode-gray-tiff";
