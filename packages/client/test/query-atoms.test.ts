@@ -1,5 +1,5 @@
 import { Effect } from "effect";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vite-plus/test";
 
 import { createAppRuntime } from "../src/atoms/runtime";
 import { createSourceQueryAtoms } from "../src/atoms/source-queries";

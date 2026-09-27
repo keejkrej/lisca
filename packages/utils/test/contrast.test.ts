@@ -1,5 +1,5 @@
 import { defaultContrastDomain, type FrameResult } from "../src/frame";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 
 import {
   deriveAutoContrast,

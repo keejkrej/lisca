@@ -1,6 +1,6 @@
 import type { AutoExcludePreviewCell } from "@lisca/contracts";
 import type { FrameResult } from "@lisca/utils";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
 const { getSmartExcludeClassifier, loadTransformers, cropCellToCanvas, resizeCanvasToSquare } =
   vi.hoisted(() => ({

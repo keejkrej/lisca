@@ -38,7 +38,7 @@ function AlignPageContent() {
         </AppShell.MainColumn>
         <AppShell.Right widthClass="w-64">
           <StudioRightPanel
-            expert={() => <StudioAlignInstrumentStack />}
+            expert={() => <StudioAlignInstrumentStack expert />}
             instruction={() => instructionForStep("alignPattern")}
           >
             <StudioAlignInstrumentStack />

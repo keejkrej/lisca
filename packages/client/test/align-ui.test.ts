@@ -1,5 +1,5 @@
 import { configureLiscaStorage, type LiscaStorageAdapter } from "@lisca/utils";
-import { describe, expect, it, beforeEach } from "vitest";
+import { describe, expect, it, beforeEach } from "vite-plus/test";
 import { normalizeAlignGridState } from "@lisca/utils";
 
 import {

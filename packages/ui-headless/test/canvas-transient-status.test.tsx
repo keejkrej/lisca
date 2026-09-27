@@ -1,6 +1,6 @@
 import { createSignal } from "solid-js";
 import { render } from "@solidjs/testing-library";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
 import { useCanvasTransientStatus } from "../src/canvas-transient-status";
 

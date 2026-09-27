@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 
 function readSource(sourcePath: string): string {
   return readFileSync(new URL(sourcePath, import.meta.url), "utf8");
@@ -10,9 +10,18 @@ describe("Studio Align instrument stack composition", () => {
   const navSource = readSource("../src/components/studio-align-nav.tsx");
   const routeSource = readSource("../src/routes/align.tsx");
 
+  it("gates Grid, Geometry, and Selection behind expert mode", () => {
+    const gateIdx = stackSource.indexOf("<Show when={props.expert}>");
+    expect(gateIdx).toBeGreaterThan(-1);
+    expect(stackSource.indexOf("<AlignToolSection")).toBeLessThan(gateIdx);
+    expect(stackSource.indexOf("<AlignGridRail")).toBeGreaterThan(gateIdx);
+    expect(stackSource.indexOf("<AlignSelectionRail")).toBeGreaterThan(gateIdx);
+    expect(stackSource.indexOf("</Show>")).toBeLessThan(stackSource.indexOf('title="Action"'));
+  });
+
   it("mounts one shared stack in both basic and expert modes", () => {
     expect(routeSource).toMatch(/<StudioAlignInstrumentStack\s*\/>/);
-    expect(routeSource).toMatch(/expert=\{\(\) => <StudioAlignInstrumentStack\s*\/>\}/);
+    expect(routeSource).toMatch(/expert=\{\(\) => <StudioAlignInstrumentStack expert\s*\/>\}/);
     expect(routeSource).not.toMatch(
       /StudioAlignControls|StudioAlignExpertRight|studio-align-right/,
     );

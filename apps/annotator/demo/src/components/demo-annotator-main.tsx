@@ -1,6 +1,7 @@
 import { Panel, StageCanvas, ViewportCard } from "@lisca/ui/shell";
 import {
   AnnotationCanvas,
+  CanvasToastStack,
   SmartSegmentModelDialog,
   useCanvasTransientStatus,
 } from "@lisca/ui/features";
@@ -78,7 +79,7 @@ export function DemoAnnotatorMain(props: {
       mask={props.state().annotation.current.mask}
       overlayOpacity={props.state().overlayOpacity}
       smartSegmentPrompts={smartSegment.prompts()}
-      toasts={toasts()}
+      toasts={props.embedded ? toasts() : []}
       tool={props.state().tool}
       onMaskCommit={(mask) => {
         const state = props.state();
@@ -113,10 +114,9 @@ export function DemoAnnotatorMain(props: {
             onConfirm={() => void smartSegment.confirmDownload()}
           />
           <StageCanvas
-            aspect="square"
+            captionCenter={<CanvasToastStack layout="inline" messages={toasts()} />}
             captionLeft={captionLeft()}
             captionRight={captionRight()}
-            class="max-w-[30rem]"
           >
             {canvas}
           </StageCanvas>

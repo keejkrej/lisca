@@ -1,6 +1,6 @@
 import { createDefaultAlignGrid } from "@lisca/utils";
 import { render } from "@solidjs/testing-library";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vite-plus/test";
 
 import { cursorForAlignTool, useAlignCanvasGridHandlers } from "../src/align-canvas-handlers";
 import { useAlignCanvasPointerHandlers } from "../src/align-pointer-handlers";

@@ -1,7 +1,7 @@
 import type { AnnotationLabel, RoiWorkspaceScan } from "@lisca/contracts";
 import type { FrameResult } from "@lisca/utils";
 import { AsyncResult } from "effect/unstable/reactivity";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vite-plus/test";
 
 // packages/client tests run under vitest's node environment without
 // vite-plugin-solid, so the bare "solid-js" specifier resolves to the SSR

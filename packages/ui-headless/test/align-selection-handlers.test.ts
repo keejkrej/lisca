@@ -2,7 +2,7 @@ import type { AlignGridCellCoord, AlignGridState } from "@lisca/contracts";
 import type { AlignGridFrameBounds } from "@lisca/utils";
 import { normalizeAlignGridState } from "@lisca/utils";
 import { render } from "@solidjs/testing-library";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vite-plus/test";
 
 import type { AlignCanvasPointerEvent } from "../src/align-canvas-handlers";
 import { useAlignCanvasPointerHandlers } from "../src/align-pointer-handlers";

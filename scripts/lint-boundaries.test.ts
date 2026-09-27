@@ -1,7 +1,7 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { RuleTester } from "oxlint/plugins-dev";
-import { describe, expect, it } from "vitest";
+import { RuleTester } from "vite-plus/lint/plugins-dev";
+import { describe, expect, it } from "vite-plus/test";
 
 import { importBoundariesRule, normalizePath } from "./oxlint-plugin-lisca-boundaries.mjs";
 

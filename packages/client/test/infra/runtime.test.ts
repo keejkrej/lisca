@@ -1,5 +1,5 @@
 import { Effect } from "effect";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 
 import { ClientError } from "../../src/infra/client-error";
 import { toFetchErrorMessage } from "../../src/infra/errors";

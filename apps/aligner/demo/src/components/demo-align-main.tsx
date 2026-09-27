@@ -1,6 +1,7 @@
 import { Panel, StageCanvas, ViewportCard } from "@lisca/ui/shell";
 import {
   AlignCanvas,
+  CanvasToastStack,
   useAlignCanvasPointerHandlers,
   useCanvasTransientStatus,
 } from "@lisca/ui/features";
@@ -58,7 +59,6 @@ export function DemoAlignMain(props: { state: Accessor<DemoAlignState>; embedded
       toolMode={props.state().toolMode}
       previewGridRef={pointer.previewGridRef}
       previewRedrawRef={pointer.previewRedrawRef}
-      toasts={props.embedded ? [] : toasts()}
       onVirtualPointerCancel={pointer.handlePointerCancel}
       onVirtualPointerDown={pointer.handlePointerDown}
       onVirtualPointerMove={pointer.handlePointerMove}
@@ -81,10 +81,9 @@ export function DemoAlignMain(props: { state: Accessor<DemoAlignState>; embedded
       fallback={
         <ViewportCard>
           <StageCanvas
-            aspect="wide"
+            captionCenter={<CanvasToastStack layout="inline" messages={toasts()} />}
             captionLeft={captionLeft()}
             captionRight={captionRight()}
-            class="max-w-[45rem]"
           >
             {canvas}
           </StageCanvas>

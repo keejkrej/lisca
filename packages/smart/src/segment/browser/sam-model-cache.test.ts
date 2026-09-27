@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 
 import { isSamModelCached, SAM_MODEL_ID } from "./sam-model-cache";
 

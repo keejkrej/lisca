@@ -12,7 +12,7 @@
   },
   "scripts": {
     "fixture": "node --experimental-strip-types src/cli.ts",
-    "test": "vitest run",
+    "test": "vp test run",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {

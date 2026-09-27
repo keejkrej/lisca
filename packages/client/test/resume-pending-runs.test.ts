@@ -1,7 +1,7 @@
 import type { AnalysisProgress, CropRoiProgress } from "@lisca/contracts";
 import { configureLiscaStorage, type LiscaStorageAdapter } from "@lisca/utils";
 import { Effect } from "effect";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
 import { ClientError } from "../src/infra/client-error";
 import { resumeStudioPendingRuns } from "../src/session/resume-pending-runs";

@@ -3,7 +3,7 @@ import { tanstackRouter } from "@tanstack/router-plugin/vite";
 import { liscaSolidPlugin } from "@lisca/web-app/vite";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { defineConfig, type PluginOption } from "vite";
+import { defineConfig, type PluginOption } from "vite-plus";
 
 const brandPublicDir = resolve(
   fileURLToPath(new URL(".", import.meta.url)),

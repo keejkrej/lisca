@@ -16,7 +16,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "dev": "tsc -p tsconfig.build.json --watch --preserveWatchOutput",
-    "test": "vitest run",
+    "test": "vp test run",
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {

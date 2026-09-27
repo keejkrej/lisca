@@ -2,7 +2,7 @@ import { cleanup, render, screen } from "@solidjs/testing-library";
 import type { AnnotationLabel } from "@lisca/contracts";
 import type { FrameResult } from "@lisca/utils";
 import { createSignal, type Accessor } from "solid-js";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
 type Toast = { text: string; tone?: "error" };
 
@@ -18,8 +18,11 @@ type SmartSegmentOptions = {
 };
 
 type AnnotationCanvasProps = {
-  toasts: readonly Toast[];
   onMaskCommit: (mask: Uint8Array) => void;
+};
+
+type CanvasToastStackProps = {
+  messages?: readonly Toast[];
 };
 
 const mocks = vi.hoisted(() => ({
@@ -29,6 +32,7 @@ const mocks = vi.hoisted(() => ({
   dock: {} as Record<string, unknown>,
   smartSegmentOptions: null as SmartSegmentOptions | null,
   annotationCanvasProps: null as AnnotationCanvasProps | null,
+  toastStackProps: null as CanvasToastStackProps | null,
 }));
 
 vi.mock("@lisca/client/runtime", () => ({
@@ -54,6 +58,10 @@ vi.mock("@lisca/smart/segment", () => ({
 vi.mock("@lisca/ui/features", () => ({
   AnnotationCanvas: (props: AnnotationCanvasProps) => {
     mocks.annotationCanvasProps = props;
+    return null;
+  },
+  CanvasToastStack: (props: CanvasToastStackProps) => {
+    mocks.toastStackProps = props;
     return null;
   },
 }));
@@ -154,16 +162,20 @@ describe("Annotator live component state", () => {
 
     const options = mocks.smartSegmentOptions;
     const canvasProps = mocks.annotationCanvasProps;
+    const toastProps = mocks.toastStackProps;
     expect(options).not.toBeNull();
     expect(canvasProps).not.toBeNull();
-    if (!options || !canvasProps) throw new Error("Annotator component mocks were not captured");
+    expect(toastProps).not.toBeNull();
+    if (!options || !canvasProps || !toastProps) {
+      throw new Error("Annotator component mocks were not captured");
+    }
 
     expect(options.frame()).toBe(firstFrame);
     expect(options.tool()).toBe("brush");
     expect(options.activeLabelValue()).toBe(1);
     expect(options.mask()).toEqual(new Uint8Array([0, 0, 0, 0]));
     expect(options.enabled()).toBe(false);
-    expect(canvasProps.toasts).toEqual([{ text: "Loading ROI frame" }]);
+    expect(toastProps.messages).toEqual([{ text: "Loading ROI frame" }]);
 
     setFrame(secondFrame);
     setTool("smart");
@@ -177,12 +189,12 @@ describe("Annotator live component state", () => {
     expect(options.activeLabelValue()).toBe(2);
     expect(options.mask()).toEqual(new Uint8Array([2, 0, 2]));
     expect(options.enabled()).toBe(true);
-    expect(canvasProps.toasts).toEqual([{ text: "Frame ready" }]);
+    expect(toastProps.messages).toEqual([{ text: "Frame ready" }]);
 
     options.onStatus?.("Segmenting…");
-    expect(canvasProps.toasts).toEqual([{ text: "Frame ready" }, { text: "Segmenting…" }]);
+    expect(toastProps.messages).toEqual([{ text: "Frame ready" }, { text: "Segmenting…" }]);
     options.onError?.("Model unavailable");
-    expect(canvasProps.toasts).toEqual([{ text: "Model unavailable", tone: "error" }]);
+    expect(toastProps.messages).toEqual([{ text: "Model unavailable", tone: "error" }]);
 
     setClassificationLabelId("artifact");
     const committedMask = new Uint8Array([2, 2, 0]);

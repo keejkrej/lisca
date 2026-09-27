@@ -6,7 +6,7 @@
     "dev": "vp dev",
     "build": "tsc -p tsconfig.json --noEmit && vp build",
     "preview": "vp preview",
-    "test": "vitest run",
+    "test": "vp test run",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {

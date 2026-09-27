@@ -1,5 +1,5 @@
 import { cleanup, render } from "@solidjs/testing-library";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
 import { useCanvasThemeRerender } from "../src/features/canvas/canvas-theme";
 import { ShellThemeProvider } from "../src/shell/theme/shell-theme";

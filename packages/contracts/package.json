@@ -29,14 +29,13 @@
     "contract-schema": "node --experimental-strip-types --import ./scripts/register-ts-ext.mjs scripts/gen-rust-schema.ts",
     "rust-types": "node --experimental-strip-types --import ./scripts/register-ts-ext.mjs scripts/gen-rust-schema.ts && cargo typify contract.schema.json --crate 'lisca@0.1.0' --unknown-crates allow -o ../../crates/lisca/src/protocol/generated.rs",
     "generate": "node --experimental-strip-types --import ./scripts/register-ts-ext.mjs scripts/gen-openapi.ts && node --experimental-strip-types --import ./scripts/register-ts-ext.mjs scripts/gen-rust-schema.ts",
-    "test": "vitest run",
+    "test": "vp test run",
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
     "effect": "catalog:"
   },
   "devDependencies": {
-    "typescript": "catalog:",
-    "vitest": "catalog:"
+    "typescript": "catalog:"
   }
 }

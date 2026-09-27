@@ -122,7 +122,9 @@ export function SelectStepperField<T extends NavigationValue>(
           )}
           placement="bottom-start"
           value={props.value}
-          onChange={(next) => next != null && props.onChange(next as T)}
+          // Kobalte echoes onChange when the controlled value/options update; only forward real changes
+          // so selection patches (e.g. Position resetting ROI) cannot re-trigger themselves forever.
+          onChange={(next) => next != null && next !== props.value && props.onChange(next as T)}
         >
           <SelectTrigger aria-label={props.label} size="sm" class="w-full min-w-0 text-sm">
             <SelectValue<T>>

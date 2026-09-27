@@ -1,6 +1,6 @@
 import type { AlignGridState } from "@lisca/contracts";
 import { cleanup, fireEvent, render } from "@solidjs/testing-library";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
 import { AlignCanvas } from "../src/features/align/align-canvas";
 import { AnnotationCanvas } from "../src/features/annotate/annotation-canvas";

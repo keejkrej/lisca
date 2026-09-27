@@ -85,7 +85,7 @@
     }
   },
   "scripts": {
-    "test": "vitest run",
+    "test": "vp test run",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {

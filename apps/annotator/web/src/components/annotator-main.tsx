@@ -2,7 +2,7 @@ import type { AnnotationLabel } from "@lisca/contracts";
 import { runClientEffect } from "@lisca/client/runtime";
 import { useSmartSegment } from "@lisca/smart/segment";
 import { createRequestSmartSegmentProvider } from "@lisca/smart/segment/request";
-import { AnnotationCanvas } from "@lisca/ui/features";
+import { AnnotationCanvas, CanvasToastStack } from "@lisca/ui/features";
 import { StageCanvas, ViewportCard } from "@lisca/ui/shell";
 import { createMemo, createSignal } from "solid-js";
 
@@ -59,12 +59,11 @@ export function AnnotatorMain() {
   return (
     <ViewportCard>
       <StageCanvas
-        aspect="square"
+        captionCenter={<CanvasToastStack layout="inline" messages={toasts()} />}
         captionLeft={`Site ${nav.selection.roi ?? "—"} · Channel ${nav.selection.channel ?? "—"}`}
         captionRight={
           canvas.frame ? `${canvas.frame.width} × ${canvas.frame.height} px` : "No frame"
         }
-        class="max-w-[30rem]"
       >
         <AnnotationCanvas
           activeLabelId={canvas.activeLabelId}
@@ -77,7 +76,6 @@ export function AnnotatorMain() {
           mask={canvas.annotation.current.mask}
           overlayOpacity={canvas.overlayOpacity}
           smartSegmentPrompts={smartSegment.prompts()}
-          toasts={toasts()}
           tool={canvas.tool}
           onMaskCommit={onMaskCommit}
           onSmartSegmentClick={(click) => void smartSegment.handleClick(click)}

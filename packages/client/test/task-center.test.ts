@@ -1,7 +1,7 @@
 import type { OperationSummary } from "@lisca/contracts";
 import type { TaskCenterGateway } from "@lisca/utils";
 import { Effect } from "effect";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
 import { createTaskCenterGateway, subscribeTaskCenterOperations } from "../src/session/task-center";
 import type { TaskDataPort } from "../src/ports/types";

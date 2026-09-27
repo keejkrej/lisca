@@ -1,7 +1,7 @@
 import type { RoiPositionScan } from "@lisca/contracts";
 import type { FrameResult } from "@lisca/utils";
 import { configureLiscaStorage, type LiscaStorageAdapter } from "@lisca/utils";
-import { describe, expect, it, beforeEach } from "vitest";
+import { describe, expect, it, beforeEach } from "vite-plus/test";
 
 import {
   createAnnotatorPersist,

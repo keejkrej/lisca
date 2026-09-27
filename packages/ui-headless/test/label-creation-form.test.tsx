@@ -1,7 +1,7 @@
 import type { AnnotationLabel } from "@lisca/contracts";
 import { createSignal } from "solid-js";
 import { render } from "@solidjs/testing-library";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 
 import {
   labelDraftsFrom,

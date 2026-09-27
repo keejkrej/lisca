@@ -1,7 +1,7 @@
 import type { RoiFrameRequest, RoiPositionScan } from "@lisca/contracts";
 import type { FrameResult } from "@lisca/utils";
 import { Effect } from "effect";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 
 import {
   AnnotationHistory,

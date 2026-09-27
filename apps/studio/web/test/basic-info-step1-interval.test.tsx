@@ -1,7 +1,7 @@
 import { RegistryProvider } from "@effect/atom-solid";
 import { cleanup, fireEvent, render, screen, waitFor } from "@solidjs/testing-library";
 import type { HostFilePickerOperations } from "@lisca/ui/features";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
 vi.mock("@lisca/ui/features", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@lisca/ui/features")>();

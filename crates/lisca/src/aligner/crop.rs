@@ -699,7 +699,42 @@ fn write_roi_tiff_page(
 }
 
 fn crop_fd_budget(soft_limit: Option<u64>) -> u64 {
-    crop_fd_budget_from(soft_limit.or_else(rlimit_nofile_soft))
+    crop_fd_budget_from(soft_limit.or_else(|| {
+        raise_nofile_soft_limit();
+        rlimit_nofile_soft()
+    }))
+}
+
+/// Largest soft `RLIMIT_NOFILE` macOS accepts when the hard limit is unlimited.
+#[cfg(target_os = "macos")]
+const NOFILE_SOFT_CEILING: libc::rlim_t = 10_240; // OPEN_MAX in <sys/syslimits.h>
+#[cfg(all(unix, not(target_os = "macos")))]
+const NOFILE_SOFT_CEILING: libc::rlim_t = 1 << 20;
+
+/// GUI launches (launchd on macOS) start with a 256 soft limit, too low for one writer per ROI.
+/// Raise the soft limit toward the hard limit once per process; failures keep the current limit.
+fn raise_nofile_soft_limit() {
+    #[cfg(unix)]
+    {
+        static RAISE: std::sync::Once = std::sync::Once::new();
+        RAISE.call_once(|| {
+            let mut lim = libc::rlimit {
+                rlim_cur: 0,
+                rlim_max: 0,
+            };
+            // SAFETY: `lim` is a valid `rlimit` out-parameter; `getrlimit` only writes it.
+            if unsafe { libc::getrlimit(libc::RLIMIT_NOFILE, &mut lim) } != 0 {
+                return;
+            }
+            let target = lim.rlim_max.min(NOFILE_SOFT_CEILING);
+            if lim.rlim_cur >= target {
+                return;
+            }
+            lim.rlim_cur = target;
+            // SAFETY: `lim` is a valid `rlimit`; only the soft limit changes, within the hard limit.
+            unsafe { libc::setrlimit(libc::RLIMIT_NOFILE, &lim) };
+        });
+    }
 }
 
 fn crop_fd_budget_from(soft_limit: Option<u64>) -> u64 {
@@ -990,6 +1025,15 @@ mod tests {
         assert_eq!(crop_fd_budget(Some(400)), 144);
         assert_eq!(crop_fd_budget(Some(0)), UNBOUNDED_FD_BUDGET);
         assert_eq!(crop_fd_budget_from(None), UNBOUNDED_FD_BUDGET);
+    }
+
+    #[test]
+    fn raise_nofile_soft_limit_never_lowers_limit() {
+        let before = rlimit_nofile_soft().unwrap();
+        raise_nofile_soft_limit();
+        let after = rlimit_nofile_soft().unwrap();
+        assert!(after >= before);
+        assert!(after >= before.min(NOFILE_SOFT_CEILING));
     }
 
     #[test]

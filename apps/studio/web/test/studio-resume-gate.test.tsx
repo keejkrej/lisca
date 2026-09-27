@@ -4,7 +4,7 @@ import {
   setLiscaActiveServerAddress,
   type LiscaStorageAdapter,
 } from "@lisca/utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
 import { createInitialAlignUiState, createStudioPersist } from "@lisca/client/atoms/align-ui";
 import {
