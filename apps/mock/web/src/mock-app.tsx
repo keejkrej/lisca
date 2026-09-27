@@ -64,16 +64,11 @@ function MockTopBar(props: { screen: MockScreen; onScreen: (screen: MockScreen) 
   );
 }
 
-function IbidiSheet(props: { aspect: "wide" | "square"; captionLeft: string }) {
+function IbidiSheet(props: { captionLeft: string }) {
   return (
     <ViewportCard>
-      <StageCanvas
-        aspect={props.aspect}
-        captionLeft={props.captionLeft}
-        captionRight="ibidi fixture"
-        class={props.aspect === "wide" ? "max-w-[45rem]" : "max-w-[30rem]"}
-      >
-        <img alt="Fixture frame" class="h-full w-full object-cover" src={IBIDI_FRAME} />
+      <StageCanvas captionLeft={props.captionLeft} captionRight="ibidi fixture">
+        <img alt="Fixture frame" class="h-full w-full object-contain" src={IBIDI_FRAME} />
       </StageCanvas>
     </ViewportCard>
   );
@@ -103,7 +98,7 @@ function AlignBody(props: { screen: MockScreen; onScreen: (screen: MockScreen) =
           <MockTopBar screen={props.screen} onScreen={props.onScreen} />
         </AppShell.TopBar>
         <AppShell.Main>
-          <IbidiSheet aspect="wide" captionLeft="mp_example_singlecell" />
+          <IbidiSheet captionLeft="mp_example_singlecell" />
         </AppShell.Main>
       </AppShell.MainColumn>
       <AppShell.Right>
@@ -151,7 +146,7 @@ function AnnotateBody(props: { screen: MockScreen; onScreen: (screen: MockScreen
           <MockTopBar screen={props.screen} onScreen={props.onScreen} />
         </AppShell.TopBar>
         <AppShell.Main>
-          <IbidiSheet aspect="square" captionLeft="Site 1 · GFP" />
+          <IbidiSheet captionLeft="Site 1 · GFP" />
         </AppShell.Main>
       </AppShell.MainColumn>
       <AppShell.Right>

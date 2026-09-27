@@ -2,6 +2,7 @@ import type { AlignGridCellCoord } from "@lisca/contracts";
 import { formatSelectedAxisValueLabel } from "@lisca/utils";
 import {
   AlignCanvas,
+  CanvasToastStack,
   useAlignCanvasPointerHandlers,
   useCanvasTransientStatus,
 } from "@lisca/ui/features";
@@ -77,12 +78,11 @@ export function StudioAlignMain() {
     <>
       <ViewportCard>
         <StageCanvas
-          aspect="wide"
+          captionCenter={<CanvasToastStack layout="inline" messages={toasts()} />}
           captionLeft={`Position ${positionLabel()}`}
           captionRight={
             canvas.frame ? `${canvas.frame.width} × ${canvas.frame.height} px` : "No frame"
           }
-          class="max-w-[45rem]"
         >
           <AlignCanvas
             class="h-full w-full"
@@ -93,7 +93,6 @@ export function StudioAlignMain() {
             toolMode={canvas.toolMode}
             previewGridRef={pointer.previewGridRef}
             previewRedrawRef={pointer.previewRedrawRef}
-            toasts={toasts()}
             onVirtualPointerCancel={pointer.handlePointerCancel}
             onVirtualPointerDown={pointer.handlePointerDown}
             onVirtualPointerMove={pointer.handlePointerMove}

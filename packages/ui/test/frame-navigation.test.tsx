@@ -1,5 +1,6 @@
 import { cleanup, fireEvent, render, screen } from "@solidjs/testing-library";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { createSignal } from "solid-js";
+import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
 import {
   SelectStepperField,
@@ -68,5 +69,39 @@ describe("frame-navigation steppers", () => {
 
     expect(screen.getByRole("button", { name: "Previous Timepoint" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Next Timepoint" })).toBeTruthy();
+  });
+});
+
+describe("SelectStepperField controlled value", () => {
+  it("does not echo onChange when the value or options change programmatically", async () => {
+    const onChange = vi.fn();
+    const [value, setValue] = createSignal(4);
+    const [options, setOptions] = createSignal([
+      { label: "04", value: 4 },
+      { label: "05", value: 5 },
+    ]);
+
+    render(() => (
+      <SelectStepperField
+        label="Position"
+        nextDisabled={false}
+        onChange={onChange}
+        onNext={() => undefined}
+        onPrevious={() => undefined}
+        options={options()}
+        previousDisabled={false}
+        value={value()}
+      />
+    ));
+
+    setValue(5);
+    setOptions([
+      { label: "05", value: 5 },
+      { label: "06", value: 6 },
+    ]);
+    setValue(6);
+    await Promise.resolve();
+
+    expect(onChange).not.toHaveBeenCalled();
   });
 });

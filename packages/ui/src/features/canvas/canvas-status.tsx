@@ -70,13 +70,21 @@ export function CanvasStatusMessageStack(props: {
   );
 }
 
-export function CanvasToastStack(props: { class?: string; messages?: CanvasStatusMessage[] }) {
+export function CanvasToastStack(props: {
+  class?: string;
+  messages?: CanvasStatusMessage[];
+  /** `overlay` floats over the canvas; `inline` sits in a stage caption row without covering the image. */
+  layout?: "overlay" | "inline";
+}) {
+  const inline = () => props.layout === "inline";
   return (
     <Show when={props.messages?.length}>
       <div
         aria-live="polite"
         class={cn(
-          "pointer-events-none absolute right-3 top-3 z-20 flex w-[min(24rem,calc(100%-1.5rem))] flex-col items-end gap-2",
+          inline()
+            ? "flex min-w-0 items-center justify-center gap-2"
+            : "pointer-events-none absolute right-3 top-3 z-20 flex w-[min(24rem,calc(100%-1.5rem))] flex-col items-end gap-2",
           props.class,
         )}
       >
@@ -86,13 +94,17 @@ export function CanvasToastStack(props: { class?: string; messages?: CanvasStatu
             return (
               <div
                 class={cn(
-                  "flex max-w-full items-start gap-2 rounded-lg border bg-popover/75 px-3 py-2 text-sm leading-snug",
+                  "flex max-w-full items-start gap-2 rounded-lg border",
+                  inline()
+                    ? "min-w-0 items-center px-2 py-0.5 text-xs normal-case tracking-normal"
+                    : "bg-popover/75 px-3 py-2 text-sm leading-snug",
                   toastToneClassName(message.tone),
                 )}
                 role={message.tone === "error" ? "alert" : "status"}
+                title={inline() ? message.text : undefined}
               >
                 {icon}
-                <span class="min-w-0">{message.text}</span>
+                <span class={cn("min-w-0", inline() && "truncate")}>{message.text}</span>
               </div>
             );
           }}

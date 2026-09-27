@@ -1,7 +1,8 @@
 import { cleanup, fireEvent, render, screen } from "@solidjs/testing-library";
 import { createEffect, createSignal, onCleanup } from "solid-js";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
+import { CanvasToastStack } from "../src/features/canvas/canvas-status";
 import { AppShell } from "../src/shell/layout/shell";
 import { StageCanvas } from "../src/shell/layout/stage-canvas";
 import { ViewportCard } from "../src/shell/layout/viewport-card";
@@ -313,50 +314,55 @@ describe("ViewportCard paper pane", () => {
 });
 
 describe("StageCanvas framing", () => {
-  it("renders a muted square well and tracked caption for wide and square aspects", () => {
-    const wide = render(() => (
-      <StageCanvas
-        aspect="wide"
-        captionLeft="Position 01"
-        captionRight="1024 × 768 px"
-        class="max-w-[45rem]"
-      >
-        <div data-testid="wide-child">canvas</div>
+  it("fills the viewport with a muted well and pins the caption below it", () => {
+    render(() => (
+      <StageCanvas captionLeft="Position 01" captionRight="1024 × 768 px">
+        <div data-testid="stage-child">canvas</div>
       </StageCanvas>
     ));
-    const wideRoot = wide.container.firstElementChild!;
-    hasClass(wideRoot, "max-w-[45rem]");
-    hasClass(wideRoot, "gap-3");
-    const wideWell = wideRoot.firstElementChild!;
-    hasClass(wideWell, "rounded-none");
-    hasClass(wideWell, "bg-muted");
-    hasClass(wideWell, "aspect-[12/7]");
-    expect(screen.getByTestId("wide-child")).toBeTruthy();
+    const root = screen.getByTestId("stage-child").parentElement!.parentElement!;
+    hasClass(root, "h-full");
+    hasClass(root, "min-h-0");
+    hasClass(root, "gap-3");
+    const well = root.firstElementChild!;
+    hasClass(well, "flex-1");
+    hasClass(well, "min-h-0");
+    hasClass(well, "rounded-none");
+    hasClass(well, "bg-muted");
+    expect(well.className).not.toMatch(/aspect-/);
     expect(screen.getByText("Position 01")).toBeTruthy();
     expect(screen.getByText("1024 × 768 px")).toBeTruthy();
-    const caption = wideRoot.lastElementChild!;
+    const caption = root.lastElementChild!;
+    hasClass(caption, "shrink-0");
     hasClass(caption, "tracking-[0.12em]");
     hasClass(caption, "text-muted-foreground");
-    wide.unmount();
+  });
+});
 
-    const square = render(() => (
+describe("StageCanvas caption status", () => {
+  it("renders inline toasts in the caption row instead of over the canvas", () => {
+    render(() => (
       <StageCanvas
-        aspect="square"
-        captionLeft="Site 1 · Channel GFP"
-        captionRight="No frame"
-        class="max-w-[30rem]"
+        captionCenter={
+          <CanvasToastStack
+            layout="inline"
+            messages={[{ text: "Var excluded 114 of 182 cells" }]}
+          />
+        }
+        captionLeft="Position 90"
+        captionRight="2048 × 2044 px"
       >
-        <div data-testid="square-child">canvas</div>
+        <div data-testid="stage-child">canvas</div>
       </StageCanvas>
     ));
-    const squareRoot = square.container.firstElementChild!;
-    hasClass(squareRoot, "max-w-[30rem]");
-    const squareWell = squareRoot.firstElementChild!;
-    hasClass(squareWell, "aspect-square");
-    hasClass(squareWell, "rounded-none");
-    hasClass(squareWell, "bg-muted");
-    expect(screen.getByTestId("square-child")).toBeTruthy();
-    expect(screen.getByText("Site 1 · Channel GFP")).toBeTruthy();
-    expect(screen.getByText("No frame")).toBeTruthy();
+    const toast = screen.getByRole("status");
+    expect(toast.textContent).toBe("Var excluded 114 of 182 cells");
+    const stack = toast.parentElement!;
+    expect(stack.className).not.toMatch(/\babsolute\b/);
+    const well = screen.getByTestId("stage-child").parentElement!;
+    expect(well.contains(toast)).toBe(false);
+    const caption = well.parentElement!.lastElementChild!;
+    expect(caption.contains(toast)).toBe(true);
+    hasClass(caption, "h-7");
   });
 });
