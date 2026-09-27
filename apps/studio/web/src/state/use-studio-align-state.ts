@@ -10,9 +10,9 @@ import type {
 } from "@lisca/contracts";
 import type { FrameResult } from "@lisca/utils";
 import {
-  allAlignPositionsSaved,
+  alignSnapshotKey,
   nextAlignPosition,
-  resolveFirstUnalignedTarget,
+  nextUnsavedAlignPosition,
   type CropConfirmState,
   type VariationExcludePreview,
 } from "@lisca/client/align-session";
@@ -20,7 +20,7 @@ import { useAlignSessionCore } from "@lisca/client/align-session/solid";
 import { useCanvasResourceTransaction } from "@lisca/ui/features";
 import { createDefaultAlignGrid, type AlignGridToolMode } from "@lisca/utils";
 import { currentServerKey } from "@lisca/client/session/work-session";
-import { createEffect, createMemo, createSignal } from "solid-js";
+import { createEffect, createMemo, createSignal, on } from "solid-js";
 import { studioClient, toErrorMessage } from "../api/studio-port";
 import { scanIdleAtom, scanSourceAtom } from "../atoms/studio-query-atoms";
 import { effectErrorMessage, loadFrameEffect } from "../effects/frame-loader";
@@ -72,12 +72,22 @@ export type StudioAlignState = {
   cropProgress: CropRoiProgress | null;
   cropStartConfirm: CropStartConfirmState | null;
   cropConfirm: CropConfirmState | null;
-  findingFirstUnaligned: boolean;
+  continuing: boolean;
   status: string | null;
+  /** Save state of the current position: stored on disk, never saved, or edited since last save/load. */
+  positionSaveState: AlignPositionSaveState;
   canGoBack: boolean;
+  canGoNext: boolean;
   goBack: () => void;
+  goNext: () => void;
+  /** Guarded position change (Navigation select / steppers). */
+  changePosition: (pos: number) => void;
   resetCurrent: () => void;
-  goToFirstUnaligned: () => Promise<void>;
+  saveCurrentPosition: () => Promise<boolean>;
+  /** Go to the next unsaved position (wrapping); when all are saved, offer to crop. */
+  continueAlign: () => Promise<void>;
+  unsavedChangesPrompt: boolean;
+  resolveUnsavedChanges: (choice: "save" | "discard" | "cancel") => Promise<void>;
   startConfirmedCrop: () => void;
   cancelCropStartConfirm: () => void;
   confirmCropOverwrite: () => void;
@@ -90,10 +100,16 @@ export type StudioAlignState = {
   dismissVariationExcludePreview: () => void;
   applyVariationExclude: () => void;
   applySmartExclusion: (modelCells: AlignGridCellCoord[]) => void;
-  saveAndAdvanceWithExcludedCells: (excludedCells: AlignGridCellCoord[]) => Promise<boolean>;
   showVariationExcludePreview: (preview: AutoExcludePreviewResponse) => void;
   reportStatus: (message: string | null) => void;
   reportError: (message: string | null) => void;
+};
+export type AlignPositionSaveState = "saved" | "unsaved" | "changed";
+type AlignBaseline = {
+  pos: number;
+  grid: AlignGridState;
+  cells: AlignGridCellCoord[];
+  key: string;
 };
 export type CropStartConfirmState = {
   positions: number[];
@@ -105,7 +121,10 @@ export function useStudioAlignState(): StudioAlignState {
   const workspacePath = useStudioStore((state) => state.workspacePath);
   const samples = useStudioStore((state) => state.samples);
   const dataSourceKind = useStudioStore((state) => state.dataSourceKind);
-  const [findingFirstUnaligned, setFindingFirstUnaligned] = createSignal(false);
+  const [continuing, setContinuing] = createSignal(false);
+  const [savedPositions, setSavedPositions] = createSignal<ReadonlySet<number>>(new Set());
+  const [baseline, setBaseline] = createSignal<AlignBaseline | null>(null);
+  const [pendingNavigation, setPendingNavigation] = createSignal<(() => void) | null>(null);
   const [cropStartConfirm, setCropStartConfirm] = createSignal<CropStartConfirmState | null>(null);
   const activeSource = createMemo(() =>
     toStudioSource({
@@ -172,12 +191,72 @@ export function useStudioAlignState(): StudioAlignState {
   const setStatus = session.actions.reportStatus;
   const applySmartExclusion = session.applySmartExclusion;
   const positionIndex = () => alignPositions().indexOf(lockedSelection().pos);
+  const currentSnapshot = () => alignSnapshotKey(ui().grid, session.derived().currentExcludedCells);
+  const captureBaseline = (pos: number) => {
+    const cells = session.derived().currentExcludedCells;
+    const grid = ui().grid;
+    setBaseline({ pos, grid, cells, key: alignSnapshotKey(grid, cells) });
+  };
+  // Snapshot each position once its frame (and any saved grid/exclusions) has loaded.
+  createEffect(() => {
+    const current = ui();
+    const pos = lockedSelection().pos;
+    if (current.frameLoading || !current.frame || current.loadedFrameSelection?.pos !== pos) return;
+    if (baseline()?.pos === pos) return;
+    captureBaseline(pos);
+  });
+  const dirty = createMemo(() => {
+    const base = baseline();
+    return base != null && base.pos === lockedSelection().pos && base.key !== currentSnapshot();
+  });
+  const positionSaveState = createMemo<AlignPositionSaveState>(() => {
+    if (dirty()) return "changed";
+    return savedPositions().has(lockedSelection().pos) ? "saved" : "unsaved";
+  });
+  const refreshSavedPositions = async () => {
+    const workspacePath = ui().workspacePath;
+    if (!workspacePath) {
+      setSavedPositions(new Set<number>());
+      return savedPositions();
+    }
+    const saved = new Set(
+      await runClientEffect(studioClient.listSavedBboxPositions(workspacePath)),
+    );
+    setSavedPositions(saved);
+    return saved;
+  };
+  createEffect(
+    on(
+      () => ui().workspacePath,
+      () => {
+        void refreshSavedPositions().catch((cause) =>
+          setError(toErrorMessage(cause, "Saved position scan failed")),
+        );
+      },
+    ),
+  );
+  /** Run a position change now, or hold it behind the unsaved-changes prompt. */
+  const guardNavigation = (navigate: () => void) => {
+    if (ui().saving) return;
+    if (dirty()) {
+      setPendingNavigation(() => navigate);
+      return;
+    }
+    navigate();
+  };
+  const changePosition = (pos: number) => {
+    if (pos === lockedSelection().pos) return;
+    guardNavigation(() => setSelection({ pos }));
+  };
   const canGoBack = () => positionIndex() > 0;
   const goBack = () => {
-    if (ui().saving || positionIndex() <= 0) return;
-    setSelection({
-      pos: alignPositions()[positionIndex() - 1],
-    });
+    if (positionIndex() <= 0) return;
+    changePosition(alignPositions()[positionIndex() - 1]!);
+  };
+  const canGoNext = () => nextAlignPosition(alignPositions(), lockedSelection().pos) != null;
+  const goNext = () => {
+    const nextPos = nextAlignPosition(alignPositions(), lockedSelection().pos);
+    if (nextPos != null) changePosition(nextPos);
   };
   const resetCurrent = () => {
     if (ui().saving) return;
@@ -186,46 +265,60 @@ export function useStudioAlignState(): StudioAlignState {
     setExcludedCellsForCurrentPosition([]);
     setStatus(`Reset Pos${lockedSelection().pos}`);
   };
-  const goToFirstUnaligned = async () => {
-    const workspacePath = ui().workspacePath;
+  const saveCurrentPosition = async () => {
+    if (ui().saving) return false;
+    const pos = lockedSelection().pos;
+    if (!(await session.saveCurrent(session.derived().currentExcludedCells))) return false;
+    captureBaseline(pos);
+    setSavedPositions((saved) => new Set([...saved, pos]));
+    setStatus(`Saved Pos${pos}`);
+    return true;
+  };
+  const continueAlign = async () => {
     const positions = alignPositions();
-    if (!workspacePath || positions.length === 0 || ui().saving || findingFirstUnaligned()) return;
-    setFindingFirstUnaligned(true);
+    if (!ui().workspacePath || positions.length === 0 || ui().saving || continuing()) return;
+    if (dirty()) {
+      setPendingNavigation(() => () => void continueAlign());
+      return;
+    }
+    setContinuing(true);
     setError(null);
     try {
-      const savedPositions = new Set(
-        await runClientEffect(studioClient.listSavedBboxPositions(workspacePath)),
-      );
-      const firstUnaligned = resolveFirstUnalignedTarget(positions, savedPositions);
-      if (firstUnaligned == null) return;
-      setSelection({
-        pos: firstUnaligned,
-      });
+      const saved = await refreshSavedPositions();
+      const current = lockedSelection().pos;
+      const target = nextUnsavedAlignPosition(positions, current, saved);
+      if (target == null) {
+        setCropStartConfirm({ positions });
+      } else if (target === current) {
+        setStatus(`Save Pos${current} to continue`);
+      } else {
+        setSelection({ pos: target });
+      }
     } catch (cause) {
       setError(toErrorMessage(cause, "Saved position scan failed"));
     } finally {
-      setFindingFirstUnaligned(false);
+      setContinuing(false);
     }
   };
-  const advanceToNextPosition = () => {
-    const nextPos = nextAlignPosition(alignPositions(), lockedSelection().pos);
-    if (nextPos == null) return false;
-    setSelection({
-      pos: nextPos,
-    });
-    return true;
-  };
-  const maybeCropWhenAllPositionsSaved = async () => {
-    const workspacePath = ui().workspacePath;
-    const positions = alignPositions();
-    if (!workspacePath || positions.length === 0) return;
-    const savedPositions = new Set(
-      await runClientEffect(studioClient.listSavedBboxPositions(workspacePath)),
-    );
-    if (!allAlignPositionsSaved(positions, savedPositions)) return;
-    setCropStartConfirm({
-      positions,
-    });
+  const resolveUnsavedChanges = async (choice: "save" | "discard" | "cancel") => {
+    const navigate = pendingNavigation();
+    if (choice === "cancel" || !navigate) {
+      setPendingNavigation(null);
+      return;
+    }
+    if (choice === "save") {
+      if (!(await saveCurrentPosition())) return;
+    } else {
+      const base = baseline();
+      if (base && base.pos === lockedSelection().pos) {
+        session.variation.cancel();
+        setManualExclusionEnabled(false);
+        setGrid(base.grid);
+        setExcludedCellsForCurrentPosition(base.cells);
+      }
+    }
+    setPendingNavigation(null);
+    navigate();
   };
   const startConfirmedCrop = () => {
     const next = cropStartConfirm();
@@ -235,14 +328,6 @@ export function useStudioAlignState(): StudioAlignState {
   };
   const cancelCropStartConfirm = () => {
     setCropStartConfirm(null);
-  };
-  const saveAndAdvanceWithExcludedCells = async (excludedCells: AlignGridCellCoord[]) => {
-    if (!(await session.saveCurrent(excludedCells))) return false;
-    const advanced = advanceToNextPosition();
-    if (!advanced) {
-      await maybeCropWhenAllPositionsSaved();
-    }
-    return true;
   };
   createEffect(() => {
     const scan = ui().scan;
@@ -335,18 +420,31 @@ export function useStudioAlignState(): StudioAlignState {
     get cropConfirm() {
       return session.crop.confirm();
     },
-    get findingFirstUnaligned() {
-      return findingFirstUnaligned();
+    get continuing() {
+      return continuing();
     },
     get status() {
       return ui().status;
     },
+    get positionSaveState() {
+      return positionSaveState();
+    },
     get canGoBack() {
       return canGoBack();
     },
+    get canGoNext() {
+      return canGoNext();
+    },
     goBack,
+    goNext,
+    changePosition,
     resetCurrent,
-    goToFirstUnaligned,
+    saveCurrentPosition,
+    continueAlign,
+    get unsavedChangesPrompt() {
+      return pendingNavigation() != null;
+    },
+    resolveUnsavedChanges,
     startConfirmedCrop,
     cancelCropStartConfirm,
     confirmCropOverwrite: session.crop.confirmOverwrite,
@@ -361,7 +459,6 @@ export function useStudioAlignState(): StudioAlignState {
     dismissVariationExcludePreview: session.variation.dismiss,
     applyVariationExclude: session.variation.apply,
     applySmartExclusion,
-    saveAndAdvanceWithExcludedCells,
     showVariationExcludePreview: session.variation.showPreview,
     reportStatus: setStatus,
     reportError: setError,

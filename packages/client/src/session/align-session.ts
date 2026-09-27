@@ -203,6 +203,34 @@ export function resolveFirstUnalignedTarget(
   return positions.find((position) => !savedPositions.has(position)) ?? positions.at(-1) ?? null;
 }
 
+/**
+ * Studio Continue policy: the next unsaved position after `currentPosition`, wrapping to the start.
+ * Returns `currentPosition` when it is the only unsaved one, and null when every position is saved.
+ */
+export function nextUnsavedAlignPosition(
+  positions: number[],
+  currentPosition: number,
+  savedPositions: ReadonlySet<number>,
+): number | null {
+  const start = positions.indexOf(currentPosition);
+  for (let offset = 1; offset <= positions.length; offset += 1) {
+    const position = positions[(start + offset) % positions.length]!;
+    if (!savedPositions.has(position)) return position;
+  }
+  return null;
+}
+
+/** Order-independent key for a position's grid + exclusions, used to detect unsaved changes. */
+export function alignSnapshotKey(
+  grid: AlignGridState,
+  excludedCells: AlignGridCellCoord[],
+): string {
+  const cells = excludedCells
+    .map((cell) => [cell.i, cell.j] as const)
+    .sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  return JSON.stringify({ grid, cells });
+}
+
 export function nextAlignPosition(positions: number[], currentPosition: number): number | null {
   const currentIndex = positions.indexOf(currentPosition);
   return currentIndex >= 0 ? (positions[currentIndex + 1] ?? null) : null;

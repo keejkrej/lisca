@@ -19,6 +19,7 @@ import { StudioAnnotateNav } from "./studio-annotate-nav";
  * Shared Studio Annotate instrument stack for basic and expert modes.
  * Flattened order (after Instruction): Navigation → Contrast → Tool → Mode → Labels → Edit → Brush → Action.
  * Expert may add Shuffle in Action; Nav/Contrast/Tool stay in both modes.
+ * Action follows the rail vocabulary: Save → Back → Next → (Shuffle) → Continue (primary, last).
  */
 export function StudioAnnotateInstrumentStack(props: { showShuffle?: boolean }) {
   const { state } = useStudioAnnotatePage();
@@ -119,13 +120,23 @@ function StudioAnnotateActionSection(props: { showShuffle: boolean }) {
         </Button>
         <Button
           class="w-full justify-center"
+          disabled={!dock.canGoToPreviousSite}
+          size="sm"
+          type="button"
+          variant="outline"
+          onClick={dock.goToPreviousSite}
+        >
+          Back
+        </Button>
+        <Button
+          class="w-full justify-center"
           disabled={!dock.canGoToNextSite}
           size="sm"
           type="button"
           variant="outline"
           onClick={dock.goToNextSite}
         >
-          Next site
+          Next
         </Button>
         <Show when={props.showShuffle}>
           <Button
@@ -146,7 +157,7 @@ function StudioAnnotateActionSection(props: { showShuffle: boolean }) {
           onClick={dock.requestContinueToAnalysis}
           disabled={disableContinue()}
         >
-          Continue to analysis
+          Continue
         </Button>
       </RailControlStack>
     </PanelSection>

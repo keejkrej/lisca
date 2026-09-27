@@ -163,7 +163,7 @@ export default function ResultPage() {
                       ? "Choose a workspace on the Info step, then run analysis from Annotate. Plots show up here as images."
                       : hasAnyPlots()
                         ? "Switch views in the dock, or run analysis again."
-                        : "On Annotate, press Continue to analysis. Finished plots appear here as images."
+                        : "On Annotate, press Continue. Finished plots appear here as images."
                   }
                   emptyAction={
                     hasAnyPlots() ? undefined : (

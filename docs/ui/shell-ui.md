@@ -64,6 +64,33 @@ Stage shells keep both 256px rails inline at 1024px and wider. Below 1024px—or
 
 Studio’s right rail always shows an Instruction section when the route provides copy, then either the default instrument stack or the expert stack. Expert mode is a workspace-level setting: render its compact checkmark toggle (Show/Edit family: persistent indicator, `aria-pressed`, brand fill when on) in the Studio top bar only on routes with an expert body. Place it immediately after Tasks in the left cluster; the right cluster is Connected + theme only. Never put Expert at the bottom of a scrolling rail.
 
+Studio Align: basic shows Tool, Selection, and Action; Expert adds Navigation, Contrast, Grid, and
+Geometry. Studio Annotate: Expert adds Shuffle to Action.
+
+### Action vocabulary
+
+Action is the last rail section and the rail’s key controls, so every step uses the same names in the
+same order:
+
+| Name       | Meaning                                                                         |
+| ---------- | ------------------------------------------------------------------------------- |
+| `Save`     | Persist the current item (position, site). Never navigates.                     |
+| `Back`     | Previous item in this step (or previous sub-step on Info).                      |
+| `Next`     | Next item in this step. Never saves; unsaved edits prompt Save/Discard/Cancel.  |
+| `Continue` | Primary, always last: advance the workflow (next pending item, then next step). |
+
+Order: `Save` → `Back` → `Next` → step-specific extras (`Open existing`, `Shuffle`) → `Continue`. Only
+`Continue` uses the primary fill. Name exports by artifact (`Save PDF`). Avoid synonyms such as
+“Jump”, “Next site”, or “Continue to analysis”.
+
+| Step     | Action                                       |
+| -------- | -------------------------------------------- |
+| Assay    | Open existing, Continue                      |
+| Info     | Back, Continue                               |
+| Align    | Save, Back, Next, Continue                   |
+| Annotate | Save, Back, Next, Shuffle (Expert), Continue |
+| Results  | Save PDF                                     |
+
 ## Shell components (web)
 
 Compose apps from shell primitives, not exported class strings:
@@ -145,7 +172,7 @@ with the rail primitives:
 // Default: independent actions and controls stack full width.
 <RailControlStack>
   <Button className="w-full">Shuffle</Button>
-  <Button className="w-full">Continue to analysis</Button>
+  <Button className="w-full">Continue</Button>
 </RailControlStack>
 
 // Exactly two short actions with the same task scope may share 96px cells.

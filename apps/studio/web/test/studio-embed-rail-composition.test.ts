@@ -10,13 +10,26 @@ describe("Studio Align instrument stack composition", () => {
   const navSource = readSource("../src/components/studio-align-nav.tsx");
   const routeSource = readSource("../src/routes/align.tsx");
 
-  it("gates Grid, Geometry, and Selection behind expert mode", () => {
-    const gateIdx = stackSource.indexOf("<Show when={props.expert}>");
-    expect(gateIdx).toBeGreaterThan(-1);
-    expect(stackSource.indexOf("<AlignToolSection")).toBeLessThan(gateIdx);
-    expect(stackSource.indexOf("<AlignGridRail")).toBeGreaterThan(gateIdx);
-    expect(stackSource.indexOf("<AlignSelectionRail")).toBeGreaterThan(gateIdx);
-    expect(stackSource.indexOf("</Show>")).toBeLessThan(stackSource.indexOf('title="Action"'));
+  it("gates Navigation, Contrast, Grid, and Geometry behind expert; keeps Selection basic", () => {
+    const expertBlocks = [
+      ...stackSource.matchAll(/<Show when=\{props\.expert\}>([\s\S]*?)<\/Show>/g),
+    ].map((match) => match[1] ?? "");
+    expect(expertBlocks).toHaveLength(2);
+    expect(expertBlocks[0]).toMatch(/<StudioAlignNav\s*\/>/);
+    expect(expertBlocks[1]).toMatch(/<AlignGridRail\b/);
+    expect(expertBlocks.join("")).not.toMatch(
+      /<AlignSelectionRail|<AlignToolSection|title="Action"/,
+    );
+  });
+
+  it("uses the shared Action vocabulary: Save, Back, Next, Continue", () => {
+    const action = stackSource.slice(stackSource.indexOf('title="Action"'));
+    const labels = [...action.matchAll(/>\s*(\{[^}]*"Save"\}|Back|Next|Continue)\s*</g)].map(
+      (match) => (match[1]!.includes("Save") ? "Save" : match[1]),
+    );
+    expect(labels).toEqual(["Save", "Back", "Next", "Continue"]);
+    expect(action).not.toMatch(/>\s*(Exclude|Jump)\s*</);
+    expect(action).not.toMatch(/saveAndAdvance/);
   });
 
   it("mounts one shared stack in both basic and expert modes", () => {
