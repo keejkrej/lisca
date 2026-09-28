@@ -1,6 +1,12 @@
 {
   "version": 1,
   "skills": {
+    "decision-record": {
+      "source": "keejkrej/skills",
+      "sourceType": "github",
+      "skillPath": "skills/decision-record/SKILL.md",
+      "computedHash": "8d35c9d09f702048744f488de6cd3ddb8b6174a89e1112f76f5d6d2616b557c5"
+    },
     "effect-ts": {
       "source": "effect-ts/skills",
       "sourceType": "github",
