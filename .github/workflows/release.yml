@@ -57,12 +57,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24
-
-      - name: Toolchain
-        run: corepack enable && corepack prepare pnpm@11.15.1 --activate
+      # Installs the pnpm version pinned by package.json "packageManager".
+      - uses: pnpm/action-setup@v4
 
       - uses: actions/setup-node@v4
         with:
