@@ -1,11 +1,11 @@
-import type { ResultPlot, ResultPlotSection } from "@lisca/analysis";
+import {
+  groupResultPlots,
+  resultGridColumns,
+  type ResultPlot,
+  type ResultPlotSection,
+} from "@lisca/analysis";
 import type { JSX } from "solid-js";
 import { For, Show } from "solid-js";
-
-const EXPORT_PAGE_CLASS = "flex flex-col overflow-visible bg-white text-[#171717]";
-const EXPORT_TITLE_CLASS =
-  "border-b border-[#e5e5e5] px-4 py-3 text-2xl font-semibold text-[#171717]";
-const EXPORT_PANEL_TITLE_CLASS = "truncate px-1 text-sm font-medium text-[#525252]";
 
 function GalleryEmpty(props: { title?: string; message?: string; action?: JSX.Element }) {
   return (
@@ -23,7 +23,6 @@ function GalleryEmpty(props: { title?: string; message?: string; action?: JSX.El
 
 export function ResultPlotGallery(props: {
   plots: ResultPlot[];
-  exportMode?: boolean;
   pageTitle?: string;
   section?: ResultPlotSection;
   emptyTitle?: string;
@@ -34,7 +33,7 @@ export function ResultPlotGallery(props: {
     <Show
       when={props.plots.length > 0}
       fallback={
-        <Show when={!props.exportMode && (props.emptyTitle || props.emptyMessage)}>
+        <Show when={props.emptyTitle || props.emptyMessage}>
           <GalleryEmpty
             action={props.emptyAction}
             message={props.emptyMessage}
@@ -43,54 +42,50 @@ export function ResultPlotGallery(props: {
         </Show>
       }
     >
-      <div class={props.exportMode ? EXPORT_PAGE_CLASS : "flex min-h-0 w-full flex-1 flex-col"}>
+      <div class="flex min-h-0 w-full flex-1 flex-col">
         <Show when={props.pageTitle}>
-          <h2
-            class={
-              props.exportMode
-                ? EXPORT_TITLE_CLASS
-                : "mb-6 text-2xl font-semibold leading-8 tracking-[-0.02em] text-foreground"
-            }
-          >
+          <h2 class="mb-6 text-2xl font-semibold leading-8 tracking-[-0.02em] text-foreground">
             {props.pageTitle}
           </h2>
         </Show>
-        <div class={props.exportMode ? "flex flex-col gap-6 p-4" : "flex flex-col gap-8 pb-8"}>
-          <For each={props.plots}>
-            {(plot, index) => (
-              <figure class="flex flex-col gap-2">
-                <figcaption
-                  class={
-                    props.exportMode
-                      ? EXPORT_PANEL_TITLE_CLASS
-                      : "truncate text-[13px] font-medium leading-[18px] text-foreground"
-                  }
+        <div class="flex flex-col gap-10 pb-8">
+          <For each={groupResultPlots(props.plots)}>
+            {(group, groupIndex) => (
+              <section class="flex flex-col gap-3">
+                <h3 class="text-sm font-semibold leading-5 text-foreground">{group.title}</h3>
+                <div
+                  class="grid gap-4"
+                  style={{
+                    "grid-template-columns": `repeat(${resultGridColumns(group.plots.length)}, minmax(0, 1fr))`,
+                  }}
                 >
-                  {plot.title}
-                </figcaption>
-                <Show
-                  when={plot.src}
-                  fallback={
-                    <div class="flex min-h-[240px] items-center justify-center rounded-none border border-dashed text-sm text-muted-foreground">
-                      Plot image not found
-                    </div>
-                  }
-                >
-                  <img
-                    alt={plot.title}
-                    class={
-                      props.exportMode
-                        ? "w-full rounded-md border bg-white object-contain"
-                        : "w-full bg-white object-contain"
-                    }
-                    decoding="async"
-                    height="800"
-                    loading={index() === 0 ? "eager" : "lazy"}
-                    src={plot.src}
-                    width="1200"
-                  />
-                </Show>
-              </figure>
+                  <For each={group.plots}>
+                    {(plot, index) => (
+                      <figure class="flex min-w-0 flex-col gap-1.5">
+                        <figcaption class="truncate text-xs font-medium leading-4 text-muted-foreground">
+                          {group.labels[index()]}
+                        </figcaption>
+                        <Show
+                          when={plot.src}
+                          fallback={
+                            <div class="flex aspect-[7/6] items-center justify-center rounded-none border border-dashed text-sm text-muted-foreground">
+                              Plot image not found
+                            </div>
+                          }
+                        >
+                          <img
+                            alt={plot.title}
+                            class="h-auto w-full bg-white object-contain"
+                            decoding="async"
+                            loading={groupIndex() === 0 ? "eager" : "lazy"}
+                            src={plot.src}
+                          />
+                        </Show>
+                      </figure>
+                    )}
+                  </For>
+                </div>
+              </section>
             )}
           </For>
         </div>

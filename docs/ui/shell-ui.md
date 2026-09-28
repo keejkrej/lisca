@@ -62,7 +62,7 @@ Stage shells keep both 256px rails inline at 1024px and wider. Below 1024px—or
 
 ### Studio Instruction + Expert
 
-Studio’s right rail always shows an Instruction section when the route provides copy, then either the default instrument stack or the expert stack. Expert mode is a workspace-level setting: render its compact checkmark toggle (Show/Edit family: persistent indicator, `aria-pressed`, brand fill when on) in the Studio top bar only on routes with an expert body. Place it immediately after Tasks in the left cluster; the right cluster is Connected + theme only. Never put Expert at the bottom of a scrolling rail.
+Studio’s right rail always shows an Instruction section when the route provides copy, then either the default instrument stack or the expert stack. Expert mode is a workspace-level setting: render its compact checkmark toggle (Show/Edit family: persistent indicator, `aria-pressed`, brand fill when on) in the Studio top bar only on routes with an expert body. Place it immediately after Tasks in the left cluster; the right cluster is the server alert (only when unreachable) + theme. Never put Expert at the bottom of a scrolling rail.
 
 Studio Align: basic shows Tool, Selection, and Action; Expert adds Navigation, Contrast, Grid, and
 Geometry. Studio Annotate: Expert adds Shuffle to Action.
@@ -75,13 +75,16 @@ same order:
 | Name       | Meaning                                                                         |
 | ---------- | ------------------------------------------------------------------------------- |
 | `Save`     | Persist the current item (position, site). Never navigates.                     |
-| `Back`     | Previous item in this step (or previous sub-step on Info).                      |
+| `Back`     | Previous item in this step (or sub-step on Info); disabled on the first item.   |
 | `Next`     | Next item in this step. Never saves; unsaved edits prompt Save/Discard/Cancel.  |
 | `Continue` | Primary, always last: advance the workflow (next pending item, then next step). |
 
 Order: `Save` → `Back` → `Next` → step-specific extras (`Open existing`, `Shuffle`) → `Continue`. Only
 `Continue` uses the primary fill. Name exports by artifact (`Save PDF`). Avoid synonyms such as
 “Jump”, “Next site”, or “Continue to analysis”.
+
+`Back` never leaves the step; only `Continue` crosses into the next step. Returning to an earlier step
+is the left step navigation's job.
 
 | Step     | Action                                       |
 | -------- | -------------------------------------------- |
@@ -224,8 +227,14 @@ form section, sample collection, or result gallery.
 
 The Studio top bar groups workspace controls by function. Its left cluster contains Tasks followed
 immediately by the optional Expert checkmark toggle (Show/Edit family); its right cluster contains
-only Connected status and the theme toggle. Expert is rendered only on routes with an expert body
-and never belongs in a scrolling rail.
+only the theme toggle, plus a server alert when the server is unreachable. Expert is rendered only on
+routes with an expert body and never belongs in a scrolling rail.
+
+Server status is exception-only. Desktop (Tauri) builds run the backend in-process over IPC and never
+show it. Web builds (Vite dev proxy or the Docker nginx proxy) probe the server with a heartbeat;
+after about 2 s of failures a “Server unreachable” chip appears. Its popover explains that nothing is
+lost, gives the dev or deployment recovery hint, and offers Retry now, while the app keeps retrying
+and hides the chip as soon as the server answers. Never show a healthy “Connected” state.
 
 Classic sidebars and horizontal docks keep their established layouts when still needed outside the
 instrument stage:

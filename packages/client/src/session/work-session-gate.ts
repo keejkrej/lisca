@@ -1,12 +1,5 @@
 import { createMemo, createSignal, type Accessor, type JSX } from "solid-js";
-import {
-  currentServerKey,
-  readWorkSessions,
-  sessionsForServer,
-  type LiscaAppId,
-  type WorkSession,
-} from "./work-session";
-import { persistLiscaActiveServer, type LiscaAppId as UtilsAppId } from "@lisca/utils";
+import { readWorkSessions, type LiscaAppId, type WorkSession } from "./work-session";
 
 export type { WorkSession } from "./work-session";
 
@@ -29,8 +22,7 @@ export function useWorkSessionGate(
   options?: WorkSessionGateOptions,
 ) {
   const skipResumePicker = options?.skipResumePicker ?? false;
-  const serverKey = currentServerKey(appId);
-  const sessions = sessionsForServer(readWorkSessions(appId), serverKey);
+  const sessions = readWorkSessions(appId);
   const [ready, setReady] = createSignal(sessions.length === 0 || skipResumePicker);
   const [open, setOpen] = createSignal(sessions.length > 0 && !skipResumePicker);
   let restored = false;
@@ -66,8 +58,4 @@ export type WorkSessionBootstrapProps = {
 export function WorkSessionBootstrap(props: WorkSessionBootstrapProps) {
   const gate = useWorkSessionGate(props.appId, props.onRestore, props.gateOptions);
   return props.children(gate);
-}
-
-export function persistActiveServer(appId: UtilsAppId, address: string | null): void {
-  persistLiscaActiveServer(appId, address);
 }

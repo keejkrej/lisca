@@ -21,7 +21,7 @@ function toTaskCommandEffect<A, E>(effect: Effect.Effect<A, E>) {
 }
 
 export function createTaskPort(
-  deps: TaskPortDeps,
+  deps: TaskPortDeps = {},
   client: LiscaApiClient = createApiClient(deps),
 ): TaskDataPort {
   return {

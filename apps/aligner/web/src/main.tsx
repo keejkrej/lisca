@@ -13,7 +13,6 @@ import { AlignPageProvider } from "./state/align-page-context";
 
 createLiscaWebApp({
   App: AlignApp,
-  defaultPort: 8765,
   appId: "aligner",
   AtomsProvider: AlignerAtomsProvider,
   probe: () => alignerHostOperations.userHomeDirectory(),

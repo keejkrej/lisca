@@ -24,7 +24,6 @@ export function restoreAnnotatorWorkSession({
   setShellWorkspacePath(workspacePath);
   setWorkspacePath(setUi, workspacePath);
   touchWorkSession("annotator", {
-    server: session.server,
     workspacePath,
     snapshot: session.snapshot,
   });

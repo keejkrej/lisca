@@ -72,7 +72,6 @@ describe("crop recovery", () => {
         },
       },
       request,
-      serverIdentity: "http://server:8767",
       onProgress,
       onError: vi.fn(),
       onCompleted: vi.fn(),
@@ -81,7 +80,7 @@ describe("crop recovery", () => {
 
     expect(subscribedRequestId).toBe("existing");
     expect(onProgress).toHaveBeenLastCalledWith(expect.objectContaining({ requestId: "existing" }));
-    expect(readCropRecovery("http://server:8767", request.workspacePath)).toEqual({
+    expect(readCropRecovery(request.workspacePath)).toEqual({
       requestId: "existing",
       terminalAcknowledged: false,
     });
@@ -104,7 +103,6 @@ describe("crop recovery", () => {
         },
       },
       request,
-      serverIdentity: "local",
       onProgress: vi.fn(),
       onError: vi.fn(),
       onCompleted,
@@ -114,7 +112,7 @@ describe("crop recovery", () => {
     const completed = progress("live-job", "completed");
     emitProgress(completed);
     expect(onCompleted).toHaveBeenCalledWith(completed);
-    expect(readCropRecovery("local", request.workspacePath)).toEqual({
+    expect(readCropRecovery(request.workspacePath)).toEqual({
       requestId: "live-job",
       terminalAcknowledged: true,
     });
@@ -133,14 +131,13 @@ describe("crop recovery", () => {
           return stop;
         },
       },
-      serverIdentity: "local",
       workspacePath: request.workspacePath,
       onProgress,
     });
 
     expect(result).toEqual({ kind: "active", progress: latest, stop });
     expect(onProgress).toHaveBeenCalledWith(latest);
-    expect(readCropRecovery("local", request.workspacePath)?.requestId).toBe("server-job");
+    expect(readCropRecovery(request.workspacePath)?.requestId).toBe("server-job");
   });
 
   it("acknowledges an active restored job when its subscription reaches terminal", async () => {
@@ -154,7 +151,6 @@ describe("crop recovery", () => {
           return () => {};
         },
       },
-      serverIdentity: "local",
       workspacePath: request.workspacePath,
       onProgress: vi.fn(),
       onTerminal,
@@ -163,7 +159,7 @@ describe("crop recovery", () => {
     const completed = progress("restored-job", "completed");
     emitProgress(completed);
     expect(onTerminal).toHaveBeenCalledWith(completed);
-    expect(readCropRecovery("local", request.workspacePath)?.terminalAcknowledged).toBe(true);
+    expect(readCropRecovery(request.workspacePath)?.terminalAcknowledged).toBe(true);
   });
 
   it("cancels by the active progress request ID, including restored jobs", () => {
@@ -173,7 +169,7 @@ describe("crop recovery", () => {
   });
 
   it("returns known terminal jobs once without subscribing", async () => {
-    rememberCropRecovery("local", request.workspacePath, "finished-job");
+    rememberCropRecovery(request.workspacePath, "finished-job");
     const latest = progress("finished-job", "completed");
     const subscribe = vi.fn();
     const options = {
@@ -181,7 +177,6 @@ describe("crop recovery", () => {
         getLatestCropProgress: () => Effect.succeed(latest),
         onCropRoiProgress: subscribe,
       },
-      serverIdentity: "local",
       workspacePath: request.workspacePath,
       onProgress: vi.fn(),
     };
@@ -191,7 +186,7 @@ describe("crop recovery", () => {
       progress: latest,
       acknowledged: false,
     });
-    acknowledgeCropRecovery("local", request.workspacePath, "finished-job");
+    acknowledgeCropRecovery(request.workspacePath, "finished-job");
     expect(await resumeCropPendingRun(options)).toEqual({
       kind: "terminal",
       progress: latest,

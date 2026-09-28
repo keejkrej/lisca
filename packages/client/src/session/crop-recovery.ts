@@ -5,40 +5,29 @@ export type CropRecoveryRecord = {
   terminalAcknowledged: boolean;
 };
 
-function recoveryKey(serverIdentity: string, workspacePath: string): string {
-  return `lisca.cropRecovery.${encodeURIComponent(serverIdentity)}.${encodeURIComponent(workspacePath)}`;
+function recoveryKey(workspacePath: string): string {
+  return `lisca.cropRecovery.${encodeURIComponent(workspacePath)}`;
 }
 
-export function readCropRecovery(
-  serverIdentity: string,
-  workspacePath: string,
-): CropRecoveryRecord | null {
+export function readCropRecovery(workspacePath: string): CropRecoveryRecord | null {
   const record = readStorageJson<CropRecoveryRecord>(
     liscaLocalStorage(),
-    recoveryKey(serverIdentity, workspacePath),
+    recoveryKey(workspacePath),
   );
   return record && typeof record.requestId === "string" ? record : null;
 }
 
-export function rememberCropRecovery(
-  serverIdentity: string,
-  workspacePath: string,
-  requestId: string,
-): void {
-  writeStorageJson(liscaLocalStorage(), recoveryKey(serverIdentity, workspacePath), {
+export function rememberCropRecovery(workspacePath: string, requestId: string): void {
+  writeStorageJson(liscaLocalStorage(), recoveryKey(workspacePath), {
     requestId,
     terminalAcknowledged: false,
   } satisfies CropRecoveryRecord);
 }
 
-export function acknowledgeCropRecovery(
-  serverIdentity: string,
-  workspacePath: string,
-  requestId: string,
-): void {
-  const current = readCropRecovery(serverIdentity, workspacePath);
+export function acknowledgeCropRecovery(workspacePath: string, requestId: string): void {
+  const current = readCropRecovery(workspacePath);
   if (current?.requestId !== requestId) return;
-  writeStorageJson(liscaLocalStorage(), recoveryKey(serverIdentity, workspacePath), {
+  writeStorageJson(liscaLocalStorage(), recoveryKey(workspacePath), {
     ...current,
     terminalAcknowledged: true,
   } satisfies CropRecoveryRecord);

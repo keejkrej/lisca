@@ -8,12 +8,11 @@ export type { AnalysisDataPort } from "./types";
 const ANALYSIS_TERMINAL_STATUSES = new Set(["completed", "error"]);
 
 export type AnalysisPortDeps = {
-  baseUrl: () => string;
   fetch?: typeof fetch;
 };
 
 export function createAnalysisPort(
-  deps: AnalysisPortDeps,
+  deps: AnalysisPortDeps = {},
   client: LiscaApiClient = createApiClient(deps),
 ): AnalysisDataPort {
   return {

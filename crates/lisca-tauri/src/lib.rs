@@ -12,6 +12,7 @@ use axum::{
 use base64::{engine::general_purpose::STANDARD as BASE64, Engine as _};
 use serde::{Deserialize, Serialize};
 use tauri::{Manager, WebviewUrl, WebviewWindowBuilder};
+use tauri_plugin_dialog::DialogExt;
 use tower::ServiceExt;
 
 /// Product-specific configuration for a Lisca Tauri desktop shell.
@@ -42,6 +43,17 @@ struct IpcResponse {
     body_base64: Option<String>,
 }
 
+/// Bytes the renderer wants written wherever the user picks in a native save dialog.
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct SaveFileRequest {
+    file_name: String,
+    directory: Option<String>,
+    filter_name: String,
+    extensions: Vec<String>,
+    contents_base64: String,
+}
+
 #[derive(Clone)]
 struct IpcBackend {
     router: Router,
@@ -57,7 +69,8 @@ where
     F: FnOnce() -> Router + Send + 'static,
 {
     let app = tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![lisca_request])
+        .plugin(tauri_plugin_dialog::init())
+        .invoke_handler(tauri::generate_handler![lisca_request, lisca_save_file])
         .setup(move |app| {
             if config.product == "studio" {
                 if let Some(model) = resolve_kill_model_path(app) {
@@ -90,6 +103,41 @@ async fn lisca_request(
     request: IpcRequest,
 ) -> Result<IpcResponse, String> {
     dispatch_request(backend.router.clone(), request).await
+}
+
+/// Ask where to save, then write the file. Resolves to `None` when the user cancels.
+#[tauri::command]
+async fn lisca_save_file<R: tauri::Runtime>(
+    app: tauri::AppHandle<R>,
+    request: SaveFileRequest,
+) -> Result<Option<String>, String> {
+    let bytes = BASE64
+        .decode(request.contents_base64.trim())
+        .map_err(|error| format!("failed to decode {}: {error}", request.file_name))?;
+    tauri::async_runtime::spawn_blocking(move || {
+        let extensions: Vec<&str> = request.extensions.iter().map(String::as_str).collect();
+        let mut dialog = app
+            .dialog()
+            .file()
+            .set_file_name(&request.file_name)
+            .add_filter(&request.filter_name, &extensions);
+        if let Some(directory) = request.directory.as_deref().map(Path::new) {
+            if directory.is_dir() {
+                dialog = dialog.set_directory(directory);
+            }
+        }
+        let Some(target) = dialog.blocking_save_file() else {
+            return Ok(None);
+        };
+        let target = target
+            .into_path()
+            .map_err(|error| format!("invalid save path: {error}"))?;
+        std::fs::write(&target, bytes)
+            .map_err(|error| format!("failed to save {}: {error}", target.display()))?;
+        Ok(Some(target.to_string_lossy().to_string()))
+    })
+    .await
+    .map_err(|error| format!("save worker failed: {error}"))?
 }
 
 async fn dispatch_request(router: Router, request: IpcRequest) -> Result<IpcResponse, String> {
@@ -185,7 +233,8 @@ fn create_window<R: tauri::Runtime, M: Manager<R>>(
     let init_script = format!(
         r#"window.liscaDesktop = Object.freeze({{
             product: {:?},
-            request: (request) => window.__TAURI_INTERNALS__.invoke("lisca_request", {{ request }})
+            request: (request) => window.__TAURI_INTERNALS__.invoke("lisca_request", {{ request }}),
+            saveFile: (request) => window.__TAURI_INTERNALS__.invoke("lisca_save_file", {{ request }})
         }});"#,
         config.product
     );

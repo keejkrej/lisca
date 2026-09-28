@@ -1750,36 +1750,6 @@
       },
       "required": ["ok", "path"]
     },
-    "SaveResultPdfRequest": {
-      "type": "object",
-      "properties": {
-        "workspacePath": {
-          "type": "string"
-        },
-        "fileName": {
-          "type": "string"
-        },
-        "contentsBase64": {
-          "type": "string"
-        }
-      },
-      "required": ["workspacePath", "fileName", "contentsBase64"]
-    },
-    "SaveResultPdfResponse": {
-      "type": "object",
-      "properties": {
-        "ok": {
-          "type": "boolean"
-        },
-        "directory": {
-          "type": "string"
-        },
-        "path": {
-          "type": "string"
-        }
-      },
-      "required": ["ok", "directory", "path"]
-    },
     "AnalysisStartRequest": {
       "type": "object",
       "properties": {

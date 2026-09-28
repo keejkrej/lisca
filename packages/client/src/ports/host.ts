@@ -13,7 +13,7 @@ export type { HostPort } from "./types";
 export type HostPortDeps = ApiClientDeps;
 
 export function createHostPort(
-  deps: HostPortDeps,
+  deps: HostPortDeps = {},
   client: LiscaApiClient = createApiClient(deps),
 ): HostPort {
   return {

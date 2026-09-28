@@ -1878,56 +1878,6 @@
         }
       }
     },
-    "/studio/save-result-pdf": {
-      "post": {
-        "tags": ["studio"],
-        "operationId": "studio.saveResultPdf",
-        "parameters": [],
-        "security": [],
-        "responses": {
-          "200": {
-            "description": "SaveResultPdfResponse",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SaveResultPdfResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "RequestError",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/RequestErrorEncoded"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/UnauthorizedEncoded"
-                }
-              }
-            }
-          }
-        },
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SaveResultPdfRequest"
-              }
-            }
-          },
-          "required": true
-        }
-      }
-    },
     "/studio/start-analysis": {
       "post": {
         "tags": ["studio"],
@@ -4460,38 +4410,6 @@
           }
         },
         "required": ["ok", "path"],
-        "additionalProperties": false
-      },
-      "SaveResultPdfRequest": {
-        "type": "object",
-        "properties": {
-          "workspacePath": {
-            "type": "string"
-          },
-          "fileName": {
-            "type": "string"
-          },
-          "contentsBase64": {
-            "type": "string"
-          }
-        },
-        "required": ["workspacePath", "fileName", "contentsBase64"],
-        "additionalProperties": false
-      },
-      "SaveResultPdfResponse": {
-        "type": "object",
-        "properties": {
-          "ok": {
-            "type": "boolean"
-          },
-          "directory": {
-            "type": "string"
-          },
-          "path": {
-            "type": "string"
-          }
-        },
-        "required": ["ok", "directory", "path"],
         "additionalProperties": false
       },
       "AnalysisStartRequest": {

@@ -15,7 +15,7 @@ const CROP_ROI_TERMINAL_STATUSES = new Set(["completed", "cancelled", "error"]);
 export type AlignerPortDeps = HostPortDeps;
 
 export function createAlignerPort(
-  deps: AlignerPortDeps,
+  deps: AlignerPortDeps = {},
   client: LiscaApiClient = createApiClient(deps),
 ): AlignerDataPort {
   const host = createHostPort(deps, client);

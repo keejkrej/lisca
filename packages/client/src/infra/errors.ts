@@ -7,23 +7,19 @@ function isInvalidApiJsonResponse(message: string): boolean {
   );
 }
 
-function formatInvalidApiJsonResponse(fallback: string, serverAddress: string): string {
-  return `${fallback}: API returned a non-JSON response from ${serverAddress}. Ensure the Rust backend is running (e.g. \`vp run dev:aligner\` or \`vp run --filter @lisca/aligner-server dev\`).`;
+function formatInvalidApiJsonResponse(fallback: string): string {
+  return `${fallback}: API returned a non-JSON response. Ensure the Rust backend is running (e.g. \`vp run dev:studio\`).`;
 }
 
-export function toFetchErrorMessage(
-  cause: unknown,
-  fallback: string,
-  serverAddress: string,
-): string {
+export function toFetchErrorMessage(cause: unknown, fallback: string): string {
   if (cause instanceof ClientError) {
     if (cause.cause != null && cause.cause !== cause) {
-      return toFetchErrorMessage(cause.cause, fallback, serverAddress);
+      return toFetchErrorMessage(cause.cause, fallback);
     }
     const clientMessage = cause.message.trim();
     if (clientMessage) {
       if (isInvalidApiJsonResponse(clientMessage)) {
-        return formatInvalidApiJsonResponse(fallback, serverAddress);
+        return formatInvalidApiJsonResponse(fallback);
       }
       return `${fallback}: ${clientMessage}`;
     }
@@ -35,10 +31,10 @@ export function toFetchErrorMessage(
     message.includes("NetworkError") ||
     message.includes("fetch failed")
   ) {
-    return `${fallback}: server unreachable at ${serverAddress}`;
+    return `${fallback}: server unreachable`;
   }
   if (message && isInvalidApiJsonResponse(message)) {
-    return formatInvalidApiJsonResponse(fallback, serverAddress);
+    return formatInvalidApiJsonResponse(fallback);
   }
   return message ? `${fallback}: ${message}` : fallback;
 }

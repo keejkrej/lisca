@@ -1,10 +1,14 @@
-import { Button, Spinner } from "@lisca/ui/components";
+import { Button } from "@lisca/ui/components";
 import { AppShell } from "@lisca/ui/shell";
 import { ResultPlotGallery } from "./result-panels-grid";
 import { createMemo, createResource, createSignal } from "solid-js";
-import { liscaDesktopBridge, resolveLiscaAssetUrl } from "@lisca/client/desktop";
-import { runClientEffect } from "@lisca/client/runtime";
-import { resolveStudioHttpBaseUrl, studioClient, toErrorMessage } from "../api/studio-port";
+import {
+  liscaDesktopBridge,
+  loadLiscaAssetBytes,
+  resolveLiscaAssetUrl,
+  saveLiscaFile,
+} from "@lisca/client/desktop";
+import { toErrorMessage } from "../api/studio-port";
 import { StudioLeft } from "../components/studio-left";
 import { StudioRightPanel } from "../components/studio-right-panel";
 import { StudioResultExpertRight } from "../components/studio-result-expert-right";
@@ -14,11 +18,11 @@ import {
   collectResultPlots,
   defaultResultPlotSection,
   filterResultPlotsBySection,
+  groupResultPlots,
   inferResultAssayKind,
   resultSectionInstruction,
   resultSectionLabel,
   withPlotSrc,
-  type ResultPlot,
   type ResultPlotSection,
 } from "@lisca/analysis";
 import { useStudioNavigate } from "../navigation/use-studio-navigate";
@@ -30,28 +34,19 @@ export default function ResultPage() {
   const [selectedSection, setSelectedSection] = createSignal<ResultPlotSection>("timeseries");
   const [isSaving, setIsSaving] = createSignal(false);
   const [saveMessage, setSaveMessage] = createSignal<string | null>(null);
-  const [exportCapture, setExportCapture] = createSignal<{
-    timeseriesPlots: ResultPlot[];
-    parameterPlots: ResultPlot[];
-  } | null>(null);
-  let exportTimeseriesEl: HTMLDivElement | undefined;
-  let exportParametersEl: HTMLDivElement | undefined;
   const analysisResultFiles = () => resultState.analysisResultFiles;
   const assayKind = createMemo(() => inferResultAssayKind(analysisResultFiles()));
   const isDesktop = liscaDesktopBridge() !== null;
   const plotsWithUrls = createMemo(() =>
-    collectResultPlots(analysisResultFiles(), assayKind()).map((plot) =>
-      withPlotSrc(plot, resolveStudioHttpBaseUrl()),
-    ),
+    collectResultPlots(analysisResultFiles(), assayKind()).map(withPlotSrc),
   );
   const [desktopPlots] = createResource(
     () => (isDesktop ? plotsWithUrls() : null),
     async (plots) =>
       Promise.all(
         plots.map(async (plot) =>
-          plot.src?.startsWith("http")
-            ? { ...plot, src: await resolveLiscaAssetUrl(plot.src) }
-            : plot,
+          // Server file URLs are origin-relative; fixtures may already carry data URLs.
+          plot.src?.startsWith("/") ? { ...plot, src: await resolveLiscaAssetUrl(plot.src) } : plot,
         ),
       ),
   );
@@ -68,50 +63,53 @@ export default function ResultPage() {
   const parameterPlots = createMemo(() => filterResultPlotsBySection(allPlots(), "parameters"));
   const hasAnyPlots = createMemo(() => allPlots().length > 0);
   const savePdf = async () => {
-    if (!resultState.workspacePath?.trim() || isSaving() || !hasAnyPlots()) return;
+    const workspacePath = resultState.workspacePath?.trim();
+    if (!workspacePath || isSaving() || !hasAnyPlots()) return;
     setIsSaving(true);
     setSaveMessage(null);
     try {
-      const { buildResultPdf, pdfBytesToBase64, RESULT_PDF_FILE_NAME, waitForExportPlots } =
-        await import("./save-result-pdf");
-      const timeseries = timeseriesPlots();
-      const parameters = parameterPlots();
-      setExportCapture({
-        timeseriesPlots: timeseries,
-        parameterPlots: parameters,
+      const { buildResultPdf, RESULT_PDF_FILE_NAME } = await import("./save-result-pdf");
+      // Read PNG bytes from the backend URLs, not the desktop data URLs shown in the gallery.
+      const loadSection = async (section: ResultPlotSection) => ({
+        title: resultSectionLabel(section, assayKind()),
+        groups: await Promise.all(
+          groupResultPlots(filterResultPlotsBySection(plotsWithUrls(), section)).map(
+            async (group) => ({
+              title: group.title,
+              plots: await Promise.all(
+                group.plots.flatMap((plot, index) =>
+                  plot.src
+                    ? [
+                        loadLiscaAssetBytes(plot.src).then((bytes) => ({
+                          label: group.labels[index]!,
+                          bytes,
+                        })),
+                      ]
+                    : [],
+                ),
+              ),
+            }),
+          ),
+        ),
       });
-      await Promise.resolve();
-      const timeseriesPage = exportTimeseriesEl;
-      const parametersPage = exportParametersEl;
-      if (!timeseriesPage && !parametersPage) {
-        throw new Error("Nothing to export");
+      const sections = [await loadSection("timeseries"), await loadSection("parameters")];
+      const savedTo = await saveLiscaFile({
+        fileName: RESULT_PDF_FILE_NAME,
+        directory: `${workspacePath.replace(/[\\/]+$/, "")}/results`,
+        mimeType: "application/pdf",
+        filterName: "PDF",
+        extensions: ["pdf"],
+        bytes: await buildResultPdf(sections),
+      });
+      if (savedTo) {
+        const plotCount = sections
+          .flatMap((section) => section.groups)
+          .reduce((sum, group) => sum + group.plots.length, 0);
+        setSaveMessage(`Saved PDF (${plotCount} plot(s)) to ${savedTo}`);
       }
-      const pages: HTMLElement[] = [];
-      const expectedPlots = timeseries.length + parameters.length;
-      if (timeseriesPage && timeseries.length > 0) {
-        await waitForExportPlots(timeseriesPage, timeseries.length);
-        pages.push(timeseriesPage);
-      }
-      if (parametersPage && parameters.length > 0) {
-        await waitForExportPlots(parametersPage, parameters.length);
-        pages.push(parametersPage);
-      }
-      if (pages.length === 0) {
-        throw new Error("No plots to export");
-      }
-      const pdfBytes = await buildResultPdf(pages);
-      const response = await runClientEffect(
-        studioClient.saveResultPdf({
-          workspacePath: resultState.workspacePath!,
-          fileName: RESULT_PDF_FILE_NAME,
-          contentsBase64: pdfBytesToBase64(pdfBytes),
-        }),
-      );
-      setSaveMessage(`Saved PDF (${expectedPlots} plot(s)) to ${response.path}`);
     } catch (cause) {
       setSaveMessage(toErrorMessage(cause, "Failed to save PDF"));
     } finally {
-      setExportCapture(null);
       setIsSaving(false);
     }
   };
@@ -148,7 +146,7 @@ export default function ResultPage() {
             <StudioTopBar showExpert />
           </AppShell.TopBar>
           <AppShell.Main>
-            <AppShell.MainScroll contentClass="relative max-w-[840px] px-6 py-8">
+            <AppShell.MainScroll contentClass="relative max-w-[1200px] px-6 py-8">
               <div class="relative flex min-h-full w-full flex-1 flex-col">
                 <ResultPlotGallery
                   emptyTitle={
@@ -183,38 +181,6 @@ export default function ResultPage() {
                   plots={sectionPlots()}
                   section={activeSection()}
                 />
-                {exportCapture() ? (
-                  <div
-                    aria-hidden
-                    class="pointer-events-none fixed top-0 -left-[10000px] w-[1200px] bg-white"
-                  >
-                    {exportCapture()!.timeseriesPlots.length > 0 ? (
-                      <div ref={exportTimeseriesEl!}>
-                        <ResultPlotGallery
-                          exportMode
-                          pageTitle="Timeseries"
-                          plots={exportCapture()!.timeseriesPlots}
-                          section="timeseries"
-                        />
-                      </div>
-                    ) : null}
-                    {exportCapture()!.parameterPlots.length > 0 ? (
-                      <div ref={exportParametersEl!}>
-                        <ResultPlotGallery
-                          exportMode
-                          pageTitle="Parameters"
-                          plots={exportCapture()!.parameterPlots}
-                          section="parameters"
-                        />
-                      </div>
-                    ) : null}
-                  </div>
-                ) : null}
-                {isSaving() ? (
-                  <div class="absolute inset-0 z-10 flex items-center justify-center bg-background/70">
-                    <Spinner class="size-4" />
-                  </div>
-                ) : null}
               </div>
             </AppShell.MainScroll>
           </AppShell.Main>

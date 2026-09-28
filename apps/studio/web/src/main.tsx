@@ -16,7 +16,6 @@ declare module "@tanstack/solid-router" {
 
 createLiscaWebApp({
   App: () => <RouterProvider router={router} />,
-  defaultPort: 8767,
   appId: "studio",
   AtomsProvider: StudioAtomsProvider,
   probe: () => studioHostOperations.userHomeDirectory(),

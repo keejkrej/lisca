@@ -1,21 +1,22 @@
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 
 use axum::{extract::DefaultBodyLimit, Router};
-use tower_http::{cors::CorsLayer, trace::TraceLayer};
+use tower_http::trace::TraceLayer;
 use tracing::info;
 
 use crate::protocol::AppId;
 
-/// Axum defaults to 2MB; smart ML and PDF routes send full frame/base64 payloads.
+/// Axum defaults to 2MB; smart ML routes send full frame/base64 payloads.
 pub const HTTP_BODY_LIMIT_BYTES: usize = 32 * 1024 * 1024;
 
+/// No CORS layer: web builds call the server on their own origin (Vite dev proxy or Docker
+/// nginx) and desktop builds use in-process IPC (ADR-0003).
 pub fn with_standard_layers<S>(router: Router<S>) -> Router<S>
 where
     S: Clone + Send + Sync + 'static,
 {
     router
         .layer(DefaultBodyLimit::max(HTTP_BODY_LIMIT_BYTES))
-        .layer(CorsLayer::permissive())
         .layer(TraceLayer::new_for_http())
 }
 

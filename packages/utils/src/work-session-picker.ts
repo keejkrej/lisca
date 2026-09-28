@@ -1,5 +1,5 @@
 import type { AlignerSource } from "@lisca/contracts";
-import type { LiscaAppId } from "./server";
+import type { LiscaAppId } from "./app-id";
 
 export type WorkSessionPickerItem = {
   id: string;
@@ -32,12 +32,12 @@ export function formatWorkSessionWhen(lastOpenedAt: string): string {
 
 export function workSessionPickerDescription(appId: LiscaAppId): string {
   if (appId === "studio") {
-    return "Pick a recent assay.json for this server, or start fresh.";
+    return "Pick a recent assay.json, or start fresh.";
   }
   if (appId === "aligner") {
-    return "Pick a recent workspace and source for this server, or start fresh.";
+    return "Pick a recent workspace and source, or start fresh.";
   }
-  return "Pick a recent workspace for this server, or start fresh.";
+  return "Pick a recent workspace, or start fresh.";
 }
 
 function sourcePathLabel(source: AlignerSource | null | undefined): string | undefined {

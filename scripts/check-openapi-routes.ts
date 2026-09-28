@@ -1,4 +1,5 @@
 import { readFileSync, readdirSync, statSync } from "node:fs";
+import { createRequire } from "node:module";
 import { join, resolve } from "node:path";
 
 const here = import.meta.dirname;
@@ -81,3 +82,24 @@ if (missingInRust.length > 0 || missingInOpenApi.length > 0) {
 console.log(
   `OpenAPI routes match Rust Axum routes (${openapiPaths.size} paths, ${routeFiles.length} files).`,
 );
+
+// Web builds call the server on their own origin (ADR-0003): every API prefix must be forwarded by
+// the Vite dev proxy and by the Docker nginx config, or that part of the app breaks in one of them.
+const apiPrefixes = new Set([...openapiPaths].map((path) => `/${path.split("/")[1]}`));
+const { LISCA_API_PROXY_PREFIXES } = createRequire(import.meta.url)("./lisca-dev-ports.cjs") as {
+  LISCA_API_PROXY_PREFIXES: string[];
+};
+const nginxConf = readFileSync(resolve(repoRoot, "docker/nginx.conf.template"), "utf8");
+const nginxPrefixes = new Set(
+  [...nginxConf.matchAll(/location (\/[a-z-]+)\/ \{/g)].map((match) => match[1]!),
+);
+const unproxied = [...apiPrefixes].flatMap((prefix) => [
+  ...(LISCA_API_PROXY_PREFIXES.includes(prefix) ? [] : [`${prefix} (Vite dev proxy)`]),
+  ...(nginxPrefixes.has(prefix) ? [] : [`${prefix} (docker/nginx.conf.template)`]),
+]);
+if (unproxied.length > 0) {
+  console.error("API prefixes not forwarded to the server:");
+  for (const entry of unproxied) console.error(`  - ${entry}`);
+  process.exit(1);
+}
+console.log(`API prefixes proxied in dev and Docker (${apiPrefixes.size} prefixes).`);

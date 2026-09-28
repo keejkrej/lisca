@@ -13,7 +13,6 @@ function isActiveAnalysisProgress(progress: AnalysisProgress): boolean {
 export type ResumeCropPendingRunsOptions = {
   client: Pick<AlignerDataPort, "getLatestCropProgress" | "onCropRoiProgress">;
   workspacePath: string;
-  serverIdentity: string;
   onProgress: (progress: CropRoiProgress) => void;
   onTerminal?: (progress: CropRoiProgress) => void;
 };
@@ -26,11 +25,11 @@ export type ResumedCropRun =
 export async function resumeCropPendingRun(
   options: ResumeCropPendingRunsOptions,
 ): Promise<ResumedCropRun> {
-  const { client, serverIdentity, workspacePath, onProgress, onTerminal } = options;
+  const { client, workspacePath, onProgress, onTerminal } = options;
   const latest = await runClientEffect(client.getLatestCropProgress(workspacePath));
   if (!latest) return { kind: "none" };
   if (isDoneCropStatus(latest.status)) {
-    const recovery = readCropRecovery(serverIdentity, workspacePath);
+    const recovery = readCropRecovery(workspacePath);
     if (recovery?.requestId !== latest.requestId) return { kind: "none" };
     return {
       kind: "terminal",
@@ -38,13 +37,13 @@ export async function resumeCropPendingRun(
       acknowledged: recovery.terminalAcknowledged,
     };
   }
-  rememberCropRecovery(serverIdentity, workspacePath, latest.requestId);
+  rememberCropRecovery(workspacePath, latest.requestId);
   onProgress(latest);
   const handleProgress = (progress: CropRoiProgress) => {
     onProgress(progress);
     if (!isDoneCropStatus(progress.status)) return;
     onTerminal?.(progress);
-    acknowledgeCropRecovery(serverIdentity, workspacePath, progress.requestId);
+    acknowledgeCropRecovery(workspacePath, progress.requestId);
   };
   return {
     kind: "active",
@@ -82,7 +81,6 @@ export type ResumeStudioPendingRunsOptions = {
     ): () => void;
   };
   workspacePath: string;
-  serverIdentity: string;
   onCropProgress: (progress: CropRoiProgress) => void;
   onRestoredCropTerminal?: (progress: CropRoiProgress) => void;
   onAnalysisProgress: (progress: AnalysisProgress) => void;
@@ -94,7 +92,6 @@ export async function resumeStudioPendingRuns(
   const stops: Array<(() => void) | null> = [];
   const crop = await resumeCropPendingRun({
     client: options.client,
-    serverIdentity: options.serverIdentity,
     workspacePath: options.workspacePath,
     onProgress: options.onCropProgress,
     onTerminal: options.onRestoredCropTerminal,
@@ -103,7 +100,7 @@ export async function resumeStudioPendingRuns(
   if (crop.kind === "terminal" && !crop.acknowledged) {
     options.onCropProgress(crop.progress);
     options.onRestoredCropTerminal?.(crop.progress);
-    acknowledgeCropRecovery(options.serverIdentity, options.workspacePath, crop.progress.requestId);
+    acknowledgeCropRecovery(options.workspacePath, crop.progress.requestId);
   }
   let analysisStop: (() => void) | null = null;
   try {

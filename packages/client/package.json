@@ -6,17 +6,9 @@
   ],
   "type": "module",
   "exports": {
-    "./urls": {
-      "types": "./src/infra/urls.ts",
-      "import": "./src/infra/urls.ts"
-    },
     "./progress": {
       "types": "./src/session/progress-poll.ts",
       "import": "./src/session/progress-poll.ts"
-    },
-    "./port-core": {
-      "types": "./src/infra/port-core.ts",
-      "import": "./src/infra/port-core.ts"
     },
     "./errors": {
       "types": "./src/infra/errors.ts",

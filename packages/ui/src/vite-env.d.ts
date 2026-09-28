@@ -1,7 +1,6 @@
 interface ImportMetaEnv {
-  readonly VITE_HTTP_URL?: string;
-  readonly VITE_HTTP_HOST?: string;
-  readonly VITE_HTTP_PORT?: string;
+  /** Vite dev server (development) vs a production build. */
+  readonly DEV: boolean;
 }
 
 interface ImportMeta {

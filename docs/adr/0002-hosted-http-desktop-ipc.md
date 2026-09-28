@@ -3,7 +3,8 @@
 The Rust backend is transport-neutral. Each product server crate exports an `app()` Axum router that
 is mounted in one of two shells:
 
-- Hosted web: the standalone `*-server` binary serves the router over HTTP.
+- Hosted web: the standalone `*-server` binary serves the router over HTTP, on the same origin as
+  the web app (ADR-0003).
 - Tauri desktop: the desktop binary links the server crate, keeps the router in-process, and dispatches
   frontend requests through the `lisca_request` Tauri command.
 

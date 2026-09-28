@@ -9,7 +9,6 @@ import { AnnotatePageProvider } from "./state/annotate-page-context";
 
 createLiscaWebApp({
   App: AnnotatorApp,
-  defaultPort: 8766,
   appId: "annotator",
   AtomsProvider: AnnotatorAtomsProvider,
   probe: () => annotatorHostOperations.userHomeDirectory(),

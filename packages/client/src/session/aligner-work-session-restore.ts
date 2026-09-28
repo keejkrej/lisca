@@ -34,7 +34,6 @@ export async function restoreAlignerWorkSession({
   setWorkspacePath(setUi, workspacePath);
   setSource(setUi, source);
   touchWorkSession("aligner", {
-    server: session.server,
     workspacePath,
     source,
     snapshot: session.snapshot,

@@ -12,18 +12,6 @@ export const SaveAssayJsonResponseSchema = Schema.Struct({
   path: Schema.String,
 }).annotate({ identifier: "SaveAssayJsonResponse" });
 
-export const SaveResultPdfRequestSchema = Schema.Struct({
-  workspacePath: Schema.String,
-  fileName: Schema.String,
-  contentsBase64: Schema.String,
-}).annotate({ identifier: "SaveResultPdfRequest" });
-
-export const SaveResultPdfResponseSchema = Schema.Struct({
-  ok: Schema.Boolean,
-  directory: Schema.String,
-  path: Schema.String,
-}).annotate({ identifier: "SaveResultPdfResponse" });
-
 export const AnalysisStatusSchema = Schema.Literals([
   "queued",
   "running",
@@ -75,8 +63,6 @@ export const LatestAnalysisQuerySchema = Schema.Struct({
 
 export type SaveAssayJsonRequest = typeof SaveAssayJsonRequestSchema.Type;
 export type SaveAssayJsonResponse = typeof SaveAssayJsonResponseSchema.Type;
-export type SaveResultPdfRequest = typeof SaveResultPdfRequestSchema.Type;
-export type SaveResultPdfResponse = typeof SaveResultPdfResponseSchema.Type;
 export type AnalysisStatus = typeof AnalysisStatusSchema.Type;
 export type AnalysisStage = typeof AnalysisStageSchema.Type;
 export type StudioAnalysisCsvFile = typeof StudioAnalysisCsvFileSchema.Type;

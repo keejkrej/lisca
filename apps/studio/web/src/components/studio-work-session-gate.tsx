@@ -4,7 +4,6 @@ import type { AnalysisProgress } from "@lisca/contracts";
 import { useAtom } from "@effect/atom-solid";
 import { runClientEffect } from "@lisca/client/runtime";
 import { resumeStudioPendingRuns } from "@lisca/client/session/resume-pending-runs";
-import { currentServerKey } from "@lisca/client/session/work-session";
 import { createSubscriptionOwner } from "@lisca/client/session/subscription-owner";
 import { restoreStudioWorkSession } from "@lisca/client/session/studio-work-session-restore";
 import { WorkSessionAppGate } from "@lisca/client/session/work-session-app-gate";
@@ -37,7 +36,6 @@ export function StudioWorkSessionGate(props: { children?: JSX.Element }) {
     await pendingRunSubscription.replace(() =>
       resumeStudioPendingRuns({
         client: studioClient,
-        serverIdentity: currentServerKey("studio"),
         workspacePath,
         onCropProgress: (progress) => studioAlignUiActions.setCropProgress(setAlignUi, progress),
         onRestoredCropTerminal: (progress) => {

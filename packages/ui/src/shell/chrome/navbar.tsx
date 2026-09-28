@@ -75,7 +75,7 @@ function ShellNavbarRoot(props: ShellNavbarProps) {
         </Show>
 
         <div class="flex min-w-0 items-center justify-end justify-self-end gap-1 sm:gap-2">
-          <ConnectionStatus state={server.state} httpBaseUrl={server.httpBaseUrl} />
+          <ConnectionStatus state={server.state} onRetry={server.retry} />
           <Show when={props.showToolsMenu !== false}>{props.endLeading}</Show>
           <ShellThemeToggle />
         </div>

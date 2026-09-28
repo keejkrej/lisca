@@ -24,9 +24,7 @@ only when an app gains a real second destination.
 
 - `packages/web-app` and `packages/web-demo` depend on no router. `@tanstack/solid-router` stays in
   the workspace for Studio and Landing.
-- The one piece of real URL state, `?liscaHttp=`, never went through the router — it is read via raw
-  `URLSearchParams` in `packages/client/src/infra/urls.ts` and `packages/utils/src/server.ts`, and is
-  unaffected. The routers used `createHashHistory`, so they owned `#/` while that state lived in the
-  search string: disjoint parts of the URL.
+- There is no URL state outside the routers. The former `?liscaHttp=` remote-server override was
+  removed (ADR-0003).
 - Studio constructs the only router in the repo outside Landing, and passes it to `createLiscaWebApp`
   as `App: () => <RouterProvider router={router} />`.

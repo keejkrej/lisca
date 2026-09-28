@@ -21,7 +21,7 @@ export function StudioTopBar(props: { showExpert?: boolean }) {
         </Show>
       </div>
       <div class="flex items-center gap-2">
-        <ConnectionStatus httpBaseUrl={server.httpBaseUrl} state={server.state} />
+        <ConnectionStatus state={server.state} onRetry={server.retry} />
         <ShellThemeToggle class="size-7" />
       </div>
     </div>

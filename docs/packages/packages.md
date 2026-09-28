@@ -13,7 +13,7 @@ Shared libraries under `packages/*`. Apps import these via workspace protocol (`
 | `@lisca/fixtures`    | On-disk sample sources and half-finished workspaces for e2e / agent tests (`vp run fixture:workspace`).                            |
 | `@lisca/ui-headless` | Solid-coupled non-DOM state and interaction logic, plus the structural types and policies that directly support those modules.     |
 | `@lisca/ui`          | SolidJS web imaging UI (zaidan/Kobalte + Tailwind). Re-exports shared UI types through `@lisca/ui/features`.                       |
-| `@lisca/web-app`     | Vite web shell: port factory (`createLiscaPort`), shared CSS entry, host operations.                                               |
+| `@lisca/web-app`     | Vite web shell: app mount (`createLiscaWebApp`), shared CSS entry, host operations.                                                |
 | `@lisca/web-demo`    | Browser-only demo helpers (`@lisca/web-demo/browser` — image load, contrast). Former `browser-frame` package.                      |
 | `@lisca/smart`       | Browser ML via transformers.js: `./segment` (SAM masks), `./segment/browser` (hook), `./exclude/browser` (ResNet smart exclusion). |
 
@@ -30,7 +30,7 @@ Do not import wizard types from the root contracts entry; use `/assay`.
 
 ```
 packages/client/src/
-  infra/          runtime, bootstrap, urls, port-core, api-client, errors
+  infra/          runtime, bootstrap, api-client, desktop, errors
   session/        align-session, annotate sessions, crop-status, progress-poll
   hooks/          use-align-state-core, use-annotate-state-core
   studio/         studio-assay-json
@@ -72,7 +72,7 @@ See `packages/fixtures/README.md`.
 | Module                   | Contents                                                             |
 | ------------------------ | -------------------------------------------------------------------- |
 | `storage.ts`             | Browser storage defaults, configurable adapters, JSON read/write     |
-| `server.ts`              | HTTP URL formatting, saved server list                               |
+| `app-id.ts`              | `LiscaAppId` (aligner, annotator, studio)                            |
 | `frame.ts`               | `FrameResult`, `PixelArray`, decode/normalize contrast               |
 | `align-grid.ts`          | Grid geometry, wheel/pointer gestures, persistence                   |
 | `annotate.ts`            | Mask helpers, bbox CSV export                                        |

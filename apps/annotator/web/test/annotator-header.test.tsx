@@ -106,11 +106,7 @@ function AnnotatorShellFixture() {
 function renderAnnotatorShell() {
   return render(() => (
     <ShellThemeProvider appId="annotator">
-      <ShellServerProvider
-        appId="annotator"
-        defaultPort={8766}
-        probe={() => new Promise(() => undefined)}
-      >
+      <ShellServerProvider probe={() => new Promise(() => undefined)}>
         <ShellWorkspaceProvider>
           <AnnotatorAtomsProvider>
             <AnnotatePageProvider>
@@ -146,7 +142,8 @@ describe("AnnotatorHeader Task Center", () => {
     expect(header).not.toBeNull();
     expect(themeToggle.parentElement).toBe(trigger.parentElement);
     expect(trigger.nextElementSibling).toBe(themeToggle);
-    expect(trigger.previousElementSibling?.textContent).toContain("Connecting…");
+    // A healthy or still-booting server shows no connection chrome.
+    expect(screen.queryByText(/Connecting|Connected/)).toBeNull();
 
     const edit = screen.getByRole("textbox", { name: "Current edit" }) as HTMLInputElement;
     const workspaceState = screen.getByLabelText("Workspace state");

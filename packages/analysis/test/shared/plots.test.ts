@@ -3,8 +3,10 @@ import {
   collectResultPlots,
   defaultResultPlotSection,
   filterResultPlotsBySection,
+  groupResultPlots,
   inferResultAssayKind,
   resultSectionInstruction,
+  resultGridColumns,
   resultSectionLabel,
   sampleFolderFromResultPath,
 } from "../../src/shared/plots";
@@ -179,5 +181,31 @@ describe("resultSectionInstruction", () => {
     expect(resultSectionInstruction("parameters", "killing")).toBe(
       "Survival curve and death-time distributions.",
     );
+  });
+});
+
+describe("groupResultPlots", () => {
+  it("groups per-sample plots by kind and workspace plots together", () => {
+    const files = [
+      { fileName: "auc.png", path: "/w/results/auc.png" },
+      { fileName: "onset_time.png", path: "/w/results/onset_time.png" },
+      { fileName: "traces.png", path: "/w/results/B/traces.png" },
+      { fileName: "traces.png", path: "/w/results/A/traces.png" },
+      { fileName: "area.png", path: "/w/results/A/area.png" },
+    ];
+    const groups = groupResultPlots(collectResultPlots(files, "transfection"));
+
+    expect(groups.map((group) => [group.title, group.labels])).toEqual([
+      ["Intensity traces", ["A", "B"]],
+      ["Mask area", ["A"]],
+      ["All samples", ["AUC", "Onset time t0"]],
+    ]);
+  });
+});
+
+describe("resultGridColumns", () => {
+  it("uses ceil(sqrt(n)) columns", () => {
+    expect([1, 2, 4, 5, 6, 9, 10].map(resultGridColumns)).toEqual([1, 2, 2, 3, 3, 3, 4]);
+    expect(resultGridColumns(0)).toBe(1);
   });
 });
