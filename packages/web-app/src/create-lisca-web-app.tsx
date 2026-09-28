@@ -39,13 +39,11 @@ function installOverlayScrollbarState(): void {
 export type LiscaWebAppConfig = {
   /** App-owned root component. */
   App: Component;
-  /** Default server port, surfaced through the server settings UI. */
-  defaultPort: number;
-  /** App id used for session history and active-server persistence. */
+  /** App id used for per-app theme and storage. */
   appId: import("@lisca/utils").LiscaAppId;
   /** App-owned atoms provider (port runtime + session hydration). */
   AtomsProvider: Component<{ children?: JSX.Element }>;
-  /** Host-port probe used for the connection-status light. */
+  /** Server check behind the "Server unreachable" alert (web builds only). */
   probe?: () => Promise<unknown>;
   /** DOM id of the mount node (defaults to `root`). */
   rootElementId?: string;
@@ -53,11 +51,11 @@ export type LiscaWebAppConfig = {
 
 /**
  * Mount a Lisca web app: render the shared provider stack around the app's
- * root. Each app supplies only its root component, default port, and atoms provider;
+ * root. Each app supplies only its root component, app id, and atoms provider;
  * the provider nesting lives in one place.
  */
 export function createLiscaWebApp(config: LiscaWebAppConfig): void {
-  const { App, defaultPort, appId, AtomsProvider, probe, rootElementId = "root" } = config;
+  const { App, appId, AtomsProvider, probe, rootElementId = "root" } = config;
 
   const mount = document.getElementById(rootElementId);
   if (!mount) {
@@ -70,7 +68,7 @@ export function createLiscaWebApp(config: LiscaWebAppConfig): void {
     () => (
       <AtomsProvider>
         <ShellThemeProvider appId={appId}>
-          <ShellServerProvider appId={appId} defaultPort={defaultPort} probe={probe}>
+          <ShellServerProvider probe={probe}>
             <ShellWorkspaceProvider>
               <App />
             </ShellWorkspaceProvider>

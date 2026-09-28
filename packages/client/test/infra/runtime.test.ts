@@ -18,9 +18,7 @@ describe("runClientEffect", () => {
     expect(caught).toBe(failure);
     expect(caught).toBeInstanceOf(ClientError);
     expect((caught as ClientError).cause).toBe(networkFailure);
-    expect(toFetchErrorMessage(caught, "Scan failed", "http://127.0.0.1:8765")).toBe(
-      "Scan failed: server unreachable at http://127.0.0.1:8765",
-    );
+    expect(toFetchErrorMessage(caught, "Scan failed")).toBe("Scan failed: server unreachable");
   });
 
   it("rejects with the original TypeError across the Promise boundary", async () => {

@@ -59,7 +59,6 @@ import type { CanvasResourceTransactionOptions } from "../canvas-resource-transa
 import { toClientError, type ClientError } from "../infra/client-error";
 import { runClientEffect } from "../infra/runtime";
 import type { AlignerDataPort } from "../ports/types";
-import { currentServerKey } from "./work-session";
 
 export type AlignSessionMeta = {
   scanLoading: boolean;
@@ -132,7 +131,6 @@ export type AlignSessionPolicy = {
    */
   enableCrop?: boolean;
   cropRequestPrefix?: string;
-  cropServerIdentity?: () => string;
   onCropCompleted?: (progress: CropRoiProgress) => void;
   onCropSkippedAll?: () => void;
 };
@@ -543,7 +541,6 @@ export function useAlignSessionCore(options: UseAlignSessionCoreOptions) {
         overwrite,
         outputFormat: "tiff",
       },
-      serverIdentity: policy.cropServerIdentity?.() ?? currentServerKey("aligner"),
       onProgress: (progress) => actions.setCropProgress(setUi, progress),
       onError: (message) => actions.setError(setUi, message),
       onCompleted: (progress) => {

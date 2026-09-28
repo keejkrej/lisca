@@ -48,8 +48,6 @@ import {
   SaveBboxResponseSchema,
   SavedBboxPositionsQuerySchema,
   SaveRoiFrameAnnotationRequestSchema,
-  SaveResultPdfRequestSchema,
-  SaveResultPdfResponseSchema,
   ScanRoiWorkspaceRequestSchema,
   ScanSourceRequestSchema,
   SmartExcludeRequestSchema,
@@ -373,13 +371,6 @@ const studioGroup = HttpApiGroup.make("studio")
     HttpApiEndpoint.post("saveAssayJson", "/studio/save-assay-json", {
       payload: SaveAssayJsonRequestSchema,
       success: SaveAssayJsonResponseSchema,
-      error: [RequestError, Unauthorized],
-    }),
-  )
-  .add(
-    HttpApiEndpoint.post("saveResultPdf", "/studio/save-result-pdf", {
-      payload: SaveResultPdfRequestSchema,
-      success: SaveResultPdfResponseSchema,
       error: [RequestError, Unauthorized],
     }),
   )

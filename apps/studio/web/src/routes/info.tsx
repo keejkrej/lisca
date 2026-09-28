@@ -35,12 +35,11 @@ function InfoPage() {
     navigateTo("/align");
   };
 
+  // Back only steps within Info; leaving the step is the left navigation's job.
+  const canGoBack = () => infoStep() > 1;
   const back = () => {
-    if (infoStep() > 1) {
-      setInfoStep((infoStep() - 1) as InfoStep);
-      return;
-    }
-    navigateTo("/assay");
+    if (!canGoBack()) return;
+    setInfoStep((infoStep() - 1) as InfoStep);
   };
 
   return (
@@ -66,7 +65,7 @@ function InfoPage() {
         </AppShell.MainColumn>
         <AppShell.Right widthClass="w-64">
           <StudioRightPanel instruction={() => instructionForStep(step())}>
-            <StudioInfoActions onBack={back} onNext={next} />
+            <StudioInfoActions canGoBack={canGoBack()} onBack={back} onNext={next} />
           </StudioRightPanel>
         </AppShell.Right>
       </AppShell.Body>

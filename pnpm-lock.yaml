@@ -629,9 +629,6 @@ importers:
       effect:
         specifier: 4.0.0-rc.112
         version: 4.0.0-rc.112
-      html2canvas-pro:
-        specifier: ^2.0.2
-        version: 2.3.3
       jspdf:
         specifier: ^4.2.1
         version: 4.2.1
@@ -3297,10 +3294,6 @@ packages:
   html-entities@2.3.3:
     resolution: {integrity: sha512-DV5Ln36z34NNTDgnz0EWGBLZENelNAtkiFA4kyNOG2tDI6Mz1uSWiq1wAKdyjnJwyDiDO7Fa2SO1CTxPXL8VxA==}
 
-  html2canvas-pro@2.3.3:
-    resolution: {integrity: sha512-HOPWJ9GJLGEquhZjEDHiJMaUqYdWL0eI5JDZXNiy1Ge2NB5s9QI+uSwKInCy5hnurGRIOpOQvEjolF8ch2XB9Q==}
-    engines: {node: '>=16.0.0'}
-
   html2canvas@1.4.1:
     resolution: {integrity: sha512-fPU6BHNpsyIhr8yyMpTLLxAbkaK8ArIBcmZIRiBLiDhjeqvXolaEmDGmELFuX9I4xDcaKKcJl+TKZLqruBbmWA==}
     engines: {node: '>=8.0.0'}
@@ -5767,7 +5760,8 @@ snapshots:
 
   balanced-match@1.0.2: {}
 
-  base64-arraybuffer@1.0.2: {}
+  base64-arraybuffer@1.0.2:
+    optional: true
 
   baseline-browser-mapping@2.11.10: {}
 
@@ -5875,6 +5869,7 @@ snapshots:
   css-line-break@2.1.0:
     dependencies:
       utrie: 1.0.2
+    optional: true
 
   cssstyle@4.6.0:
     dependencies:
@@ -6179,11 +6174,6 @@ snapshots:
       whatwg-encoding: 3.1.1
 
   html-entities@2.3.3: {}
-
-  html2canvas-pro@2.3.3:
-    dependencies:
-      css-line-break: 2.1.0
-      text-segmentation: 1.0.3
 
   html2canvas@1.4.1:
     dependencies:
@@ -6987,6 +6977,7 @@ snapshots:
   text-segmentation@1.0.3:
     dependencies:
       utrie: 1.0.2
+    optional: true
 
   tinybench@2.9.0: {}
 
@@ -7060,6 +7051,7 @@ snapshots:
   utrie@1.0.2:
     dependencies:
       base64-arraybuffer: 1.0.2
+    optional: true
 
   vite-plugin-solid@2.11.14(@voidzero-dev/vite-plus-core@0.3.3(@types/node@22.20.1)(esbuild@0.28.1)(jiti@2.7.0)(typescript@5.9.3))(solid-js@1.9.14):
     dependencies:

@@ -1,4 +1,4 @@
-import { FetchHttpClient, HttpClient, HttpClientRequest } from "effect/unstable/http";
+import { FetchHttpClient } from "effect/unstable/http";
 import { HttpApiClient } from "effect/unstable/httpapi";
 import { liscaApi } from "@lisca/contracts/http-api";
 import { Effect, Layer } from "effect";
@@ -8,9 +8,8 @@ import { createDesktopFetch, liscaDesktopBridge } from "./desktop";
 import type { ClientEffect } from "./runtime";
 
 export type ApiClientDeps = {
-  baseUrl: () => string;
+  /** Test seam; defaults to the Tauri bridge in desktop builds, else global `fetch`. */
   fetch?: typeof fetch;
-  accessToken?: () => string | undefined;
 };
 
 function fetchLayerFor(deps: ApiClientDeps) {
@@ -24,26 +23,15 @@ function fetchLayerFor(deps: ApiClientDeps) {
 }
 
 function makeApiClientEffect(deps: ApiClientDeps) {
-  return HttpApiClient.make(liscaApi, {
-    baseUrl: "",
-    transformClient: (client) =>
-      HttpClient.mapRequest(client, (request) => {
-        let next = HttpClientRequest.prependUrl(request, deps.baseUrl());
-        const token = deps.accessToken?.();
-        if (token) {
-          next = HttpClientRequest.setHeader(next, "Authorization", `Bearer ${token}`);
-        }
-        return next;
-      }),
-  }).pipe(Effect.provide(fetchLayerFor(deps)));
+  return HttpApiClient.make(liscaApi, { baseUrl: "" }).pipe(Effect.provide(fetchLayerFor(deps)));
 }
 
 export type LiscaApiClient = Effect.Success<ReturnType<typeof makeApiClientEffect>>;
 
 /**
- * Typed client derived from the Effect `HttpApi` contract. The base URL is
- * resolved per request (session server switching) by rewriting the outgoing
- * request, so a single client instance survives base-URL changes.
+ * Typed client derived from the Effect `HttpApi` contract. Requests use origin-relative URLs:
+ * web builds are served from the same origin as the server (Vite dev proxy or Docker nginx),
+ * and desktop builds route them over Tauri IPC (ADR-0003).
  */
 export function createApiClient(deps: ApiClientDeps): LiscaApiClient {
   return Effect.runSync(makeApiClientEffect(deps));

@@ -49,7 +49,6 @@ export function frameCacheKey(
 
 export type AlignerFrameLoaderOptions = {
   spanName: string;
-  httpBaseUrl: () => string;
 };
 
 export function createAlignerFrameLoader(options: AlignerFrameLoaderOptions) {
@@ -74,7 +73,7 @@ export function createAlignerFrameLoader(options: AlignerFrameLoaderOptions) {
 
   function effectErrorMessage(error: unknown): string {
     const cause = error instanceof ClientError ? (error.cause ?? error) : error;
-    return toFetchErrorMessage(cause, "Frame request failed", options.httpBaseUrl());
+    return toFetchErrorMessage(cause, "Frame request failed");
   }
 
   return { loadFrameEffect, effectErrorMessage };

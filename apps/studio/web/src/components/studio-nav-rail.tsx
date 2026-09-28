@@ -69,8 +69,11 @@ export function StudioNavRail() {
   const routeId = () => pathname().slice(1) || "assay";
 
   return (
-    <nav aria-label="Primary" class="flex h-full min-h-0 flex-col justify-center px-7 py-2.5">
-      <div class="flex w-[200px] shrink-0 flex-col">
+    <nav
+      aria-label="Primary"
+      class="flex h-full min-h-0 flex-col items-center justify-center px-7 py-2.5"
+    >
+      <div class="flex w-fit min-w-0 shrink-0 flex-col">
         <NavButton
           active={routeId() === "assay"}
           index={1}

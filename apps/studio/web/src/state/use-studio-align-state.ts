@@ -19,7 +19,6 @@ import {
 import { useAlignSessionCore } from "@lisca/client/align-session/solid";
 import { useCanvasResourceTransaction } from "@lisca/ui/features";
 import { createDefaultAlignGrid, type AlignGridToolMode } from "@lisca/utils";
-import { currentServerKey } from "@lisca/client/session/work-session";
 import { createEffect, createMemo, createSignal, on } from "solid-js";
 import { studioClient, toErrorMessage } from "../api/studio-port";
 import { scanIdleAtom, scanSourceAtom } from "../atoms/studio-query-atoms";
@@ -171,7 +170,6 @@ export function useStudioAlignState(): StudioAlignState {
       canLoadFrame: (state) => alignPositionsForScan(state.scan).length > 0,
       preserveFrameOnContrastFailure: true,
       cropRequestPrefix: "studio-crop",
-      cropServerIdentity: () => currentServerKey("studio"),
     },
   });
   const ui = session.state;

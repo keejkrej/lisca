@@ -1,12 +1,17 @@
 import { Button } from "@lisca/ui/components";
 import { PanelSection, RailControlStack } from "@lisca/ui/shell";
 
-export function StudioInfoActions(props: { onBack: () => void; onNext: () => void }) {
+export function StudioInfoActions(props: {
+  canGoBack: boolean;
+  onBack: () => void;
+  onNext: () => void;
+}) {
   return (
     <PanelSection appearance="rail" title="Action">
       <RailControlStack>
         <Button
           class="w-full justify-center"
+          disabled={!props.canGoBack}
           size="sm"
           type="button"
           variant="outline"

@@ -43,7 +43,7 @@ serde_json = "1"
 tiff = "0.10"
 tokio = { version = "1", features = ["full"] }
 tower = { version = "0.5", features = ["util"] }
-tower-http = { version = "0.6", features = ["cors", "trace"] }
+tower-http = { version = "0.6", features = ["trace"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 walkdir = "2.5"
@@ -61,4 +61,5 @@ lisca-server = { path = "crates/lisca-server" }
 lisca-transfection = { git = "https://github.com/keejkrej/lisca-transfection-assay", rev = "869a231e089cde21cf44af1d6ed155b2610ca383" }
 tauri = "2"
 tauri-build = "2"
+tauri-plugin-dialog = "2"
 

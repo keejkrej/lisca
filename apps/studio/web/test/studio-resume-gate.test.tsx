@@ -1,9 +1,5 @@
 import { cleanup, render } from "@solidjs/testing-library";
-import {
-  configureLiscaStorage,
-  setLiscaActiveServerAddress,
-  type LiscaStorageAdapter,
-} from "@lisca/utils";
+import { configureLiscaStorage, type LiscaStorageAdapter } from "@lisca/utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
 import { createInitialAlignUiState, createStudioPersist } from "@lisca/client/atoms/align-ui";
@@ -37,7 +33,6 @@ const folderSource = {
 
 const savedWorkSession: WorkSession = {
   id: "ws-1",
-  server: "local",
   workspacePath: "/ws",
   assayJsonPath: "/ws/assay.json",
   label: "assay",
@@ -94,7 +89,6 @@ function mountGate(onRestore: (session: WorkSession) => void | Promise<void>, ch
 describe("Studio resume-picker gate decision — bug fix (G3.9-G3.12)", () => {
   beforeEach(() => {
     configureLiscaStorage({ local: createMemoryStorage(), session: createMemoryStorage() });
-    setLiscaActiveServerAddress(null);
   });
   afterEach(() => cleanup());
 
@@ -126,7 +120,6 @@ describe("Studio resume-picker gate decision — bug fix (G3.9-G3.12)", () => {
     await vi.waitFor(() => expect(onRestore).toHaveBeenCalledTimes(1));
     expect(onRestore.mock.calls[0][0]).toMatchObject({
       id: "ws-1",
-      server: "local",
       assayJsonPath: "/ws/assay.json",
     });
   });

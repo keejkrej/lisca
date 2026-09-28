@@ -11,7 +11,7 @@ export type { AnnotatorDataPort } from "./types";
 export type AnnotatorPortDeps = HostPortDeps;
 
 export function createAnnotatorPort(
-  deps: AnnotatorPortDeps,
+  deps: AnnotatorPortDeps = {},
   client: LiscaApiClient = createApiClient(deps),
 ): AnnotatorDataPort {
   const host = createHostPort(deps, client);

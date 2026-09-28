@@ -20,8 +20,6 @@ import type {
   SaveAssayJsonResponse,
   SaveBboxResponse,
   SavedAlignState,
-  SaveResultPdfRequest,
-  SaveResultPdfResponse,
   SmartExcludeRequest,
   SmartExcludeResponse,
   SmartSegmentRequest,
@@ -52,7 +50,6 @@ export type TaskDataPort = {
 export type StudioHostPort = HostPort & {
   readTextFile(path: string): ClientEffect<string>;
   saveAssayJson(saveTo: string, contents: string): ClientEffect<SaveAssayJsonResponse>;
-  saveResultPdf(request: SaveResultPdfRequest): ClientEffect<SaveResultPdfResponse>;
 };
 
 export type AnnotatorDataPort = HostPort &

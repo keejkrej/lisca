@@ -1,5 +1,5 @@
 import { Effect } from "effect";
-import { describe, expect, it } from "vite-plus/test";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
 import { createTaskPort } from "../src/ports/tasks";
 import { runClientEffect } from "../src/infra/runtime";
@@ -27,11 +27,19 @@ const operation = {
   updatedAtMs: 2,
 } as const;
 
+// Requests are origin-relative; a browser page resolves them against its own location.
+beforeEach(() => {
+  vi.stubGlobal("location", { origin: "http://localhost:8765", pathname: "/" });
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
+
 describe("createTaskPort", () => {
   it("reads and decodes the generic operation list", async () => {
     const requested: string[] = [];
     const port = createTaskPort({
-      baseUrl: () => "http://127.0.0.1:8765",
       fetch: async (input) => {
         requested.push(String(input));
         return Response.json([operation]);
@@ -58,7 +66,6 @@ describe("createTaskPort", () => {
       attempts: [],
     } as const;
     const port = createTaskPort({
-      baseUrl: () => "http://127.0.0.1:8765",
       fetch: async (input) => {
         const url = String(input);
         requested.push(url);
@@ -98,7 +105,6 @@ describe("createTaskPort", () => {
       tasks: [task],
     };
     const port = createTaskPort({
-      baseUrl: () => "http://127.0.0.1:8765",
       fetch: async (input, init) => {
         const request = input instanceof Request ? input : new Request(input, init);
         requested.push({
@@ -115,17 +121,17 @@ describe("createTaskPort", () => {
     await expect(Effect.runPromise(port.retryTask("task-1"))).resolves.toEqual(detail);
     expect(requested).toEqual([
       {
-        url: "http://127.0.0.1:8765/tasks/operation/cancel",
+        url: "http://localhost:8765/tasks/operation/cancel",
         method: "POST",
         body: { operationId: "op-1" },
       },
       {
-        url: "http://127.0.0.1:8765/tasks/task/cancel",
+        url: "http://localhost:8765/tasks/task/cancel",
         method: "POST",
         body: { taskId: "task-1" },
       },
       {
-        url: "http://127.0.0.1:8765/tasks/task/retry",
+        url: "http://localhost:8765/tasks/task/retry",
         method: "POST",
         body: { taskId: "task-1" },
       },
@@ -134,7 +140,6 @@ describe("createTaskPort", () => {
 
   it("preserves typed invalid-transition command failures", async () => {
     const port = createTaskPort({
-      baseUrl: () => "http://127.0.0.1:8765",
       fetch: async () =>
         Response.json(
           {

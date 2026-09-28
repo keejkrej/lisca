@@ -76,7 +76,8 @@ describe("desktop IPC transport", () => {
       liscaDesktop: { product: "studio", request },
       location: { href: "tauri://localhost/index.html" },
     });
-    const port = createHostPort({ baseUrl: () => "http://127.0.0.1:8767" });
+    vi.stubGlobal("location", { origin: "tauri://localhost", pathname: "/index.html" });
+    const port = createHostPort({});
 
     await expect(Effect.runPromise(port.userHomeDirectory())).resolves.toBe("/home/test");
     expect(request).toHaveBeenCalledWith(

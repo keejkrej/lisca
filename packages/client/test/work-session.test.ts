@@ -1,18 +1,13 @@
-import { configureLiscaStorage, type LiscaStorageAdapter } from "@lisca/utils";
-import { setLiscaActiveServerAddress } from "@lisca/utils";
+import { configureLiscaStorage, liscaLocalStorage, type LiscaStorageAdapter } from "@lisca/utils";
 import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
 import {
-  currentServerKey,
   isValidWorkSession,
   readWorkSessions,
-  resolveServerKey,
-  sessionsForServer,
   studioAssayJsonPathForSaveTo,
   touchAlignerWorkSessionFromState,
   touchStudioWorkSessionFromAssayPath,
   touchWorkSession,
-  writeWorkSessions,
 } from "../src/session/work-session";
 
 function createMemoryStorage(): LiscaStorageAdapter {
@@ -34,28 +29,20 @@ describe("work-session registry", () => {
       local: createMemoryStorage(),
       session: createMemoryStorage(),
     });
-    setLiscaActiveServerAddress(null);
     vi.stubGlobal("crypto", {
       randomUUID: () => "session-id-1",
     });
   });
 
-  it("resolveServerKey normalizes active server addresses", () => {
-    expect(resolveServerKey(null, 8765)).toBe("local");
-    expect(resolveServerKey("192.168.1.10:8765", 8765)).toBe("http://192.168.1.10:8765");
-  });
-
   it("aligner requires workspace and source", () => {
     expect(
       touchWorkSession("aligner", {
-        server: "local",
         workspacePath: "/data/ws-a",
       }),
     ).toBeNull();
     expect(readWorkSessions("aligner")).toHaveLength(0);
 
     touchWorkSession("aligner", {
-      server: "local",
       workspacePath: "/data/ws-a",
       source: {
         kind: "folder",
@@ -68,8 +55,8 @@ describe("work-session registry", () => {
   });
 
   it("annotator requires only workspace", () => {
-    touchWorkSession("annotator", { server: "local", workspacePath: "/data/ws-a" });
-    touchWorkSession("annotator", { server: "local", workspacePath: "/data/ws-b" });
+    touchWorkSession("annotator", { workspacePath: "/data/ws-a" });
+    touchWorkSession("annotator", { workspacePath: "/data/ws-b" });
     const sessions = readWorkSessions("annotator");
     expect(sessions).toHaveLength(2);
     expect(sessions[0]?.workspacePath).toBe("/data/ws-b");
@@ -78,7 +65,6 @@ describe("work-session registry", () => {
   it("studio requires assay.json path", () => {
     expect(
       touchWorkSession("studio", {
-        server: "local",
         workspacePath: "/data/ws-a",
       }),
     ).toBeNull();
@@ -102,23 +88,34 @@ describe("work-session registry", () => {
     expect(studioAssayJsonPathForSaveTo("/data/run/")).toBe("/data/run/assay.json");
   });
 
-  it("sessionsForServer filters by normalized server key", () => {
-    writeWorkSessions("studio", [
-      {
-        id: "a",
-        server: "http://remote:8767",
-        assayJsonPath: "/remote/run/assay.json",
-        lastOpenedAt: "2026-06-15T10:00:00.000Z",
-      },
-      {
-        id: "b",
-        server: "local",
-        assayJsonPath: "/local/run/assay.json",
-        lastOpenedAt: "2026-06-15T09:00:00.000Z",
-      },
+  it("ignores the legacy server field on stored sessions and dedupes by path", () => {
+    // Sessions saved before the server-identity removal still carry a `server` field.
+    liscaLocalStorage().setItem(
+      "lisca.workSessions.studio",
+      JSON.stringify([
+        {
+          id: "a",
+          server: "http://remote:8767",
+          assayJsonPath: "/run-a/assay.json",
+          lastOpenedAt: "2026-06-15T10:00:00.000Z",
+        },
+        {
+          id: "b",
+          server: "local",
+          assayJsonPath: "/run-b/assay.json",
+          lastOpenedAt: "2026-06-15T09:00:00.000Z",
+        },
+      ]),
+    );
+    expect(readWorkSessions("studio").map((session) => session.id)).toEqual(["a", "b"]);
+
+    touchStudioWorkSessionFromAssayPath("/run-b/assay.json");
+    const sessions = readWorkSessions("studio");
+    expect(sessions.map((session) => session.assayJsonPath)).toEqual([
+      "/run-b/assay.json",
+      "/run-a/assay.json",
     ]);
-    expect(sessionsForServer(readWorkSessions("studio"), "local")).toHaveLength(1);
-    expect(currentServerKey("studio")).toBe("local");
+    expect(sessions[0]).not.toHaveProperty("server");
   });
 
   it("migrates legacy aligner session storage only when source is present", () => {

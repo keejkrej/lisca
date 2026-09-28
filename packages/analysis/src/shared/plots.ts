@@ -151,6 +151,49 @@ export function collectResultPlots(
   return ordered;
 }
 
+/** Plots of one kind across samples, or all workspace-level plots, shown together as a grid. */
+export type ResultPlotGroup = {
+  title: string;
+  plots: ResultPlot[];
+  /** Per-plot caption inside the group: the sample folder, or the plot title for workspace plots. */
+  labels: string[];
+};
+
+export const WORKSPACE_PLOT_GROUP_TITLE = "All samples";
+
+/**
+ * Group plots for grid display: per-sample plots of the same file form one group (titled by
+ * the plot kind, captioned by sample); workspace-level plots share one group. Order follows
+ * first appearance.
+ */
+export function groupResultPlots(plots: ResultPlot[]): ResultPlotGroup[] {
+  const groups = new Map<string, ResultPlotGroup>();
+  for (const plot of plots) {
+    const sample = sampleFolderFromResultPath(plot.path);
+    const key = sample ? `sample:${plot.fileName}` : "workspace";
+    let group = groups.get(key);
+    if (!group) {
+      const suffix = sample ? ` (${sample})` : "";
+      const title =
+        sample && plot.title.endsWith(suffix)
+          ? plot.title.slice(0, -suffix.length)
+          : sample
+            ? plot.title
+            : WORKSPACE_PLOT_GROUP_TITLE;
+      group = { title, plots: [], labels: [] };
+      groups.set(key, group);
+    }
+    group.plots.push(plot);
+    group.labels.push(sample ?? plot.title);
+  }
+  return [...groups.values()];
+}
+
+/** Near-square grid: ⌈√n⌉ columns for n plots. */
+export function resultGridColumns(count: number): number {
+  return Math.max(1, Math.ceil(Math.sqrt(count)));
+}
+
 export function filterResultPlotsBySection(
   plots: ResultPlot[],
   section: ResultPlotSection,
@@ -163,12 +206,12 @@ export function defaultResultPlotSection(plots: ResultPlot[]): ResultPlotSection
   return "parameters";
 }
 
-export function resultFileUrl(httpBaseUrl: string, path: string): string {
-  const base = httpBaseUrl.replace(/\/$/, "");
-  return `${base}/fs/file?path=${encodeURIComponent(path)}`;
+/** Origin-relative URL of a workspace file on the server's file endpoint. */
+export function resultFileUrl(path: string): string {
+  return `/fs/file?path=${encodeURIComponent(path)}`;
 }
 
-export function withPlotSrc(plot: ResultPlot, httpBaseUrl: string): ResultPlot {
+export function withPlotSrc(plot: ResultPlot): ResultPlot {
   if (plot.src) return plot;
-  return { ...plot, src: resultFileUrl(httpBaseUrl, plot.path) };
+  return { ...plot, src: resultFileUrl(plot.path) };
 }

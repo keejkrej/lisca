@@ -5,7 +5,7 @@ use std::{
 };
 
 use axum::{
-    extract::{DefaultBodyLimit, Query, State},
+    extract::{Query, State},
     routing::{get, post},
     Json, Router,
 };
@@ -14,8 +14,7 @@ use lisca::{
     analysis,
     protocol::{
         AnalysisProgress, AnalysisProgressQuery, AnalysisStartRequest, AssayJsonFile, AssayType,
-        LatestAnalysisQuery, SaveAssayJsonRequest, SaveAssayJsonResponse, SaveResultPdfRequest,
-        SaveResultPdfResponse,
+        LatestAnalysisQuery, SaveAssayJsonRequest, SaveAssayJsonResponse,
     },
 };
 use lisca_server::{
@@ -30,10 +29,6 @@ where
 {
     Router::new()
         .route("/studio/save-assay-json", post(save_assay_json_handler))
-        .route(
-            "/studio/save-result-pdf",
-            post(save_result_pdf_handler).layer(DefaultBodyLimit::max(32 * 1024 * 1024)),
-        )
         .route("/studio/start-analysis", post(start_analysis_handler::<S>))
         .route(
             "/studio/analysis-progress",
@@ -64,50 +59,6 @@ async fn save_assay_json_handler(
 
     Ok(Json(SaveAssayJsonResponse {
         ok: true,
-        path: target.to_string_lossy().to_string(),
-    }))
-}
-
-async fn save_result_pdf_handler(
-    Json(payload): Json<SaveResultPdfRequest>,
-) -> Result<Json<SaveResultPdfResponse>, FsError> {
-    let workspace_path = payload.workspace_path.trim().to_string();
-    if workspace_path.is_empty() {
-        return Err(FsError::new("workspacePath is required"));
-    }
-
-    let file_name = payload.file_name.trim().to_string();
-    if file_name.is_empty() {
-        return Err(FsError::new("fileName is required"));
-    }
-    if file_name.contains('/') || file_name.contains('\\') {
-        return Err(FsError::new(format!("invalid fileName: {file_name}")));
-    }
-    if !file_name.ends_with(".pdf") {
-        return Err(FsError::new("fileName must end with .pdf"));
-    }
-
-    let (results_dir, target) = tokio::task::spawn_blocking(move || {
-        use base64::Engine;
-
-        let bytes = base64::engine::general_purpose::STANDARD
-            .decode(payload.contents_base64.trim())
-            .map_err(|error| FsError::new(format!("failed to decode {file_name}: {error}")))?;
-        let results_dir = PathBuf::from(workspace_path).join("results");
-        std::fs::create_dir_all(&results_dir).map_err(|error| {
-            FsError::internal(format!("failed to create results folder: {error}"))
-        })?;
-        let target = results_dir.join(&file_name);
-        std::fs::write(&target, bytes)
-            .map_err(|error| FsError::internal(format!("failed to save {file_name}: {error}")))?;
-        Ok::<_, FsError>((results_dir, target))
-    })
-    .await
-    .map_err(|error| FsError::internal(format!("PDF save worker failed: {error}")))??;
-
-    Ok(Json(SaveResultPdfResponse {
-        ok: true,
-        directory: results_dir.to_string_lossy().to_string(),
         path: target.to_string_lossy().to_string(),
     }))
 }

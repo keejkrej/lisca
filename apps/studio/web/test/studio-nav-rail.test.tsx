@@ -133,7 +133,7 @@ function renderStudioShell() {
     router,
     ...render(() => (
       <ShellThemeProvider appId="studio">
-        <ShellServerProvider appId="studio" defaultPort={8767}>
+        <ShellServerProvider>
           <ShellWorkspaceProvider>
             <RouterProvider router={router} />
           </ShellWorkspaceProvider>
@@ -166,14 +166,13 @@ describe("StudioNavRail Task Center", () => {
 
     const nav = screen.getByRole("navigation", { name: "Primary" });
     const statusBar = screen.getByRole("region", { name: "Studio status bar" });
-    const connection = screen.getByLabelText(/^Server /);
 
     expect(nav.classList.contains("px-7")).toBe(true);
+    expect(nav.classList.contains("items-center")).toBe(true);
     expect(nav.classList.contains("pl-12")).toBe(false);
     expect(nav.contains(trigger)).toBe(false);
     expect(statusBar.contains(trigger)).toBe(true);
     expect(trigger.parentElement?.contains(expert)).toBe(true);
-    expect(trigger.parentElement?.contains(connection)).toBe(false);
     expect(trigger.compareDocumentPosition(expert) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
 
     const edit = screen.getByRole("textbox", { name: "Current edit" }) as HTMLInputElement;

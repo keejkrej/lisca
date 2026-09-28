@@ -11,7 +11,7 @@ export type { AnalysisProgress } from "@lisca/contracts";
 
 export type StudioPortDeps = AlignerPortDeps;
 
-export function createStudioPort(deps: StudioPortDeps): StudioDataPort {
+export function createStudioPort(deps: StudioPortDeps = {}): StudioDataPort {
   const client = createApiClient(deps);
   const aligner = createAlignerPort(deps, client);
   const annotator = createAnnotatorPort(deps, client);
@@ -28,9 +28,6 @@ export function createStudioPort(deps: StudioPortDeps): StudioDataPort {
     },
     saveAssayJson(saveTo, contents) {
       return toClientEffect(client.studio.saveAssayJson({ payload: { saveTo, contents } }));
-    },
-    saveResultPdf(request) {
-      return toClientEffect(client.studio.saveResultPdf({ payload: request }));
     },
     getAnalysisResults(workspacePath) {
       return toClientEffect(client.studio.getAnalysisResults({ query: { workspacePath } }));

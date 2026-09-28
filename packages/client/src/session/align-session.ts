@@ -54,8 +54,6 @@ export function makeErrorCropProgress(
 export type RunCropRoiOptions = {
   client: Pick<AlignerDataPort, "cropRoi" | "onCropRoiProgress">;
   request: CropRoiRequest;
-  /** Stable identity for the server owning the in-memory crop job. */
-  serverIdentity: string;
   /** Called with the queued progress, every progress update, and any error progress. */
   onProgress: (progress: CropRoiProgress) => void;
   /** Called with a human-readable message when the job fails. */
@@ -257,8 +255,7 @@ export function frameLoadSelectionKey(selection: FrameRequest): string {
 const noop = () => {};
 
 export async function runCropRoi(options: RunCropRoiOptions): Promise<() => void> {
-  const { client, request, serverIdentity, onProgress, onError, onCompleted, toErrorMessage } =
-    options;
+  const { client, request, onProgress, onError, onCompleted, toErrorMessage } = options;
   const totalPositions = request.positions.length;
 
   onProgress(makeQueuedCropProgress(request.requestId, totalPositions));
@@ -267,7 +264,7 @@ export async function runCropRoi(options: RunCropRoiOptions): Promise<() => void
   try {
     const response = await runClientEffect(client.cropRoi(request));
     const authoritativeId = response.requestId;
-    rememberCropRecovery(serverIdentity, request.workspacePath, authoritativeId);
+    rememberCropRecovery(request.workspacePath, authoritativeId);
     onProgress({
       ...makeQueuedCropProgress(authoritativeId, totalPositions),
       status: response.status,
@@ -281,7 +278,7 @@ export async function runCropRoi(options: RunCropRoiOptions): Promise<() => void
       } else if (progress.status === "completed") {
         onCompleted(progress);
       }
-      acknowledgeCropRecovery(serverIdentity, request.workspacePath, progress.requestId);
+      acknowledgeCropRecovery(request.workspacePath, progress.requestId);
       stop();
     });
     return () => stop();

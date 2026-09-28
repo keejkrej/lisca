@@ -1,26 +1,42 @@
-import { cleanup, render } from "@solidjs/testing-library";
-import { afterEach, describe, expect, it } from "vite-plus/test";
+import { cleanup, fireEvent, render, screen } from "@solidjs/testing-library";
+import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
 import { ConnectionStatus, type ConnectionState } from "../src/shell/chrome/connection-status";
 
 afterEach(cleanup);
 
-const states = [
-  ["idle", "Idle"],
-  ["connecting", "Connecting…"],
-  ["open", "Connected"],
-  ["closed", "Disconnected"],
-] satisfies [ConnectionState, string][];
-
 describe("ConnectionStatus", () => {
-  it.each(states)("renders the %s host state without visible service chrome", (state, label) => {
-    const view = render(() => (
-      <ConnectionStatus httpBaseUrl="http://127.0.0.1:8767" state={state} />
-    ));
-    const status = view.getByLabelText(`Server ${label}`);
+  it.each(["idle", "connecting", "open"] satisfies ConnectionState[])(
+    "shows nothing while the server is %s",
+    (state) => {
+      const view = render(() => <ConnectionStatus state={state} />);
+      expect(view.container.textContent).toBe("");
+    },
+  );
 
-    expect(status.textContent).toBe(label);
-    expect(status.dataset.state).toBe(state);
-    expect(status.querySelector('[data-slot="connection-status-dot"]')).not.toBeNull();
+  it("asks for attention when the server is unreachable and retries on demand", async () => {
+    const onRetry = vi.fn();
+    const view = render(() => <ConnectionStatus state="closed" onRetry={onRetry} />);
+
+    const chip = view.getByRole("button", { name: "Server unreachable" });
+    expect(chip.textContent).toContain("Server unreachable");
+    fireEvent.click(chip);
+
+    // The popover renders in a portal outside the view container.
+    const retry = await screen.findByRole("button", { name: "Retry now" });
+    expect(screen.getByText(/localhost:3000 isn't responding/)).toBeTruthy();
+    fireEvent.click(retry);
+    expect(onRetry).toHaveBeenCalledOnce();
+    expect(screen.getByRole("button", { name: "Retrying…" })).toBeTruthy();
+  });
+
+  it("renders nothing in desktop builds, where the backend runs in-process", () => {
+    Object.defineProperty(window, "liscaDesktop", { configurable: true, value: {} });
+    try {
+      const view = render(() => <ConnectionStatus state="closed" />);
+      expect(view.container.textContent).toBe("");
+    } finally {
+      Reflect.deleteProperty(window, "liscaDesktop");
+    }
   });
 });

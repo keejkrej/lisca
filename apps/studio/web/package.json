@@ -26,7 +26,6 @@
     "@lisca/web-app": "workspace:*",
     "@tanstack/solid-router": "catalog:",
     "effect": "catalog:",
-    "html2canvas-pro": "^2.0.2",
     "jspdf": "^4.2.1",
     "phosphor-icons-solid": "catalog:",
     "solid-js": "catalog:"
