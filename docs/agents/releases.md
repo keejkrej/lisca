@@ -38,7 +38,7 @@ whose version differs from any of the nine desktop manifest fields fails without
    ```
 
 4. Commit and push the version plus release changes to `main`.
-5. Wait for the `CI` workflow on that exact commit to succeed.
+5. Wait for the `Checks` workflow on that exact commit to succeed.
 6. Create and push the tag without moving it later:
 
    ```sh

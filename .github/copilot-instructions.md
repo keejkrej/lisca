@@ -1,7 +1,7 @@
 # Copilot review instructions
 
 LiSCA is a pnpm/Vite+ and Cargo monorepo: SolidJS web apps, Rust (Axum) servers, and Tauri
-desktop shells for Studio, Aligner, and Annotator. `CLAUDE.md` holds the full repository
+desktop shells for Studio, Aligner, and Annotator. `AGENTS.md` (symlinked as `CLAUDE.md`) holds the full repository
 guidelines; `docs/adr/` records deliberate choices.
 
 When reviewing a pull request, prioritize correctness bugs and regressions over style. Formatting
