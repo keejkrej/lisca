@@ -3,7 +3,7 @@
 This tree is the notebooks **export artifact**, equivalent to `lisca-notebooks-X.Y.Z.zip`. It is not a development branch, and it is not Studio, Aligner, Annotator, or the Lisca monorepo (`apps/`, `crates/`, …).
 
 - All daily edits happen on **`main`** (and assay sidecars). Nobody hand-edits branch `notebooks`.
-- The only writer of branch `notebooks` is the notebooks release workflow: pack zip → push that packed tree to `notebooks` → tag `notebooks-vX.Y.Z` on that export commit → GitHub Release. There is no sync from main merges or PRs.
+- The only writer of branch `notebooks` is the release-jupyternotebook workflow: pack zip → push that packed tree to `notebooks` → tag `notebooks-vX.Y.Z` on that export commit → GitHub Release. There is no sync from main merges or PRs.
 - `update.sh` always uses portable git under `.tools/git`. It pulls export branch `notebooks`; it does not pull `main`.
 
 ## Get
@@ -108,4 +108,4 @@ Set these in the first code cell of each notebook. Paths are the mounted or loca
 
 ## Version
 
-`VERSION` is the source of truth (this tree is `0.1.4`). Bump it on **`main`**. After merge, run notebooks-release `workflow_dispatch` with that SemVer. The job packs from main, publishes this tree to branch `notebooks`, and tags `notebooks-vX.Y.Z` on that **export** commit (not a main SHA). Desktop installers use a different train (`v*`) and are not in this export.
+`VERSION` is the source of truth (this tree is `0.1.4`). Bump it on **`main`**. After merge, run release-jupyternotebook `workflow_dispatch` with that SemVer. The job packs from main, publishes this tree to branch `notebooks`, and tags `notebooks-vX.Y.Z` on that **export** commit (not a main SHA). Desktop installers use a different train (`v*`) and are not in this export.

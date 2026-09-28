@@ -59,10 +59,10 @@ installers and must not be hooked into `.github/workflows/release.yml`.
 
 - Desktop tags: `vX.Y.Z` → unsigned Studio, Aligner, and Annotator installers (DMG, NSIS, deb).
 - Notebook tags: `notebooks-vX.Y.Z` on the **export commit** of branch `notebooks` (not `main`).
-  Asset: `lisca-notebooks-X.Y.Z.zip`. Workflow: `.github/workflows/notebooks-release.yml`.
+  Asset: `lisca-notebooks-X.Y.Z.zip`. Workflow: `.github/workflows/release-jupyternotebook.yml`.
 - Bump `notebooks/VERSION` (and `notebooks/pyproject.toml`) on **`main`**. Daily work never lands on
   `notebooks`. Branch `notebooks` is an export artifact equivalent to the zip.
-- After merge, `workflow_dispatch` notebooks-release with that SemVer. The job packs from **main**,
+- After merge, `workflow_dispatch` release-jupyternotebook with that SemVer. The job packs from **main**,
   publishes the packed tree to `notebooks` with `--tag` (`notebooks-vX.Y.Z` on the export commit),
   then creates the GitHub Release. Do not tag a main monorepo commit. Do not push branch `notebooks`
   from merges or PRs. Do not add a sync from main.

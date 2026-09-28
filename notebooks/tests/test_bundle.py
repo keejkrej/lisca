@@ -193,9 +193,10 @@ class TestNotebooksBundle(unittest.TestCase):
         self.assertIn(".tools/", publish)
         self.assertIn("notebooks/*.backup-*.ipynb", publish)
         self.assertNotIn("*.bak-*", publish)
-        release = (REPO / ".github" / "workflows" / "notebooks-release.yml").read_text(
+        release = (REPO / ".github" / "workflows" / "release-jupyternotebook.yml").read_text(
             encoding="utf-8"
         )
+        self.assertIn("name: release-jupyternotebook", release)
         self.assertIn("workflow_dispatch", release)
         self.assertIn("publish-notebooks-branch.sh --tag", release)
         self.assertIn("ref: main", release)
