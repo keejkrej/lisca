@@ -1,4 +1,4 @@
-name: Notebooks release
+name: release-jupyternotebook
 
 # Pack from main (monorepo). Tag notebooks-v* on the notebooks export commit, not main.
 
@@ -11,7 +11,7 @@ on:
         type: string
 
 concurrency:
-  group: notebooks-release
+  group: release-jupyternotebook
   cancel-in-progress: false
 
 permissions:
