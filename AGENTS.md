@@ -38,6 +38,20 @@ TypeScript tests use Vitest and are named `*.test.ts` or `*.test.tsx`, usually i
 
 ## Commit & Pull Request Guidelines
 
-Recent commits use short, imperative summaries such as `Polish shell chrome and fix canvas theme live updates.` Keep each commit scoped to one coherent change. Pull requests should explain the user-visible outcome, identify affected apps/packages, link the relevant local issue or PRD under `.scratch/<feature-slug>/`, and report validation performed. Include screenshots for visual UI changes and call out contract, schema, model, or migration impacts explicitly.
+Recent commits use short, imperative summaries such as `Polish shell chrome and fix canvas theme live updates.` Keep each commit scoped to one coherent change. Pull requests should explain the user-visible outcome, identify affected apps/packages, link the relevant GitHub issue, and report validation performed. Include screenshots for visual UI changes and call out contract, schema, model, or migration impacts explicitly.
 
 Desktop releases follow [`docs/agents/releases.md`](docs/agents/releases.md): the three shipped apps share one release version, release-bearing desktop manifests must match the immutable `v*` tag, and unrelated private helpers do not receive empty version bumps.
+
+## Agent skills
+
+### Issue tracker
+
+Issues and specs live as GitHub issues in `keejkrej/lisca`. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Five canonical labels: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: one root `CONTEXT.md` and `docs/adr/`. See `docs/agents/domain.md`.
