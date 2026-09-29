@@ -54,6 +54,59 @@ write_ico() {
   )" "$ico"
 }
 
+# macOS 26 and later leave an opaque square icns sharp in the Dock.
+# Clip the plate to the app-icon corner so those corners stay transparent.
+mask_macos_icon() {
+  local src="$1"
+  local dest="$2"
+  if ! command -v swift >/dev/null 2>&1; then
+    echo "missing required tool: swift" >&2
+    exit 1
+  fi
+  swift - "$src" "$dest" <<'SWIFT'
+import AppKit
+let srcPath = CommandLine.arguments[1]
+let destPath = CommandLine.arguments[2]
+guard let image = NSImage(contentsOfFile: srcPath) else {
+  fputs("unreadable icon \(srcPath)\n", stderr)
+  exit(1)
+}
+let size = 1024
+guard let rep = NSBitmapImageRep(
+  bitmapDataPlanes: nil,
+  pixelsWide: size,
+  pixelsHigh: size,
+  bitsPerSample: 8,
+  samplesPerPixel: 4,
+  hasAlpha: true,
+  isPlanar: false,
+  colorSpaceName: .deviceRGB,
+  bytesPerRow: 0,
+  bitsPerPixel: 0
+) else {
+  fputs("could not allocate icon bitmap\n", stderr)
+  exit(1)
+}
+NSGraphicsContext.saveGraphicsState()
+NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: rep)
+let rect = NSRect(x: 0, y: 0, width: CGFloat(size), height: CGFloat(size))
+let radius = CGFloat(size) * 0.2237
+NSBezierPath(roundedRect: rect, xRadius: radius, yRadius: radius).addClip()
+image.draw(in: rect)
+NSGraphicsContext.restoreGraphicsState()
+guard let png = rep.representation(using: .png, properties: [:]) else {
+  fputs("could not encode icon\n", stderr)
+  exit(1)
+}
+do {
+  try png.write(to: URL(fileURLWithPath: destPath))
+} catch {
+  fputs("could not write \(destPath): \(error)\n", stderr)
+  exit(1)
+}
+SWIFT
+}
+
 write_icns() {
   local src="$1"
   local dest="$2"
@@ -63,18 +116,20 @@ write_icns() {
   fi
   local work
   work="$(mktemp -d)"
+  local masked="$work/masked.png"
   local set="$work/icon.iconset"
   mkdir -p "$set"
-  magick "$src" -resize 16x16 "$set/icon_16x16.png"
-  magick "$src" -resize 32x32 "$set/icon_16x16@2x.png"
-  magick "$src" -resize 32x32 "$set/icon_32x32.png"
-  magick "$src" -resize 64x64 "$set/icon_32x32@2x.png"
-  magick "$src" -resize 128x128 "$set/icon_128x128.png"
-  magick "$src" -resize 256x256 "$set/icon_128x128@2x.png"
-  magick "$src" -resize 256x256 "$set/icon_256x256.png"
-  magick "$src" -resize 512x512 "$set/icon_256x256@2x.png"
-  magick "$src" -resize 512x512 "$set/icon_512x512.png"
-  magick "$src" -resize 1024x1024 "$set/icon_512x512@2x.png"
+  mask_macos_icon "$src" "$masked"
+  magick "$masked" -resize 16x16 "$set/icon_16x16.png"
+  magick "$masked" -resize 32x32 "$set/icon_16x16@2x.png"
+  magick "$masked" -resize 32x32 "$set/icon_32x32.png"
+  magick "$masked" -resize 64x64 "$set/icon_32x32@2x.png"
+  magick "$masked" -resize 128x128 "$set/icon_128x128.png"
+  magick "$masked" -resize 256x256 "$set/icon_128x128@2x.png"
+  magick "$masked" -resize 256x256 "$set/icon_256x256.png"
+  magick "$masked" -resize 512x512 "$set/icon_256x256@2x.png"
+  magick "$masked" -resize 512x512 "$set/icon_512x512.png"
+  magick "$masked" -resize 1024x1024 "$set/icon_512x512@2x.png"
   iconutil -c icns "$set" -o "$dest"
   rm -rf "$work"
 }

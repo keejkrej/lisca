@@ -11,7 +11,7 @@ export function StudioAnnotateNav() {
       when={!nav.workspaceMissing}
       fallback={
         <p class="text-destructive text-sm" role="alert">
-          Choose a workspace on the Info step first.
+          Choose a workspace on the Metadata step first.
         </p>
       }
     >

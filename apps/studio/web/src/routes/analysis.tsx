@@ -2,9 +2,9 @@ import { Spinner } from "@lisca/ui/components";
 import { createFileRoute } from "@tanstack/solid-router";
 import { lazy, Suspense } from "solid-js";
 
-const ResultPage = lazy(() => import("../result/result-page"));
+const AnalysisPage = lazy(() => import("../analysis/analysis-page"));
 
-function ResultPageFallback() {
+function AnalysisPageFallback() {
   return (
     <div class="flex h-full items-center justify-center">
       <Spinner class="size-4" />
@@ -12,10 +12,10 @@ function ResultPageFallback() {
   );
 }
 
-export const Route = createFileRoute("/result")({
+export const Route = createFileRoute("/analysis")({
   component: () => (
-    <Suspense fallback={<ResultPageFallback />}>
-      <ResultPage />
+    <Suspense fallback={<AnalysisPageFallback />}>
+      <AnalysisPage />
     </Suspense>
   ),
 });

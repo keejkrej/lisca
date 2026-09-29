@@ -11,7 +11,7 @@ import {
   type AnalysisFixture,
   type FixtureAssayId,
 } from "@lisca/analysis/fixtures";
-import { ResultPlotGallery } from "@lisca/studio-web/result";
+import { AnalysisPlotGallery } from "@lisca/studio-web/analysis";
 import { Panel, SidebarStack } from "@lisca/ui/shell";
 import { DemoNavbar, DemoShell } from "@lisca/web-demo";
 import { createMemo, createSignal, Show } from "solid-js";
@@ -70,7 +70,7 @@ export function AnalysisDemo(props: AnalysisDemoProps) {
                     <p class="border-b px-4 py-2 text-xs text-muted-foreground">
                       {fixtureBanner()}
                     </p>
-                    <ResultPlotGallery
+                    <AnalysisPlotGallery
                       emptyTitle="No plots in this view"
                       emptyMessage="Switch Timeseries and Parameters in the dock."
                       plots={plots()}
@@ -101,7 +101,7 @@ export function AnalysisDemo(props: AnalysisDemoProps) {
               <DemoShell.MainScroll contentClass="p-2.5">
                 <Panel class="min-h-full w-full">
                   <p class="border-b px-4 py-2 text-xs text-muted-foreground">{fixtureBanner()}</p>
-                  <ResultPlotGallery
+                  <AnalysisPlotGallery
                     emptyTitle="No plots in this view"
                     emptyMessage="Switch Timeseries and Parameters in the dock."
                     plots={plots()}

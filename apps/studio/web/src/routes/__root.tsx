@@ -1,6 +1,6 @@
 import { Navigate, Outlet, createRootRoute } from "@tanstack/solid-router";
 
-import { StudioBasicInfoLeaveGuard } from "../components/studio-basic-info-leave-guard";
+import { StudioMetadataLeaveGuard } from "../components/studio-metadata-leave-guard";
 import { StudioWorkSessionGate } from "../components/studio-work-session-gate";
 
 export const Route = createRootRoute({
@@ -11,7 +11,7 @@ export const Route = createRootRoute({
 function RootLayout() {
   return (
     <StudioWorkSessionGate>
-      <StudioBasicInfoLeaveGuard />
+      <StudioMetadataLeaveGuard />
       <Outlet />
     </StudioWorkSessionGate>
   );

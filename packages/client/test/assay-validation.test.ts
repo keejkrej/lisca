@@ -55,7 +55,7 @@ describe("assay validation", () => {
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.errors[0]).toContain("Choose an assay type");
-      expect(result.errors).toContain("Complete the Info step (name, source, workspace).");
+      expect(result.errors).toContain("Complete the Metadata step (name, source, workspace).");
     }
   });
 

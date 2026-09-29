@@ -1,13 +1,13 @@
 import { PanelSection } from "@lisca/ui/shell";
 
 import { useStudioStore } from "../state/studio-store";
-import { useStudioResultState } from "../state/use-studio-result-state";
+import { useStudioAnalysisPage } from "../state/use-studio-analysis-page";
 
-export function StudioResultExpertRight() {
-  const resultState = useStudioResultState();
+export function StudioAnalysisExpert() {
+  const analysisPage = useStudioAnalysisPage();
   const assayId = useStudioStore((state) => state.assayId);
 
-  const fileCount = () => resultState.analysisResultFiles.length;
+  const fileCount = () => analysisPage.analysisResultFiles.length;
 
   return (
     <PanelSection appearance="rail" title="Analysis">

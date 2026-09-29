@@ -5,7 +5,7 @@ import IconTrashRegular from "phosphor-icons-solid/IconTrashRegular";
 
 import { studioWizardActions, studioWizardAtom } from "../state/studio-store";
 
-export function BasicInfoStep2() {
+export function MetadataSamples() {
   const wizard = useAtomValue(() => studioWizardAtom);
   const setWizard = useAtomSet(() => studioWizardAtom);
   const updateSample = (
@@ -23,14 +23,14 @@ export function BasicInfoStep2() {
       class="flex w-full max-w-[640px] min-w-0 flex-col gap-6"
     >
       <div class="flex flex-col gap-2">
-        <h1 class="text-2xl font-semibold leading-8 tracking-[-0.02em]" id="studio-samples-title">
+        <h2 class="text-2xl font-semibold leading-8 tracking-[-0.02em]" id="studio-samples-title">
           Samples
-        </h1>
+        </h2>
         <p class="text-[13px] leading-[18px] text-muted-foreground">
           Each row is one condition: name, position range, and mask vs signal channels.
         </p>
       </div>
-      <div class="w-full min-w-0 border-y border-border">
+      <div class="flex w-full min-w-0 flex-col gap-5">
         <For each={samples()}>
           {(row, index) => (
             <SampleCard
@@ -72,7 +72,7 @@ function SampleCard(props: {
   return (
     <article
       aria-label={`Sample ${props.index + 1}`}
-      class="flex min-w-0 flex-col gap-4 border-b border-border py-5 last:border-b-0"
+      class="flex min-w-0 flex-col gap-4"
     >
       <div class="grid min-w-0 grid-cols-[4.5rem_minmax(0,1fr)_2rem] items-end gap-2.5">
         <label class="flex min-w-0 flex-col gap-1.5">

@@ -25,7 +25,7 @@ function ShellDockInner(props: { children?: JSX.Element; class?: string }) {
       aria-label="Dock"
       class={cn(shellDockFixed, "border-t", shellDivider, shellSurface, props.class)}
     >
-      <div class="min-h-0 flex-1 overflow-auto">{props.children}</div>
+      <div class="min-h-0 flex-1 overflow-auto overscroll-none">{props.children}</div>
     </div>
   );
 }
@@ -83,7 +83,7 @@ function SkipToMainLink() {
 function AppShellRoot(props: { children?: JSX.Element }) {
   return (
     <ShellLayoutProvider>
-      <div class="lisca-instrument-shell flex h-full min-h-0 flex-col overflow-clip bg-muted py-4 text-xs leading-4 text-foreground">
+      <div class="lisca-instrument-shell flex h-full min-h-0 flex-col overflow-clip overscroll-none bg-muted py-4 text-xs leading-4 text-foreground">
         <SkipToMainLink />
         {props.children}
       </div>
@@ -103,7 +103,7 @@ function AppShellTopBar(props: { children?: JSX.Element; class?: string }) {
       )}
       data-slot="app-shell-top-bar"
     >
-      <div class="min-h-0 flex-1 overflow-auto">{props.children}</div>
+      <div class="min-h-0 flex-1 overflow-auto overscroll-none">{props.children}</div>
     </div>
   );
 }
@@ -197,7 +197,7 @@ function AppShellMainScroll(props: {
   return (
     <div
       class={cn(
-        "flex h-full min-h-0 min-w-0 w-full flex-1 flex-col overflow-x-hidden overflow-y-auto",
+        "flex h-full min-h-0 min-w-0 w-full flex-1 flex-col overflow-x-hidden overflow-y-auto overscroll-none",
         props.class,
       )}
       data-slot="app-shell-main-scroll"

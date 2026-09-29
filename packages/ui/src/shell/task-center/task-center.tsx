@@ -25,7 +25,17 @@ import { cn } from "../../lib/utils";
 export type TaskCenterProps = {
   /** Compact instrument-session trigger; the default keeps the existing shell button. */
   appearance?: "button" | "status-link";
+  /** Dialog subtitle. Defaults to the shared task-center description. */
+  description?: string;
+  /** Shown under the empty title when the scoped list has no operations. */
+  emptyMessage?: string;
+  /** Empty-list heading. */
+  emptyTitle?: string;
   gateway: TaskCenterGateway;
+  /** Status trigger text. Defaults to "Tasks". */
+  label?: string;
+  /** Dialog title. Defaults to "Task Center". */
+  title?: string;
   subscribe: (handlers: {
     onSnapshot: (snapshot: Awaited<ReturnType<TaskCenterGateway["listOperations"]>>) => void;
     onError: (error: unknown) => void;
@@ -282,6 +292,9 @@ export function TaskCenter(props: TaskCenterProps) {
     }
   };
 
+  const label = () => props.label ?? "Tasks";
+  const title = () => props.title ?? "Task Center";
+
   return (
     <Dialog.Root modal open={open()} onOpenChange={setDialogOpen}>
       <Dialog.Trigger
@@ -289,8 +302,8 @@ export function TaskCenter(props: TaskCenterProps) {
         ref={(element) => (triggerButton = element)}
         aria-label={
           indicator().tone === "attention"
-            ? `Tasks, ${indicator().attentionCount} need attention`
-            : `Tasks, ${indicator().activeCount} active`
+            ? `${label()}, ${indicator().attentionCount} need attention`
+            : `${label()}, ${indicator().activeCount} active`
         }
         class={cn(
           "relative",
@@ -304,7 +317,7 @@ export function TaskCenter(props: TaskCenterProps) {
         <Show when={!statusLink()}>
           <IconQueueRegular class="size-4" />
         </Show>
-        <span class={statusLink() ? undefined : "hidden sm:inline"}>Tasks</span>
+        <span class={statusLink() ? undefined : "hidden sm:inline"}>{label()}</span>
         <Show when={statusLink() ? indicator().activeCount > 0 : indicator().tone !== "idle"}>
           <span
             aria-hidden="true"
@@ -349,15 +362,15 @@ export function TaskCenter(props: TaskCenterProps) {
         >
           <div class="flex items-start justify-between gap-4 border-b border-border px-5 py-4">
             <div class="space-y-1">
-              <Dialog.Title class="font-semibold text-foreground text-lg">Task Center</Dialog.Title>
+              <Dialog.Title class="font-semibold text-foreground text-lg">{title()}</Dialog.Title>
               <Dialog.Description class="text-muted-foreground text-sm">
-                Background computations and recent results
+                {props.description ?? "Background computations and recent results"}
               </Dialog.Description>
             </div>
             <Dialog.CloseButton
               as={Button}
               ref={(element) => (closeButton = element)}
-              aria-label="Close Task Center"
+              aria-label={`Close ${title()}`}
               class=""
               size="icon-sm"
               type="button"
@@ -391,9 +404,11 @@ export function TaskCenter(props: TaskCenterProps) {
               fallback={
                 <div class="flex min-h-52 flex-col items-center justify-center gap-2 px-6 py-12 text-center">
                   <IconQueueRegular class="size-7 text-muted-foreground" />
-                  <p class="font-medium text-foreground text-sm">No tasks yet</p>
+                  <p class="font-medium text-foreground text-sm">
+                    {props.emptyTitle ?? "No tasks yet"}
+                  </p>
                   <p class="max-w-sm text-muted-foreground text-sm">
-                    Long-running computations will appear here while you keep working.
+                    {props.emptyMessage ?? "Long-running computations will appear here."}
                   </p>
                 </div>
               }

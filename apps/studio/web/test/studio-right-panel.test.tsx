@@ -16,7 +16,7 @@ import { StudioRightPanel } from "../src/components/studio-right-panel";
 afterEach(cleanup);
 
 describe("StudioRightPanel", () => {
-  it("safely centers short rails without making overflowing expert content unreachable", () => {
+  it("pins the rail measure to the leading margin and keeps short content vertically centered", () => {
     const view = render(() => (
       <StudioRightPanel expert={() => <div>Expert controls</div>} instruction="Instruction" />
     ));
@@ -28,10 +28,11 @@ describe("StudioRightPanel", () => {
     expect(scroll).not.toBeNull();
     expect(rail?.classList.contains("px-7")).toBe(false);
     expect(scroll?.classList.contains("overflow-y-auto")).toBe(true);
-    expect((scroll as HTMLElement | null)?.style.scrollbarGutter).toBe("stable both-edges");
+    expect((scroll as HTMLElement | null)?.style.scrollbarGutter).toBe("");
     expect(scroll?.classList.contains("w-[200px]")).toBe(false);
     expect(scroll?.classList.contains("justify-center")).toBe(false);
     expect(stack?.classList.contains("my-auto")).toBe(true);
+    expect(stack?.classList.contains("ml-7")).toBe(true);
     expect(stack?.classList.contains("w-[200px]")).toBe(true);
     expect(stack?.classList.contains("gap-4")).toBe(true);
     expect(screen.getAllByText("Instruction")).toHaveLength(2);

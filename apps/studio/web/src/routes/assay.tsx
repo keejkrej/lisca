@@ -40,7 +40,7 @@ function AssayPage() {
       const label = assayDisplayLabel(assayJson);
       touchStudioWorkSessionFromAssayPath(path, label);
       recordStudioAssayMemory(path, label, assayJson.workspace.path.trim() || undefined);
-      navigateTo("/info");
+      navigateTo("/metadata");
     } catch (cause) {
       setOpenAssayError(
         cause instanceof Error

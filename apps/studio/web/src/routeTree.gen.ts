@@ -11,10 +11,10 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AlignRouteImport } from './routes/align'
+import { Route as AnalysisRouteImport } from './routes/analysis'
 import { Route as AnnotateRouteImport } from './routes/annotate'
 import { Route as AssayRouteImport } from './routes/assay'
-import { Route as InfoRouteImport } from './routes/info'
-import { Route as ResultRouteImport } from './routes/result'
+import { Route as MetadataRouteImport } from './routes/metadata'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -24,6 +24,11 @@ const IndexRoute = IndexRouteImport.update({
 const AlignRoute = AlignRouteImport.update({
   id: '/align',
   path: '/align',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AnalysisRoute = AnalysisRouteImport.update({
+  id: '/analysis',
+  path: '/analysis',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AnnotateRoute = AnnotateRouteImport.update({
@@ -36,57 +41,59 @@ const AssayRoute = AssayRouteImport.update({
   path: '/assay',
   getParentRoute: () => rootRouteImport,
 } as any)
-const InfoRoute = InfoRouteImport.update({
-  id: '/info',
-  path: '/info',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ResultRoute = ResultRouteImport.update({
-  id: '/result',
-  path: '/result',
+const MetadataRoute = MetadataRouteImport.update({
+  id: '/metadata',
+  path: '/metadata',
   getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/align': typeof AlignRoute
+  '/analysis': typeof AnalysisRoute
   '/annotate': typeof AnnotateRoute
   '/assay': typeof AssayRoute
-  '/info': typeof InfoRoute
-  '/result': typeof ResultRoute
+  '/metadata': typeof MetadataRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/align': typeof AlignRoute
+  '/analysis': typeof AnalysisRoute
   '/annotate': typeof AnnotateRoute
   '/assay': typeof AssayRoute
-  '/info': typeof InfoRoute
-  '/result': typeof ResultRoute
+  '/metadata': typeof MetadataRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/align': typeof AlignRoute
+  '/analysis': typeof AnalysisRoute
   '/annotate': typeof AnnotateRoute
   '/assay': typeof AssayRoute
-  '/info': typeof InfoRoute
-  '/result': typeof ResultRoute
+  '/metadata': typeof MetadataRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/align' | '/annotate' | '/assay' | '/info' | '/result'
+  fullPaths: '/' | '/align' | '/analysis' | '/annotate' | '/assay' | '/metadata'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/align' | '/annotate' | '/assay' | '/info' | '/result'
-  id: '__root__' | '/' | '/align' | '/annotate' | '/assay' | '/info' | '/result'
+  to: '/' | '/align' | '/analysis' | '/annotate' | '/assay' | '/metadata'
+  id:
+    | '__root__'
+    | '/'
+    | '/align'
+    | '/analysis'
+    | '/annotate'
+    | '/assay'
+    | '/metadata'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AlignRoute: typeof AlignRoute
+  AnalysisRoute: typeof AnalysisRoute
   AnnotateRoute: typeof AnnotateRoute
   AssayRoute: typeof AssayRoute
-  InfoRoute: typeof InfoRoute
-  ResultRoute: typeof ResultRoute
+  MetadataRoute: typeof MetadataRoute
 }
 
 declare module '@tanstack/solid-router' {
@@ -105,6 +112,13 @@ declare module '@tanstack/solid-router' {
       preLoaderRoute: typeof AlignRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/analysis': {
+      id: '/analysis'
+      path: '/analysis'
+      fullPath: '/analysis'
+      preLoaderRoute: typeof AnalysisRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/annotate': {
       id: '/annotate'
       path: '/annotate'
@@ -119,18 +133,11 @@ declare module '@tanstack/solid-router' {
       preLoaderRoute: typeof AssayRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/info': {
-      id: '/info'
-      path: '/info'
-      fullPath: '/info'
-      preLoaderRoute: typeof InfoRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/result': {
-      id: '/result'
-      path: '/result'
-      fullPath: '/result'
-      preLoaderRoute: typeof ResultRouteImport
+    '/metadata': {
+      id: '/metadata'
+      path: '/metadata'
+      fullPath: '/metadata'
+      preLoaderRoute: typeof MetadataRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -139,10 +146,10 @@ declare module '@tanstack/solid-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AlignRoute: AlignRoute,
+  AnalysisRoute: AnalysisRoute,
   AnnotateRoute: AnnotateRoute,
   AssayRoute: AssayRoute,
-  InfoRoute: InfoRoute,
-  ResultRoute: ResultRoute,
+  MetadataRoute: MetadataRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

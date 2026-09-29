@@ -77,6 +77,7 @@ describe("AppShell paper pane", () => {
     hasClass(root, "bg-muted");
     hasClass(root, "py-4");
     hasClass(root, "overflow-clip");
+    hasClass(root, "overscroll-none");
     hasClass(screen.getByLabelText("Left panel"), "w-64");
     expect(screen.getByLabelText("Left panel").classList.contains("border-r")).toBe(false);
     hasClass(screen.getByLabelText("Right panel"), "w-64");
@@ -140,6 +141,7 @@ describe("AppShell paper pane", () => {
     expect(scroll?.parentElement).toBe(main);
     hasClass(scroll!, "w-full");
     hasClass(scroll!, "overflow-y-auto");
+    hasClass(scroll!, "overscroll-none");
     expect(content).not.toBeNull();
     hasClass(content!, "mx-auto");
     hasClass(content!, "min-h-full");

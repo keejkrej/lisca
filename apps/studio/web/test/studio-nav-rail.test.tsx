@@ -17,9 +17,14 @@ import { createSignal, onMount } from "solid-js";
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
 const mocks = vi.hoisted(() => {
-  const operation = (status: "running" | "cancelled", updatedAtMs: number) => ({
-    operationId: "crop-operation",
-    kind: "crop-roi",
+  const operation = (
+    status: "running" | "cancelled",
+    updatedAtMs: number,
+    kind = "crop-roi",
+    operationId = "crop-operation",
+  ) => ({
+    operationId,
+    kind,
     workspaceId: "workspace-1",
     workspacePath: "/experiments/studio-demo",
     mutating: true,
@@ -74,7 +79,10 @@ const mocks = vi.hoisted(() => {
     cancelTask,
     retryTask,
     gateway: {
-      listOperations: async () => [operation("running", 1)],
+      listOperations: async () => [
+        operation("running", 1),
+        operation("running", 1, "analysis/transfection", "analysis-operation"),
+      ],
       getOperation,
       getTask: vi.fn(async () => task("running")),
       cancelOperation: vi.fn(async () => detail("cancelled", 2)),
@@ -82,7 +90,10 @@ const mocks = vi.hoisted(() => {
       retryTask,
     },
     subscribe: vi.fn(({ onSnapshot }: { onSnapshot: (snapshot: readonly unknown[]) => void }) => {
-      onSnapshot([operation("running", 1)]);
+      onSnapshot([
+        operation("running", 1),
+        operation("running", 1, "analysis/transfection", "analysis-operation"),
+      ]);
       return () => undefined;
     }),
   };
@@ -118,15 +129,22 @@ function StudioShellFixture() {
   );
 }
 
-function renderStudioShell() {
+function renderStudioShell(initial = "/align?position=7") {
   const rootRoute = createRootRoute();
-  const annotateRoute = createRoute({
-    getParentRoute: () => rootRoute,
-    path: "/annotate",
-    component: StudioShellFixture,
-  });
-  const routeTree = rootRoute.addChildren([annotateRoute]);
-  const history = createMemoryHistory({ initialEntries: ["/annotate?position=7"] });
+  const routeFor = (path: string) =>
+    createRoute({
+      getParentRoute: () => rootRoute,
+      path,
+      component: StudioShellFixture,
+    });
+  const routeTree = rootRoute.addChildren([
+    routeFor("/align"),
+    routeFor("/analysis"),
+    routeFor("/annotate"),
+    routeFor("/metadata"),
+    routeFor("/assay"),
+  ]);
+  const history = createMemoryHistory({ initialEntries: [initial] });
   const router = createRouter({ routeTree, history });
 
   return {
@@ -152,6 +170,23 @@ afterEach(() => {
 Object.defineProperty(window, "scrollTo", { value: vi.fn(), writable: true });
 
 describe("StudioNavRail Task Center", () => {
+  it("hides tasks away from Align and Analysis", async () => {
+    renderStudioShell("/annotate");
+    expect(await screen.findByRole("button", { name: /Expert mode$/ })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /^Cropping|^Analysis/ })).toBeNull();
+  });
+
+  it("lists analysis operations on the Analysis page", async () => {
+    renderStudioShell("/analysis");
+    fireEvent.click(await screen.findByRole("button", { name: "Analysis, 1 active" }));
+    expect(await screen.findByRole("dialog", { name: "Analysis" })).toBeTruthy();
+    expect(screen.getByText("Background analysis computations")).toBeTruthy();
+    expect(
+      await screen.findByRole("button", { name: /Expand Analysis\/transfection/ }),
+    ).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /Expand Crop ROI/ })).toBeNull();
+  });
+
   it("inspects and controls a crop task without losing route, workspace, or edit state", async () => {
     vi.stubGlobal(
       "fetch",
@@ -159,7 +194,7 @@ describe("StudioNavRail Task Center", () => {
     );
     const { router } = renderStudioShell();
 
-    const trigger = await screen.findByRole("button", { name: "Tasks, 1 active" });
+    const trigger = await screen.findByRole("button", { name: "Cropping, 1 active" });
     const expert = screen.getByRole("button", { name: /Expert mode$/ });
     expect(["true", "false"]).toContain(expert.getAttribute("aria-pressed"));
     expect(expert.querySelector('[data-slot="instrument-toggle-indicator"]')).toBeTruthy();
@@ -180,7 +215,8 @@ describe("StudioNavRail Task Center", () => {
     const workspaceState = screen.getByLabelText("Workspace state");
     fireEvent.input(edit, { target: { value: "edited unsaved phenotype" } });
     fireEvent.click(trigger);
-    await screen.findByRole("dialog", { name: "Task Center" });
+    const dialog = await screen.findByRole("dialog", { name: "Cropping" });
+    expect(dialog.textContent).toContain("Background crop computations");
 
     fireEvent.click(screen.getByRole("button", { name: /Expand Crop ROI/ }));
     await screen.findByText("Current task");
@@ -204,7 +240,7 @@ describe("StudioNavRail Task Center", () => {
     await waitFor(() => expect(screen.queryByRole("button", { name: "Retry" })).toBeNull());
     expectStudioState(router.state.location.href, edit, routeState, workspaceState);
 
-    fireEvent.click(screen.getByRole("button", { name: "Close Task Center" }));
+    fireEvent.click(screen.getByRole("button", { name: "Close Cropping" }));
     await waitFor(() => expect(trigger.getAttribute("aria-expanded")).toBe("false"));
     expectStudioState(router.state.location.href, edit, routeState, workspaceState);
   });
@@ -216,8 +252,8 @@ function expectStudioState(
   routeState: HTMLElement,
   workspaceState: HTMLElement,
 ) {
-  expect(routeHref).toBe("/annotate?position=7");
-  expect(routeState.textContent).toBe("/annotate?position=7");
+  expect(routeHref).toBe("/align?position=7");
+  expect(routeState.textContent).toBe("/align?position=7");
   expect(workspaceState.textContent).toBe("/experiments/studio-demo");
   expect(edit.value).toBe("edited unsaved phenotype");
 }

@@ -187,7 +187,7 @@ export function useStudioAnnotateState(): StudioAnnotateState {
         stopAnalysisProgress();
         stopAnalysisProgress = noop;
         setStatus("Analysis completed");
-        studioNavigate(navigate, "/result");
+        studioNavigate(navigate, "/analysis");
       }
       if (progress.status === "error") {
         analysisGeneration += 1;

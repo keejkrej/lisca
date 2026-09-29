@@ -1,6 +1,6 @@
 import { Button } from "@lisca/ui/components";
 import { AppShell } from "@lisca/ui/shell";
-import { ResultPlotGallery } from "./result-panels-grid";
+import { AnalysisPlotGallery } from "./analysis-plot-gallery";
 import { createMemo, createResource, createSignal } from "solid-js";
 import {
   liscaDesktopBridge,
@@ -11,8 +11,8 @@ import {
 import { toErrorMessage } from "../api/studio-port";
 import { StudioLeft } from "../components/studio-left";
 import { StudioRightPanel } from "../components/studio-right-panel";
-import { StudioResultExpertRight } from "../components/studio-result-expert-right";
-import { StudioResultControls } from "../components/studio-result-dock";
+import { StudioAnalysisExpert } from "../components/studio-analysis-expert";
+import { StudioAnalysisControls } from "../components/studio-analysis-controls";
 import { StudioTopBar } from "../components/studio-top-bar";
 import {
   collectResultPlots,
@@ -26,15 +26,15 @@ import {
   type ResultPlotSection,
 } from "@lisca/analysis";
 import { useStudioNavigate } from "../navigation/use-studio-navigate";
-import { useStudioResultState } from "../state/use-studio-result-state";
+import { useStudioAnalysisPage } from "../state/use-studio-analysis-page";
 
-export default function ResultPage() {
+export default function AnalysisPage() {
   const { navigateTo } = useStudioNavigate();
-  const resultState = useStudioResultState();
+  const analysisPage = useStudioAnalysisPage();
   const [selectedSection, setSelectedSection] = createSignal<ResultPlotSection>("timeseries");
   const [isSaving, setIsSaving] = createSignal(false);
   const [saveMessage, setSaveMessage] = createSignal<string | null>(null);
-  const analysisResultFiles = () => resultState.analysisResultFiles;
+  const analysisResultFiles = () => analysisPage.analysisResultFiles;
   const assayKind = createMemo(() => inferResultAssayKind(analysisResultFiles()));
   const isDesktop = liscaDesktopBridge() !== null;
   const plotsWithUrls = createMemo(() =>
@@ -63,7 +63,7 @@ export default function ResultPage() {
   const parameterPlots = createMemo(() => filterResultPlotsBySection(allPlots(), "parameters"));
   const hasAnyPlots = createMemo(() => allPlots().length > 0);
   const savePdf = async () => {
-    const workspacePath = resultState.workspacePath?.trim();
+    const workspacePath = analysisPage.workspacePath?.trim();
     if (!workspacePath || isSaving() || !hasAnyPlots()) return;
     setIsSaving(true);
     setSaveMessage(null);
@@ -148,17 +148,17 @@ export default function ResultPage() {
           <AppShell.Main>
             <AppShell.MainScroll contentClass="relative max-w-[1200px] px-6 py-8">
               <div class="relative flex min-h-full w-full flex-1 flex-col">
-                <ResultPlotGallery
+                <AnalysisPlotGallery
                   emptyTitle={
-                    !resultState.workspacePath?.trim()
+                    !analysisPage.workspacePath?.trim()
                       ? "No workspace yet"
                       : hasAnyPlots()
                         ? "Nothing in this view"
                         : "No plots yet"
                   }
                   emptyMessage={
-                    !resultState.workspacePath?.trim()
-                      ? "Choose a workspace on the Info step, then run analysis from Annotate. Plots show up here as images."
+                    !analysisPage.workspacePath?.trim()
+                      ? "Choose a workspace on the Metadata step, then run analysis from Annotate. Plots show up here as images."
                       : hasAnyPlots()
                         ? "Switch views in the dock, or run analysis again."
                         : "On Annotate, press Continue. Finished plots appear here as images."
@@ -170,10 +170,10 @@ export default function ResultPage() {
                         type="button"
                         variant="outline"
                         onClick={() =>
-                          navigateTo(resultState.workspacePath?.trim() ? "/annotate" : "/info")
+                          navigateTo(analysisPage.workspacePath?.trim() ? "/annotate" : "/metadata")
                         }
                       >
-                        {resultState.workspacePath?.trim() ? "Go to Annotate" : "Go to Info"}
+                        {analysisPage.workspacePath?.trim() ? "Go to Annotate" : "Go to Metadata"}
                       </Button>
                     )
                   }
@@ -189,9 +189,9 @@ export default function ResultPage() {
           <StudioRightPanel
             expert={() => (
               <>
-                <StudioResultExpertRight />
-                <StudioResultControls
-                  saveDisabled={!resultState.workspacePath?.trim() || !hasAnyPlots() || isSaving()}
+                <StudioAnalysisExpert />
+                <StudioAnalysisControls
+                  saveDisabled={!analysisPage.workspacePath?.trim() || !hasAnyPlots() || isSaving()}
                   saveLabel={isSaving() ? "Saving PDF…" : "Save PDF"}
                   shortcutsEnabled={!isSaving()}
                   toolActions={hasAnyPlots() ? sectionToolActions() : []}
@@ -201,8 +201,8 @@ export default function ResultPage() {
             )}
             instruction={dockInstruction}
           >
-            <StudioResultControls
-              saveDisabled={!resultState.workspacePath?.trim() || !hasAnyPlots() || isSaving()}
+            <StudioAnalysisControls
+              saveDisabled={!analysisPage.workspacePath?.trim() || !hasAnyPlots() || isSaving()}
               saveLabel={isSaving() ? "Saving PDF…" : "Save PDF"}
               shortcutsEnabled={!isSaving()}
               toolActions={hasAnyPlots() ? sectionToolActions() : []}

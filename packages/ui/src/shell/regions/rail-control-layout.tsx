@@ -13,11 +13,10 @@ export type RailSidebarProps = Omit<ComponentProps<"div">, "children" | "style">
 };
 
 /**
- * Full-width stage-rail scroller with a physically centered 200px section measure.
+ * Full-width stage-rail scroller with a 200px measure pinned to a 28px leading margin.
  *
- * The scroller owns the complete 256px rail. Stable gutters reserve matching space on both
- * edges when the platform uses non-overlay scrollbars, so overflow never narrows the section
- * measure or makes adaptive action/field pairs collapse unexpectedly.
+ * The scroller owns the complete 256px rail. A classic scrollbar consumes the trailing
+ * margin, so overflow does not move the text.
  */
 export function RailSidebar(props: RailSidebarProps) {
   const [local, others] = splitProps(props, ["class", "children"]);
@@ -26,14 +25,13 @@ export function RailSidebar(props: RailSidebarProps) {
     <div
       {...others}
       class={cn(
-        "flex h-full w-full min-h-0 flex-col items-center overflow-y-auto py-2.5",
+        "flex h-full w-full min-h-0 flex-col items-start overflow-y-auto overscroll-none py-2.5",
         local.class,
       )}
       data-rail-layout="sidebar"
       data-slot="rail-sidebar-scroll"
-      style={{ "scrollbar-gutter": "stable both-edges" }}
     >
-      <RailSectionStack class="my-auto w-[200px] shrink-0">{local.children}</RailSectionStack>
+      <RailSectionStack class="my-auto ml-7 w-[200px] shrink-0">{local.children}</RailSectionStack>
     </div>
   );
 }

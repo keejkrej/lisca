@@ -3,15 +3,15 @@ import type { ResultPlot } from "@lisca/analysis";
 import { createSignal } from "solid-js";
 import { afterEach, describe, expect, it } from "vite-plus/test";
 
-import { ResultPlotGallery } from "../src/result/result-panels-grid";
+import { AnalysisPlotGallery } from "../src/analysis/analysis-plot-gallery";
 
 afterEach(cleanup);
 
-describe("ResultPlotGallery reactivity", () => {
+describe("AnalysisPlotGallery reactivity", () => {
   it("switches between empty and populated states when plots change", () => {
     const [plots, setPlots] = createSignal<ResultPlot[]>([]);
     render(() => (
-      <ResultPlotGallery emptyMessage="Run analysis first" plots={plots()} section="timeseries" />
+      <AnalysisPlotGallery emptyMessage="Run analysis first" plots={plots()} section="timeseries" />
     ));
 
     expect(screen.getByText("Run analysis first")).toBeTruthy();
@@ -34,7 +34,7 @@ describe("ResultPlotGallery reactivity", () => {
 
   it("shows every per-sample traces.png with the sample folder in the title", () => {
     render(() => (
-      <ResultPlotGallery
+      <AnalysisPlotGallery
         plots={[
           {
             fileName: "traces.png",
