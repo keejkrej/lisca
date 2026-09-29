@@ -35,15 +35,15 @@ describe("studio task scope", () => {
       "analysis/custom",
     ]);
     expect(studioTaskCenterCopy("crop")).toEqual({
-      label: "Cropping",
-      title: "Cropping",
+      label: "Tasks",
+      title: "Tasks",
       description: "Background crop computations",
       emptyTitle: "No crop tasks yet",
       emptyMessage: "Long-running crop computations will appear here.",
     });
     expect(studioTaskCenterCopy("analysis")).toEqual({
-      label: "Analysis",
-      title: "Analysis",
+      label: "Tasks",
+      title: "Tasks",
       description: "Background analysis computations",
       emptyTitle: "No analysis tasks yet",
       emptyMessage: "Long-running analysis computations will appear here.",

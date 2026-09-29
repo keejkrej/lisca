@@ -42,6 +42,9 @@ vi.mock("phosphor-icons-solid/IconPaintBrushRegular", () => ({
 vi.mock("phosphor-icons-solid/IconSparkleRegular", () => ({
   default: () => <svg aria-hidden="true" />,
 }));
+vi.mock("phosphor-icons-solid/IconCopyRegular", () => ({
+  default: () => <svg aria-hidden="true" data-testid="copy-icon" />,
+}));
 
 afterEach(cleanup);
 
@@ -191,7 +194,7 @@ describe("stage rail tool compatibility", () => {
 });
 
 describe("PathButton stage compatibility", () => {
-  it("shows the stage label and requested extension while preserving the classic icon basename", () => {
+  it("renders the stage label with a status dot and reveals the full path on hover, while the classic variant stays on the basename", async () => {
     render(() => (
       <div>
         <PathButton
@@ -211,14 +214,41 @@ describe("PathButton stage compatibility", () => {
       </div>
     ));
 
-    const stage = screen.getByRole("button", { name: "Source source-image.nd2" });
-    expect(stage.textContent).toContain("Source");
-    expect(stage.textContent).toContain("source-image.nd2");
+    // Stage trigger: only the label + status dot are visible; the path lives
+    // in the tooltip and on the aria-label.
+    const stage = screen.getByRole("button", {
+      name: "Source: /workspaces/plate-01/source-image.nd2",
+    });
+    expect(stage.textContent).toBe("Source");
+    expect(stage.textContent).not.toContain("source-image");
+    expect(stage.textContent).not.toContain(".nd2");
     expect(screen.queryByTestId("unused-stage-icon")).toBeNull();
+
+    // Hover the trigger to surface the tooltip with the full path.
+    fireEvent.pointerEnter(stage);
+    expect(await screen.findByText("/workspaces/plate-01/source-image.nd2")).toBeTruthy();
 
     const classic = screen.getByRole("button", { name: "source-image" });
     expect(within(classic).getByTestId("classic-path-icon")).toBeTruthy();
     expect(classic.textContent).toBe("source-image");
     expect(classic.textContent).not.toContain(".nd2");
+  });
+
+  it("labels an unset stage path with a muted dot and a pick prompt in the tooltip", async () => {
+    render(() => (
+      <PathButton
+        appearance="stage"
+        label="Workspace"
+        value={null}
+        onClick={() => undefined}
+      />
+    ));
+
+    const trigger = screen.getByRole("button", { name: "Workspace: not set" });
+    expect(trigger.textContent).toBe("Workspace");
+    expect(trigger.textContent).not.toContain("Not set");
+
+    fireEvent.pointerEnter(trigger);
+    expect(await screen.findByText("Pick a workspace folder")).toBeTruthy();
   });
 });

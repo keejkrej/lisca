@@ -1,3 +1,3 @@
 import { createLiscaViteConfig } from "@lisca/web-app/vite";
 
-export default createLiscaViteConfig({ port: 8765, product: "aligner" });
+export default createLiscaViteConfig({ port: 18765, product: "aligner" });

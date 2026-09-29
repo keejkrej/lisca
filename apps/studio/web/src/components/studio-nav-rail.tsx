@@ -16,6 +16,12 @@ function isEditableTarget(target: EventTarget | null): boolean {
   return Boolean(target.closest("input, textarea, select, [contenteditable='true']"));
 }
 
+const STEP_ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"] as const;
+
+function stepLabel(index: number): string {
+  return STEP_ROMAN[index - 1] ?? String(index);
+}
+
 function NavButton(props: {
   active: boolean;
   children: JSX.Element;
@@ -66,7 +72,7 @@ function NavButton(props: {
           props.active ? "text-primary" : "text-muted-foreground",
         )}
       >
-        {String(props.index).padStart(2, "0")}
+        {stepLabel(props.index)}
       </span>
       <span
         class={cn(

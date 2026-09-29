@@ -1,7 +1,9 @@
 use std::{
     collections::BTreeMap,
-    io,
+    io::{self, Read, Write},
+    net::TcpStream,
     path::{Path, PathBuf},
+    time::Duration,
 };
 
 use axum::{
@@ -11,7 +13,7 @@ use axum::{
 };
 use base64::{engine::general_purpose::STANDARD as BASE64, Engine as _};
 use serde::{Deserialize, Serialize};
-use tauri::{Manager, WebviewUrl, WebviewWindowBuilder};
+use tauri::{utils::acl::ExecutionContext, Manager, WebviewUrl, WebviewWindowBuilder};
 
 const MAIN_WINDOW_LABEL: &str = "main";
 use tauri_plugin_dialog::DialogExt;
@@ -34,6 +36,114 @@ struct IpcRequest {
     #[serde(default)]
     headers: BTreeMap<String, String>,
     body: Option<String>,
+}
+
+/// Number of ports above the configured dev URL to probe for a live Vite server.
+/// A Lisca dev SPA serves HTML on `/`; an unrelated process on the preferred
+/// port (another Electron app, a different Lisca product's Vite) usually does
+/// not, so we only need to peek a few bytes of the body.
+const DEV_URL_SCAN_PORTS: u16 = 20;
+const DEV_URL_PROBE_TIMEOUT: Duration = Duration::from_millis(120);
+const DEV_URL_PROBE_READ_CAP: usize = 2048;
+
+/// Resolve the dev URL the desktop shell should actually load.
+///
+/// The configured `dev_url` names the *preferred* port. When Vite is bumped off
+/// it (strictPort off, or another process sitting there), this probe walks the
+/// candidate addresses for the same port first — IPv4 loopback then IPv6
+/// loopback — then ports up to `DEV_URL_SCAN_PORTS` higher, and returns the
+/// first one whose `/` is HTML carrying `data-lisca-app="<product>"`. The
+/// configured URL is returned as-is when nothing matches, so production and
+/// non-Vite flows are unaffected.
+fn resolve_dev_url(dev_url: String, product: &str) -> String {
+    let Some((host, preferred_port)) = parse_loopback_dev_url(&dev_url) else {
+        return dev_url;
+    };
+    // Vite may bind only one address family when the other is taken (e.g. IPv6
+    // wildcard when IPv4 127.0.0.1 is held by another process).
+    let hosts: [&str; 2] = if host == "127.0.0.1" {
+        ["127.0.0.1", "[::1]"]
+    } else {
+        ["[::1]", "127.0.0.1"]
+    };
+
+    for offset in 0..DEV_URL_SCAN_PORTS {
+        let port = match preferred_port.checked_add(offset) {
+            Some(port) => port,
+            None => break,
+        };
+        for candidate_host in hosts {
+            if looks_like_product_vite(candidate_host, port, product) {
+                // Emit `localhost` so the desktop capability's remote-URL
+                // pattern (`http://localhost:*`) matches regardless of which
+                // address family Vite happened to bind.
+                let found = format!("http://localhost:{port}");
+                if found != dev_url {
+                    eprintln!(
+                        "[lisca-tauri] dev URL {dev_url} is not {product}'s Vite server; using {found} instead"
+                    );
+                }
+                return found;
+            }
+        }
+    }
+    dev_url
+}
+
+/// Parse `http://127.0.0.1:PORT[/path]` or `http://localhost:PORT[/path]` into
+/// `(host, port)`. Anything else is not a Lisca dev URL we can probe.
+fn parse_loopback_dev_url(dev_url: &str) -> Option<(&str, u16)> {
+    let without_scheme = dev_url.strip_prefix("http://")?;
+    let host_port = without_scheme.split('/').next()?;
+    let (host, port) = host_port.rsplit_once(':')?;
+    if host != "127.0.0.1" && host != "localhost" {
+        return None;
+    }
+    let port = port.parse().ok()?;
+    Some((host, port))
+}
+
+/// Cheap "is this the right Lisca dev SPA?" check: read the first few bytes of
+/// `GET /` and require both `<html` and `data-lisca-app="<product>"`. Anything
+/// else (an API 404 JSON blob, a sibling product's Vite, an unrelated app,
+/// connection refused) does not match.
+fn looks_like_product_vite(host: &str, port: u16, product: &str) -> bool {
+    // SocketAddr::from_str expects `[v6]:port` or `v4:port`, so wrap bare
+    // IPv6 hosts in brackets.
+    let bracketed = if host.contains(':') && !host.starts_with('[') {
+        format!("[{host}]")
+    } else {
+        host.to_string()
+    };
+    let addr = format!("{bracketed}:{port}");
+    let Ok(addr) = addr.parse() else {
+        return false;
+    };
+    let Ok(mut stream) = TcpStream::connect_timeout(&addr, DEV_URL_PROBE_TIMEOUT) else {
+        return false;
+    };
+    let _ = stream.set_read_timeout(Some(DEV_URL_PROBE_TIMEOUT));
+    let _ = stream.set_write_timeout(Some(DEV_URL_PROBE_TIMEOUT));
+
+    let request = format!(
+        "GET / HTTP/1.0\r\nHost: {host}:{port}\r\nUser-Agent: lisca-tauri\r\nAccept: text/html,*/*\r\nConnection: close\r\n\r\n"
+    );
+    if stream.write_all(request.as_bytes()).is_err() {
+        return false;
+    }
+
+    let mut body = String::new();
+    let mut buf = [0_u8; 1024];
+    while body.len() < DEV_URL_PROBE_READ_CAP {
+        match stream.read(&mut buf) {
+            Ok(0) => break,
+            Ok(read) => body.push_str(&String::from_utf8_lossy(&buf[..read])),
+            Err(_) => return false,
+        }
+    }
+
+    let marker = format!("data-lisca-app=\"{product}\"");
+    body.contains("<html") && body.contains(&marker)
 }
 
 #[derive(Debug, Serialize)]
@@ -66,10 +176,28 @@ struct IpcBackend {
 /// Hosted builds run the same router through the standalone server binary. Desktop
 /// builds dispatch renderer requests to it through a Tauri command, without a TCP
 /// listener or a copied sidecar executable.
-pub fn run<F>(config: ProductConfig, context: tauri::Context, backend_factory: F)
+pub fn run<F>(config: ProductConfig, mut context: tauri::Context, backend_factory: F)
 where
     F: FnOnce() -> Router + Send + 'static,
 {
+    // The shell's bridge commands forward to the embedded router; they carry
+    // no plugin scope of their own, so grant them on Local and on loopback dev
+    // URLs explicitly. Without this, the IPC gate rejects them the moment the
+    // page is loaded from Vite instead of tauri://localhost.
+    {
+        use tauri::utils::acl::RemoteUrlPattern;
+        let authority = context.runtime_authority_mut();
+        authority.__allow_command("lisca_request".to_string(), ExecutionContext::Local);
+        authority.__allow_command("lisca_save_file".to_string(), ExecutionContext::Local);
+        for url in ["http://127.0.0.1:*", "http://localhost:*"] {
+            if let Ok(pattern) = url.parse::<RemoteUrlPattern>() {
+                let context = ExecutionContext::Remote { url: pattern };
+                authority.__allow_command("lisca_request".to_string(), context.clone());
+                authority.__allow_command("lisca_save_file".to_string(), context);
+            }
+        }
+    }
+
     let reopen_config = config.clone();
     let app = tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
@@ -83,11 +211,7 @@ where
 
             let router = tauri::async_runtime::block_on(async move { backend_factory() });
             app.manage(IpcBackend { router });
-            create_window(
-                app,
-                &config,
-                std::env::var("VITE_DEV_SERVER_URL").ok().as_deref(),
-            )?;
+            create_window(app, &config)?;
             Ok(())
         })
         .build(context);
@@ -140,8 +264,7 @@ fn reopen_main_window<R: tauri::Runtime>(app: &tauri::AppHandle<R>, config: &Pro
         return;
     }
 
-    let dev_url = std::env::var("VITE_DEV_SERVER_URL").ok();
-    if let Err(error) = create_window(app, config, dev_url.as_deref()) {
+    if let Err(error) = create_window(app, config) {
         eprintln!("failed to reopen window: {error}");
     }
 }
@@ -277,7 +400,6 @@ fn resolve_kill_model_path<R: tauri::Runtime, M: Manager<R>>(app: &M) -> Option<
 fn create_window<R: tauri::Runtime, M: Manager<R>>(
     app: &M,
     config: &ProductConfig,
-    dev_url: Option<&str>,
 ) -> tauri::Result<()> {
     let init_script = format!(
         r#"window.liscaDesktop = Object.freeze({{
@@ -288,21 +410,7 @@ fn create_window<R: tauri::Runtime, M: Manager<R>>(
         config.product
     );
 
-    let url = if let Some(url) = dev_url {
-        WebviewUrl::External(url.parse().map_err(|error| {
-            io::Error::new(
-                io::ErrorKind::InvalidInput,
-                format!("invalid dev URL: {error}"),
-            )
-        })?)
-    } else {
-        WebviewUrl::App("index.html".parse().map_err(|error| {
-            io::Error::new(
-                io::ErrorKind::InvalidInput,
-                format!("invalid bundled app URL: {error}"),
-            )
-        })?)
-    };
+    let url = window_url(app, config.product);
 
     WebviewWindowBuilder::new(app, MAIN_WINDOW_LABEL, url)
         .title(config.product_name)
@@ -311,6 +419,25 @@ fn create_window<R: tauri::Runtime, M: Manager<R>>(
         .build()?;
 
     Ok(())
+}
+
+/// Pick the URL the desktop window loads.
+///
+/// Production builds always serve the bundled `frontendDist` via
+/// `tauri://localhost` (`WebviewUrl::App("index.html")`). Dev builds consult
+/// `tauri.conf.json > build.devUrl` and probe nearby ports: when Vite is
+/// bumped off its preferred port (another Electron app, a stale dev process),
+/// the desktop shell follows it instead of rendering whatever answered first.
+fn window_url<R: tauri::Runtime, M: Manager<R>>(app: &M, product: &str) -> WebviewUrl {
+    if tauri::is_dev() {
+        if let Some(dev_url) = app.config().build.dev_url.as_ref() {
+            let resolved = resolve_dev_url(dev_url.to_string(), product);
+            if let Ok(url) = resolved.parse() {
+                return WebviewUrl::External(url);
+            }
+        }
+    }
+    WebviewUrl::App("index.html".parse().expect("index.html is a valid path"))
 }
 
 #[cfg(test)]
@@ -385,5 +512,242 @@ mod tests {
     #[test]
     fn a_programmatic_exit_still_quits() {
         assert!(should_quit_on_exit_request(Some(0)));
+    }
+
+    #[test]
+    fn parses_loopback_dev_urls_and_rejects_everything_else() {
+        assert_eq!(
+            parse_loopback_dev_url("http://127.0.0.1:8767"),
+            Some(("127.0.0.1", 8767))
+        );
+        assert_eq!(
+            parse_loopback_dev_url("http://localhost:8765/foo"),
+            Some(("localhost", 8765))
+        );
+        assert_eq!(parse_loopback_dev_url("http://127.0.0.1"), None);
+        assert_eq!(parse_loopback_dev_url("http://0.0.0.0:8767"), None);
+        assert_eq!(parse_loopback_dev_url("https://127.0.0.1:8767"), None);
+        assert_eq!(parse_loopback_dev_url("not-a-url"), None);
+    }
+
+    #[test]
+    fn vite_probe_accepts_matching_product_html_and_rejects_everything_else() {
+        use std::io::{Read as _, Write as _};
+        use std::net::TcpListener;
+        use std::thread;
+
+        fn serve_html(listener: TcpListener, body: &'static str) {
+            thread::spawn(move || {
+                for stream in listener.incoming() {
+                    if let Ok(mut stream) = stream {
+                        // Read the request before replying; otherwise the
+                        // kernel may RST the connection on close and the
+                        // client never sees the body.
+                        let mut buf = [0_u8; 512];
+                        let _ = stream.read(&mut buf);
+                        let response = format!(
+                            "HTTP/1.0 200 OK\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                            body.len(),
+                            body
+                        );
+                        let _ = stream.write_all(response.as_bytes());
+                        let _ = stream.shutdown(std::net::Shutdown::Both);
+                    }
+                }
+            });
+        }
+
+        // HTML page carrying the matching data-lisca-app tag — accept.
+        let html_listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let html_port = html_listener.local_addr().unwrap().port();
+        serve_html(html_listener, r#"<html lang="en" data-lisca-app="aligner"></html>"#);
+        assert!(looks_like_product_vite("127.0.0.1", html_port, "aligner"));
+
+        // HTML page for a different product — reject.
+        let html_listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let other_port = html_listener.local_addr().unwrap().port();
+        serve_html(html_listener, r#"<html lang="en" data-lisca-app="studio"></html>"#);
+        assert!(!looks_like_product_vite("127.0.0.1", other_port, "aligner"));
+
+        // JSON 404 — reject.
+        let json_listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let json_port = json_listener.local_addr().unwrap().port();
+        thread::spawn(move || {
+            for stream in json_listener.incoming() {
+                if let Ok(mut stream) = stream {
+                    let mut buf = [0_u8; 512];
+                    let _ = stream.read(&mut buf);
+                    let body = r#"{"error":"not_found"}"#;
+                    let response = format!(
+                        "HTTP/1.0 404 Not Found\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                        body.len(),
+                        body
+                    );
+                    let _ = stream.write_all(response.as_bytes());
+                    let _ = stream.shutdown(std::net::Shutdown::Both);
+                }
+            }
+        });
+        assert!(!looks_like_product_vite("127.0.0.1", json_port, "aligner"));
+
+        // Connection refused — reject.
+        let closed = TcpListener::bind("127.0.0.1:0").unwrap();
+        let closed_port = closed.local_addr().unwrap().port();
+        drop(closed);
+        assert!(!looks_like_product_vite("127.0.0.1", closed_port, "aligner"));
+    }
+
+    #[test]
+    fn resolve_dev_url_falls_back_to_the_configured_url_when_no_probe_matches() {
+        // Nothing is listening on any port we'd pick in this range, so the
+        // configured URL should be returned unchanged.
+        let placeholder = "http://127.0.0.1:9".to_string(); // discard port (RFC 863)
+        assert_eq!(
+            resolve_dev_url(placeholder.clone(), "aligner"),
+            placeholder
+        );
+
+        // Non-loopback or unparseable URLs are returned as-is without probing.
+        let remote = "https://example.com:8443".to_string();
+        assert_eq!(resolve_dev_url(remote.clone(), "aligner"), remote);
+    }
+
+    #[test]
+    fn resolve_dev_url_picks_up_a_v6_only_vite_when_v4_is_taken() {
+        use std::io::{Read as _, Write as _};
+        use std::net::TcpListener;
+        use std::thread;
+
+        // Skip on hosts where IPv6 loopback is unavailable.
+        let Ok(probe_v6) = TcpListener::bind("[::1]:0") else {
+            return;
+        };
+        drop(probe_v6);
+
+        // Occupy IPv4 127.0.0.1:base with a foreign JSON app, and bind IPv6
+        // wildcard *:base with the matching Vite page — the same shape Vite
+        // ends up in when IPv4 is taken (strictPort off, host: true).
+        let (foreign, vite_v6, base_port) = loop {
+            let foreign = TcpListener::bind("127.0.0.1:0").unwrap();
+            let base = foreign.local_addr().unwrap().port();
+            // Try the IPv6 wildcard on the same port; if a parallel test or
+            // this run holds it, restart from a fresh v4 port.
+            match TcpListener::bind(("::", base)) {
+                Ok(v) => break (foreign, v, base),
+                Err(_) => drop(foreign),
+            }
+        };
+
+        fn serve_json(listener: TcpListener) {
+            thread::spawn(move || {
+                for stream in listener.incoming() {
+                    if let Ok(mut stream) = stream {
+                        let mut buf = [0_u8; 512];
+                        let _ = stream.read(&mut buf);
+                        let body = r#"{"error":"not_found"}"#;
+                        let response = format!(
+                            "HTTP/1.0 404 Not Found\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                            body.len(),
+                            body
+                        );
+                        let _ = stream.write_all(response.as_bytes());
+                        let _ = stream.shutdown(std::net::Shutdown::Both);
+                    }
+                }
+            });
+        }
+        fn serve_html(listener: TcpListener, body: &'static str) {
+            thread::spawn(move || {
+                for stream in listener.incoming() {
+                    if let Ok(mut stream) = stream {
+                        let mut buf = [0_u8; 512];
+                        let _ = stream.read(&mut buf);
+                        let response = format!(
+                            "HTTP/1.0 200 OK\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                            body.len(),
+                            body
+                        );
+                        let _ = stream.write_all(response.as_bytes());
+                        let _ = stream.shutdown(std::net::Shutdown::Both);
+                    }
+                }
+            });
+        }
+
+        serve_json(foreign);
+        serve_html(
+            vite_v6,
+            r#"<html lang="en" data-lisca-app="aligner"></html>"#,
+        );
+
+        let configured = format!("http://127.0.0.1:{base_port}");
+        // The resolver always emits `localhost` so the desktop capability's
+        // remote-URL pattern matches regardless of address family.
+        let expected = format!("http://localhost:{base_port}");
+        assert_eq!(resolve_dev_url(configured, "aligner"), expected);
+    }
+
+    #[test]
+    fn resolve_dev_url_skips_foreign_apps_and_sibling_products() {
+        use std::io::{Read as _, Write as _};
+        use std::net::TcpListener;
+        use std::thread;
+
+        fn bind_listener() -> TcpListener {
+            TcpListener::bind("127.0.0.1:0").unwrap()
+        }
+
+        fn serve(listener: TcpListener, body: &'static str, status: &'static str) {
+            thread::spawn(move || {
+                for stream in listener.incoming() {
+                    if let Ok(mut stream) = stream {
+                        let mut buf = [0_u8; 512];
+                        let _ = stream.read(&mut buf);
+                        let response = format!(
+                            "HTTP/1.0 {status}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                            body.len(),
+                            body
+                        );
+                        let _ = stream.write_all(response.as_bytes());
+                        let _ = stream.shutdown(std::net::Shutdown::Both);
+                    }
+                }
+            });
+        }
+
+        // Find three adjacent free ports: foreign JSON, sibling studio Vite,
+        // matching aligner Vite.
+        let (foreign_listener, studio_listener, aligner_listener, base_port) = loop {
+            let foreign = bind_listener();
+            let base = foreign.local_addr().unwrap().port();
+            if base > u16::MAX - 2 {
+                drop(foreign);
+                continue;
+            }
+            let (Ok(studio), Ok(aligner)) = (
+                TcpListener::bind(("127.0.0.1", base + 1)),
+                TcpListener::bind(("127.0.0.1", base + 2)),
+            ) else {
+                drop(foreign);
+                continue;
+            };
+            break (foreign, studio, aligner, base);
+        };
+
+        serve(foreign_listener, r#"{"error":"not_found"}"#, "404 Not Found");
+        serve(
+            studio_listener,
+            r#"<html lang="en" data-lisca-app="studio"></html>"#,
+            "200 OK",
+        );
+        serve(
+            aligner_listener,
+            r#"<html lang="en" data-lisca-app="aligner"></html>"#,
+            "200 OK",
+        );
+
+        let configured = format!("http://127.0.0.1:{base_port}");
+        let expected = format!("http://localhost:{}", base_port + 2);
+        assert_eq!(resolve_dev_url(configured, "aligner"), expected);
     }
 }

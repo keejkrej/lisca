@@ -3,7 +3,7 @@
  * Build the web frontend + Rust backend for a product, then serve both on a
  * single public port so you can access it from another machine on the LAN.
  *
- *   pnpm run serve:aligner [--host 0.0.0.0] [--port 8765] [--skip-build]
+ *   pnpm run serve:aligner [--host 0.0.0.0] [--port 18765] [--skip-build]
  *
  * A tiny HTTP proxy serves the static dist/ for non-API routes and forwards
  * /fs, /align, /annotate, /studio, /profile, /memory, /tasks to the Rust backend
@@ -25,8 +25,8 @@ const skipBuild = process.argv.includes("--skip-build");
 const hostArg = process.argv.find((a) => a.startsWith("--host="));
 const portArg = process.argv.find((a) => a.startsWith("--port="));
 
-const PORTS: Record<LiscaProduct, number> = { aligner: 8765, annotator: 8766, studio: 8767 };
-const publicPort = portArg ? Number(portArg.slice(7)) : (PORTS[product] ?? 8765);
+const PORTS: Record<LiscaProduct, number> = { aligner: 18765, annotator: 18766, studio: 18767 };
+const publicPort = portArg ? Number(portArg.slice(7)) : (PORTS[product] ?? 18765);
 const host = hostArg ? hostArg.slice(7) : "0.0.0.0";
 
 if (!(product in PORTS)) {
