@@ -1,0 +1,33 @@
+# Read from the default branch. The workflow env repeats the model and tool
+# switches so a pull request is reviewed the same way before this file lands.
+
+[config]
+model = "ollama/deepseek-v4.1-flash"
+fallback_models = ["ollama/deepseek-v4.1-flash"]
+# Real window is 1M. max_model_tokens is the cap actually sent on a review.
+custom_model_max_tokens = 1048576
+max_model_tokens = 48000
+ai_timeout = 180
+output_run_details = true
+output_run_cost = true
+repo_context_files = ["AGENTS.md", ".github/copilot-instructions.md"]
+
+[ollama]
+api_base = "https://ollama.com"
+
+[litellm]
+extra_body = '{"think": false}'
+
+[github_action_config]
+auto_review = true
+auto_describe = false
+auto_improve = false
+pr_actions = ["opened", "reopened", "ready_for_review"]
+
+[pr_reviewer]
+num_max_findings = 3
+extra_instructions = """
+Prioritize correctness bugs and regressions over style. Formatting and lint are enforced by CI (pnpm run fmt:check, pnpm run check), so do not comment on them.
+Flag behavior that contradicts an accepted ADR in docs/adr/ (web builds call the server on their own origin with relative URLs; desktop builds use Tauri IPC). Flag fetch called from UI components; network access belongs in @lisca/client. Flag contract changes in packages/contracts without regenerated openapi.json, contract.schema.json, and crates/lisca/src/protocol/generated.rs. Flag a new server route prefix that is not proxied by both scripts/lisca-dev-ports.cjs and docker/nginx.conf.template. Flag behavior changes without a focused regression test, and desktop release manifests whose versions drift from the shared release version in docs/agents/releases.md.
+Keep each comment specific: name the file and line, the failing scenario, and a suggested fix.
+"""

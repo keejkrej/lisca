@@ -1,0 +1,55 @@
+name: PR Agent
+
+on:
+  pull_request:
+    types: [opened, reopened, ready_for_review]
+  issue_comment:
+    types: [created]
+
+# A newer event on the same pull request replaces a run that has not finished.
+concurrency:
+  group: pr-agent-${{ github.event.pull_request.number || github.event.issue.number }}
+  cancel-in-progress: true
+
+jobs:
+  pr_agent:
+    name: review
+    # Drafts wait until ready. Issue comments run only on pull requests, and bot
+    # comments (including this action's own) do not start another run.
+    if: >-
+      github.event.sender.type != 'Bot' &&
+      (
+        github.event_name == 'issue_comment' && github.event.issue.pull_request ||
+        github.event_name == 'pull_request' && github.event.pull_request.draft == false
+      )
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+      checks: write
+    steps:
+      - name: PR Agent
+        uses: the-pr-agent/pr-agent@1d01f24f455bb879c1d9c557ad7de3d72dcc7975 # v0.46.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Ollama Cloud. https://ollama.com is the native API host; the model id
+          # has no :cloud suffix. The key is the OLLAMA_API_KEY Actions secret.
+          OLLAMA__API_KEY: ${{ secrets.OLLAMA_API_KEY }}
+          OLLAMA__API_BASE: https://ollama.com
+          OLLAMA.API_KEY: ${{ secrets.OLLAMA_API_KEY }}
+          OLLAMA.API_BASE: https://ollama.com
+          config.model: ollama/deepseek-v4.1-flash
+          config.fallback_models: '["ollama/deepseek-v4.1-flash"]'
+          config.custom_model_max_tokens: "1048576"
+          config.max_model_tokens: "48000"
+          config.ai_timeout: "180"
+          # Thinking is on for this model by default. Leave it off so a review
+          # does not spend output tokens on a hidden chain of thought.
+          litellm.extra_body: '{"think": false}'
+          # Unset means all three tools run. Review only; /describe and /improve
+          # remain available as pull request comments.
+          github_action_config.auto_review: "true"
+          github_action_config.auto_describe: "false"
+          github_action_config.auto_improve: "false"
+          github_action_config.pr_actions: '["opened", "reopened", "ready_for_review"]'
