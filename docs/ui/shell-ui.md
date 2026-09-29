@@ -269,7 +269,7 @@ instrument stage:
 
 Landing **demos** (`apps/*/demo`, ports 5175/5176/5177) are browser/marketing surfaces. They use demo-owned `DemoShell` chrome and may deviate from the instrument. They are not a second `AppShell` variant.
 
-The instrument **mock** (`apps/mock/web`, `vp run dev:mock`) composes the same paper-pane `AppShell` as the real apps, filled with static/fixture content so layout can be iterated without Tauri or a Rust server.
+The instrument **mock** (`apps/mock/web`, `pnpm run dev:mock`) composes the same paper-pane `AppShell` as the real apps, filled with static/fixture content so layout can be iterated without Tauri or a Rust server.
 
 ## Out of scope
 

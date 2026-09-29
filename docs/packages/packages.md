@@ -10,7 +10,7 @@ Shared libraries under `packages/*`. Apps import these via workspace protocol (`
 | `@lisca/utils`       | Framework-free client logic: imaging helpers, storage adapters, annotation tools, shortcuts, task-center and picker models.        |
 | `@lisca/client`      | Effect runtime, HTTP/WS ports, session hooks, studio assay JSON helpers, Effect Atom query layers.                                 |
 | `@lisca/analysis`    | Pure Studio results model: Rust PNG plot catalog, sectioning, and assay constants.                                                 |
-| `@lisca/fixtures`    | On-disk sample sources and half-finished workspaces for e2e / agent tests (`vp run fixture:workspace`).                            |
+| `@lisca/fixtures`    | On-disk sample sources and half-finished workspaces for e2e / agent tests (`pnpm run fixture:workspace`).                          |
 | `@lisca/ui-headless` | Solid-coupled non-DOM state and interaction logic, plus the structural types and policies that directly support those modules.     |
 | `@lisca/ui`          | SolidJS web imaging UI (zaidan/Kobalte + Tailwind). Re-exports shared UI types through `@lisca/ui/features`.                       |
 | `@lisca/web-app`     | Vite web shell: app mount (`createLiscaWebApp`), shared CSS entry, host operations.                                                |
@@ -62,7 +62,7 @@ On-disk sample sources and half-finished workspaces for e2e / agent tests.
 Not the analysis-demo PNG placeholders.
 
 ```
-vp run fixture:workspace -- --assay transfection --stage cropped --out /tmp/tf
+pnpm run fixture:workspace -- --assay transfection --stage cropped --out /tmp/tf
 ```
 
 See `packages/fixtures/README.md`.
@@ -100,13 +100,13 @@ Examples: `AnnotationMode`, `HostFilePickerMode`, `cropConfirmCopy`.
 
 ## Verification
 
-`vp lint` enforces public package subpaths, the contracts assay/UI subpath, UI feature-domain isolation, the shared-package-to-app direction, and workspace dependency declarations. The local `lisca-boundaries/imports` rule reads each workspace manifest and accepts declarations from dependencies, dev dependencies, optional dependencies, or peer dependencies.
+`pnpm run lint` (oxlint via `vp lint`) enforces public package subpaths, the contracts assay/UI subpath, UI feature-domain isolation, the shared-package-to-app direction, and workspace dependency declarations. The local `lisca-boundaries/imports` rule reads each workspace manifest and accepts declarations from dependencies, dev dependencies, optional dependencies, or peer dependencies.
 
 ```sh
-vp install
-vp lint
-vp run typecheck
-vp run check:contracts
+pnpm install
+pnpm run lint
+pnpm run typecheck
+pnpm run check:contracts
 ```
 
 After schema changes, run the filtered `generate` and `rust-types` tasks documented in [contracts.md](./contracts.md).

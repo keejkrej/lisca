@@ -3,7 +3,7 @@
  * Build a product's web frontend for a Tauri desktop bundle.
  *
  * Usage:
- *   vp exec node --experimental-strip-types scripts/build-tauri-frontend.ts <product>
+ *   node --experimental-strip-types scripts/build-tauri-frontend.ts <product>
  */
 import { resolve } from "node:path";
 import { runVpSync } from "./node-run.ts";
@@ -16,7 +16,7 @@ const PRODUCTS = new Set<LiscaProduct>(["aligner", "annotator", "studio"]);
 
 function usage(): void {
   console.error(`
-Usage: vp exec node --experimental-strip-types scripts/build-tauri-frontend.ts <product>
+Usage: node --experimental-strip-types scripts/build-tauri-frontend.ts <product>
 
   product  aligner | annotator | studio
 `);

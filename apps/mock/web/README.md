@@ -4,7 +4,7 @@ Static paper-pane stand-in for **real app UI** (layout, type, elevation). Not a 
 demo and not a fake Tauri/host.
 
 ```sh
-vp run dev:mock
+pnpm run dev:mock
 ```
 
 Opens [http://localhost:5178](http://localhost:5178). Switch Align / Annotate / Result in

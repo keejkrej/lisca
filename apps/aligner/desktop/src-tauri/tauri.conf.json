@@ -4,7 +4,7 @@
   "version": "0.3.2",
   "identifier": "com.lisca.aligner",
   "build": {
-    "beforeDevCommand": "vp run --filter @lisca/aligner-web dev",
+    "beforeDevCommand": "pnpm run --filter @lisca/aligner-web dev",
     "beforeBuildCommand": "",
     "devUrl": "http://127.0.0.1:8765",
     "frontendDist": "../../web/dist"

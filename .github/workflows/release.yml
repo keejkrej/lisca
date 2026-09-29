@@ -1,6 +1,6 @@
 name: Release
 
-# Landing already deploys from deploy/landing via Render (vp run deploy:landing).
+# Landing already deploys from deploy/landing via Render (pnpm run deploy:landing).
 # Notebook zips ship from notebooks-v* tags via release-jupyternotebook.yml, not this workflow.
 
 on:
@@ -97,7 +97,7 @@ jobs:
           test -s models/killing-assay-resnet18/model.onnx
 
       - name: Package desktop app
-        run: pnpm exec vp run dist:${{ matrix.product }}
+        run: pnpm run dist:${{ matrix.product }}
 
       - name: Upload installers
         shell: bash

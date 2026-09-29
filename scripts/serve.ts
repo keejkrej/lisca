@@ -3,7 +3,7 @@
  * Build the web frontend + Rust backend for a product, then serve both on a
  * single public port so you can access it from another machine on the LAN.
  *
- *   vp run serve:aligner [--host 0.0.0.0] [--port 8765] [--skip-build]
+ *   pnpm run serve:aligner [--host 0.0.0.0] [--port 8765] [--skip-build]
  *
  * A tiny HTTP proxy serves the static dist/ for non-API routes and forwards
  * /fs, /align, /annotate, /studio, /profile, /memory, /tasks to the Rust backend
