@@ -150,55 +150,6 @@
         }
       }
     },
-    "/fs/file": {
-      "get": {
-        "tags": ["fs"],
-        "operationId": "fs.readFile",
-        "parameters": [
-          {
-            "name": "path",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            },
-            "required": true
-          }
-        ],
-        "security": [],
-        "responses": {
-          "200": {
-            "description": "ReadTextFileResponse",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ReadTextFileResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "RequestError",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/RequestErrorEncoded"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/UnauthorizedEncoded"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/fs/create-directory": {
       "post": {
         "tags": ["fs"],
