@@ -44,9 +44,6 @@ jobs:
           config.custom_model_max_tokens: "1048576"
           config.max_model_tokens: "48000"
           config.ai_timeout: "180"
-          # Thinking is on for this model by default. Leave it off so a review
-          # does not spend output tokens on a hidden chain of thought.
-          litellm.extra_body: '{"think": false}'
           # Unset means all three tools run. Review only; /describe and /improve
           # remain available as pull request comments.
           github_action_config.auto_review: "true"

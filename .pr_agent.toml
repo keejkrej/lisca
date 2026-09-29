@@ -15,9 +15,6 @@ repo_context_files = ["AGENTS.md", ".github/copilot-instructions.md"]
 [ollama]
 api_base = "https://ollama.com"
 
-[litellm]
-extra_body = '{"think": false}'
-
 [github_action_config]
 auto_review = true
 auto_describe = false
