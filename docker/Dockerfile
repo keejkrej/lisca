@@ -8,8 +8,7 @@ ARG PRODUCT
 
 WORKDIR /app
 
-RUN corepack enable && corepack prepare pnpm@12.5.1 --activate \
-  && npm install -g vite-plus@latest
+RUN corepack enable && corepack prepare pnpm@12.5.1 --activate
 
 # Install deps with a cached pnpm store. Lockfile is copied first so the
 # expensive install only re-runs when dependencies change.
@@ -22,10 +21,11 @@ COPY docs ./docs
 RUN --mount=type=cache,target=/root/.local/share/pnpm/store,id=lisca-pnpm-store \
     pnpm install --frozen-lockfile --ignore-scripts
 
-# Build the product web app and its workspace dependencies.
-# vp run --filter <pkg>... resolves the transitive dependency graph from package.json.
+# Build the product web app and its workspace dependencies through the pinned
+# lockfile toolchain (no global install).
+# pnpm run --filter <pkg>... resolves the transitive dependency graph from package.json.
 RUN --mount=type=cache,target=/app/node_modules/.cache,id=lisca-node-cache,sharing=locked \
-    vp run --no-cache --filter @lisca/${PRODUCT}-web... build
+    pnpm run --filter @lisca/${PRODUCT}-web... build
 
 # --- Rust: cargo-chef dep layer + cached target ---
 # Trixie (glibc ≥ 2.38) is required: ort prebuilt ONNX Runtime references __isoc23_* symbols.
