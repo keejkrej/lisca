@@ -3,8 +3,8 @@
  * Build the web frontend and the Tauri app with its embedded Rust backend.
  *
  * Usage:
- *   vp run dist:studio
- *   vp exec node --experimental-strip-types scripts/package-tauri.ts [product]
+ *   pnpm run dist:studio
+ *   node --experimental-strip-types scripts/package-tauri.ts [product]
  *
  * Omitting `product` packages Studio, which bundles the Aligner and Annotator
  * flows and is the default development check.
@@ -21,12 +21,12 @@ const root = resolve(import.meta.dirname, "..");
 
 function usage(): void {
   console.error(`
-Usage: vp exec node --experimental-strip-types scripts/package-tauri.ts [product]
+Usage: node --experimental-strip-types scripts/package-tauri.ts [product]
 
   product  aligner | annotator | studio (default: studio)
 
 Example:
-  vp run dist:aligner
+  pnpm run dist:aligner
 `);
 }
 

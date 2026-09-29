@@ -1,7 +1,7 @@
 # Studio analysis demo
 
 Browser-only **landing demo** of Studio result visualization. It is not the
-instrument mock (`vp run dev:mock`) and does not use the Tauri paper pane. It
+instrument mock (`pnpm run dev:mock`) and does not use the Tauri paper pane. It
 loads **fixture** PNG plot files for transfection and killing — the same filenames
 the Rust pipeline writes via mplot-rs.
 
@@ -13,13 +13,13 @@ in the browser.
 From the repo root:
 
 ```sh
-vp run dev:studio-demo
+pnpm run dev:studio-demo
 ```
 
 Or:
 
 ```sh
-vp run --filter @lisca/studio-demo dev
+pnpm run --filter @lisca/studio-demo dev
 ```
 
 The app listens on [http://localhost:5177](http://localhost:5177).

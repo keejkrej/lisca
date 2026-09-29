@@ -31,7 +31,7 @@ Survival (killing).
 for both shipping assays so the team can iterate on the gallery without a workspace.
 
 ```sh
-vp run dev:studio-demo
+pnpm run dev:studio-demo
 ```
 
 Opens [http://localhost:5177](http://localhost:5177). Switch `transfection.fixture` /
@@ -45,10 +45,10 @@ PNGs above.
 
 ```sh
 # Only test analysis
-vp run fixture:workspace -- --assay transfection --stage cropped --out /tmp/tf-analyze
+pnpm run fixture:workspace -- --assay transfection --stage cropped --out /tmp/tf-analyze
 
 # Only test align
-vp run fixture:workspace -- --assay killing --stage assay --out /tmp/kill-align
+pnpm run fixture:workspace -- --assay killing --stage assay --out /tmp/kill-align
 ```
 
 Stages: `source`, `assay`, `aligned`, `cropped`, `annotated`, `analyzed`.

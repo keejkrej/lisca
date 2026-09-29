@@ -8,7 +8,7 @@ function isInvalidApiJsonResponse(message: string): boolean {
 }
 
 function formatInvalidApiJsonResponse(fallback: string): string {
-  return `${fallback}: API returned a non-JSON response. Ensure the Rust backend is running (e.g. \`vp run dev:studio\`).`;
+  return `${fallback}: API returned a non-JSON response. Ensure the Rust backend is running (e.g. \`pnpm run dev:studio\`).`;
 }
 
 export function toFetchErrorMessage(cause: unknown, fallback: string): string {

@@ -16,17 +16,18 @@ Do not add new assay brains under `models/`.
 
 ## Build, Test, and Development Commands
 
-Use Node 24+, pnpm 12+, and the `vp` wrapper for JavaScript workspace tasks.
+Use Node 24+ and pnpm 12+ (both pinned in `.mise.toml` and `package.json`). JavaScript workspace
+tasks are plain `pnpm run` scripts; per-app dev/build/test commands still use the Vite+ `vp` CLI
+(`vite-plus/core` is the `vite` catalog alias), and repo-wide lint/format go through `vp lint` / `vp fmt`.
 
-- `vp install` installs workspace dependencies.
-- `vp run dev:studio` starts Studio's web and Rust server; replace `studio` with `aligner` or `annotator`.
-- `vp run build` builds shared packages and all web apps.
-- `vp run check` runs linting, TypeScript checks, contract validation, Rust checks/Clippy, and workspace tests.
-- `vp run fmt` formats supported files; `vp run fmt:check` verifies formatting without edits.
-- `vp run dist:studio` packages the Studio desktop installer; replace `studio` with `aligner` or `annotator`.
-- `vp run dist:studio` packages the Studio desktop installer; replace `studio` with `aligner` or `annotator`.
+- `pnpm install` installs workspace dependencies.
+- `pnpm run dev:studio` starts Studio's web and Rust server; replace `studio` with `aligner` or `annotator`.
+- `pnpm run build` builds shared packages and all web apps.
+- `pnpm run check` runs linting, TypeScript checks, contract validation, Rust checks/Clippy, and workspace tests.
+- `pnpm run fmt` formats supported files; `pnpm run fmt:check` verifies formatting without edits.
+- `pnpm run dist:studio` packages the Studio desktop installer; replace `studio` with `aligner` or `annotator`.
 - A local desktop build or install that does not name a product packages Studio only. Studio includes the Aligner and Annotator flows, so that one package is the development check. Name the product when a different app is the target.
-- GitHub Actions (`Checks` workflow) runs `vp run fmt:check` and `vp run check` on pull requests and `main`. GitHub Copilot reviews every non-draft pull request automatically (repository ruleset); its review guidance lives in `.github/copilot-instructions.md`. A `v*` tag publishes unsigned Studio, Aligner, and Annotator installers (macOS DMG, Windows NSIS, Linux deb) to a GitHub Release. Studio installers include the public killing ONNX. The `release-jupyternotebook` workflow (`workflow_dispatch` from `main`, not a tag push) publishes `lisca-notebooks-X.Y.Z.zip` and tags `notebooks-v*` (not desktop installers).
+- GitHub Actions (`Checks` workflow) runs `pnpm run fmt:check` and `pnpm run check` on pull requests and `main`. GitHub Copilot reviews every non-draft pull request automatically (repository ruleset); its review guidance lives in `.github/copilot-instructions.md`. A `v*` tag publishes unsigned Studio, Aligner, and Annotator installers (macOS DMG, Windows NSIS, Linux deb) to a GitHub Release. Studio installers include the public killing ONNX. The `release-jupyternotebook` workflow (`workflow_dispatch` from `main`, not a tag push) publishes `lisca-notebooks-X.Y.Z.zip` and tags `notebooks-v*` (not desktop installers).
 - `cargo test --workspace` runs Rust tests.
 - `cd python && uv run pytest` runs the Python suite (crop tests do not need the crop extra).
 
@@ -36,7 +37,7 @@ TypeScript is strict and uses two-space indentation, extensionless imports, keba
 
 ## Testing Guidelines
 
-TypeScript tests use Vitest and are named `*.test.ts` or `*.test.tsx`, usually in a package's `test/` directory. Rust integration tests belong in `crates/<crate>/tests/`; Python tests use `python/tests/test_*.py`. Add focused regression tests with behavior changes. Run the affected package test first, for example `vp run --filter @lisca/client test`, then `vp run check` before review.
+TypeScript tests use Vitest and are named `*.test.ts` or `*.test.tsx`, usually in a package's `test/` directory. Rust integration tests belong in `crates/<crate>/tests/`; Python tests use `python/tests/test_*.py`. Add focused regression tests with behavior changes. Run the affected package test first, for example `pnpm run --filter @lisca/client test`, then `pnpm run check` before review.
 
 ## Commit & Pull Request Guidelines
 

@@ -36,22 +36,22 @@ From the repo root:
 
 ```sh
 # Only test align — source + assay.json, no boxes yet
-vp run fixture:workspace -- --assay transfection --stage assay --out /tmp/tf-align
+pnpm run fixture:workspace -- --assay transfection --stage assay --out /tmp/tf-align
 
 # Only test crop — alignment already saved
-vp run fixture:workspace -- --assay killing --stage aligned --out /tmp/kill-crop
+pnpm run fixture:workspace -- --assay killing --stage aligned --out /tmp/kill-crop
 
 # Only test analysis — ROI stacks present, no results yet
-vp run fixture:workspace -- --assay transfection --stage cropped --out /tmp/tf-analyze
+pnpm run fixture:workspace -- --assay transfection --stage cropped --out /tmp/tf-analyze
 
 # Finished workspace for result review / agent inspection
-vp run fixture:workspace -- --assay killing --stage analyzed --out /tmp/kill-done --force
+pnpm run fixture:workspace -- --assay killing --stage analyzed --out /tmp/kill-done --force
 ```
 
 Equivalent:
 
 ```sh
-vp run --filter @lisca/fixtures fixture -- --assay transfection --stage cropped --out /tmp/tf-analyze
+pnpm run --filter @lisca/fixtures fixture -- --assay transfection --stage cropped --out /tmp/tf-analyze
 ```
 
 `--out` must be empty unless you pass `--force`. The generator overwrites the
@@ -89,5 +89,5 @@ const { out } = materializeFixture({
 ## Tests
 
 ```sh
-vp run --filter @lisca/fixtures test
+pnpm run --filter @lisca/fixtures test
 ```

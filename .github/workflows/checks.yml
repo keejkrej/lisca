@@ -53,10 +53,10 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Format
-        run: pnpm exec vp run fmt:check
+        run: pnpm run fmt:check
 
       - name: Check
-        run: pnpm exec vp run check
+        run: pnpm run check
 
   windows-script-smoke:
     name: windows script smoke
@@ -77,7 +77,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Exercise the portable Vite+ launcher
-        run: pnpm exec vp test run scripts/node-run.test.ts
+        run: pnpm run test:scripts -- scripts/node-run.test.ts
 
   notebooks-pack:
     name: notebooks pack smoke

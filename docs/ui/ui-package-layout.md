@@ -46,7 +46,7 @@ Each domain is a subfolder under `features/` with a single responsibility:
 - No cross-domain imports (e.g. `host/` must not import from `align/`).
 - Features may import `shell/*`, `@lisca/ui-headless/*`, `@lisca/utils`, and `components/ui/*` (web, zaidan primitives); they must not import app code.
 
-`vp lint` enforces these feature-domain rules through `lisca-boundaries/imports`.
+`pnpm run lint` (oxlint via `vp lint`) enforces these feature-domain rules through `lisca-boundaries/imports`.
 
 ### Internal vs public
 
@@ -102,4 +102,4 @@ Decision tree for new code:
 3. Atoms, session effects, API wiring → `@lisca/client`.
 4. DOM presentation only → `@lisca/ui`; import headless state.
 
-Co-locate tests under `packages/*/test/` mirroring the module path. `vp run test` runs workspace test tasks recursively.
+Co-locate tests under `packages/*/test/` mirroring the module path. `pnpm run test` runs workspace test tasks recursively.

@@ -6,8 +6,8 @@
  * Pushes to deploy/landing trigger a Render deploy automatically.
  *
  * Usage:
- *   vp run deploy:landing
- *   vp exec node --experimental-strip-types scripts/deploy-landing.ts [--skip-build]
+ *   pnpm run deploy:landing
+ *   node --experimental-strip-types scripts/deploy-landing.ts [--skip-build]
  */
 import { existsSync, mkdirSync, rmSync, cpSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
@@ -55,7 +55,7 @@ if (!skipBuild) {
 
 const distRoot = join(root, DIST_REL);
 if (!existsSync(join(distRoot, "index.html"))) {
-  console.error(`Missing ${DIST_REL}/index.html — run: vp run --filter @lisca/landing-web build`);
+  console.error(`Missing ${DIST_REL}/index.html — run: pnpm run --filter @lisca/landing-web build`);
   process.exit(1);
 }
 

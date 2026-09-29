@@ -33,8 +33,8 @@ whose version differs from any of the nine desktop manifest fields fails without
 
    ```sh
    node --experimental-strip-types scripts/check-release-version.ts vX.Y.Z
-   vp run fmt:check
-   vp run check
+   pnpm run fmt:check
+   pnpm run check
    ```
 
 4. Commit and push the version plus release changes to `main`.

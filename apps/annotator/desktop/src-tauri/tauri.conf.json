@@ -4,7 +4,7 @@
   "version": "0.3.2",
   "identifier": "com.lisca.annotator",
   "build": {
-    "beforeDevCommand": "vp run --filter @lisca/annotator-web dev",
+    "beforeDevCommand": "pnpm run --filter @lisca/annotator-web dev",
     "beforeBuildCommand": "",
     "devUrl": "http://127.0.0.1:8766",
     "frontendDist": "../../web/dist"

@@ -5,7 +5,7 @@ desktop shells for Studio, Aligner, and Annotator. `AGENTS.md` (symlinked as `CL
 guidelines; `docs/adr/` records deliberate choices.
 
 When reviewing a pull request, prioritize correctness bugs and regressions over style. Formatting
-and lint are enforced by CI (`vp run fmt:check`, `vp run check`), so do not comment on them.
+and lint are enforced by CI (`pnpm run fmt:check`, `pnpm run check`), so do not comment on them.
 
 Flag in particular:
 

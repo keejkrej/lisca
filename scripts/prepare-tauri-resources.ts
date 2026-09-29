@@ -17,7 +17,7 @@ type LiscaProduct = keyof typeof DESKTOP_PRODUCTS;
 const product = process.argv[2] as LiscaProduct | undefined;
 if (!product || !Object.hasOwn(DESKTOP_PRODUCTS, product)) {
   console.error(
-    "Usage: vp exec node --experimental-strip-types scripts/prepare-tauri-resources.ts <aligner|annotator|studio>",
+    "Usage: node --experimental-strip-types scripts/prepare-tauri-resources.ts <aligner|annotator|studio>",
   );
   process.exit(1);
 }
