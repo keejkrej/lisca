@@ -3,8 +3,11 @@
  * Build the web frontend and the Tauri app with its embedded Rust backend.
  *
  * Usage:
- *   vp run dist:aligner
- *   vp exec node --experimental-strip-types scripts/package-tauri.ts aligner
+ *   vp run dist:studio
+ *   vp exec node --experimental-strip-types scripts/package-tauri.ts [product]
+ *
+ * Omitting `product` packages Studio, which bundles the Aligner and Annotator
+ * flows and is the default development check.
  */
 import { cpSync, existsSync, mkdirSync, rmSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -18,9 +21,9 @@ const root = resolve(import.meta.dirname, "..");
 
 function usage(): void {
   console.error(`
-Usage: vp exec node --experimental-strip-types scripts/package-tauri.ts <product>
+Usage: vp exec node --experimental-strip-types scripts/package-tauri.ts [product]
 
-  product  aligner | annotator | studio
+  product  aligner | annotator | studio (default: studio)
 
 Example:
   vp run dist:aligner
@@ -60,11 +63,12 @@ function stageArtifacts(product: LiscaProduct, cfg: DesktopProductConfig): strin
   return desktopDir;
 }
 
-const product = process.argv[2] as LiscaProduct | undefined;
-if (!product || product === "-h" || product === "--help") {
+const arg = process.argv[2];
+if (arg === "-h" || arg === "--help") {
   usage();
-  process.exit(product ? 0 : 1);
+  process.exit(0);
 }
+const product = (arg ?? "studio") as LiscaProduct;
 
 const cfg = DESKTOP_PRODUCTS[product];
 if (!cfg) {

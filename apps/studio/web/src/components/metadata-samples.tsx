@@ -70,10 +70,7 @@ function SampleCard(props: {
   onRemove: () => void;
 }) {
   return (
-    <article
-      aria-label={`Sample ${props.index + 1}`}
-      class="flex min-w-0 flex-col gap-4"
-    >
+    <article aria-label={`Sample ${props.index + 1}`} class="flex min-w-0 flex-col gap-4">
       <div class="grid min-w-0 grid-cols-[4.5rem_minmax(0,1fr)_2rem] items-end gap-2.5">
         <label class="flex min-w-0 flex-col gap-1.5">
           <span class="text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
