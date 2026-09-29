@@ -19,7 +19,7 @@ import { recordStudioAssayMemory } from "../utils/studio-memory";
 import { AssayOverwriteConfirmModal } from "./assay-overwrite-confirm-modal";
 import { AssaySaveConfirmModal } from "./assay-save-confirm-modal";
 
-export function StudioBasicInfoLeaveGuard() {
+export function StudioMetadataLeaveGuard() {
   const wizard = useAtomValue(() => studioWizardAtom);
   const setWizard = useAtomSet(() => studioWizardAtom);
   const setBasicInfoSavedSnapshot = (snapshot: string | null) =>

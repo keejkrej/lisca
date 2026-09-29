@@ -37,7 +37,7 @@ export type { AssayId, BasicInfoSampleRow, StudioAssayJson, StudioDataSourceKind
 /** @deprecated Prefer IntervalUnit */
 export type TimelapseUnit = IntervalUnit;
 
-export type StudioStep = "chooseAssay" | "info1" | "info2" | "alignPattern";
+export type StudioStep = "chooseAssay" | "metadata" | "alignPattern";
 export type InfoStep = 1 | 2;
 
 export {

@@ -13,7 +13,9 @@ use std::process::Command;
 
 use csv::ReaderBuilder;
 use lisca::analysis::array::{masked_roi_stats, trapezoidal_integral};
-use lisca::analysis::assays::transfection::{run_auc, run_fit, run_timeseries};
+use lisca::analysis::assays::transfection::{
+    run_auc, run_fit, run_timeseries, run_timeseries_with_mode,
+};
 use lisca::analysis::slide::build_slide_mapping;
 use lisca::protocol::AssayJsonFile;
 use tempfile::tempdir;
@@ -110,6 +112,28 @@ fn timeseries_stage_matches_reference_metrics() {
             corrected,
             AUC_REL_TOL
         ));
+    }
+}
+
+#[test]
+fn full_frame_timeseries_measures_every_crop_pixel_without_masks() {
+    let temp = tempdir().expect("tempdir");
+    let fixture = SyntheticWorkspace::build(temp.path());
+    // Full-frame mode must not consult mask stacks.
+    fs::remove_dir_all(fixture.root.join("mask")).expect("drop mask stacks");
+    let assay = read_assay_json(&fixture.root);
+    let mapping = build_slide_mapping(&assay).expect("mapping");
+
+    run_timeseries_with_mode(&fixture.root, &mapping, 1, true).expect("full-frame timeseries");
+
+    let csv_path = fixture.root.join("analysis").join("Pos1").join("ch1.csv");
+    assert!(csv_path.is_file(), "expected {}", csv_path.display());
+    let (_, rows) = read_results_csv(&csv_path);
+    assert_eq!(rows.len(), 4);
+    // The fixture crops are 4x4, so a mask-free measurement covers 16 pixels.
+    // The masked path would report 4 (the center 2x2 mask area).
+    for row in rows {
+        assert_eq!(row["area"], "16");
     }
 }
 

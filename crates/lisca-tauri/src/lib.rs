@@ -12,6 +12,8 @@ use axum::{
 use base64::{engine::general_purpose::STANDARD as BASE64, Engine as _};
 use serde::{Deserialize, Serialize};
 use tauri::{Manager, WebviewUrl, WebviewWindowBuilder};
+
+const MAIN_WINDOW_LABEL: &str = "main";
 use tauri_plugin_dialog::DialogExt;
 use tower::ServiceExt;
 
@@ -68,6 +70,7 @@ pub fn run<F>(config: ProductConfig, context: tauri::Context, backend_factory: F
 where
     F: FnOnce() -> Router + Send + 'static,
 {
+    let reopen_config = config.clone();
     let app = tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .invoke_handler(tauri::generate_handler![lisca_request, lisca_save_file])
@@ -89,11 +92,57 @@ where
         })
         .build(context);
     match app {
-        Ok(app) => app.run(|_, _| {}),
+        Ok(app) => app.run(move |app_handle, event| {
+            on_shell_event(app_handle, event, &reopen_config);
+        }),
         Err(error) => {
             eprintln!("failed to build Tauri application: {error}");
             std::process::exit(1);
         }
+    }
+}
+
+/// macOS window close (Command-W, the red button) requests exit with no code.
+/// Command-Q and Dock → Quit terminate through NSApplication and never reach
+/// this check, so a codeless request stays in the Dock and a coded one still quits.
+fn should_quit_on_exit_request(code: Option<i32>) -> bool {
+    !cfg!(target_os = "macos") || code.is_some()
+}
+
+fn on_shell_event<R: tauri::Runtime>(
+    app: &tauri::AppHandle<R>,
+    event: tauri::RunEvent,
+    config: &ProductConfig,
+) {
+    // Reopen exists only on macOS. Other platforms quit when the last window closes.
+    #[cfg(not(target_os = "macos"))]
+    let _ = (app, config);
+
+    match event {
+        tauri::RunEvent::ExitRequested { code, api, .. } if !should_quit_on_exit_request(code) => {
+            api.prevent_exit();
+        }
+        #[cfg(target_os = "macos")]
+        tauri::RunEvent::Reopen {
+            has_visible_windows: false,
+            ..
+        } => reopen_main_window(app, config),
+        _ => {}
+    }
+}
+
+#[cfg(target_os = "macos")]
+fn reopen_main_window<R: tauri::Runtime>(app: &tauri::AppHandle<R>, config: &ProductConfig) {
+    if let Some(window) = app.get_webview_window(MAIN_WINDOW_LABEL) {
+        let _ = window.unminimize();
+        let _ = window.show();
+        let _ = window.set_focus();
+        return;
+    }
+
+    let dev_url = std::env::var("VITE_DEV_SERVER_URL").ok();
+    if let Err(error) = create_window(app, config, dev_url.as_deref()) {
+        eprintln!("failed to reopen window: {error}");
     }
 }
 
@@ -255,7 +304,7 @@ fn create_window<R: tauri::Runtime, M: Manager<R>>(
         })?)
     };
 
-    WebviewWindowBuilder::new(app, "main", url)
+    WebviewWindowBuilder::new(app, MAIN_WINDOW_LABEL, url)
         .title(config.product_name)
         .inner_size(1280.0, 800.0)
         .initialization_script(&init_script)
@@ -323,5 +372,18 @@ mod tests {
 
         assert!(response.body.is_none());
         assert_eq!(response.body_base64.as_deref(), Some("AJ+Slg=="));
+    }
+
+    #[test]
+    fn closing_the_window_on_macos_does_not_quit() {
+        assert_eq!(
+            should_quit_on_exit_request(None),
+            !cfg!(target_os = "macos")
+        );
+    }
+
+    #[test]
+    fn a_programmatic_exit_still_quits() {
+        assert!(should_quit_on_exit_request(Some(0)));
     }
 }

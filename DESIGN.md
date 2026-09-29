@@ -17,8 +17,11 @@ colors:
   destructive: "#DC2626"
   gfp: "#10B981"
   brand-studio: "#3DDC97"
+  brand-studio-light: "#00AB69"
   brand-aligner: "#4EA3FF"
+  brand-aligner-light: "#4298F3"
   brand-annotator: "#F24B4B"
+  brand-annotator-light: "#E94244"
   brand-foreground: "#171717"
 typography:
   display:
@@ -175,9 +178,9 @@ Studio, Aligner, and Annotator share this language. Reuse the same shell, sectio
 - **Foreground and ink (`#171717`):** default text, icons, and navigation carets.
 - **Primary (`#252525`) / primary foreground (`#FAFAFA`):** unscoped and marketing chrome. Studio, Aligner, and Annotator remap `--primary`, `--ring`, and `--sidebar-primary` to that app's brand.
 - **Brand accents:** one icon color per app, used sparingly on filled primary actions, focus rings, selected nav/tool, and pressed Show/Edit/Expert toggles. Outline actions, body text, section titles, and rails stay ink/stage. Do not tint rail backgrounds.
-  - **Studio mint (`#3DDC97`)** with ink foreground. Distinct from GFP.
-  - **Aligner blue (`#4EA3FF`)** with ink foreground (white-on-blue fails 12px AA).
-  - **Annotator coral (`#F24B4B`)** with ink foreground (white-on-coral fails 12px AA). Distinct from destructive.
+  - **Studio mint** with ink foreground. Dark mode and the icon use `#3DDC97`. Light mode uses `#00AB69` so the fill clears 3:1 on white. Distinct from GFP.
+  - **Aligner blue** with ink foreground. Dark mode and the icon use `#4EA3FF`. Light mode uses `#4298F3`. White-on-blue fails 12px AA, so the label stays ink.
+  - **Annotator coral** with ink foreground. Dark mode and the icon use `#F24B4B`. Light mode uses `#E94244`, deepened on white with ink on the fill still above 4.5:1. White-on-coral fails 12px AA. Distinct from destructive.
 - **Muted foreground (`#6B6B6B`):** metadata and secondary values; never primary labels. It remains AA-readable on the muted stage.
 - **Border and rule (`#E5E5E5`):** control outlines and quiet separators.
 - **Destructive (`#DC2626`):** irreversible or error states only. Do not restyle it as Annotator coral, and do not use Annotator coral on error toasts.

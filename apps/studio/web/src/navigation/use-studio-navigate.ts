@@ -1,6 +1,6 @@
 import { useNavigate } from "@tanstack/solid-router";
 
-export type StudioRouteTo = "/assay" | "/info" | "/align" | "/annotate" | "/result";
+export type StudioRouteTo = "/assay" | "/metadata" | "/align" | "/annotate" | "/analysis";
 
 export function studioNavigate(navigate: ReturnType<typeof useNavigate>, to: StudioRouteTo): void {
   void navigate({

@@ -332,7 +332,9 @@ export function useStudioAlignState(): StudioAlignState {
     const positions = alignPositions();
     if (!scan) return;
     if (positions.length === 0) {
-      setError("No assay positions found in source scan — check position ranges on the Info step");
+      setError(
+        "No assay positions found in source scan — check position ranges on the Metadata step",
+      );
       return;
     }
     const skipped = assayPositions().length - positions.length;

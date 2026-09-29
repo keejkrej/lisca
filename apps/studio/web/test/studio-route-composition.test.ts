@@ -3,10 +3,10 @@ import { describe, expect, it } from "vite-plus/test";
 
 const workflowShells = [
   ["/assay", "../src/routes/assay.tsx"],
-  ["/info", "../src/routes/info.tsx"],
+  ["/metadata", "../src/routes/metadata.tsx"],
   ["/align", "../src/routes/align.tsx"],
   ["/annotate", "../src/routes/annotate.tsx"],
-  ["/result", "../src/result/result-page.tsx"],
+  ["/analysis", "../src/analysis/analysis-page.tsx"],
 ] as const;
 
 function readSource(sourcePath: string): string {
@@ -31,38 +31,48 @@ describe("Studio workflow route composition", () => {
   it.each([
     ["/align", "../src/routes/align.tsx"],
     ["/annotate", "../src/routes/annotate.tsx"],
-    ["/result", "../src/result/result-page.tsx"],
+    ["/analysis", "../src/analysis/analysis-page.tsx"],
   ])("puts the expert toggle in the top bar on %s", (_route, sourcePath) => {
     const source = readSource(sourcePath);
 
     expect(source).toMatch(/<StudioTopBar\s+showExpert\s*\/>/);
   });
 
-  it("uses the Info label and one picker-field treatment for source and workspace", () => {
+  it("uses the Metadata label and one picker-field treatment for source and workspace", () => {
     const navSource = readSource("../src/components/studio-nav-rail.tsx");
-    const infoSource = readSource("../src/components/basic-info-step1.tsx");
+    const pagesSource = readSource("../src/navigation/studio-page-shortcuts.ts");
+    const metadataSource = readSource("../src/components/metadata-fields.tsx");
+    const metadataRouteSource = readSource("../src/routes/metadata.tsx");
+    const samplesSource = readSource("../src/components/metadata-samples.tsx");
 
-    expect(navSource).toMatch(/>\s*Info\s*</);
+    expect(pagesSource).toMatch(/label: "Metadata"/);
+    expect(pagesSource).toMatch(/label: "Analysis"/);
+    expect(navSource).toMatch(/STUDIO_PAGES/);
+    expect(metadataRouteSource).toMatch(/<MetadataFields/);
+    expect(metadataRouteSource).toMatch(/<MetadataSamples/);
+    expect(metadataRouteSource).not.toMatch(/infoStep/);
     expect(navSource).not.toMatch(/Basic info/);
-    expect(infoSource).toMatch(/>Info<\/h1>/);
-    expect(infoSource.match(/<PathPickerField/g)).toHaveLength(2);
-    expect(infoSource).not.toMatch(/Basic info/);
+    expect(metadataSource).toMatch(/>Info<\/h1>/);
+    expect(metadataSource.match(/<PathPickerField/g)).toHaveLength(2);
+    expect(metadataSource).not.toMatch(/Basic info/);
+    expect(samplesSource).not.toMatch(/border-b/);
+    expect(samplesSource).not.toMatch(/border-y/);
   });
 
   it("keeps document scrolling on the full main sheet instead of constrained content", () => {
     const assayRouteSource = readSource("../src/routes/assay.tsx");
-    const infoRouteSource = readSource("../src/routes/info.tsx");
-    const samplesSource = readSource("../src/components/basic-info-step2.tsx");
-    const resultPageSource = readSource("../src/result/result-page.tsx");
-    const resultGallerySource = readSource("../src/result/result-panels-grid.tsx");
+    const metadataRouteSource = readSource("../src/routes/metadata.tsx");
+    const samplesSource = readSource("../src/components/metadata-samples.tsx");
+    const analysisPageSource = readSource("../src/analysis/analysis-page.tsx");
+    const analysisGallerySource = readSource("../src/analysis/analysis-plot-gallery.tsx");
     const analysisDemoSource = readSource("../../demo/src/analysis-demo.tsx");
 
     expect(assayRouteSource).toMatch(/<AppShell\.MainScroll/);
-    expect(infoRouteSource).toMatch(/<AppShell\.MainScroll/);
+    expect(metadataRouteSource).toMatch(/<AppShell\.MainScroll/);
     expect(samplesSource).not.toMatch(/overflow-y-auto/);
     expect(samplesSource).not.toMatch(/max-h-\[58vh\]/);
-    expect(resultPageSource).toMatch(/<AppShell\.MainScroll/);
-    expect(resultGallerySource).not.toMatch(/overflow-y-auto/);
+    expect(analysisPageSource).toMatch(/<AppShell\.MainScroll/);
+    expect(analysisGallerySource).not.toMatch(/overflow-y-auto/);
     expect(analysisDemoSource).toMatch(/<DemoShell>/);
     expect(analysisDemoSource).not.toMatch(/<AppShell/);
     expect(analysisDemoSource.match(/<DemoShell\.MainScroll/g)).toHaveLength(2);

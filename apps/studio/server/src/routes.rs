@@ -149,6 +149,9 @@ fn build_transfection_operation(
     let interval = lisca::analysis::assays::transfection::interval_minutes(&assay)
         .unwrap_or(lisca::analysis::assays::transfection::DEFAULT_INTERVAL_MINUTES);
     let max_onset = lisca::analysis::assays::transfection::max_onset_minutes(&assay);
+    // `analysis.skipSegment` measures every pixel of the site. That area is the
+    // crop size, so it stays constant across time. The masked path segments first.
+    let full_frame = transfection::skip_segment(&assay);
     let mut tasks = Vec::new();
 
     // Prepare validates assay mapping only (no slide.json side file).
@@ -161,33 +164,35 @@ fn build_transfection_operation(
     tasks.push(prepare);
 
     let mut segment_ids_by_channel = std::collections::BTreeMap::<u32, Vec<String>>::new();
-    for (slide_channel, entry) in mapping.iter() {
-        for position in &entry.positions {
-            let mut shard = SlideMapping::new();
-            let mut shard_entry = entry.clone();
-            shard_entry.positions = vec![*position];
-            shard.insert(*slide_channel, shard_entry);
-            let shard = Arc::new(shard);
-            let task_workspace = workspace.clone();
-            let task = analysis_task(
-                format!("analysis/transfection/segment/Pos{position}"),
-                vec![prepare_id.clone()],
-                Arc::new(move || {
-                    transfection::run_segment(
-                        &task_workspace,
-                        &shard,
-                        &transfection::SegmentOptions {
-                            jobs: 1,
-                            ..transfection::SegmentOptions::default()
-                        },
-                    )
-                }),
-            );
-            segment_ids_by_channel
-                .entry(*slide_channel)
-                .or_default()
-                .push(task.task_id().to_string());
-            tasks.push(task);
+    if !full_frame {
+        for (slide_channel, entry) in mapping.iter() {
+            for position in &entry.positions {
+                let mut shard = SlideMapping::new();
+                let mut shard_entry = entry.clone();
+                shard_entry.positions = vec![*position];
+                shard.insert(*slide_channel, shard_entry);
+                let shard = Arc::new(shard);
+                let task_workspace = workspace.clone();
+                let task = analysis_task(
+                    format!("analysis/transfection/segment/Pos{position}"),
+                    vec![prepare_id.clone()],
+                    Arc::new(move || {
+                        transfection::run_segment(
+                            &task_workspace,
+                            &shard,
+                            &transfection::SegmentOptions {
+                                jobs: 1,
+                                ..transfection::SegmentOptions::default()
+                            },
+                        )
+                    }),
+                );
+                segment_ids_by_channel
+                    .entry(*slide_channel)
+                    .or_default()
+                    .push(task.task_id().to_string());
+                tasks.push(task);
+            }
         }
     }
 
@@ -197,12 +202,19 @@ fn build_transfection_operation(
         shard.insert(*slide_channel, entry.clone());
         let shard = Arc::new(shard);
         let task_workspace = workspace.clone();
-        let task = analysis_task(
-            format!("analysis/transfection/timeseries/sc{slide_channel}"),
+        let dependencies = if full_frame {
+            vec![prepare_id.clone()]
+        } else {
             segment_ids_by_channel
                 .remove(slide_channel)
-                .unwrap_or_default(),
-            Arc::new(move || transfection::run_timeseries(&task_workspace, &shard, 1)),
+                .unwrap_or_default()
+        };
+        let task = analysis_task(
+            format!("analysis/transfection/timeseries/sc{slide_channel}"),
+            dependencies,
+            Arc::new(move || {
+                transfection::run_timeseries_with_mode(&task_workspace, &shard, 1, full_frame)
+            }),
         );
         timeseries_ids.push(task.task_id().to_string());
         tasks.push(task);
@@ -739,5 +751,40 @@ mod tests {
             let _ = state.tasks.cancel_operation(&detail.operation.operation_id);
             fs::remove_dir_all(workspace).unwrap();
         }
+    }
+
+    #[tokio::test]
+    async fn transfection_skip_segment_measures_the_full_site_without_masks() {
+        let state = TestState::new();
+        let workspace = graph_workspace(AssayType::Transfection);
+        let assay_path = workspace.join("assay.json");
+        let mut assay: serde_json::Value =
+            serde_json::from_str(&fs::read_to_string(&assay_path).unwrap()).unwrap();
+        assay["analysis"]["skipSegment"] = serde_json::json!(true);
+        fs::write(&assay_path, serde_json::to_string(&assay).unwrap()).unwrap();
+
+        let assay = load_assay_json(&workspace).unwrap();
+        let detail =
+            build_analysis_operation(&state.tasks, workspace.clone(), assay, "skip-segment")
+                .unwrap();
+
+        assert!(detail
+            .tasks
+            .iter()
+            .all(|task| !task.task_kind.contains("/segment/")));
+        let prepare = detail
+            .tasks
+            .iter()
+            .find(|task| task.task_kind.ends_with("/prepare"))
+            .unwrap();
+        let timeseries = detail
+            .tasks
+            .iter()
+            .find(|task| task.task_kind.ends_with("/timeseries/sc0"))
+            .unwrap();
+        assert_eq!(timeseries.dependencies, vec![prepare.task_id.clone()]);
+
+        let _ = state.tasks.cancel_operation(&detail.operation.operation_id);
+        fs::remove_dir_all(workspace).unwrap();
     }
 }

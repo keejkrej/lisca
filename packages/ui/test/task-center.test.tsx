@@ -114,6 +114,13 @@ function deferred<T>() {
 function renderTaskCenter(
   gatewayOverrides: Partial<TaskCenterGateway> = {},
   appearance?: "button" | "status-link",
+  copy?: {
+    label?: string;
+    title?: string;
+    description?: string;
+    emptyTitle?: string;
+    emptyMessage?: string;
+  },
 ) {
   let handlers:
     | {
@@ -136,7 +143,12 @@ function renderTaskCenter(
       <input aria-label="Current edit" />
       <TaskCenter
         appearance={appearance}
+        description={copy?.description}
+        emptyMessage={copy?.emptyMessage}
+        emptyTitle={copy?.emptyTitle}
         gateway={gateway}
+        label={copy?.label}
+        title={copy?.title}
         subscribe={(next) => {
           handlers = next;
           return () => undefined;
@@ -159,6 +171,30 @@ afterEach(() => {
 Object.defineProperty(window, "scrollTo", { value: vi.fn(), writable: true });
 
 describe("Task Center dialog", () => {
+  it("uses shared task-center copy unless the caller supplies page copy", async () => {
+    const generic = renderTaskCenter();
+    fireEvent.click(generic.getByRole("button", { name: "Tasks, 0 active" }));
+    expect(await screen.findByRole("dialog", { name: "Task Center" })).toBeTruthy();
+    expect(screen.getByText("Background computations and recent results")).toBeTruthy();
+    expect(screen.getByText("No tasks yet")).toBeTruthy();
+    expect(screen.getByText("Long-running computations will appear here.")).toBeTruthy();
+    expect(screen.queryByText(/while you keep working/)).toBeNull();
+    cleanup();
+
+    const scoped = renderTaskCenter({}, undefined, {
+      label: "Cropping",
+      title: "Cropping",
+      description: "Background crop computations",
+      emptyTitle: "No crop tasks yet",
+      emptyMessage: "Long-running crop computations will appear here.",
+    });
+    fireEvent.click(scoped.getByRole("button", { name: "Cropping, 0 active" }));
+    expect(await screen.findByRole("dialog", { name: "Cropping" })).toBeTruthy();
+    expect(screen.getByText("Background crop computations")).toBeTruthy();
+    expect(screen.getByText("No crop tasks yet")).toBeTruthy();
+    expect(screen.getByText("Long-running crop computations will appear here.")).toBeTruthy();
+  });
+
   it("offers an opt-in quiet status link with a running-operation badge", () => {
     const view = renderTaskCenter({}, "status-link");
     const trigger = view.getByRole("button", { name: "Tasks, 0 active" });

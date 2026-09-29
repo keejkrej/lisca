@@ -2,7 +2,7 @@ import { ConnectionStatus, ShellThemeToggle, useShellServer } from "@lisca/ui/sh
 import { Show } from "solid-js";
 
 import { StudioExpertToggle } from "./studio-expert-toggle";
-import { StudioTaskCenter } from "./studio-task-center";
+import { StudioPageTaskCenter } from "./studio-task-center";
 
 export function StudioTopBar(props: { showExpert?: boolean }) {
   const server = useShellServer();
@@ -15,7 +15,7 @@ export function StudioTopBar(props: { showExpert?: boolean }) {
     >
       <h1 class="sr-only">LiSCA Studio</h1>
       <div class="flex items-center gap-2">
-        <StudioTaskCenter />
+        <StudioPageTaskCenter />
         <Show when={props.showExpert}>
           <StudioExpertToggle />
         </Show>

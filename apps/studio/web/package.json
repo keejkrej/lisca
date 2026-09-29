@@ -3,9 +3,9 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./result": {
-      "types": "./src/result/result-panels-grid.tsx",
-      "import": "./src/result/result-panels-grid.tsx"
+    "./analysis": {
+      "types": "./src/analysis/analysis-plot-gallery.tsx",
+      "import": "./src/analysis/analysis-plot-gallery.tsx"
     }
   },
   "scripts": {

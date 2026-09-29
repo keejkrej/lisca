@@ -13,18 +13,21 @@ import { SidebarStack } from "../src/shell/regions/sidebar-stack";
 afterEach(cleanup);
 
 describe("instrument rail control layout", () => {
-  it("keeps the full rail as scroll owner while preserving a centered 200px measure", () => {
+  it("pins a 200px measure to the leading margin so a classic bar stays in the trailing margin", () => {
     const view = render(() => <RailSidebar aria-label="Instrument rail">Controls</RailSidebar>);
 
     const rail = view.getByLabelText("Instrument rail");
     const stack = rail.firstElementChild;
     expect(rail.classList.contains("h-full")).toBe(true);
     expect(rail.classList.contains("w-full")).toBe(true);
+    expect(rail.classList.contains("items-start")).toBe(true);
     expect(rail.classList.contains("overflow-y-auto")).toBe(true);
+    expect(rail.classList.contains("overscroll-none")).toBe(true);
     expect(rail.classList.contains("px-7")).toBe(false);
-    expect(rail.style.scrollbarGutter).toBe("stable both-edges");
+    expect(rail.style.scrollbarGutter).toBe("");
     expect(stack?.getAttribute("data-slot")).toBe("rail-section-stack");
     expect(stack?.classList.contains("my-auto")).toBe(true);
+    expect(stack?.classList.contains("ml-7")).toBe(true);
     expect(stack?.classList.contains("w-[200px]")).toBe(true);
     expect(stack?.classList.contains("shrink-0")).toBe(true);
   });
@@ -34,6 +37,7 @@ describe("instrument rail control layout", () => {
 
     const sidebar = view.getByLabelText("Classic sidebar");
     expect(sidebar.classList.contains("overflow-auto")).toBe(true);
+    expect(sidebar.classList.contains("overscroll-none")).toBe(true);
     expect(sidebar.classList.contains("p-2.5")).toBe(true);
     expect(sidebar.querySelector('[data-slot="rail-section-stack"]')).toBeNull();
   });

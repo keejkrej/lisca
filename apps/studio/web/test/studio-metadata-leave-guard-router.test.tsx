@@ -40,7 +40,7 @@ vi.mock("@lisca/client/session/work-session", async (importOriginal) => {
   };
 });
 
-import { StudioBasicInfoLeaveGuard } from "../src/components/studio-basic-info-leave-guard";
+import { StudioMetadataLeaveGuard } from "../src/components/studio-metadata-leave-guard";
 
 type WizardState = ReturnType<typeof createInitialStudioWizardState>;
 
@@ -48,8 +48,8 @@ function dirtyWizard(overrides: Partial<WizardState> = {}): WizardState {
   return { ...createInitialStudioWizardState(), name: "A", ...overrides };
 }
 
-function InfoPage() {
-  return <div>Info page</div>;
+function MetadataPage() {
+  return <div>Metadata page</div>;
 }
 
 function AlignPage() {
@@ -61,7 +61,7 @@ function renderWithRouter(initialWizard: WizardState) {
     component: function RootLayout() {
       return (
         <RegistryProvider initialValues={[[studioWizardAtom, initialWizard]]}>
-          <StudioBasicInfoLeaveGuard />
+          <StudioMetadataLeaveGuard />
           <Outlet />
         </RegistryProvider>
       );
@@ -69,8 +69,8 @@ function renderWithRouter(initialWizard: WizardState) {
   });
   const infoRoute = createRoute({
     getParentRoute: () => rootRoute,
-    path: "/info",
-    component: InfoPage,
+    path: "/metadata",
+    component: MetadataPage,
   });
   const alignRoute = createRoute({
     getParentRoute: () => rootRoute,
@@ -78,7 +78,7 @@ function renderWithRouter(initialWizard: WizardState) {
     component: AlignPage,
   });
   const routeTree = rootRoute.addChildren([infoRoute, alignRoute]);
-  const history = createMemoryHistory({ initialEntries: ["/info"] });
+  const history = createMemoryHistory({ initialEntries: ["/metadata"] });
   const router = createRouter({ routeTree, history });
 
   return { router, ...render(() => <RouterProvider router={router} />) };
@@ -95,21 +95,21 @@ afterEach(() => {
 // restoration calls on navigation. Stub it (same as studio-nav-rail.test.tsx).
 Object.defineProperty(window, "scrollTo", { value: vi.fn(), writable: true });
 
-describe("StudioBasicInfoLeaveGuard real-router integration", () => {
+describe("StudioMetadataLeaveGuard real-router integration", () => {
   it("parks navigation and surfaces the workspace-folder error when Save is clicked without a folder", async () => {
     const { router } = renderWithRouter(dirtyWizard({ workspacePath: "" }));
 
     // Wait for the initial route to render so the guard's `useBlocker` effect
     // has registered `history.block` (createEffect runs after render).
-    await screen.findByText("Info page");
+    await screen.findByText("Metadata page");
 
     // Do not await navigate: a blocked navigation doesn't settle until the
     // blocker proceeds/resets. Fire it and wait for the modal instead.
     void router.navigate({ to: "/align" });
 
-    await screen.findByRole("dialog", { name: "Info changed" });
-    // The real @tanstack/solid-router blocker kept us on /info.
-    expect(router.state.location.href).toBe("/info");
+    await screen.findByRole("dialog", { name: "Metadata changed" });
+    // The real @tanstack/solid-router blocker kept us on /metadata.
+    expect(router.state.location.href).toBe("/metadata");
 
     await fireEvent.click(screen.getByRole("button", { name: "Save" }));
 
@@ -118,7 +118,7 @@ describe("StudioBasicInfoLeaveGuard real-router integration", () => {
 
     // Navigation is still parked after the failed save — the fix surfaces an
     // error instead of silently returning false, and the route does not advance.
-    expect(router.state.location.href).toBe("/info");
+    expect(router.state.location.href).toBe("/metadata");
     expect(save.writeStudioAssayJson).not.toHaveBeenCalled();
     expect(save.assayJsonExists).not.toHaveBeenCalled();
     // The skip/escape hatch still resolves the parked blocker.
@@ -129,12 +129,12 @@ describe("StudioBasicInfoLeaveGuard real-router integration", () => {
   it("advances navigation after a successful save on a dirty wizard with a workspace folder", async () => {
     const { router } = renderWithRouter(dirtyWizard({ workspacePath: "/ws/run-1" }));
 
-    await screen.findByText("Info page");
+    await screen.findByText("Metadata page");
 
     void router.navigate({ to: "/align" });
 
-    await screen.findByRole("dialog", { name: "Info changed" });
-    expect(router.state.location.href).toBe("/info");
+    await screen.findByRole("dialog", { name: "Metadata changed" });
+    expect(router.state.location.href).toBe("/metadata");
 
     await fireEvent.click(screen.getByRole("button", { name: "Save" }));
 

@@ -13,10 +13,10 @@ The package is pure model logic. Studio-coupled atoms live in
 `apps/studio/web/src/atoms/studio-analysis-atoms.ts`, where the model is wired to the
 `StudioPortService` runtime.
 
-## Result gallery
+## Analysis gallery
 
-`apps/studio/web/src/result/result-panels-grid.tsx` shows the PNG files the Rust
-pipeline already wrote via mplot-rs (`ResultPlotGallery`). There is no in-app chart
+`apps/studio/web/src/analysis/analysis-plot-gallery.tsx` shows the PNG files the Rust
+pipeline already wrote via mplot-rs (`AnalysisPlotGallery`). There is no in-app chart
 renderer. Studio lists PNGs from the analysis manifest (`results/*.png` workspace
 boxplots and `results/<sample>/*.png` packs) and serves them at `GET /fs/file?path=`.
 Per-sample titles include the sample folder (for example
@@ -27,7 +27,7 @@ Survival (killing).
 
 ## Analysis demo
 
-`apps/studio/demo` is a browser-only mock of the result page. It loads fixture PNGs
+`apps/studio/demo` is a browser-only mock of the analysis page. It loads fixture PNGs
 for both shipping assays so the team can iterate on the gallery without a workspace.
 
 ```sh

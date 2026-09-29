@@ -54,7 +54,7 @@ function MockTopBar(props: { screen: MockScreen; onScreen: (screen: MockScreen) 
           variant={props.screen === "studio" ? "default" : "outline"}
           onClick={() => props.onScreen("studio")}
         >
-          Result
+          Analysis
         </Button>
       </div>
       <p class="text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
@@ -182,10 +182,10 @@ function ResultBody(props: { screen: MockScreen; onScreen: (screen: MockScreen) 
           <PanelSection appearance="rail" title="Tasks">
             <RailControlStack>
               <InertAction>Assay</InertAction>
-              <InertAction>Info</InertAction>
+              <InertAction>Metadata</InertAction>
               <InertAction>Align</InertAction>
               <InertAction>Annotate</InertAction>
-              <InertAction active>Result</InertAction>
+              <InertAction active>Analysis</InertAction>
             </RailControlStack>
           </PanelSection>
         </RailSidebar>

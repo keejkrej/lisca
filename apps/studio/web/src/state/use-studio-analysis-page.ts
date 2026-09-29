@@ -6,14 +6,14 @@ import { analysisResultsAtom, analysisResultsIdleAtom } from "../atoms/studio-an
 import { useStudioAnnotateStore } from "./studio-annotate-store";
 import { useStudioStore } from "./studio-store";
 
-export type StudioResultState = {
+export type StudioAnalysisPage = {
   workspacePath: string | null;
   analysisResultFiles: StudioAnalysisCsvFile[];
   setAnalysisProgress: (progress: AnalysisProgress | null) => void;
   setAnalysisResultFiles: (files: StudioAnalysisCsvFile[]) => void;
 };
 
-export function useStudioResultState(): StudioResultState {
+export function useStudioAnalysisPage(): StudioAnalysisPage {
   const workspacePath = useStudioStore((state) => state.workspacePath);
   const activeWorkspacePath = () => workspacePath().trim() || null;
   const annotateStore = useStudioAnnotateStore();

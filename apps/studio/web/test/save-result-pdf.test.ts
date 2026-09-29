@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vite-plus/test";
 
-import { buildResultPdf, pdfSafeText } from "../src/result/save-result-pdf";
+import { buildResultPdf, pdfSafeText } from "../src/analysis/save-result-pdf";
 
 // 1×1 white PNG.
 const PNG = Uint8Array.from(

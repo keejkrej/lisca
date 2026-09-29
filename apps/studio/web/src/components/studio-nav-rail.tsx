@@ -1,22 +1,38 @@
 import { cn } from "@lisca/ui/components";
 import { Link, useNavigate, useRouterState } from "@tanstack/solid-router";
-import type { JSX } from "solid-js";
+import { createEffect, For, onCleanup, type JSX } from "solid-js";
 
+import {
+  STUDIO_PAGES,
+  studioPageForShortcut,
+  studioPageShortcutPlatform,
+  type StudioPageShortcutPlatform,
+} from "../navigation/studio-page-shortcuts";
 import { studioNavigate, type StudioRouteTo } from "../navigation/use-studio-navigate";
 import { confirmStudioAnnotateLeave } from "../state/studio-annotate-guard";
+
+function isEditableTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false;
+  return Boolean(target.closest("input, textarea, select, [contenteditable='true']"));
+}
+
 function NavButton(props: {
   active: boolean;
   children: JSX.Element;
   index: number;
+  shortcutPlatform: StudioPageShortcutPlatform;
   to: StudioRouteTo;
   onClick?: () => void;
   leaveAnnotateGuard?: boolean;
 }) {
   const navigate = useNavigate();
+  const shortcutKey =
+    props.shortcutPlatform === "mac" ? `Meta+${props.index}` : `Control+${props.index}`;
 
   return (
     <Link
       aria-current={props.active ? "page" : undefined}
+      aria-keyshortcuts={shortcutKey}
       class={cn(
         "group flex h-9 w-full min-w-0 shrink-0 items-center gap-3 rounded-md text-left outline-none transition-colors",
         "hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring",
@@ -65,8 +81,40 @@ function NavButton(props: {
 }
 
 export function StudioNavRail() {
+  const navigate = useNavigate();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const routeId = () => pathname().slice(1) || "assay";
+  const shortcutPlatform = studioPageShortcutPlatform();
+
+  const goTo = (to: StudioRouteTo) => {
+    const current = routeId();
+    if (current === to.slice(1)) return;
+    if (current === "annotate" && !confirmStudioAnnotateLeave()) return;
+    studioNavigate(navigate, to);
+  };
+
+  createEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.repeat || event.isComposing) return;
+      const to = studioPageForShortcut(
+        {
+          key: event.key,
+          editableTarget: isEditableTarget(event.target),
+          metaKey: event.metaKey,
+          ctrlKey: event.ctrlKey,
+          shiftKey: event.shiftKey,
+          altKey: event.altKey,
+        },
+        shortcutPlatform,
+      );
+      if (!to) return;
+      event.preventDefault();
+      goTo(to);
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    onCleanup(() => window.removeEventListener("keydown", onKeyDown));
+  });
 
   return (
     <nav
@@ -74,41 +122,19 @@ export function StudioNavRail() {
       class="flex h-full min-h-0 flex-col items-center justify-center px-7 py-2.5"
     >
       <div class="flex w-fit min-w-0 shrink-0 flex-col">
-        <NavButton
-          active={routeId() === "assay"}
-          index={1}
-          leaveAnnotateGuard={routeId() === "annotate"}
-          to="/assay"
-        >
-          Assay
-        </NavButton>
-        <NavButton
-          active={routeId() === "info"}
-          index={2}
-          leaveAnnotateGuard={routeId() === "annotate"}
-          to="/info"
-        >
-          Info
-        </NavButton>
-        <NavButton
-          active={routeId() === "align"}
-          index={3}
-          leaveAnnotateGuard={routeId() === "annotate"}
-          to="/align"
-        >
-          Align
-        </NavButton>
-        <NavButton active={routeId() === "annotate"} index={4} to="/annotate">
-          Annotate
-        </NavButton>
-        <NavButton
-          active={routeId() === "result"}
-          index={5}
-          leaveAnnotateGuard={routeId() === "annotate"}
-          to="/result"
-        >
-          Results
-        </NavButton>
+        <For each={STUDIO_PAGES}>
+          {(page) => (
+            <NavButton
+              active={routeId() === page.to.slice(1)}
+              index={page.index}
+              leaveAnnotateGuard={routeId() === "annotate"}
+              shortcutPlatform={shortcutPlatform}
+              to={page.to}
+            >
+              {page.label}
+            </NavButton>
+          )}
+        </For>
       </div>
     </nav>
   );

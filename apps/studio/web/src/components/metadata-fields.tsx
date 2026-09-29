@@ -4,6 +4,7 @@ import type { HostFilePickerMode } from "@lisca/ui/features";
 import {
   Field,
   FieldLabel,
+  FieldTitle,
   Input,
   Select,
   SelectContent,
@@ -59,7 +60,7 @@ function kindFromMode(mode: HostFilePickerMode): StudioDataSourceKind {
   return null;
 }
 
-export function BasicInfoStep1(props: { hostPort: HostFilePickerOperations }) {
+export function MetadataFields(props: { hostPort: HostFilePickerOperations }) {
   const wizard = useAtomValue(() => studioWizardAtom);
   const setWizard = useAtomSet(() => studioWizardAtom);
   const patch = (p: Parameters<typeof studioWizardActions.patchWizard>[1]) =>
@@ -240,9 +241,7 @@ export function BasicInfoStep1(props: { hostPort: HostFilePickerOperations }) {
         </div>
         <Show when={wizard().assayId === ASSAY_TYPE.TRANSFECTION}>
           <Field class="w-full gap-2">
-            <FieldLabel class="text-sm font-medium leading-[18px]" for="studio-skip-segment">
-              Segmentation
-            </FieldLabel>
+            <FieldTitle class="text-sm font-medium leading-[18px]">Misc</FieldTitle>
             <label class="flex cursor-pointer items-center gap-2.5 text-[13px] leading-[18px]">
               <input
                 checked={wizard().analysis?.skipSegment ?? false}
@@ -252,7 +251,7 @@ export function BasicInfoStep1(props: { hostPort: HostFilePickerOperations }) {
                 type="checkbox"
                 onChange={(event) => setAnalysis({ skipSegment: event.currentTarget.checked })}
               />
-              <span>Use the full site (skip mask)</span>
+              <span>Skip segmentation</span>
             </label>
           </Field>
         </Show>

@@ -30,7 +30,7 @@ export function StudioAnnotateInstrumentStack(props: { showShuffle?: boolean }) 
       fallback={
         <PanelSection appearance="rail" title="Annotate">
           <p class="text-[13px] leading-[18px] text-muted-foreground">
-            Choose a workspace on the Info step first.
+            Choose a workspace on the Metadata step first.
           </p>
         </PanelSection>
       }

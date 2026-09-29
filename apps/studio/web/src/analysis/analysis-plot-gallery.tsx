@@ -21,7 +21,7 @@ function GalleryEmpty(props: { title?: string; message?: string; action?: JSX.El
   );
 }
 
-export function ResultPlotGallery(props: {
+export function AnalysisPlotGallery(props: {
   plots: ResultPlot[];
   pageTitle?: string;
   section?: ResultPlotSection;

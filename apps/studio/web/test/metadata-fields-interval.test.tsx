@@ -14,7 +14,7 @@ vi.mock("@lisca/ui/features", async (importOriginal) => {
 });
 
 import { ChooseAssay } from "../src/components/choose-assay";
-import { BasicInfoStep1 } from "../src/components/basic-info-step1";
+import { MetadataFields } from "../src/components/metadata-fields";
 import { createInitialStudioWizardState, studioWizardAtom } from "../src/state/studio-store";
 
 const stubHostPort = {} as HostFilePickerOperations;
@@ -25,7 +25,7 @@ function renderWizard() {
       initialValues={[[studioWizardAtom, createInitialStudioWizardState()] as const]}
     >
       <ChooseAssay />
-      <BasicInfoStep1 hostPort={stubHostPort} />
+      <MetadataFields hostPort={stubHostPort} />
     </RegistryProvider>
   ));
 }
@@ -38,7 +38,23 @@ function intervalInput(container: HTMLElement): HTMLInputElement {
 
 afterEach(cleanup);
 
-describe("BasicInfoStep1 interval field across assay switches", () => {
+describe("MetadataFields misc", () => {
+  it("shows skip segmentation under Misc for transfection only", async () => {
+    renderWizard();
+    expect(screen.getByText("Misc")).toBeTruthy();
+    expect(screen.getByRole("checkbox", { name: "Skip segmentation" })).toBeTruthy();
+    expect(screen.queryByText("Use the full site (skip mask)")).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: /Killing/ }));
+
+    await waitFor(() => {
+      expect(screen.queryByText("Misc")).toBeNull();
+      expect(screen.queryByRole("checkbox", { name: "Skip segmentation" })).toBeNull();
+    });
+  });
+});
+
+describe("MetadataFields interval field across assay switches", () => {
   it("seeds the transfection default 10 and the e.g. 10 placeholder", () => {
     const { container } = renderWizard();
     const input = intervalInput(container);

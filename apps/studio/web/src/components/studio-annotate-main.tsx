@@ -98,10 +98,10 @@ export function StudioAnnotateMain() {
       <Match when={state.workspaceMissing}>
         <ViewportCard contentClass="relative max-w-[480px]">
           <StudioEmptyState
-            actionLabel="Go to Info"
-            description="Choose a workspace on the Info step, then align and crop sites before annotating."
+            actionLabel="Go to Metadata"
+            description="Choose a workspace on the Metadata step, then align and crop sites before annotating."
             title="Workspace not set"
-            onAction={() => navigateTo("/info")}
+            onAction={() => navigateTo("/metadata")}
           />
         </ViewportCard>
         <StudioAnalysisStartModal />

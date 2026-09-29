@@ -71,7 +71,7 @@ vi.mock("@lisca/client/session/work-session", async (importOriginal) => {
   };
 });
 
-import { StudioBasicInfoLeaveGuard } from "../src/components/studio-basic-info-leave-guard";
+import { StudioMetadataLeaveGuard } from "../src/components/studio-metadata-leave-guard";
 
 // Module-scope Solid signals wired into the hoisted holders above. The guard
 // reads/writes through the mocked hooks, which read/write these signals, so
@@ -119,14 +119,14 @@ afterEach(() => {
   blockerSignal[1]({ status: "idle", proceed: vi.fn(), reset: vi.fn() });
 });
 
-describe("StudioBasicInfoLeaveGuard save guard", () => {
+describe("StudioMetadataLeaveGuard save guard", () => {
   it("surfaces a clear error and stays blocked when Save is clicked without a workspace folder", async () => {
     resetWizard(dirtyWizard({ workspacePath: "" }));
     block();
 
-    render(() => <StudioBasicInfoLeaveGuard />);
+    render(() => <StudioMetadataLeaveGuard />);
 
-    await screen.findByRole("dialog", { name: "Info changed" });
+    await screen.findByRole("dialog", { name: "Metadata changed" });
 
     await fireEvent.click(screen.getByRole("button", { name: "Save" }));
 
@@ -150,9 +150,9 @@ describe("StudioBasicInfoLeaveGuard save guard", () => {
     resetWizard(dirtyWizard({ workspacePath: "/assays/run-1" }));
     block();
 
-    render(() => <StudioBasicInfoLeaveGuard />);
+    render(() => <StudioMetadataLeaveGuard />);
 
-    await screen.findByRole("dialog", { name: "Info changed" });
+    await screen.findByRole("dialog", { name: "Metadata changed" });
     await fireEvent.click(screen.getByRole("button", { name: "Save" }));
 
     await waitFor(() => {
@@ -180,14 +180,14 @@ describe("StudioBasicInfoLeaveGuard save guard", () => {
     resetWizard(dirtyWizard({ workspacePath: "/existing" }));
     block();
 
-    render(() => <StudioBasicInfoLeaveGuard />);
+    render(() => <StudioMetadataLeaveGuard />);
 
-    await screen.findByRole("dialog", { name: "Info changed" });
+    await screen.findByRole("dialog", { name: "Metadata changed" });
     await fireEvent.click(screen.getByRole("button", { name: "Save" }));
 
     // The save modal closes and the overwrite modal opens; nothing written yet.
     await screen.findByRole("dialog", { name: "Assay already saved here" });
-    expect(screen.queryByRole("dialog", { name: "Info changed" })).toBeNull();
+    expect(screen.queryByRole("dialog", { name: "Metadata changed" })).toBeNull();
     expect(save.writeStudioAssayJson).not.toHaveBeenCalled();
     expect(currentBlocker().proceed).not.toHaveBeenCalled();
 
@@ -207,9 +207,9 @@ describe("StudioBasicInfoLeaveGuard save guard", () => {
     resetWizard(dirtyWizard({ workspacePath: "" }));
     block();
 
-    render(() => <StudioBasicInfoLeaveGuard />);
+    render(() => <StudioMetadataLeaveGuard />);
 
-    await screen.findByRole("dialog", { name: "Info changed" });
+    await screen.findByRole("dialog", { name: "Metadata changed" });
     await fireEvent.click(screen.getByRole("button", { name: "Skip Save" }));
 
     expect(currentBlocker().proceed).toHaveBeenCalled();
@@ -221,9 +221,9 @@ describe("StudioBasicInfoLeaveGuard save guard", () => {
     resetWizard(dirtyWizard({ workspacePath: "" }));
     block();
 
-    render(() => <StudioBasicInfoLeaveGuard />);
+    render(() => <StudioMetadataLeaveGuard />);
 
-    await screen.findByRole("dialog", { name: "Info changed" });
+    await screen.findByRole("dialog", { name: "Metadata changed" });
     await fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
 
     expect(currentBlocker().reset).toHaveBeenCalled();
@@ -236,9 +236,9 @@ describe("StudioBasicInfoLeaveGuard save guard", () => {
     resetWizard(dirtyWizard({ workspacePath: "" }));
     block();
 
-    render(() => <StudioBasicInfoLeaveGuard />);
+    render(() => <StudioMetadataLeaveGuard />);
 
-    await screen.findByRole("dialog", { name: "Info changed" });
+    await screen.findByRole("dialog", { name: "Metadata changed" });
     await fireEvent.click(screen.getByRole("button", { name: "Save" }));
     const alert = await screen.findByRole("alert");
     expect(alert.textContent).toMatch(/workspace folder before saving/i);
@@ -250,7 +250,7 @@ describe("StudioBasicInfoLeaveGuard save guard", () => {
     resetWizard(dirtyWizard({ workspacePath: "/picked" }));
     block();
 
-    await screen.findByRole("dialog", { name: "Info changed" });
+    await screen.findByRole("dialog", { name: "Metadata changed" });
     expect(screen.queryByRole("alert")).toBeNull();
 
     await fireEvent.click(screen.getByRole("button", { name: "Save" }));
@@ -264,7 +264,7 @@ describe("StudioBasicInfoLeaveGuard save guard", () => {
   });
 });
 
-describe("StudioBasicInfoLeaveGuard dirty trigger", () => {
+describe("StudioMetadataLeaveGuard dirty trigger", () => {
   it("marks the wizard dirty when a non-default assay is picked without a workspace folder", () => {
     const initial = createInitialStudioWizardState();
     expect(isBasicInfoDirty(initial)).toBe(false);

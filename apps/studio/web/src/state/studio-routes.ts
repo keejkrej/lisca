@@ -12,16 +12,13 @@ export function instructionForStep(step: StudioStep): string {
   if (step === "chooseAssay") {
     return "Pick an assay to set up, or open an existing one.";
   }
-  if (step === "info1") {
-    return "Choose the image source, workspace folder, and time between frames.";
-  }
-  if (step === "info2") {
-    return "Name each sample and the microscope positions it covers. Align and Annotate use these ranges.";
+  if (step === "metadata") {
+    return "Choose the image source, workspace folder, and time between frames. Name each sample and the positions it covers.";
   }
   if (step === "alignPattern") {
     return "Drag the grid onto the micropattern, exclude empty cells, then press Save. Continue moves to the next unsaved position.";
   }
-  return "Finish the Info step before aligning.";
+  return "Finish the Metadata step before aligning.";
 }
 
 export function instructionForAnnotate(): string {

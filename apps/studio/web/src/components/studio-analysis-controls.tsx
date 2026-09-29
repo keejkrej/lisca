@@ -14,7 +14,7 @@ function isEditableTarget(target: EventTarget | null): boolean {
   return Boolean(target.closest("input, textarea, select, [contenteditable='true']"));
 }
 
-export function StudioResultControls(props: {
+export function StudioAnalysisControls(props: {
   toolActions: DockToolAction[];
   shortcutsEnabled: boolean;
   saveDisabled: boolean;
