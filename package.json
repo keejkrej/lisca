@@ -28,12 +28,11 @@
     "fmt": "vp fmt",
     "fmt:check": "vp fmt --check",
     "test": "vp run -r --no-cache test",
-    "test:scripts": "vp test run scripts/check-release-version.test.ts scripts/lisca-dev.test.ts scripts/lint-boundaries.test.ts scripts/node-run.test.ts --exclude '.deploy/**'",
+    "test:scripts": "vp test run scripts/check-openapi-routes.test.ts scripts/check-release-version.test.ts scripts/lisca-dev.test.ts scripts/lint-boundaries.test.ts scripts/node-run.test.ts --exclude '.deploy/**'",
     "typecheck": "vp run -r --no-cache typecheck"
   },
   "devDependencies": {
     "@types/node": "catalog:",
-    "@voidzero-dev/vite-plus-core": "latest",
     "node-addon-api": "^8.9.2",
     "node-gyp": "^11.5.0",
     "oxlint-plugin-eslint": "1.68.0",
@@ -44,7 +43,7 @@
     "wait-on": "^8.0.3"
   },
   "engines": {
-    "node": ">=22",
+    "node": ">=24",
     "pnpm": ">=12"
   },
   "packageManager": "pnpm@12.5.1"
