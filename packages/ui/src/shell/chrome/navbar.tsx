@@ -13,6 +13,8 @@ import { cn } from "../../lib/utils";
 export type ShellNavbarProps = {
   /** Screen-reader application title rendered as the page's primary heading. */
   title?: string;
+  /** Visible label centered in the bar; falls back to `title`. */
+  label?: string;
   appearance?: "default" | "stage";
   /** Show the source path/action button (default: true). */
   showSourceButton?: boolean;
@@ -39,8 +41,10 @@ function ShellNavbarRoot(props: ShellNavbarProps) {
   const handleSource = () => (props.onPickSource ?? workspace.pickSource)();
   const handleWorkspace = () => (props.onPickWorkspace ?? workspace.pickWorkspace)();
 
+  const label = () => props.label ?? props.title;
+
   return (
-    <header class={cn("h-full", props.appearance !== "stage" && "px-6")}>
+    <header class={cn("relative h-full", props.appearance !== "stage" && "px-6")}>
       <Show when={props.title}>{(title) => <h1 class="sr-only">{title()}</h1>}</Show>
       <div
         class={cn(
@@ -80,6 +84,17 @@ function ShellNavbarRoot(props: ShellNavbarProps) {
           <ShellThemeToggle />
         </div>
       </div>
+
+      <Show when={label()}>
+        {(text) => (
+          <span
+            aria-hidden="true"
+            class="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-xs font-semibold uppercase tracking-[0.2em] text-foreground/60"
+          >
+            {text()}
+          </span>
+        )}
+      </Show>
     </header>
   );
 }

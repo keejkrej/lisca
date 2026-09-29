@@ -71,7 +71,7 @@ lisca` (the `protocol::contract_tests` lock the key wire shapes).
 
 ## Transport and style
 
-- **Single transport:** Effect `HttpApi` over HTTP for JSON client↔server calls. `GET /fs/file` is the raw-byte exception (ADR-0002): workspace files such as plots, loaded by URL rather than the generated client.
+- **One JSON contract, two transports:** Effect `HttpApi` defines the JSON client↔server contract; hosted builds call it over HTTP, desktop builds over in-process Tauri IPC (ADR-0002). `GET /fs/file` is the raw-byte exception to that contract: workspace files such as plots, loaded by URL rather than the generated client.
 - **Long-running jobs** (crop ROI, analysis): clients poll the existing progress GET endpoints (`/align/crop-roi-progress`, `/studio/analysis-progress`).
 - **Connection health:** each app injects its host-port `userHomeDirectory()` probe into `ShellServerProvider`; the shell does not call `fetch` itself.
 - **API style:** typed action-oriented HTTP RPC (named endpoints like `/align/load-frame`), not REST resources and not a separate RPC framework.

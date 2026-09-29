@@ -16,7 +16,7 @@ Do not add new assay brains under `models/`.
 
 ## Build, Test, and Development Commands
 
-Use Node 22+, pnpm 12+, and the `vp` wrapper for JavaScript workspace tasks.
+Use Node 24+, pnpm 12+, and the `vp` wrapper for JavaScript workspace tasks.
 
 - `vp install` installs workspace dependencies.
 - `vp run dev:studio` starts Studio's web and Rust server; replace `studio` with `aligner` or `annotator`.
@@ -24,8 +24,9 @@ Use Node 22+, pnpm 12+, and the `vp` wrapper for JavaScript workspace tasks.
 - `vp run check` runs linting, TypeScript checks, contract validation, Rust checks/Clippy, and workspace tests.
 - `vp run fmt` formats supported files; `vp run fmt:check` verifies formatting without edits.
 - `vp run dist:studio` packages the Studio desktop installer; replace `studio` with `aligner` or `annotator`.
+- `vp run dist:studio` packages the Studio desktop installer; replace `studio` with `aligner` or `annotator`.
 - A local desktop build or install that does not name a product packages Studio only. Studio includes the Aligner and Annotator flows, so that one package is the development check. Name the product when a different app is the target.
-- GitHub Actions (`Checks` workflow) runs `vp run fmt:check` and `vp run check` on pull requests and `main`. GitHub Copilot reviews every pull request automatically (repository ruleset); its review guidance lives in `.github/copilot-instructions.md`. A `v*` tag publishes unsigned Studio, Aligner, and Annotator installers (macOS DMG, Windows NSIS, Linux deb) to a GitHub Release. Studio installers include the public killing ONNX. The `release-jupyternotebook` workflow (`workflow_dispatch` from `main`, not a tag push) publishes `lisca-notebooks-X.Y.Z.zip` and tags `notebooks-v*` (not desktop installers).
+- GitHub Actions (`Checks` workflow) runs `vp run fmt:check` and `vp run check` on pull requests and `main`. GitHub Copilot reviews every non-draft pull request automatically (repository ruleset); its review guidance lives in `.github/copilot-instructions.md`. A `v*` tag publishes unsigned Studio, Aligner, and Annotator installers (macOS DMG, Windows NSIS, Linux deb) to a GitHub Release. Studio installers include the public killing ONNX. The `release-jupyternotebook` workflow (`workflow_dispatch` from `main`, not a tag push) publishes `lisca-notebooks-X.Y.Z.zip` and tags `notebooks-v*` (not desktop installers).
 - `cargo test --workspace` runs Rust tests.
 - `cd python && uv run pytest` runs the Python suite (crop tests do not need the crop extra).
 
