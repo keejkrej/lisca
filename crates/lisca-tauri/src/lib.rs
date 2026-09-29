@@ -119,10 +119,8 @@ fn on_shell_event<R: tauri::Runtime>(
     let _ = (app, config);
 
     match event {
-        tauri::RunEvent::ExitRequested { code, api, .. } => {
-            if !should_quit_on_exit_request(code) {
-                api.prevent_exit();
-            }
+        tauri::RunEvent::ExitRequested { code, api, .. } if !should_quit_on_exit_request(code) => {
+            api.prevent_exit();
         }
         #[cfg(target_os = "macos")]
         tauri::RunEvent::Reopen {
