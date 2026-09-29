@@ -12,6 +12,13 @@ const openapi = JSON.parse(readFileSync(openapiPath, "utf8")) as {
 
 const openapiPaths = new Set(Object.keys(openapi.paths).toSorted());
 
+/**
+ * Axum routes that return raw bytes and are absent from the JSON HttpApi.
+ * Web loads them as same-origin URLs; desktop loads them through `lisca_request`.
+ * See ADR-0002.
+ */
+const RAW_BYTE_ROUTES = new Set(["/fs/file"]);
+
 function findRouteFiles(root: string): string[] {
   const files: string[] = [];
   const appsDir = join(root, "apps");
@@ -55,9 +62,18 @@ for (const filePath of routeFiles) {
 }
 
 const missingInRust = [...openapiPaths].filter((path) => !rustPaths.has(path));
-const missingInOpenApi = [...rustPaths].filter((path) => !openapiPaths.has(path));
+const missingInOpenApi = [...rustPaths].filter(
+  (path) => !openapiPaths.has(path) && !RAW_BYTE_ROUTES.has(path),
+);
+const missingRawRoutes = [...RAW_BYTE_ROUTES].filter((path) => !rustPaths.has(path));
+const rawRoutesInOpenApi = [...RAW_BYTE_ROUTES].filter((path) => openapiPaths.has(path));
 
-if (missingInRust.length > 0 || missingInOpenApi.length > 0) {
+if (
+  missingInRust.length > 0 ||
+  missingInOpenApi.length > 0 ||
+  missingRawRoutes.length > 0 ||
+  rawRoutesInOpenApi.length > 0
+) {
   console.error("OpenAPI path mismatch with Rust Axum routes.\n");
   if (missingInRust.length > 0) {
     console.error("In openapi.json but missing from Rust routes:");
@@ -69,6 +85,20 @@ if (missingInRust.length > 0 || missingInOpenApi.length > 0) {
   if (missingInOpenApi.length > 0) {
     console.error("In Rust routes but missing from openapi.json:");
     for (const path of missingInOpenApi) {
+      console.error(`  - ${path}`);
+    }
+    console.error("");
+  }
+  if (missingRawRoutes.length > 0) {
+    console.error("Raw byte routes missing from Rust routes:");
+    for (const path of missingRawRoutes) {
+      console.error(`  - ${path}`);
+    }
+    console.error("");
+  }
+  if (rawRoutesInOpenApi.length > 0) {
+    console.error("Raw byte routes must stay out of the JSON HttpApi (ADR-0002):");
+    for (const path of rawRoutesInOpenApi) {
       console.error(`  - ${path}`);
     }
     console.error("");

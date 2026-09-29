@@ -38,6 +38,7 @@ where
         .route("/fs/list", get(list_directory_handler))
         .route("/fs/home", get(home_directory_handler))
         .route("/fs/read-text", get(read_text_file_handler))
+        // Raw bytes, outside the JSON HttpApi. See ADR-0002.
         .route("/fs/file", get(read_file_handler))
         .route("/fs/create-directory", post(create_directory_handler))
 }
