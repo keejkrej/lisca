@@ -3,7 +3,7 @@
   "private": true,
   "scripts": {
     "build": "cargo build --release -p studio-server",
-    "dev": "node ../../../scripts/kill-tcp-listener.cjs 9767 && PORT=9767 cargo watch -w . -w ../../aligner/server -w ../../annotator/server -w ../../../crates/lisca -w ../../../Cargo.toml -w ../../../Cargo.lock -x \"run -p studio-server\"",
+    "dev": "node ../../../scripts/kill-tcp-listener.cjs 19767 && PORT=19767 cargo watch -w . -w ../../aligner/server -w ../../annotator/server -w ../../../crates/lisca -w ../../../Cargo.toml -w ../../../Cargo.lock -x \"run -p studio-server\"",
     "typecheck": "cargo check -p studio-server"
   }
 }

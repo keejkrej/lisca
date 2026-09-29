@@ -15,9 +15,9 @@ const LISCA_API_PROXY_PREFIXES = [
 
 /** @type {Record<"aligner" | "annotator" | "studio", LiscaDevPorts>} */
 const LISCA_APP_PORTS = {
-  aligner: { publicPort: 8765, backendPort: 8765 + LISCA_DEV_BACKEND_PORT_OFFSET },
-  annotator: { publicPort: 8766, backendPort: 8766 + LISCA_DEV_BACKEND_PORT_OFFSET },
-  studio: { publicPort: 8767, backendPort: 8767 + LISCA_DEV_BACKEND_PORT_OFFSET },
+  aligner: { publicPort: 18765, backendPort: 18765 + LISCA_DEV_BACKEND_PORT_OFFSET },
+  annotator: { publicPort: 18766, backendPort: 18766 + LISCA_DEV_BACKEND_PORT_OFFSET },
+  studio: { publicPort: 18767, backendPort: 18767 + LISCA_DEV_BACKEND_PORT_OFFSET },
 };
 
 function liscaDevBackendPort(publicPort) {

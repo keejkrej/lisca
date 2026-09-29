@@ -176,7 +176,7 @@ function liscaDevProxy(backendPort: number): Record<string, ProxyOptions> {
 
 /**
  * Shared Vite configuration for every Lisca web app. Apps supply the public dev
- * port (8765/8766/8767); API traffic is proxied to the Rust backend on port + 1000.
+ * port (18765/18766/18767); API traffic is proxied to the Rust backend on port + 1000.
  */
 export function createLiscaViteConfig(options: {
   port: number;
@@ -209,7 +209,10 @@ export function createLiscaViteConfig(options: {
     server: {
       host: true,
       port: options.port,
-      strictPort: true,
+      // Let Vite auto-increment when the preferred port is taken (another
+      // local app, a stale dev process). The desktop shell probes for the
+      // actual port — see `resolve_dev_url` in crates/lisca-tauri.
+      strictPort: false,
       proxy: liscaDevProxy(backendPort),
     },
   });

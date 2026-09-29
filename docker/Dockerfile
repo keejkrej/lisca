@@ -64,8 +64,8 @@ RUN --mount=type=cache,target=/usr/local/cargo/registry,id=lisca-cargo-registry 
 FROM debian:trixie-slim AS runtime
 ARG PRODUCT
 
-# aligner=8765, annotator=8766, studio=8767
-ARG PUBLIC_PORT=8765
+# aligner=18765, annotator=18766, studio=18767
+ARG PUBLIC_PORT=18765
 
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \

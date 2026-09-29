@@ -29,11 +29,11 @@ services:
       dockerfile: docker/Dockerfile
       args:
         PRODUCT: aligner
-        PUBLIC_PORT: 8765
+        PUBLIC_PORT: 18765
     ports:
-      - "8765:8765"
+      - "18765:18765"
     environment:
-      PUBLIC_PORT: 8765
+      PUBLIC_PORT: 18765
     volumes: *lisca-volumes
     restart: unless-stopped
 
@@ -44,11 +44,11 @@ services:
       dockerfile: docker/Dockerfile
       args:
         PRODUCT: annotator
-        PUBLIC_PORT: 8766
+        PUBLIC_PORT: 18766
     ports:
-      - "8766:8766"
+      - "18766:18766"
     environment:
-      PUBLIC_PORT: 8766
+      PUBLIC_PORT: 18766
     volumes: *lisca-volumes
     restart: unless-stopped
 
@@ -59,10 +59,10 @@ services:
       dockerfile: docker/Dockerfile
       args:
         PRODUCT: studio
-        PUBLIC_PORT: 8767
+        PUBLIC_PORT: 18767
     ports:
-      - "8767:8767"
+      - "18767:18767"
     environment:
-      PUBLIC_PORT: 8767
+      PUBLIC_PORT: 18767
     volumes: *lisca-studio-volumes
     restart: unless-stopped

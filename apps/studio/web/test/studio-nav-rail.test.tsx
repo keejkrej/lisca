@@ -173,13 +173,13 @@ describe("StudioNavRail Task Center", () => {
   it("hides tasks away from Align and Analysis", async () => {
     renderStudioShell("/annotate");
     expect(await screen.findByRole("button", { name: /Expert mode$/ })).toBeTruthy();
-    expect(screen.queryByRole("button", { name: /^Cropping|^Analysis/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: /^Tasks/ })).toBeNull();
   });
 
   it("lists analysis operations on the Analysis page", async () => {
     renderStudioShell("/analysis");
-    fireEvent.click(await screen.findByRole("button", { name: "Analysis, 1 active" }));
-    expect(await screen.findByRole("dialog", { name: "Analysis" })).toBeTruthy();
+    fireEvent.click(await screen.findByRole("button", { name: "Tasks, 1 active" }));
+    expect(await screen.findByRole("dialog", { name: "Tasks" })).toBeTruthy();
     expect(screen.getByText("Background analysis computations")).toBeTruthy();
     expect(
       await screen.findByRole("button", { name: /Expand Analysis\/transfection/ }),
@@ -194,7 +194,7 @@ describe("StudioNavRail Task Center", () => {
     );
     const { router } = renderStudioShell();
 
-    const trigger = await screen.findByRole("button", { name: "Cropping, 1 active" });
+    const trigger = await screen.findByRole("button", { name: "Tasks, 1 active" });
     const expert = screen.getByRole("button", { name: /Expert mode$/ });
     expect(["true", "false"]).toContain(expert.getAttribute("aria-pressed"));
     expect(expert.querySelector('[data-slot="instrument-toggle-indicator"]')).toBeTruthy();
@@ -215,7 +215,7 @@ describe("StudioNavRail Task Center", () => {
     const workspaceState = screen.getByLabelText("Workspace state");
     fireEvent.input(edit, { target: { value: "edited unsaved phenotype" } });
     fireEvent.click(trigger);
-    const dialog = await screen.findByRole("dialog", { name: "Cropping" });
+    const dialog = await screen.findByRole("dialog", { name: "Tasks" });
     expect(dialog.textContent).toContain("Background crop computations");
 
     fireEvent.click(screen.getByRole("button", { name: /Expand Crop ROI/ }));
@@ -240,7 +240,7 @@ describe("StudioNavRail Task Center", () => {
     await waitFor(() => expect(screen.queryByRole("button", { name: "Retry" })).toBeNull());
     expectStudioState(router.state.location.href, edit, routeState, workspaceState);
 
-    fireEvent.click(screen.getByRole("button", { name: "Close Cropping" }));
+    fireEvent.click(screen.getByRole("button", { name: "Close Tasks" }));
     await waitFor(() => expect(trigger.getAttribute("aria-expanded")).toBe("false"));
     expectStudioState(router.state.location.href, edit, routeState, workspaceState);
   });

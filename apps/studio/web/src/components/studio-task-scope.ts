@@ -31,16 +31,16 @@ export type StudioTaskCenterCopy = {
 export function studioTaskCenterCopy(scope: StudioTaskScope): StudioTaskCenterCopy {
   if (scope === "crop") {
     return {
-      label: "Cropping",
-      title: "Cropping",
+      label: "Tasks",
+      title: "Tasks",
       description: "Background crop computations",
       emptyTitle: "No crop tasks yet",
       emptyMessage: "Long-running crop computations will appear here.",
     };
   }
   return {
-    label: "Analysis",
-    title: "Analysis",
+    label: "Tasks",
+    title: "Tasks",
     description: "Background analysis computations",
     emptyTitle: "No analysis tasks yet",
     emptyMessage: "Long-running analysis computations will appear here.",

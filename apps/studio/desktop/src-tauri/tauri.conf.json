@@ -6,7 +6,7 @@
   "build": {
     "beforeDevCommand": "pnpm run --filter @lisca/studio-web dev",
     "beforeBuildCommand": "",
-    "devUrl": "http://127.0.0.1:8767",
+    "devUrl": "http://127.0.0.1:18767",
     "frontendDist": "../../web/dist"
   },
   "app": {

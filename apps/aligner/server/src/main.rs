@@ -1,6 +1,6 @@
 use lisca::{http, protocol::AppId};
 
-const DEFAULT_PORT: u16 = 8765;
+const DEFAULT_PORT: u16 = 19765;
 
 #[tokio::main]
 async fn main() {
