@@ -22,12 +22,12 @@ describe("Studio Align instrument stack composition", () => {
     );
   });
 
-  it("uses the shared Action vocabulary: Save, Back, Next, Continue", () => {
+  it("uses the shared Action vocabulary: Save, Back, Next, Crop", () => {
     const action = stackSource.slice(stackSource.indexOf('title="Action"'));
-    const labels = [...action.matchAll(/>\s*(\{[^}]*"Save"\}|Back|Next|Continue)\s*</g)].map(
+    const labels = [...action.matchAll(/>\s*(\{[^}]*"Save"\}|Back|Next|Crop|Continue)\s*</g)].map(
       (match) => (match[1]!.includes("Save") ? "Save" : match[1]),
     );
-    expect(labels).toEqual(["Save", "Back", "Next", "Continue"]);
+    expect(labels).toEqual(["Save", "Back", "Next", "Crop"]);
     expect(action).not.toMatch(/>\s*(Exclude|Jump)\s*</);
     expect(action).not.toMatch(/saveAndAdvance/);
   });

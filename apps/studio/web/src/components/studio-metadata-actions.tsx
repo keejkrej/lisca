@@ -5,7 +5,7 @@ import { Show } from "solid-js";
 import { useStudioAssaySave } from "../state/use-studio-assay-save";
 import { AssayOverwriteConfirmModal } from "./assay-overwrite-confirm-modal";
 
-export function StudioMetadataActions(props: { onNext: () => void }) {
+export function StudioMetadataActions() {
   const save = useStudioAssaySave();
 
   return (
@@ -15,7 +15,6 @@ export function StudioMetadataActions(props: { onNext: () => void }) {
           class="w-full justify-center"
           size="sm"
           type="button"
-          variant="outline"
           onClick={() => void save.saveAssay(false)}
         >
           Save
@@ -27,9 +26,6 @@ export function StudioMetadataActions(props: { onNext: () => void }) {
             </p>
           )}
         </Show>
-        <Button class="w-full justify-center" size="sm" type="button" onClick={props.onNext}>
-          Continue
-        </Button>
       </RailControlStack>
       <AssayOverwriteConfirmModal
         open={save.overwriteOpen()}

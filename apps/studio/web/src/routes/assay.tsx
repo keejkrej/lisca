@@ -40,7 +40,10 @@ function AssayPage() {
   const setWizard = useAtomSet(() => studioWizardAtom);
   const { save, replaceDocument, prompts } = useReplaceDocumentGuard();
   const newAssay = () =>
-    replaceDocument(() => studioWizardActions.newAssay(setWizard, wizard().assayId));
+    replaceDocument(() => {
+      studioWizardActions.newAssay(setWizard, wizard().assayId);
+      navigateTo("/metadata");
+    });
   const hasDocument = () => wizard().basicInfoSavedSnapshot != null || save.dirty();
 
   const openAssayJson = async (path: string) => {

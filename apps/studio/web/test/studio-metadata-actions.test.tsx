@@ -41,13 +41,11 @@ function wizard(overrides: Partial<WizardState> = {}): WizardState {
 }
 
 function renderActions(state: WizardState) {
-  const onNext = vi.fn();
   render(() => (
     <RegistryProvider initialValues={[[studioWizardAtom, state]]}>
-      <StudioMetadataActions onNext={onNext} />
+      <StudioMetadataActions />
     </RegistryProvider>
   ));
-  return { onNext };
 }
 
 beforeEach(() => {
