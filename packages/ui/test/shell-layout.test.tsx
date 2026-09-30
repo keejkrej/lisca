@@ -175,8 +175,10 @@ describe("AppShell paper pane", () => {
     const leftOverlay = screen.getByLabelText("Left panel");
     const rightOverlay = screen.getByLabelText("Right panel");
     const topBar = stageTopBar();
-    hasClass(leftOverlay.firstElementChild!, "w-64");
-    hasClass(rightOverlay.firstElementChild!, "w-64");
+    const panelOf = (overlay: HTMLElement) =>
+      overlay.querySelector('[data-slot="scroll-area-content"]')!.firstElementChild!;
+    hasClass(panelOf(leftOverlay), "w-64");
+    hasClass(panelOf(rightOverlay), "w-64");
     expect(leftOverlay.getAttribute("aria-hidden")).toBe("true");
     expect((leftOverlay as HTMLElement & { inert: boolean }).inert).toBe(true);
     hasClass(leftOverlay, "bg-muted");

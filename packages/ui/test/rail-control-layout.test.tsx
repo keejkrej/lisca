@@ -13,16 +13,20 @@ import { SidebarStack } from "../src/shell/regions/sidebar-stack";
 afterEach(cleanup);
 
 describe("instrument rail control layout", () => {
-  it("pins a 200px measure to the leading margin so a classic bar stays in the trailing margin", () => {
+  it("pins a 200px measure to the leading margin under an overlay scrollbar", () => {
     const view = render(() => <RailSidebar aria-label="Instrument rail">Controls</RailSidebar>);
 
     const rail = view.getByLabelText("Instrument rail");
-    const stack = rail.firstElementChild;
+    const viewport = rail.querySelector('[data-slot="scroll-area-viewport"]')!;
+    const content = viewport.firstElementChild!;
+    const stack = content.firstElementChild;
+    expect(rail.getAttribute("data-slot")).toBe("rail-sidebar-scroll");
     expect(rail.classList.contains("h-full")).toBe(true);
     expect(rail.classList.contains("w-full")).toBe(true);
-    expect(rail.classList.contains("items-start")).toBe(true);
-    expect(rail.classList.contains("overflow-y-auto")).toBe(true);
-    expect(rail.classList.contains("overscroll-none")).toBe(true);
+    expect(rail.querySelector('[data-slot="scroll-area-scrollbar"]')).not.toBeNull();
+    expect(viewport.classList.contains("no-scrollbar")).toBe(true);
+    expect(viewport.classList.contains("overscroll-none")).toBe(true);
+    expect(content.classList.contains("items-start")).toBe(true);
     expect(rail.classList.contains("px-7")).toBe(false);
     expect(rail.style.scrollbarGutter).toBe("");
     expect(stack?.getAttribute("data-slot")).toBe("rail-section-stack");
@@ -36,9 +40,11 @@ describe("instrument rail control layout", () => {
     const view = render(() => <SidebarStack aria-label="Classic sidebar">Controls</SidebarStack>);
 
     const sidebar = view.getByLabelText("Classic sidebar");
-    expect(sidebar.classList.contains("overflow-auto")).toBe(true);
-    expect(sidebar.classList.contains("overscroll-none")).toBe(true);
-    expect(sidebar.classList.contains("p-2.5")).toBe(true);
+    const viewport = sidebar.querySelector('[data-slot="scroll-area-viewport"]')!;
+    const content = viewport.firstElementChild!;
+    expect(viewport.classList.contains("no-scrollbar")).toBe(true);
+    expect(viewport.classList.contains("overscroll-none")).toBe(true);
+    expect(content.classList.contains("p-2.5")).toBe(true);
     expect(sidebar.querySelector('[data-slot="rail-section-stack"]')).toBeNull();
   });
 

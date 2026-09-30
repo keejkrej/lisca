@@ -19,6 +19,7 @@ import IconXRegular from "phosphor-icons-solid/IconXRegular";
 import { For, Show, createMemo, createSignal, onCleanup, onMount } from "solid-js";
 
 import { Button, buttonVariants } from "../../components/ui/button";
+import { ScrollArea } from "../../components/ui/scroll-area";
 import { Spinner } from "../../components/ui/spinner";
 import { cn } from "../../lib/utils";
 
@@ -398,7 +399,7 @@ export function TaskCenter(props: TaskCenterProps) {
             )}
           </Show>
 
-          <div class="min-h-52 flex-1 overflow-y-auto overscroll-contain">
+          <ScrollArea class="min-h-52 flex-1" viewportClass="overscroll-contain">
             <Show
               when={state().operations.length > 0}
               fallback={
@@ -549,7 +550,7 @@ export function TaskCenter(props: TaskCenterProps) {
                 </For>
               </ul>
             </Show>
-          </div>
+          </ScrollArea>
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>

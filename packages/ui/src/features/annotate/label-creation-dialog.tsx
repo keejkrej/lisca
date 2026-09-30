@@ -7,6 +7,7 @@ import { Index, onCleanup, onMount, Show } from "solid-js";
 
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
+import { ScrollArea } from "../../components/ui/scroll-area";
 import { DialogSurface } from "../../shell/modal/dialog-surface";
 import { ModalScrim } from "../../shell/modal/modal-scrim";
 
@@ -83,7 +84,7 @@ export function LabelCreationDialog(props: LabelCreationDialogProps) {
             </Button>
           </div>
 
-          <div class="flex min-h-0 flex-1 flex-col gap-3 overflow-auto px-5 py-4">
+          <ScrollArea class="min-h-0 flex-1" contentClass="flex flex-col gap-3 px-5 py-4">
             <div class="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_4rem_2rem] gap-2 px-1 text-muted-foreground text-xs">
               <span>Name</span>
               <span>ID</span>
@@ -153,7 +154,7 @@ export function LabelCreationDialog(props: LabelCreationDialogProps) {
                 {form.activeError()}
               </p>
             </Show>
-          </div>
+          </ScrollArea>
 
           <div class="flex justify-end gap-2 border-t border-border px-5 py-4">
             <Button

@@ -236,12 +236,7 @@ describe("PathButton stage compatibility", () => {
 
   it("labels an unset stage path with a muted dot and a pick prompt in the tooltip", async () => {
     render(() => (
-      <PathButton
-        appearance="stage"
-        label="Workspace"
-        value={null}
-        onClick={() => undefined}
-      />
+      <PathButton appearance="stage" label="Workspace" value={null} onClick={() => undefined} />
     ));
 
     const trigger = screen.getByRole("button", { name: "Workspace: not set" });

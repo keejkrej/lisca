@@ -1,6 +1,7 @@
 import type { ComponentProps, JSX } from "solid-js";
 import { splitProps } from "solid-js";
 
+import { ScrollArea } from "../../components/ui/scroll-area";
 import { cn } from "../../lib/utils";
 
 export type RailControlLayoutProps = ComponentProps<"div">;
@@ -15,24 +16,23 @@ export type RailSidebarProps = Omit<ComponentProps<"div">, "children" | "style">
 /**
  * Full-width stage-rail scroller with a 200px measure pinned to a 28px leading margin.
  *
- * The scroller owns the complete 256px rail. A classic scrollbar consumes the trailing
- * margin, so overflow does not move the text.
+ * The scroller owns the complete 256px rail. Its overlay scrollbar sits over the trailing
+ * margin without taking width, so overflow does not move the text.
  */
 export function RailSidebar(props: RailSidebarProps) {
   const [local, others] = splitProps(props, ["class", "children"]);
 
   return (
-    <div
+    <ScrollArea
       {...others}
-      class={cn(
-        "flex h-full w-full min-h-0 flex-col items-start overflow-y-auto overscroll-none py-2.5",
-        local.class,
-      )}
+      class={cn("h-full w-full min-h-0", local.class)}
+      contentClass="flex flex-col items-start py-2.5"
       data-rail-layout="sidebar"
       data-slot="rail-sidebar-scroll"
+      viewportClass="overscroll-none"
     >
       <RailSectionStack class="my-auto ml-7 w-[200px] shrink-0">{local.children}</RailSectionStack>
-    </div>
+    </ScrollArea>
   );
 }
 

@@ -27,7 +27,7 @@ describe("StudioRightPanel", () => {
 
     expect(scroll).not.toBeNull();
     expect(rail?.classList.contains("px-7")).toBe(false);
-    expect(scroll?.classList.contains("overflow-y-auto")).toBe(true);
+    expect(scroll?.querySelector('[data-slot="scroll-area-scrollbar"]')).not.toBeNull();
     expect((scroll as HTMLElement | null)?.style.scrollbarGutter).toBe("");
     expect(scroll?.classList.contains("w-[200px]")).toBe(false);
     expect(scroll?.classList.contains("justify-center")).toBe(false);

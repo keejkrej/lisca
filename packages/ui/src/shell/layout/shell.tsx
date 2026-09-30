@@ -26,7 +26,9 @@ function ShellDockInner(props: { children?: JSX.Element; class?: string }) {
       aria-label="Dock"
       class={cn(shellDockFixed, "border-t", shellDivider, shellSurface, props.class)}
     >
-      <div class="min-h-0 flex-1 overflow-auto overscroll-none">{props.children}</div>
+      <ScrollArea class="min-h-0 flex-1" contentClass="h-full" viewportClass="overscroll-none">
+        {props.children}
+      </ScrollArea>
     </div>
   );
 }
@@ -104,7 +106,9 @@ function AppShellTopBar(props: { children?: JSX.Element; class?: string }) {
       )}
       data-slot="app-shell-top-bar"
     >
-      <div class="min-h-0 flex-1 overflow-auto overscroll-none">{props.children}</div>
+      <ScrollArea class="min-h-0 flex-1" contentClass="h-full" viewportClass="overscroll-none">
+        {props.children}
+      </ScrollArea>
     </div>
   );
 }

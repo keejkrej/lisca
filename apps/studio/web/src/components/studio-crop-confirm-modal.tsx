@@ -1,5 +1,5 @@
 import { cropConfirmCopy } from "@lisca/ui/features";
-import { Button } from "@lisca/ui/components";
+import { Button, ScrollArea } from "@lisca/ui/components";
 import { DialogSurface, ModalScrim } from "@lisca/ui/shell";
 import { Show } from "solid-js";
 
@@ -28,7 +28,9 @@ export function StudioCropConfirmModal() {
                     {copy.title}
                   </h2>
                   <p class="text-muted-foreground text-sm">{copy.description}</p>
-                  <p class="max-h-20 overflow-auto text-muted-foreground text-xs">{existingList}</p>
+                  <ScrollArea viewportClass="max-h-20">
+                    <p class="text-muted-foreground text-xs">{existingList}</p>
+                  </ScrollArea>
                 </div>
                 <div class="flex justify-end gap-2">
                   <Button type="button" variant="outline" onClick={crop.cancelCropConfirm}>

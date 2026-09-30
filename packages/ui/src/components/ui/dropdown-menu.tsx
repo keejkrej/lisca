@@ -174,17 +174,21 @@ type DropdownMenuSubContentProps<T extends ValidComponent = "div"> = Polymorphic
 const DropdownMenuSubContent = <T extends ValidComponent = "div">(
   props: DropdownMenuSubContentProps<T>,
 ) => {
-  const [local, others] = splitProps(props as DropdownMenuSubContentProps, ["class"]);
+  const [local, others] = splitProps(props as DropdownMenuSubContentProps, ["class", "children"]);
   return (
     <DropdownMenuPrimitive.Portal>
       <DropdownMenuPrimitive.SubContent
         data-slot="dropdown-menu-sub-content"
         class={cn(
-          "z-50 z-dropdown-menu-sub-content z-menu-target max-h-(--kb-popper-available-height) min-w-32 origin-(--kb-menu-content-transform-origin) overflow-y-auto overflow-x-hidden outline-none data-closed:overflow-hidden",
+          "z-50 z-dropdown-menu-sub-content z-menu-target min-w-32 origin-(--kb-menu-content-transform-origin) overflow-hidden outline-none",
           local.class,
         )}
         {...others}
-      />
+      >
+        <ScrollArea viewportClass="max-h-(--kb-popper-content-available-height)">
+          {local.children}
+        </ScrollArea>
+      </DropdownMenuPrimitive.SubContent>
     </DropdownMenuPrimitive.Portal>
   );
 };

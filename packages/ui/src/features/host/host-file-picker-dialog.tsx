@@ -134,26 +134,28 @@ export function HostFilePickerDialog(props: HostFilePickerDialogProps) {
             <Show when={props.recentItems && props.recentItems.length > 0 && props.onPickRecent}>
               <div class="space-y-2">
                 <p class="font-medium text-foreground text-sm">Recent</p>
-                <ul class="max-h-32 overflow-auto rounded-md border border-border divide-y divide-border/60">
-                  <For each={props.recentItems}>
-                    {(item) => (
-                      <li>
-                        <button
-                          class="flex w-full flex-col gap-0.5 px-3 py-2 text-left text-sm transition-colors hover:bg-muted/30"
-                          type="button"
-                          onClick={() => props.onPickRecent!(item.path)}
-                        >
-                          <Show when={item.label}>
-                            <span class="font-medium text-foreground">{item.label}</span>
-                          </Show>
-                          <span class="truncate text-muted-foreground" title={item.path}>
-                            {item.path}
-                          </span>
-                        </button>
-                      </li>
-                    )}
-                  </For>
-                </ul>
+                <ScrollArea class="rounded-md border border-border" viewportClass="max-h-32">
+                  <ul class="divide-y divide-border/60">
+                    <For each={props.recentItems}>
+                      {(item) => (
+                        <li>
+                          <button
+                            class="flex w-full flex-col gap-0.5 px-3 py-2 text-left text-sm transition-colors hover:bg-muted/30"
+                            type="button"
+                            onClick={() => props.onPickRecent!(item.path)}
+                          >
+                            <Show when={item.label}>
+                              <span class="font-medium text-foreground">{item.label}</span>
+                            </Show>
+                            <span class="truncate text-muted-foreground" title={item.path}>
+                              {item.path}
+                            </span>
+                          </button>
+                        </li>
+                      )}
+                    </For>
+                  </ul>
+                </ScrollArea>
               </div>
             </Show>
 

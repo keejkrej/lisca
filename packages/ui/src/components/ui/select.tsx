@@ -16,6 +16,7 @@ import IconCheckRegular from "phosphor-icons-solid/IconCheckRegular";
 import type { ComponentProps, JSX, ValidComponent } from "solid-js";
 import { mergeProps, splitProps } from "solid-js";
 import { cn } from "../../lib/utils";
+import { ScrollArea } from "./scroll-area";
 
 type SelectProps<O, OptGroup = never, T extends ValidComponent = "div"> = PolymorphicProps<
   T,
@@ -109,19 +110,25 @@ type SelectContentProps<T extends ValidComponent = "div"> = PolymorphicProps<
 
 const SelectContent = <T extends ValidComponent = "div">(props: SelectContentProps<T>) => {
   const [local, others] = splitProps(props as SelectContentProps, ["class"]);
-  let contentRef: HTMLElement | undefined;
+  let viewportRef: HTMLElement | undefined;
   return (
     <SelectPrimitive.Portal>
       <SelectPrimitive.Content
-        ref={(el) => (contentRef = el)}
         class={cn(
-          "relative isolate z-50 z-menu-target z-select-content max-h-80 min-w-32 origin-(--kb-select-content-transform-origin) overflow-y-auto overflow-x-hidden",
+          "relative isolate z-50 z-menu-target z-select-content min-w-32 origin-(--kb-select-content-transform-origin) overflow-hidden",
           local.class,
         )}
         data-slot="select-content"
         {...others}
       >
-        <SelectPrimitive.Listbox class="m-0 p-1" scrollRef={() => contentRef} />
+        <ScrollArea
+          viewportClass="max-h-80"
+          viewportRef={(el) => {
+            viewportRef = el;
+          }}
+        >
+          <SelectPrimitive.Listbox class="m-0 p-1" scrollRef={() => viewportRef} />
+        </ScrollArea>
       </SelectPrimitive.Content>
     </SelectPrimitive.Portal>
   );

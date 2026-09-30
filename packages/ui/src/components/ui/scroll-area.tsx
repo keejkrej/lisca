@@ -35,6 +35,10 @@ type ScrollAreaProps = ComponentProps<"div"> & {
   viewportClass?: string;
   /** Classes for the content box; it is at least as tall as the viewport. */
   contentClass?: string;
+  /** The scrolling element, for APIs that scroll items into view (e.g. listboxes). */
+  viewportRef?: (el: HTMLDivElement) => void;
+  /** Axis that gets the overlay bar. Defaults to vertical. */
+  orientation?: "vertical" | "horizontal";
 };
 
 const ScrollArea = (props: ScrollAreaProps) => {
@@ -43,6 +47,8 @@ const ScrollArea = (props: ScrollAreaProps) => {
     "children",
     "viewportClass",
     "contentClass",
+    "viewportRef",
+    "orientation",
     "onMouseEnter",
     "onMouseLeave",
   ]);
@@ -61,7 +67,7 @@ const ScrollArea = (props: ScrollAreaProps) => {
     >
       {/* biome-ignore lint/a11y/noStaticElementInteractions: <hover tracking is a passive UI affordance — no keyboard equivalent needed since the inner viewport remains keyboard-scrollable> */}
       <div
-        class={cn("relative overflow-clip", local.class)}
+        class={cn("relative flex flex-col overflow-clip", local.class)}
         data-slot="scroll-area"
         onMouseEnter={(e) => {
           setHovered(true);
@@ -75,11 +81,14 @@ const ScrollArea = (props: ScrollAreaProps) => {
       >
         <div
           class={cn(
-            "no-scrollbar size-full overflow-auto rounded-[inherit] outline-none transition-[color,box-shadow] focus-visible:outline-1 focus-visible:ring-[3px] focus-visible:ring-ring/50",
+            "no-scrollbar min-h-0 w-full flex-1 overflow-auto rounded-[inherit] outline-none transition-[color,box-shadow] focus-visible:outline-1 focus-visible:ring-[3px] focus-visible:ring-ring/50",
             local.viewportClass,
           )}
           data-slot="scroll-area-viewport"
-          ref={viewportRef}
+          ref={(el) => {
+            viewportRef = el;
+            local.viewportRef?.(el);
+          }}
         >
           <div
             class={cn("min-h-full", local.contentClass)}
@@ -89,7 +98,7 @@ const ScrollArea = (props: ScrollAreaProps) => {
             {local.children}
           </div>
         </div>
-        <ScrollBar />
+        <ScrollBar orientation={local.orientation ?? "vertical"} />
         <div data-slot="scroll-area-corner" />
       </div>
     </ScrollAreaContext.Provider>
