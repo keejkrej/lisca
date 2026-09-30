@@ -26,6 +26,7 @@ describe("desktop release versions", () => {
   it("keeps all shipped desktop products on one release train", () => {
     const entries = desktopReleaseVersions(process.cwd());
     expect(entries).toHaveLength(9);
-    expect(assertReleaseVersions("v0.3.2", entries)).toBe("0.3.2");
+    const version = entries[0].version;
+    expect(assertReleaseVersions(`v${version}`, entries)).toBe(version);
   });
 });
