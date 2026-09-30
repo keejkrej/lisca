@@ -58,14 +58,16 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe("StudioMetadataActions", () => {
-  it("saves unsaved changes explicitly and then reads Saved", async () => {
-    renderActions(wizard());
+  it("always saves on click, with or without changes", async () => {
+    const base = wizard();
+    renderActions({ ...base, basicInfoSavedSnapshot: serializeBasicInfoSnapshot(base) });
 
-    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    const button = screen.getByRole("button", { name: "Save" }) as HTMLButtonElement;
+    expect(button.disabled).toBe(false);
+    fireEvent.click(button);
     await waitFor(() => expect(save.writeStudioAssayJson).toHaveBeenCalledOnce());
     expect(save.writeStudioAssayJson.mock.calls[0]![0]).toBe("/data/ws");
-    const saved = await screen.findByRole("button", { name: "Saved" });
-    expect((saved as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.getByRole("button", { name: "Save" })).toBe(button);
   });
 
   it("asks before replacing an assay.json it did not write", async () => {

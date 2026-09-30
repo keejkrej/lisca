@@ -7,20 +7,18 @@ import { AssayOverwriteConfirmModal } from "./assay-overwrite-confirm-modal";
 
 export function StudioMetadataActions(props: { onNext: () => void }) {
   const save = useStudioAssaySave();
-  const saveLabel = () => (save.saving() ? "Saving…" : save.dirty() ? "Save" : "Saved");
 
   return (
     <PanelSection appearance="rail" title="Action">
       <RailControlStack>
         <Button
           class="w-full justify-center"
-          disabled={save.saving() || !save.dirty()}
           size="sm"
           type="button"
           variant="outline"
           onClick={() => void save.saveAssay(false)}
         >
-          {saveLabel()}
+          Save
         </Button>
         <Show when={save.saveError()}>
           {(message) => (
