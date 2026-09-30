@@ -3,7 +3,8 @@ import {
   HostFilePickerDialog,
   SourcePickerModal,
 } from "@lisca/ui/features";
-import { useWorkSessionRecents } from "@lisca/client/session/work-session-app-gate";
+import type { AlignerSource } from "@lisca/contracts";
+import { readRecentMemory, touchRecentMemory } from "@lisca/client/session/recent-memory";
 import { ShellNavbar, useShellWorkspace } from "@lisca/ui/shell";
 import type { HostFilePickerMode } from "@lisca/ui/features";
 import { createSignal } from "solid-js";
@@ -23,7 +24,6 @@ function filePickerTitle(mode: HostFilePickerMode): string {
 export function AlignerHeader() {
   const alignSource = useAlignSource();
   const workspace = useShellWorkspace();
-  const recents = useWorkSessionRecents();
   let pickerMode: HostFilePickerMode | null = null;
   const [sourcePickerOpen, setSourcePickerOpen] = createSignal(false);
   const [folderSourcePath, setFolderSourcePath] = createSignal<string | null>(null);
@@ -33,6 +33,18 @@ export function AlignerHeader() {
     title: string;
   }>({ open: false, mode: "workspace", title: "" });
 
+  // Each picker remembers its own recent picks; a recent pick sets only that field.
+  const applyWorkspace = (path: string) => {
+    workspace.setWorkspacePath(path);
+    alignSource.setSource(null);
+    touchRecentMemory("aligner", { kind: "workspace", path });
+  };
+  const applySource = (source: AlignerSource) => {
+    workspace.setSourcePath(source.path);
+    alignSource.setSource(source);
+    touchRecentMemory("aligner", { kind: "source", source });
+  };
+
   const openFilePicker = (mode: HostFilePickerMode) => {
     pickerMode = mode;
     setFilePicker({ open: true, mode, title: filePickerTitle(mode) });
@@ -41,8 +53,7 @@ export function AlignerHeader() {
   const applyPickDirectory = (path: string) => {
     const mode = pickerMode;
     if (mode === "workspace") {
-      workspace.setWorkspacePath(path);
-      alignSource.setSource(null);
+      applyWorkspace(path);
       return;
     }
     if (mode === "folder") {
@@ -52,14 +63,8 @@ export function AlignerHeader() {
 
   const applyPickFile = (path: string) => {
     const mode = pickerMode;
-    if (mode === "nd2_file") {
-      workspace.setSourcePath(path);
-      alignSource.setSource({ kind: "nd2", path });
-    }
-    if (mode === "czi_file") {
-      workspace.setSourcePath(path);
-      alignSource.setSource({ kind: "czi", path });
-    }
+    if (mode === "nd2_file") applySource({ kind: "nd2", path });
+    if (mode === "czi_file") applySource({ kind: "czi", path });
   };
 
   return (
@@ -76,6 +81,8 @@ export function AlignerHeader() {
         onOpenCzi={() => openFilePicker("czi_file")}
         onOpenFolder={() => openFilePicker("folder")}
         onOpenNd2={() => openFilePicker("nd2_file")}
+        recentSources={sourcePickerOpen() ? readRecentMemory("aligner").sources : undefined}
+        onPickRecentSource={applySource}
       />
 
       <FolderSourceParseModal
@@ -83,8 +90,7 @@ export function AlignerHeader() {
         path={folderSourcePath()}
         onClose={() => setFolderSourcePath(null)}
         onConfirm={(source) => {
-          workspace.setSourcePath(source.path);
-          alignSource.setSource(source);
+          applySource(source);
           setFolderSourcePath(null);
         }}
       />
@@ -101,17 +107,14 @@ export function AlignerHeader() {
         onPickDirectory={applyPickDirectory}
         onPickFile={applyPickFile}
         recentItems={
-          filePicker().open && filePicker().mode === "workspace" ? recents.items() : undefined
+          filePicker().open && filePicker().mode === "workspace"
+            ? readRecentMemory("aligner").workspaces
+            : undefined
         }
         onPickRecent={(path) => {
           setFilePicker((current) => ({ ...current, open: false }));
           pickerMode = null;
-          // Restores workspace + source together; a session without a source is just a workspace.
-          void recents.restore(path).then((restored) => {
-            if (restored) return;
-            workspace.setWorkspacePath(path);
-            alignSource.setSource(null);
-          });
+          applyWorkspace(path);
         }}
       />
     </>

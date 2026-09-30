@@ -1,9 +1,10 @@
 import type { AlignerSource } from "@lisca/contracts";
+import { recentLabel } from "@lisca/ui-headless/host-file-picker-state";
+import IconClockCounterClockwiseRegular from "phosphor-icons-solid/IconClockCounterClockwiseRegular";
 import IconXRegular from "phosphor-icons-solid/IconXRegular";
 import { For, Show } from "solid-js";
 
 import { Button } from "../../components/ui/button";
-import { ScrollArea } from "../../components/ui/scroll-area";
 import { DialogSurface } from "../../shell/modal/dialog-surface";
 import { ModalScrim } from "../../shell/modal/modal-scrim";
 
@@ -71,44 +72,28 @@ export function SourcePickerModal(props: SourcePickerModalProps) {
                 props.recentSources && props.recentSources.length > 0 && props.onPickRecentSource
               }
             >
-              <div class="space-y-2">
-                <p class="font-medium text-foreground text-sm">Recent sources</p>
-                <ScrollArea class="rounded-md border border-border" viewportClass="max-h-32">
-                  <ul class="divide-y divide-border/60">
-                    <For each={props.recentSources}>
-                      {(item) => (
-                        <li>
-                          <button
-                            class="flex w-full flex-col gap-0.5 px-3 py-2 text-left text-sm transition-colors hover:bg-muted/30"
-                            type="button"
-                            onClick={() => {
-                              props.onPickRecentSource!(item.source);
-                              props.onClose();
-                            }}
-                          >
-                            <Show
-                              when={item.label}
-                              fallback={
-                                <span class="font-medium text-foreground capitalize">
-                                  {item.source.kind}
-                                </span>
-                              }
-                            >
-                              <span class="font-medium text-foreground">{item.label}</span>
-                            </Show>
-                            <span
-                              class="truncate text-muted-foreground"
-                              title={formatSourcePath(item.source)}
-                            >
-                              {formatSourcePath(item.source)}
-                            </span>
-                          </button>
-                        </li>
-                      )}
-                    </For>
-                  </ul>
-                </ScrollArea>
-              </div>
+              <ul aria-label="Recent sources" class="flex flex-wrap gap-1.5">
+                <For each={props.recentSources!.slice(0, 5)}>
+                  {(item) => (
+                    <li class="flex max-w-56 items-center rounded-md border border-border text-muted-foreground text-sm transition-colors hover:text-foreground">
+                      <button
+                        class="flex min-w-0 items-center gap-1.5 px-2 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        title={`Open ${formatSourcePath(item.source)}`}
+                        type="button"
+                        onClick={() => {
+                          props.onPickRecentSource!(item.source);
+                          props.onClose();
+                        }}
+                      >
+                        <IconClockCounterClockwiseRegular class="size-3.5 shrink-0" />
+                        <span class="truncate">
+                          {item.label ?? recentLabel(formatSourcePath(item.source))}
+                        </span>
+                      </button>
+                    </li>
+                  )}
+                </For>
+              </ul>
             </Show>
 
             <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">

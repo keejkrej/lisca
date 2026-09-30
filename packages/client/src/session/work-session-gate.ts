@@ -18,7 +18,7 @@ export type WorkSessionGateOptions = {
 
 export function useWorkSessionGate(
   appId: LiscaAppId,
-  onRestore: (session: WorkSession) => void | boolean | Promise<void | boolean>,
+  onRestore: (session: WorkSession) => void | Promise<void>,
   options?: WorkSessionGateOptions,
 ) {
   const skipResumePicker = options?.skipResumePicker ?? false;
@@ -50,7 +50,7 @@ export function useWorkSessionGate(
 
 export type WorkSessionBootstrapProps = {
   appId: LiscaAppId;
-  onRestore: (session: WorkSession) => void | boolean | Promise<void | boolean>;
+  onRestore: (session: WorkSession) => void | Promise<void>;
   gateOptions?: WorkSessionGateOptions;
   children: (gate: Accessor<WorkSessionGateState>) => JSX.Element;
 };

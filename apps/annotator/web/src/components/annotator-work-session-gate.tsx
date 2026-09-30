@@ -23,17 +23,17 @@ export function AnnotatorWorkSessionGate(props: { children?: JSX.Element }) {
   return (
     <WorkSessionAppGate
       appId="annotator"
-      // No resume dialog: the workspace picker lists recent sessions as chips instead.
+      // No resume dialog: the workspace and source pickers list recent picks instead.
       gateOptions={{ skipResumePicker: true }}
       PickerDialog={WorkSessionPickerDialog}
-      onRestore={(session) =>
-        restoreAnnotatorWorkSession({
+      onRestore={(session) => {
+        void restoreAnnotatorWorkSession({
           session,
           setShellWorkspacePath: workspace.setWorkspacePath,
           setWorkspacePath: annotatorUiActions.setWorkspacePath,
           setUi,
-        })
-      }
+        });
+      }}
     >
       {props.children}
     </WorkSessionAppGate>

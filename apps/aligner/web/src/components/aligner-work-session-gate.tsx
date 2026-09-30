@@ -20,11 +20,11 @@ export function AlignerWorkSessionGate(props: { children?: JSX.Element }) {
   return (
     <WorkSessionAppGate
       appId="aligner"
-      // No resume dialog: the workspace picker lists recent sessions as chips instead.
+      // No resume dialog: the workspace and source pickers list recent picks instead.
       gateOptions={{ skipResumePicker: true }}
       PickerDialog={WorkSessionPickerDialog}
-      onRestore={(session) =>
-        restoreAlignerWorkSession({
+      onRestore={async (session) => {
+        await restoreAlignerWorkSession({
           session,
           setShellWorkspacePath: workspace.setWorkspacePath,
           setWorkspacePath: alignerUiActions.setWorkspacePath,
@@ -33,8 +33,8 @@ export function AlignerWorkSessionGate(props: { children?: JSX.Element }) {
           resumePendingRuns: async () => {
             // Crop jobs are not owned by Aligner.
           },
-        })
-      }
+        });
+      }}
     >
       {props.children}
     </WorkSessionAppGate>

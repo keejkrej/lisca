@@ -1,84 +1,15 @@
-import type {
-  AlignerSource,
-  MemoryAssayEntry,
-  MemoryKind,
-  MemorySourceEntry,
-  MemoryWorkspaceEntry,
-} from "@lisca/contracts";
-import { liscaLocalStorage, readStorageJson, writeStorageJson } from "@lisca/utils";
+import type { AlignerSource, MemoryKind } from "@lisca/contracts";
 
-const WIZARD_MEMORY_KEY = "lisca.studio.wizardMemory";
-const MEMORY_CAP = 20;
+import {
+  readRecentMemory,
+  touchRecentMemory,
+  type RecentMemoryTouch,
+} from "../session/recent-memory";
 
-type StudioWizardMemoryFile = {
-  workspaces: MemoryWorkspaceEntry[];
-  sources: MemorySourceEntry[];
-  assays: MemoryAssayEntry[];
-};
-
-function emptyMemory(): StudioWizardMemoryFile {
-  return { workspaces: [], sources: [], assays: [] };
-}
-
-function readWizardMemory(): StudioWizardMemoryFile {
-  return (
-    readStorageJson<StudioWizardMemoryFile>(liscaLocalStorage(), WIZARD_MEMORY_KEY) ?? emptyMemory()
-  );
-}
-
-function writeWizardMemory(memory: StudioWizardMemoryFile): void {
-  writeStorageJson(liscaLocalStorage(), WIZARD_MEMORY_KEY, memory);
-}
-
-function trimCap<T>(entries: T[]): T[] {
-  return entries.slice(0, MEMORY_CAP);
-}
-
-function sourcesEqual(a: AlignerSource, b: AlignerSource): boolean {
-  return JSON.stringify(a) === JSON.stringify(b);
-}
-
-export type StudioWizardMemoryTouch =
-  | { kind: "workspace"; path: string; label?: string }
-  | { kind: "source"; source: AlignerSource; label?: string }
-  | {
-      kind: "assay";
-      path: string;
-      assayLabel?: string;
-      workspacePath?: string;
-    };
+export type StudioWizardMemoryTouch = RecentMemoryTouch;
 
 export function touchStudioWizardMemory(touch: StudioWizardMemoryTouch): void {
-  const now = Date.now();
-  const memory = readWizardMemory();
-
-  if (touch.kind === "workspace") {
-    const path = touch.path.trim();
-    if (!path) return;
-    memory.workspaces = trimCap([
-      { path, label: touch.label, lastUsedAt: now },
-      ...memory.workspaces.filter((entry) => entry.path !== path),
-    ]);
-  } else if (touch.kind === "source") {
-    memory.sources = trimCap([
-      { source: touch.source, label: touch.label, lastUsedAt: now },
-      ...memory.sources.filter((entry) => !sourcesEqual(entry.source, touch.source)),
-    ]);
-  } else {
-    const path = touch.path.trim();
-    if (!path) return;
-    memory.assays = trimCap([
-      {
-        path,
-        assayLabel: touch.assayLabel,
-        workspacePath: touch.workspacePath,
-        lastUsedAt: now,
-      },
-      ...memory.assays.filter((entry) => entry.path !== path),
-    ]);
-  }
-
-  writeWizardMemory(memory);
+  touchRecentMemory("studio", touch);
 }
 
 export function readStudioWizardMemoryRecent(kind: MemoryKind): {
@@ -86,7 +17,7 @@ export function readStudioWizardMemoryRecent(kind: MemoryKind): {
   sources: Array<{ source: AlignerSource; label?: string }>;
   assays: Array<{ path: string; assayLabel?: string; workspacePath?: string }>;
 } {
-  const memory = readWizardMemory();
+  const memory = readRecentMemory("studio");
 
   if (kind === "workspace") {
     return {
