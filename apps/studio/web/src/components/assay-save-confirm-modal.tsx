@@ -9,6 +9,9 @@ export function AssaySaveConfirmModal(props: {
   onCancel: () => void;
   onSave: () => void;
   onSkip: () => void;
+  title?: string;
+  description?: string;
+  skipLabel?: string;
 }) {
   return (
     <Show when={props.open}>
@@ -17,10 +20,10 @@ export function AssaySaveConfirmModal(props: {
           <div class="space-y-4">
             <div class="space-y-1">
               <h2 id="assay-save-confirm-title" class="font-medium text-foreground">
-                Metadata changed
+                {props.title ?? "Metadata changed"}
               </h2>
               <p class="text-muted-foreground text-sm">
-                Save these settings before leaving the Metadata step?
+                {props.description ?? "Save these settings before leaving the Metadata step?"}
               </p>
               <Show when={props.error}>
                 <p class="z-destructive-surface text-sm" role="alert">
@@ -43,7 +46,7 @@ export function AssaySaveConfirmModal(props: {
                 variant="outline"
                 onClick={props.onSkip}
               >
-                Skip Save
+                {props.skipLabel ?? "Skip Save"}
               </Button>
               <Button disabled={props.saving} type="button" onClick={props.onSave}>
                 {props.saving ? "Saving…" : "Save"}

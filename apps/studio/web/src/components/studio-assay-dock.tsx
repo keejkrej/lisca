@@ -6,6 +6,7 @@ import { useStudioNavigate } from "../navigation/use-studio-navigate";
 export function StudioAssayActions(props: {
   openingAssay: boolean;
   assayPickerOpen: boolean;
+  onNewAssay: () => void;
   onOpenAssay: () => void;
 }) {
   const { navigateTo } = useStudioNavigate();
@@ -13,6 +14,16 @@ export function StudioAssayActions(props: {
   return (
     <PanelSection appearance="rail" title="Action">
       <RailControlStack>
+        <Button
+          class="w-full justify-center"
+          disabled={props.openingAssay}
+          size="sm"
+          type="button"
+          variant="outline"
+          onClick={props.onNewAssay}
+        >
+          New
+        </Button>
         <Button
           class="w-full justify-center"
           disabled={props.openingAssay || props.assayPickerOpen}
