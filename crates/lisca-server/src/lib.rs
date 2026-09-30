@@ -8,8 +8,7 @@ mod task_scheduler;
 mod tasks;
 
 pub use task_scheduler::{
-    OperationSpec, SchedulerConfig, SchedulerError, TaskContext, TaskFailure, TaskScheduler,
-    TaskSpec,
+    SchedulerConfig, SchedulerError, StepContext, StepFailure, StepSpec, TaskScheduler, TaskSpec,
 };
 pub use tasks::{task_router, HasTaskScheduler};
 

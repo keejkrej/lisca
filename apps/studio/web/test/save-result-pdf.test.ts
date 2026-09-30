@@ -19,7 +19,7 @@ describe("buildResultPdf", () => {
     const plots = (labels: string[]) => labels.map((label) => ({ label, bytes: PNG }));
     const bytes = await buildResultPdf([
       {
-        title: "Timeseries",
+        title: "Traces",
         groups: [
           { title: "Intensity traces", plots: plots(["A", "B", "C", "D", "E", "F"]) },
           { title: "Mask area", plots: plots(["A", "B"]) },
@@ -34,7 +34,7 @@ describe("buildResultPdf", () => {
 
   it("rejects an export with no plots", async () => {
     await expect(
-      buildResultPdf([{ title: "Timeseries", groups: [{ title: "Traces", plots: [] }] }]),
+      buildResultPdf([{ title: "Traces", groups: [{ title: "Traces", plots: [] }] }]),
     ).rejects.toThrow("No plots to export");
   });
 

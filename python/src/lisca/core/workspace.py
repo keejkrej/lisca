@@ -4,7 +4,11 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 
-from lisca.core.align_grid import AlignGridState, CellCoord, align_grid_state_from_json
+from lisca.core.align_grid import (
+    AlignGridState,
+    PatternCoord,
+    align_grid_state_from_json,
+)
 from lisca.core.bbox import RoiBbox, parse_bbox_csv
 from lisca.core.paths import (
     ALIGN_DIR,
@@ -74,7 +78,7 @@ __all__ = [
 @dataclass(frozen=True)
 class SavedAlignState:
     grid: AlignGridState
-    excluded_cells: list[CellCoord]
+    excluded_patterns: list[PatternCoord]
 
 
 @dataclass(frozen=True)
@@ -112,15 +116,16 @@ def list_align_positions(workspace: Path) -> list[int]:
 
 
 def load_saved_align_state(workspace: Path, position: int) -> SavedAlignState:
+    migrate_workspace(workspace)
     path = align_json_path(workspace, position)
     raw = json.loads(path.read_text(encoding="utf-8"))
     excluded = [
-        CellCoord(i=int(cell["i"]), j=int(cell["j"]))
-        for cell in raw.get("excludedCells", [])
+        PatternCoord(i=int(pattern["i"]), j=int(pattern["j"]))
+        for pattern in raw.get("excludedPatterns", [])
     ]
     return SavedAlignState(
         grid=align_grid_state_from_json(raw["grid"]),
-        excluded_cells=excluded,
+        excluded_patterns=excluded,
     )
 
 

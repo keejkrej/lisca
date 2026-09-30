@@ -14,9 +14,9 @@ pipeline_tag: image-classification
 **Ownership:** this lisca monorepo (product / any-assay). Smart exclude is not
 an assay pipeline.
 
-Binary image classifier for LiSCA **Smart exclude**: predicts whether a micropattern grid cell ROI should be excluded from downstream ROI export.
+Binary image classifier for LiSCA **Smart exclude**: predicts whether a Pattern (micropattern alignment-grid slot) should be excluded so it does not become an ROI.
 
-Trained on user-preference exclusions (edge-clipped sites filtered out). Labels:
+Trained on user-preference exclusions (edge-clipped Patterns filtered out). Labels:
 
 | ID  | Label     |
 | --- | --------- |
@@ -27,7 +27,7 @@ Trained on user-preference exclusions (edge-clipped sites filtered out). Labels:
 
 Matches `export_meta.json`:
 
-- Crop cell ROI, min–max normalize to uint8
+- Crop the Pattern box, min–max normalize to uint8
 - Resize to 224×224
 - Grayscale → RGB
 - ImageNet mean/std normalization

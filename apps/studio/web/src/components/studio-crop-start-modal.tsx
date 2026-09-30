@@ -27,7 +27,7 @@ export function StudioCropStartModal() {
                 </h2>
                 <p class="text-muted-foreground text-sm">
                   {confirm().unaligned.length === 0
-                    ? `${confirm().positions.length} positions have saved alignment output. Crop site images from the aligned grid now?`
+                    ? `${confirm().positions.length} positions have saved alignment output. Crop ROI images from the aligned grid now?`
                     : `${confirm().positions.length - confirm().unaligned.length} of ${confirm().positions.length} positions aligned. Save an alignment for ${formatPositions(confirm().unaligned)} before cropping.`}
                 </p>
               </div>

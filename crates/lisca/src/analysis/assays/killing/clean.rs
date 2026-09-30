@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 use std::path::Path;
 
 use crate::analysis::csv_io::{column_index, parse_f64, read_csv, write_csv};
-use crate::analysis::slide::SlideMapping;
+use crate::analysis::sample::SampleMapping;
 
 pub const CLEAN_THRESHOLD: f64 = 0.8;
 
@@ -12,13 +12,13 @@ struct PredictionRow {
     crop: u32,
     label: bool,
     pos: u32,
-    slide_channel: u32,
+    sample: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 struct CropKey {
     pos: u32,
-    slide_channel: u32,
+    sample: String,
     crop: u32,
 }
 
@@ -34,7 +34,8 @@ fn load_predictions(path: &Path) -> Result<Vec<PredictionRow>, String> {
     let label_index =
         column_index(&headers, "label").ok_or("missing label column in predictions.csv")?;
     let pos_index = column_index(&headers, "pos").unwrap_or(usize::MAX);
-    let slide_channel_index = column_index(&headers, "slide").unwrap_or(usize::MAX);
+    let sample_index =
+        column_index(&headers, "sample").ok_or("missing sample column in predictions.csv")?;
 
     let mut parsed = Vec::with_capacity(rows.len());
     for row in rows {
@@ -51,19 +52,12 @@ fn load_predictions(path: &Path) -> Result<Vec<PredictionRow>, String> {
                 .and_then(|value| u32::try_from(value as u64).ok())
                 .unwrap_or(0)
         };
-        let slide_channel = if slide_channel_index == usize::MAX {
-            0
-        } else {
-            parse_f64(&row[slide_channel_index])
-                .and_then(|value| u32::try_from(value as u64).ok())
-                .unwrap_or(0)
-        };
         parsed.push(PredictionRow {
             t,
             crop,
             label: parse_label(&row[label_index]),
             pos,
-            slide_channel,
+            sample: row[sample_index].clone(),
         });
     }
     Ok(parsed)
@@ -75,7 +69,7 @@ fn clean_predictions(rows: &[PredictionRow]) -> Vec<PredictionRow> {
         grouped
             .entry(CropKey {
                 pos: row.pos,
-                slide_channel: row.slide_channel,
+                sample: row.sample.clone(),
                 crop: row.crop,
             })
             .or_default()
@@ -103,7 +97,7 @@ fn clean_predictions(rows: &[PredictionRow]) -> Vec<PredictionRow> {
     cleaned.sort_by(|left, right| {
         left.pos
             .cmp(&right.pos)
-            .then_with(|| left.slide_channel.cmp(&right.slide_channel))
+            .then_with(|| left.sample.cmp(&right.sample))
             .then_with(|| left.crop.cmp(&right.crop))
             .then_with(|| left.t.cmp(&right.t))
     });
@@ -116,7 +110,7 @@ fn compute_death_times(rows: &[PredictionRow]) -> BTreeMap<CropKey, u32> {
         grouped
             .entry(CropKey {
                 pos: row.pos,
-                slide_channel: row.slide_channel,
+                sample: row.sample.clone(),
                 crop: row.crop,
             })
             .or_default()
@@ -156,27 +150,27 @@ fn compute_death_times(rows: &[PredictionRow]) -> BTreeMap<CropKey, u32> {
     death_times
 }
 
-fn build_kill_curve(death_times: &BTreeMap<CropKey, u32>, slide_channel: u32) -> Vec<(u32, u32)> {
-    let channel_deaths: Vec<u32> = death_times
+fn build_kill_curve(death_times: &BTreeMap<CropKey, u32>, sample: &str) -> Vec<(u32, u32)> {
+    let sample_deaths: Vec<u32> = death_times
         .iter()
-        .filter(|(key, death_time)| key.slide_channel == slide_channel && **death_time > 0)
+        .filter(|(key, death_time)| key.sample == sample && **death_time > 0)
         .map(|(_, death_time)| *death_time)
         .collect();
-    if channel_deaths.is_empty() {
+    if sample_deaths.is_empty() {
         return Vec::new();
     }
 
     let max_t = death_times
         .keys()
-        .filter(|key| key.slide_channel == slide_channel)
+        .filter(|key| key.sample == sample)
         .flat_map(|key| death_times.get(key).copied())
-        .chain(channel_deaths.iter().copied())
+        .chain(sample_deaths.iter().copied())
         .max()
         .unwrap_or(0);
 
     (0..=max_t)
         .map(|t| {
-            let alive = channel_deaths
+            let alive = sample_deaths
                 .iter()
                 .filter(|death_time| **death_time >= t)
                 .count() as u32;
@@ -185,7 +179,7 @@ fn build_kill_curve(death_times: &BTreeMap<CropKey, u32>, slide_channel: u32) ->
         .collect()
 }
 
-pub fn run_clean(workspace: &Path, mapping: &SlideMapping) -> Result<(), String> {
+pub fn run_clean(workspace: &Path, mapping: &SampleMapping) -> Result<(), String> {
     let predictions_path = workspace.join("results/predictions.csv");
     let rows = load_predictions(&predictions_path)?;
     let cleaned = clean_predictions(&rows);
@@ -199,13 +193,13 @@ pub fn run_clean(workspace: &Path, mapping: &SlideMapping) -> Result<(), String>
                 row.crop.to_string(),
                 row.label.to_string().to_lowercase(),
                 row.pos.to_string(),
-                row.slide_channel.to_string(),
+                row.sample.clone(),
             ]
         })
         .collect::<Vec<_>>();
     write_csv(
         &workspace.join("results/predictions_cleaned.csv"),
-        &["t", "crop", "label", "pos", "slide"],
+        &["t", "crop", "label", "pos", "sample"],
         &cleaned_rows,
     )?;
 
@@ -216,29 +210,29 @@ pub fn run_clean(workspace: &Path, mapping: &SlideMapping) -> Result<(), String>
                 key.crop.to_string(),
                 death_time.to_string(),
                 key.pos.to_string(),
-                key.slide_channel.to_string(),
+                key.sample.clone(),
             ]
         })
         .collect::<Vec<_>>();
     write_csv(
         &workspace.join("results/death_times.csv"),
-        &["crop", "death_time", "pos", "slide"],
+        &["crop", "death_time", "pos", "sample"],
         &death_rows,
     )?;
 
     let mut curve_rows = Vec::new();
-    for slide_channel in mapping.keys() {
-        for (t, n_alive) in build_kill_curve(&death_times, *slide_channel) {
+    for sample in mapping {
+        for (t, n_alive) in build_kill_curve(&death_times, &sample.name) {
             curve_rows.push(vec![
                 t.to_string(),
                 n_alive.to_string(),
-                slide_channel.to_string(),
+                sample.name.clone(),
             ]);
         }
     }
     write_csv(
         &workspace.join("results/kill_curve.csv"),
-        &["t", "n_alive", "slide"],
+        &["t", "n_alive", "sample"],
         &curve_rows,
     )?;
     Ok(())
@@ -254,7 +248,7 @@ mod tests {
             crop,
             label,
             pos: 1,
-            slide_channel: 0,
+            sample: "A".to_string(),
         }
     }
 
@@ -283,13 +277,13 @@ mod tests {
         let death_times = compute_death_times(&rows);
         let key = CropKey {
             pos: 1,
-            slide_channel: 0,
+            sample: "A".to_string(),
             crop: 1,
         };
         assert_eq!(death_times.get(&key).copied(), Some(2));
     }
 
-    fn timeseries(crops: &[(u32, u32)]) -> Vec<PredictionRow> {
+    fn crop_traces(crops: &[(u32, u32)]) -> Vec<PredictionRow> {
         let mut rows = Vec::new();
         for &(crop, last_alive_t) in crops {
             for t in 0..=10 {
@@ -301,10 +295,10 @@ mod tests {
 
     #[test]
     fn polarity_correct_convention_yields_decreasing_kill_curve() {
-        let rows = timeseries(&[(1, 10), (2, 5), (3, 3)]);
+        let rows = crop_traces(&[(1, 10), (2, 5), (3, 3)]);
         let cleaned = clean_predictions(&rows);
         let death_times = compute_death_times(&cleaned);
-        let curve = build_kill_curve(&death_times, 0);
+        let curve = build_kill_curve(&death_times, "A");
         assert_eq!(
             curve,
             vec![
@@ -325,7 +319,7 @@ mod tests {
 
     #[test]
     fn polarity_inverted_convention_all_alive_at_t0_yields_empty_curve() {
-        let rows = timeseries(&[(1, 10), (2, 5), (3, 3)])
+        let rows = crop_traces(&[(1, 10), (2, 5), (3, 3)])
             .into_iter()
             .map(|row| PredictionRow {
                 label: !row.label,
@@ -334,13 +328,13 @@ mod tests {
             .collect::<Vec<_>>();
         let cleaned = clean_predictions(&rows);
         let death_times = compute_death_times(&cleaned);
-        let curve = build_kill_curve(&death_times, 0);
+        let curve = build_kill_curve(&death_times, "A");
         assert!(curve.is_empty());
     }
 
     #[test]
     fn polarity_inverted_convention_with_always_dead_crop_is_silently_wrong() {
-        let mut rows = timeseries(&[(1, 10), (2, 5), (3, 3)])
+        let mut rows = crop_traces(&[(1, 10), (2, 5), (3, 3)])
             .into_iter()
             .map(|row| PredictionRow {
                 label: !row.label,
@@ -352,7 +346,7 @@ mod tests {
         }
         let cleaned = clean_predictions(&rows);
         let death_times = compute_death_times(&cleaned);
-        let curve = build_kill_curve(&death_times, 0);
+        let curve = build_kill_curve(&death_times, "A");
         let expected: Vec<(u32, u32)> = (0..=10).map(|t| (t, 1)).collect();
         assert_eq!(curve, expected);
     }

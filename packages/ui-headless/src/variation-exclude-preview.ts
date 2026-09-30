@@ -1,7 +1,7 @@
-import type { AutoExcludePreviewResponse } from "@lisca/contracts";
+import type { VariationExcludePreviewResponse } from "@lisca/contracts";
 
 export type VariationExcludePreviewInput = {
-  preview: AutoExcludePreviewResponse;
+  preview: VariationExcludePreviewResponse;
   threshold: number;
 };
 
@@ -14,7 +14,7 @@ export function clampVariationThreshold(value: number, min: number, max: number)
   return Math.min(max, Math.max(min, value));
 }
 
-export function deriveVariationExcludeMetrics(preview: AutoExcludePreviewResponse) {
+export function deriveVariationExcludeMetrics(preview: VariationExcludePreviewResponse) {
   const min = preview.scoreMin;
   const max = preview.scoreMax > preview.scoreMin ? preview.scoreMax : preview.scoreMin + 1;
   const step = Math.max((max - min) / 500, 0.001);
@@ -22,11 +22,11 @@ export function deriveVariationExcludeMetrics(preview: AutoExcludePreviewRespons
   return { min, max, step, maxBinCount };
 }
 
-export function countVariationExcludedCells(
-  preview: AutoExcludePreviewResponse,
+export function countVariationExcludedPatterns(
+  preview: VariationExcludePreviewResponse,
   threshold: number,
 ): number {
-  return preview.cellScores.filter((cell) => cell.score <= threshold).length;
+  return preview.patternScores.filter((pattern) => pattern.score <= threshold).length;
 }
 
 export function isVariationBinActive(binEnd: number, threshold: number): boolean {
@@ -34,7 +34,7 @@ export function isVariationBinActive(binEnd: number, threshold: number): boolean
 }
 
 export function deriveVariationExcludePreview(input: VariationExcludePreviewInput | null): {
-  preview: AutoExcludePreviewResponse;
+  preview: VariationExcludePreviewResponse;
   threshold: number;
   selectedCount: number;
   metrics: ReturnType<typeof deriveVariationExcludeMetrics>;
@@ -45,7 +45,7 @@ export function deriveVariationExcludePreview(input: VariationExcludePreviewInpu
   return {
     preview: input.preview,
     threshold,
-    selectedCount: countVariationExcludedCells(input.preview, threshold),
+    selectedCount: countVariationExcludedPatterns(input.preview, threshold),
     metrics,
   };
 }

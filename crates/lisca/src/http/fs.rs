@@ -44,15 +44,15 @@ where
 }
 
 async fn run_blocking<T>(
-    operation: &'static str,
-    task: impl FnOnce() -> Result<T, FsError> + Send + 'static,
+    label: &'static str,
+    work: impl FnOnce() -> Result<T, FsError> + Send + 'static,
 ) -> Result<T, FsError>
 where
     T: Send + 'static,
 {
-    tokio::task::spawn_blocking(task)
+    tokio::task::spawn_blocking(work)
         .await
-        .map_err(|error| FsError::internal(format!("{operation} worker failed: {error}")))?
+        .map_err(|error| FsError::internal(format!("{label} worker failed: {error}")))?
 }
 
 async fn list_directory_handler(

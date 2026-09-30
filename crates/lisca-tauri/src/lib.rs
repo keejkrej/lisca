@@ -560,13 +560,19 @@ mod tests {
         // HTML page carrying the matching data-lisca-app tag — accept.
         let html_listener = TcpListener::bind("127.0.0.1:0").unwrap();
         let html_port = html_listener.local_addr().unwrap().port();
-        serve_html(html_listener, r#"<html lang="en" data-lisca-app="aligner"></html>"#);
+        serve_html(
+            html_listener,
+            r#"<html lang="en" data-lisca-app="aligner"></html>"#,
+        );
         assert!(looks_like_product_vite("127.0.0.1", html_port, "aligner"));
 
         // HTML page for a different product — reject.
         let html_listener = TcpListener::bind("127.0.0.1:0").unwrap();
         let other_port = html_listener.local_addr().unwrap().port();
-        serve_html(html_listener, r#"<html lang="en" data-lisca-app="studio"></html>"#);
+        serve_html(
+            html_listener,
+            r#"<html lang="en" data-lisca-app="studio"></html>"#,
+        );
         assert!(!looks_like_product_vite("127.0.0.1", other_port, "aligner"));
 
         // JSON 404 — reject.
@@ -594,7 +600,11 @@ mod tests {
         let closed = TcpListener::bind("127.0.0.1:0").unwrap();
         let closed_port = closed.local_addr().unwrap().port();
         drop(closed);
-        assert!(!looks_like_product_vite("127.0.0.1", closed_port, "aligner"));
+        assert!(!looks_like_product_vite(
+            "127.0.0.1",
+            closed_port,
+            "aligner"
+        ));
     }
 
     #[test]
@@ -602,10 +612,7 @@ mod tests {
         // Nothing is listening on any port we'd pick in this range, so the
         // configured URL should be returned unchanged.
         let placeholder = "http://127.0.0.1:9".to_string(); // discard port (RFC 863)
-        assert_eq!(
-            resolve_dev_url(placeholder.clone(), "aligner"),
-            placeholder
-        );
+        assert_eq!(resolve_dev_url(placeholder.clone(), "aligner"), placeholder);
 
         // Non-loopback or unparseable URLs are returned as-is without probing.
         let remote = "https://example.com:8443".to_string();
@@ -734,7 +741,11 @@ mod tests {
             break (foreign, studio, aligner, base);
         };
 
-        serve(foreign_listener, r#"{"error":"not_found"}"#, "404 Not Found");
+        serve(
+            foreign_listener,
+            r#"{"error":"not_found"}"#,
+            "404 Not Found",
+        );
         serve(
             studio_listener,
             r#"<html lang="en" data-lisca-app="studio"></html>"#,

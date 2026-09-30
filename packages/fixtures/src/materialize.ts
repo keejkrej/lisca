@@ -47,6 +47,14 @@ export type MaterializeResult = {
   files: string[];
 };
 
+const TRANSFECTION_FIXTURE_SAMPLE = "Mock (fixture)";
+
+/** Killing fixture samples in assay order; each covers one Position. */
+const KILLING_FIXTURE_SAMPLES = [
+  { name: "Control (fixture)", position: 1 },
+  { name: "CAR-T 1:4 (fixture)", position: 2 },
+] as const;
+
 /** Tiny, reviewable layout shared by both shipping assays. */
 export const FIXTURE_LAYOUT = {
   positions: [1, 2] as const,
@@ -58,7 +66,7 @@ export const FIXTURE_LAYOUT = {
   frameHeight: 16,
   roiWidth: 4,
   roiHeight: 4,
-  maskChannel: 0,
+  segmentationChannel: 0,
   signalChannel: 1,
   folderTemplate: {
     subfolder: "Pos{p}",
@@ -160,7 +168,7 @@ function writeSourceFrames(write: WriteRel, prefix: string): void {
 function sourcePixels(channel: number, time: number): Uint8Array {
   const { frameWidth, frameHeight, boxes } = FIXTURE_LAYOUT;
   const pixels = new Uint8Array(frameWidth * frameHeight).fill(24);
-  const fill = channel === FIXTURE_LAYOUT.maskChannel ? 200 : 48 + time * 48;
+  const fill = channel === FIXTURE_LAYOUT.segmentationChannel ? 200 : 48 + time * 48;
   for (const box of boxes) {
     fillRect(pixels, frameWidth, box.x, box.y, box.w, box.h, fill);
   }
@@ -183,15 +191,15 @@ function writeAssayJson(write: WriteRel, assay: FixtureAssay, workspacePath: str
       unit: "minute",
     },
     samples: transfection
-      ? [{ slideChannel: 0, name: "Mock (fixture)", positions: "1:2" }]
-      : [
-          { slideChannel: 0, name: "Control (fixture)", positions: "1" },
-          { slideChannel: 1, name: "CAR-T 1:4 (fixture)", positions: "2" },
-        ],
+      ? [{ name: TRANSFECTION_FIXTURE_SAMPLE, positions: "1:2" }]
+      : KILLING_FIXTURE_SAMPLES.map((sample) => ({
+          name: sample.name,
+          positions: String(sample.position),
+        })),
     analysis: {
       ...(transfection ? { maxOnsetMinutes: 120, skipSegment: false } : {}),
       channels: {
-        mask: FIXTURE_LAYOUT.maskChannel,
+        segmentation: FIXTURE_LAYOUT.segmentationChannel,
         signal: [FIXTURE_LAYOUT.signalChannel],
       },
     },
@@ -210,11 +218,11 @@ function writeAlignment(write: WriteRel): void {
       rotation: 0,
       spacingA: 8,
       spacingB: 8,
-      cellWidth: 4,
-      cellHeight: 4,
+      patternWidth: 4,
+      patternHeight: 4,
       opacity: 0.6,
     },
-    excludedCells: [],
+    excludedPatterns: [],
   };
   decodeJson(SavedAlignStateSchema, align);
 
@@ -269,9 +277,9 @@ function writeRoiStacks(write: WriteRel): void {
 }
 
 function roiPage(channel: number, time: number, roi: number): Uint8Array {
-  const { roiWidth, roiHeight, maskChannel } = FIXTURE_LAYOUT;
+  const { roiWidth, roiHeight, segmentationChannel } = FIXTURE_LAYOUT;
   const pixels = new Uint8Array(roiWidth * roiHeight).fill(12);
-  const fill = channel === maskChannel ? 220 : Math.min(40 + time * 50 + roi * 8, 255);
+  const fill = channel === segmentationChannel ? 220 : Math.min(40 + time * 50 + roi * 8, 255);
   fillRect(pixels, roiWidth, 1, 1, 2, 2, fill);
   return pixels;
 }
@@ -345,7 +353,7 @@ function writeAnalysisOutputs(write: WriteRel, assay: FixtureAssay): void {
         times.map((t) => `${roi},${t},${(0.08 * roi + 0.3 * t).toFixed(2)}`),
       ),
     ];
-    write(join("timeseries", `Pos${pos}`, `ch${signalChannel}.csv`), `${rows.join("\n")}\n`);
+    write(join("traces", `Pos${pos}`, `ch${signalChannel}.csv`), `${rows.join("\n")}\n`);
   }
   writeKillingResults(write);
   for (const plot of KILLING_PLOTS) {
@@ -355,7 +363,13 @@ function writeAnalysisOutputs(write: WriteRel, assay: FixtureAssay): void {
 }
 
 function transfectionSampleDirname(): string {
-  return filesystemSafeSampleName("Mock (fixture)");
+  return filesystemSafeSampleName(TRANSFECTION_FIXTURE_SAMPLE);
+}
+
+function killingSampleForPosition(pos: number): string {
+  const sample = KILLING_FIXTURE_SAMPLES.find((entry) => entry.position === pos);
+  if (!sample) throw new Error(`no killing fixture sample for Pos${pos}`);
+  return sample.name;
 }
 
 /** Match lisca-transfection `filesystem_safe_sample_name` for `results/<sample>/`. */
@@ -428,27 +442,27 @@ function writeTransfectionPlots(write: WriteRel): void {
 
 function writeKillingResults(write: WriteRel): void {
   const { positions, rois, times } = FIXTURE_LAYOUT;
-  const predictions = ["t,crop,p_dead,label,pos,slide"];
-  const cleaned = ["t,crop,label,pos,slide"];
-  const death = ["crop,death_time,pos,slide"];
-  const curve = ["t,n_alive,slide"];
+  const predictions = ["t,crop,p_dead,label,pos,sample"];
+  const cleaned = ["t,crop,label,pos,sample"];
+  const death = ["crop,death_time,pos,sample"];
+  const curve = ["t,n_alive,sample"];
 
-  for (const [index, pos] of positions.entries()) {
-    const slide = index;
+  for (const pos of positions) {
+    const sample = killingSampleForPosition(pos);
     for (const roi of rois) {
       for (const t of times) {
         const pDead = 0.08 * roi + 0.3 * t;
         const label = pDead >= 0.5;
-        predictions.push(`${t},${roi},${pDead.toFixed(2)},${label},${pos},${slide}`);
-        cleaned.push(`${t},${roi},${label},${pos},${slide}`);
+        predictions.push(`${t},${roi},${pDead.toFixed(2)},${label},${pos},${sample}`);
+        cleaned.push(`${t},${roi},${label},${pos},${sample}`);
       }
-      death.push(`${roi},${times[times.length - 1]},${pos},${slide}`);
+      death.push(`${roi},${times[times.length - 1]},${pos},${sample}`);
     }
   }
-  for (const slide of [0, 1]) {
+  for (const { name: sample } of KILLING_FIXTURE_SAMPLES) {
     let alive = 2;
     for (const t of times) {
-      curve.push(`${t},${alive},${slide}`);
+      curve.push(`${t},${alive},${sample}`);
       alive = Math.max(0, alive - 1);
     }
   }
@@ -506,7 +520,7 @@ export function expectedKeyPaths(assay: FixtureAssay, stage: FixtureStage): stri
       );
     } else {
       paths.push(
-        `timeseries/Pos1/ch${FIXTURE_LAYOUT.signalChannel}.csv`,
+        `traces/Pos1/ch${FIXTURE_LAYOUT.signalChannel}.csv`,
         "results/traces.png",
         "results/kill_curve.csv",
         "results/death_times.png",

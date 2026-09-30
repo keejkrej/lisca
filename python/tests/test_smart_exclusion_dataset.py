@@ -23,7 +23,7 @@ def _write_align_state(
     align_dir = workspace / "align"
     align_dir.mkdir(parents=True, exist_ok=True)
     payload = {
-        "excludedCells": [{"i": i, "j": j} for i, j in excluded],
+        "excludedPatterns": [{"i": i, "j": j} for i, j in excluded],
         "grid": {
             "enabled": True,
             "shape": "rect",
@@ -32,8 +32,8 @@ def _write_align_state(
             "rotation": 0,
             "spacingA": 50,
             "spacingB": 50,
-            "cellWidth": 50,
-            "cellHeight": 50,
+            "patternWidth": 50,
+            "patternHeight": 50,
             "opacity": 0.35,
         },
     }
@@ -85,7 +85,7 @@ def _write_source_frame(source: Path, position: int, ext: str = "tif") -> None:
 
 
 @pytest.mark.parametrize("ext", ["tif", "png"])
-def test_create_smart_exclusion_dataset_filters_small_excluded_cells(
+def test_create_smart_exclusion_dataset_filters_small_excluded_patterns(
     tmp_path: Path,
     ext: str,
 ) -> None:

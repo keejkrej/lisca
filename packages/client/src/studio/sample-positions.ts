@@ -93,17 +93,21 @@ function signalChannelsEqual(a: readonly number[], b: readonly number[]): boolea
   return a.length === b.length && a.every((value, index) => value === b[index]);
 }
 
-/** Resolve mask/signal for a slide channel from analysis defaults + per-sample overrides. */
+/** Resolve segmentation/signal for a sample (by name) from analysis defaults + per-sample overrides. */
 export function resolveSampleChannels(
   analysis: AssayAnalysisConfig | null | undefined,
-  slideChannel: number,
-): { mask: number; signal: number[] } | null {
-  const override = analysis?.sampleChannels?.find((entry) => entry.slideChannel === slideChannel);
+  sample: string,
+): { segmentation: number; signal: number[] } | null {
+  const name = sample.trim();
+  const override = analysis?.sampleChannels?.find((entry) => entry.sample.trim() === name);
   if (override) {
-    return { mask: override.mask, signal: [...override.signal] };
+    return { segmentation: override.segmentation, signal: [...override.signal] };
   }
   if (analysis?.channels) {
-    return { mask: analysis.channels.mask, signal: [...analysis.channels.signal] };
+    return {
+      segmentation: analysis.channels.segmentation,
+      signal: [...analysis.channels.signal],
+    };
   }
   return null;
 }
@@ -111,26 +115,27 @@ export function resolveSampleChannels(
 /** Derive on-disk analysis channel fields from UI sample rows. */
 export function analysisChannelsFromSamples(
   samples: readonly {
-    slideChannel: string;
     name: string;
-    mask: string;
+    segmentation: string;
     signal: string;
   }[],
 ): Pick<AssayAnalysisConfig, "channels" | "sampleChannels"> {
-  const rows: { slideChannel: number; mask: number; signal: [number, ...number[]] }[] = [];
-  for (const sample of samples) {
-    if (!sample.name.trim()) continue;
-    const slideChannel = parseNonNegativeInteger(sample.slideChannel);
-    const mask = parseNonNegativeInteger(sample.mask);
-    const signal = parseSignalChannels(sample.signal);
-    if (slideChannel == null || mask == null || signal == null) continue;
-    rows.push({ slideChannel, mask, signal });
+  const rows: { sample: string; segmentation: number; signal: [number, ...number[]] }[] = [];
+  for (const row of samples) {
+    const sample = row.name.trim();
+    if (!sample) continue;
+    const segmentation = parseNonNegativeInteger(row.segmentation);
+    const signal = parseSignalChannels(row.signal);
+    if (segmentation == null || signal == null) continue;
+    rows.push({ sample, segmentation, signal });
   }
   if (rows.length === 0) return {};
 
-  const channels = { mask: rows[0]!.mask, signal: rows[0]!.signal };
+  const channels = { segmentation: rows[0]!.segmentation, signal: rows[0]!.signal };
   const sampleChannels = rows.filter(
-    (row) => row.mask !== channels.mask || !signalChannelsEqual(row.signal, channels.signal),
+    (row) =>
+      row.segmentation !== channels.segmentation ||
+      !signalChannelsEqual(row.signal, channels.signal),
   );
   return {
     channels,
@@ -141,13 +146,10 @@ export function analysisChannelsFromSamples(
 export function sampleRowToDisk(row: {
   positionStart: string;
   positionFinish: string;
-  slideChannel: string;
   name: string;
 }): AssaySampleRow {
-  const slideChannel = parseNonNegativeInteger(row.slideChannel);
   return {
-    slideChannel: slideChannel ?? 0,
-    name: row.name,
+    name: row.name.trim(),
     positions: formatSamplePositions(row.positionStart, row.positionFinish),
   };
 }
@@ -156,17 +158,15 @@ export function sampleRowFromDisk(
   record: AssaySampleRow,
   analysis?: AssayAnalysisConfig | null,
 ): SamplePositionRange & {
-  slideChannel: string;
   name: string;
-  mask: string;
+  segmentation: string;
   signal: string;
 } {
   const range = parseSamplePositions(record.positions);
-  const channels = resolveSampleChannels(analysis, record.slideChannel);
+  const channels = resolveSampleChannels(analysis, record.name);
   return {
-    slideChannel: String(record.slideChannel),
     name: record.name,
-    mask: channels != null ? String(channels.mask) : "",
+    segmentation: channels != null ? String(channels.segmentation) : "",
     signal: channels != null ? formatSignalChannels(channels.signal) : "",
     positionStart: range.positionStart,
     positionFinish: range.positionFinish,

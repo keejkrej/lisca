@@ -227,7 +227,7 @@ fn decode_page_to_f64(
 pub fn roi_frame_2d(
     stack: &RoiStack,
     axis_order: &str,
-    timepoint: u32,
+    frame_index: u32,
     channel: u32,
     z_index: u32,
 ) -> Result<Frame2D, String> {
@@ -248,12 +248,12 @@ pub fn roi_frame_2d(
         let size = stack.shape[axis_index];
         match axis {
             'T' => {
-                if timepoint as usize >= size {
+                if frame_index as usize >= size {
                     return Err(format!(
-                        "Time index {timepoint} out of range for axis size {size}"
+                        "Frame {frame_index} out of range for axis size {size}"
                     ));
                 }
-                fixed_indices[axis_index] = timepoint as usize;
+                fixed_indices[axis_index] = frame_index as usize;
             }
             'C' => {
                 if channel as usize >= size {

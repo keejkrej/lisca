@@ -1,8 +1,9 @@
-import { ASSAY_TYPE } from "@lisca/contracts/assay";
+import { ASSAY_TYPE, type StudioAssaySampleRow } from "@lisca/contracts/assay";
 import { describe, expect, it } from "vite-plus/test";
 
 import { createInitialStudioWizardState } from "../src/atoms/studio-ui";
 import {
+  duplicateSampleNames,
   validateAssayForAnalysis,
   validAssayIdentity,
   validAssaySamples,
@@ -34,7 +35,7 @@ describe("assay validation", () => {
         name: row.name || `sample-${index}`,
         positionStart: "1",
         positionFinish: "4",
-        mask: row.mask || "0",
+        segmentation: row.segmentation || "0",
         signal: row.signal || "1",
       }),
     );
@@ -66,7 +67,7 @@ describe("assay validation", () => {
         name: row.name || `sample-${index}`,
         positionStart: "1",
         positionFinish: "4",
-        mask: row.mask || "0",
+        segmentation: row.segmentation || "0",
         signal: row.signal || "1",
       }),
     );
@@ -81,4 +82,48 @@ describe("assay validation", () => {
     });
     expect(result.ok).toBe(true);
   });
+
+  it("reports blank sample names", () => {
+    const result = validateAssayForAnalysis({
+      assayId: ASSAY_TYPE.TRANSFECTION,
+      name: "Run A",
+      dataPath: "/data",
+      workspacePath: "/save",
+      intervalValue: 5,
+      intervalUnit: "minute",
+      samples: [sampleRow("sample:0", "Control"), sampleRow("sample:1", "   ")],
+    });
+    expect(result).toEqual({
+      ok: false,
+      errors: ["Sample row 2: sample name must be non-empty."],
+    });
+    expect(validAssaySamples([sampleRow("sample:0", "   ")])).toBe(false);
+  });
+
+  it("reports duplicate sample names compared after trimming", () => {
+    const samples = [
+      sampleRow("sample:0", "Control"),
+      sampleRow("sample:1", " Control "),
+      sampleRow("sample:2", "Treated"),
+    ];
+    expect(duplicateSampleNames(samples)).toEqual(["Control"]);
+    expect(validAssaySamples(samples)).toBe(false);
+    const result = validateAssayForAnalysis({
+      assayId: ASSAY_TYPE.TRANSFECTION,
+      name: "Run A",
+      dataPath: "/data",
+      workspacePath: "/save",
+      intervalValue: 5,
+      intervalUnit: "minute",
+      samples,
+    });
+    expect(result).toEqual({
+      ok: false,
+      errors: ['Sample name "Control" is used by more than one sample; names must be unique.'],
+    });
+  });
 });
+
+function sampleRow(id: string, name: string): StudioAssaySampleRow {
+  return { id, name, positionStart: "0", positionFinish: "1", segmentation: "0", signal: "1" };
+}

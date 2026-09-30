@@ -12,7 +12,7 @@ export type AlignEditToggleProps = {
 export function AlignEditToggle(props: AlignEditToggleProps) {
   return (
     <Toggle
-      aria-label="Edit site exclusions"
+      aria-label="Edit pattern exclusions"
       aria-pressed={props.enabled}
       class={cn("w-full justify-center text-xs", props.class)}
       data-instrument-state-toggle=""

@@ -1,8 +1,8 @@
 import type {
-  AlignGridCellCoord,
+  AlignGridPatternCoord,
   AlignGridState,
   AlignerSource,
-  AutoExcludePreviewResponse,
+  VariationExcludePreviewResponse,
   ContrastWindow,
   CropRoiProgress,
   FrameRequest,
@@ -46,10 +46,10 @@ export type AlignState = {
   setPatternZoomLocked: (locked: boolean) => void;
   manualExclusionEnabled: boolean;
   setManualExclusionEnabled: (enabled: boolean) => void;
-  excludedCellsByPosition: ExcludedByPosition;
-  setExcludedCellsForCurrentPosition: (cells: Iterable<AlignGridCellCoord>) => void;
-  currentExcludedCells: AlignGridCellCoord[];
-  displayedExcludedCells: AlignGridCellCoord[];
+  excludedPatternsByPosition: ExcludedByPosition;
+  setExcludedPatternsForCurrentPosition: (patterns: Iterable<AlignGridPatternCoord>) => void;
+  currentExcludedPatterns: AlignGridPatternCoord[];
+  displayedExcludedPatterns: AlignGridPatternCoord[];
   visibleCounts: {
     included: number;
     excluded: number;
@@ -69,12 +69,12 @@ export type AlignState = {
   variationExcludePreview: VariationExcludePreview | null;
   variationExcludeLoading: boolean;
   variationExclude: () => Promise<void>;
-  showVariationExcludePreview: (preview: AutoExcludePreviewResponse) => void;
+  showVariationExcludePreview: (preview: VariationExcludePreviewResponse) => void;
   setVariationExcludeThreshold: (threshold: number) => void;
   cancelVariationExclude: () => void;
   applyVariationExclude: () => void;
-  autoExclude: () => Promise<void>;
-  applySmartExclusion: (modelCells: AlignGridCellCoord[]) => void;
+  excludeEdgeAndVariation: () => Promise<void>;
+  applySmartExclusion: (modelPatterns: AlignGridPatternCoord[]) => void;
   reportError: (message: string | null) => void;
 };
 
@@ -91,7 +91,7 @@ export type UseAlignStateCoreDeps = {
     };
     useCanvasTransaction: () => <T>(options: CanvasResourceTransactionOptions<T>) => () => void;
   };
-  /** Default true. Standalone Aligner sets false (light shell — no crop jobs). */
+  /** Default true. Standalone Aligner sets false (light shell — no crop tasks). */
   enableCrop?: boolean;
 };
 
@@ -126,7 +126,7 @@ export function useAlignStateCore(deps: UseAlignStateCoreDeps): Accessor<AlignSt
     setSpacingZoomLocked,
     setPatternZoomLocked,
     setManualExclusionEnabled,
-    setExcludedCellsForCurrentPosition,
+    setExcludedPatternsForCurrentPosition,
   } = session.actions;
 
   return createMemo<AlignState>(() => {
@@ -156,10 +156,10 @@ export function useAlignStateCore(deps: UseAlignStateCoreDeps): Accessor<AlignSt
       setToolMode,
       manualExclusionEnabled: currentUi.manualExclusionEnabled,
       setManualExclusionEnabled,
-      excludedCellsByPosition: currentUi.excludedCellsByPosition,
-      setExcludedCellsForCurrentPosition,
-      currentExcludedCells: derived.currentExcludedCells,
-      displayedExcludedCells: derived.displayedExcludedCells,
+      excludedPatternsByPosition: currentUi.excludedPatternsByPosition,
+      setExcludedPatternsForCurrentPosition,
+      currentExcludedPatterns: derived.currentExcludedPatterns,
+      displayedExcludedPatterns: derived.displayedExcludedPatterns,
       visibleCounts: derived.visibleCounts,
       saving: currentUi.saving,
       cropping: meta.cropping,
@@ -180,7 +180,7 @@ export function useAlignStateCore(deps: UseAlignStateCoreDeps): Accessor<AlignSt
       setVariationExcludeThreshold: variation.setThreshold,
       cancelVariationExclude: variation.cancel,
       applyVariationExclude: variation.apply,
-      autoExclude: variation.autoExclude,
+      excludeEdgeAndVariation: variation.excludeEdgeAndVariation,
       applySmartExclusion: session.applySmartExclusion,
       reportError: session.actions.reportError,
     };

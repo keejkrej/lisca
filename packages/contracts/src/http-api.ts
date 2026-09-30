@@ -31,10 +31,10 @@ import {
   NullableCropRoiProgressSchema,
   NullableSavedAlignStateSchema,
   OutputPathsQuerySchema,
-  OperationDetailQuerySchema,
-  OperationDetailSchema,
-  OperationCancelRequestSchema,
-  OperationListSchema,
+  TaskDetailQuerySchema,
+  TaskDetailSchema,
+  TaskCancelRequestSchema,
+  TaskListSchema,
   ReadTextFileQuerySchema,
   ReadTextFileResponseSchema,
   RoiFrameAnnotationSchema,
@@ -54,10 +54,10 @@ import {
   SmartExcludeResponseSchema,
   SmartSegmentRequestSchema,
   SmartSegmentResponseSchema,
-  TaskDetailQuerySchema,
-  TaskDetailSchema,
-  TaskCancelRequestSchema,
-  TaskRetryRequestSchema,
+  StepDetailQuerySchema,
+  StepDetailSchema,
+  StepCancelRequestSchema,
+  StepRetryRequestSchema,
   MemoryRecentResponseSchema,
   MemoryTouchRequestSchema,
   MemoryTouchResponseSchema,
@@ -91,7 +91,7 @@ export class TaskCommandError extends Schema.TaggedError<TaskCommandError>()(
   "TaskCommandError",
   {
     code: Schema.Literals(["not-found", "invalid-transition"]),
-    entity: Schema.Literals(["operation", "task"]),
+    entity: Schema.Literals(["task", "step"]),
     id: Schema.String,
     currentStatus: Schema.NullOr(Schema.String),
     message: Schema.String,
@@ -318,15 +318,8 @@ const memoryGroup = HttpApiGroup.make("memory")
 // --- tasks group (shared by every product backend) --------------------------
 const tasksGroup = HttpApiGroup.make("tasks")
   .add(
-    HttpApiEndpoint.get("listOperations", "/tasks/operations", {
-      success: OperationListSchema,
-      error: [RequestError, Unauthorized],
-    }),
-  )
-  .add(
-    HttpApiEndpoint.get("getOperation", "/tasks/operation", {
-      query: OperationDetailQuerySchema,
-      success: OperationDetailSchema,
+    HttpApiEndpoint.get("listTasks", "/tasks", {
+      success: TaskListSchema,
       error: [RequestError, Unauthorized],
     }),
   )
@@ -338,23 +331,30 @@ const tasksGroup = HttpApiGroup.make("tasks")
     }),
   )
   .add(
-    HttpApiEndpoint.post("cancelOperation", "/tasks/operation/cancel", {
-      payload: OperationCancelRequestSchema,
-      success: OperationDetailSchema,
-      error: [TaskCommandError, RequestError, Unauthorized],
+    HttpApiEndpoint.get("getStep", "/tasks/step", {
+      query: StepDetailQuerySchema,
+      success: StepDetailSchema,
+      error: [RequestError, Unauthorized],
     }),
   )
   .add(
     HttpApiEndpoint.post("cancelTask", "/tasks/task/cancel", {
       payload: TaskCancelRequestSchema,
-      success: OperationDetailSchema,
+      success: TaskDetailSchema,
       error: [TaskCommandError, RequestError, Unauthorized],
     }),
   )
   .add(
-    HttpApiEndpoint.post("retryTask", "/tasks/task/retry", {
-      payload: TaskRetryRequestSchema,
-      success: OperationDetailSchema,
+    HttpApiEndpoint.post("cancelStep", "/tasks/step/cancel", {
+      payload: StepCancelRequestSchema,
+      success: TaskDetailSchema,
+      error: [TaskCommandError, RequestError, Unauthorized],
+    }),
+  )
+  .add(
+    HttpApiEndpoint.post("retryStep", "/tasks/step/retry", {
+      payload: StepRetryRequestSchema,
+      success: TaskDetailSchema,
       error: [TaskCommandError, RequestError, Unauthorized],
     }),
   );

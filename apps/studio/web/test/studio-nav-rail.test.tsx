@@ -17,13 +17,13 @@ import { createSignal, onMount } from "solid-js";
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
 const mocks = vi.hoisted(() => {
-  const operation = (
+  const task = (
     status: "running" | "cancelled",
     updatedAtMs: number,
     kind = "crop-roi",
-    operationId = "crop-operation",
+    taskId = "crop-task",
   ) => ({
-    operationId,
+    taskId,
     kind,
     workspaceId: "workspace-1",
     workspacePath: "/experiments/studio-demo",
@@ -43,10 +43,10 @@ const mocks = vi.hoisted(() => {
     createdAtMs: 1,
     updatedAtMs,
   });
-  const task = (status: "running" | "cancelled") => ({
-    taskId: "crop-position-7",
-    operationId: "crop-operation",
-    taskKind: "crop-position-7",
+  const step = (status: "running" | "cancelled") => ({
+    stepId: "crop-position-7",
+    taskId: "crop-task",
+    stepKind: "crop-position-7",
     workspaceId: "workspace-1",
     status,
     weight: 1,
@@ -56,8 +56,8 @@ const mocks = vi.hoisted(() => {
     attempts: [
       {
         attemptId: "attempt-1",
-        operationId: "crop-operation",
-        taskId: "crop-position-7",
+        taskId: "crop-task",
+        stepId: "crop-position-7",
         status,
         startedAtMs: 10,
         finishedAtMs: status === "running" ? null : 20,
@@ -66,33 +66,33 @@ const mocks = vi.hoisted(() => {
     ],
   });
   const detail = (status: "running" | "cancelled", updatedAtMs: number) => ({
-    operation: operation(status, updatedAtMs),
-    tasks: [task(status)],
+    task: task(status, updatedAtMs),
+    steps: [step(status)],
   });
-  const getOperation = vi.fn(async () => detail("running", 1));
-  const cancelTask = vi.fn(async () => detail("cancelled", 2));
-  const retryTask = vi.fn(async () => detail("running", 3));
+  const getTask = vi.fn(async () => detail("running", 1));
+  const cancelStep = vi.fn(async () => detail("cancelled", 2));
+  const retryStep = vi.fn(async () => detail("running", 3));
 
   return {
-    operation,
-    getOperation,
-    cancelTask,
-    retryTask,
+    task,
+    getTask,
+    cancelStep,
+    retryStep,
     gateway: {
-      listOperations: async () => [
-        operation("running", 1),
-        operation("running", 1, "analysis/transfection", "analysis-operation"),
+      listTasks: async () => [
+        task("running", 1),
+        task("running", 1, "analysis/transfection", "analysis-task"),
       ],
-      getOperation,
-      getTask: vi.fn(async () => task("running")),
-      cancelOperation: vi.fn(async () => detail("cancelled", 2)),
-      cancelTask,
-      retryTask,
+      getTask,
+      getStep: vi.fn(async () => step("running")),
+      cancelTask: vi.fn(async () => detail("cancelled", 2)),
+      cancelStep,
+      retryStep,
     },
     subscribe: vi.fn(({ onSnapshot }: { onSnapshot: (snapshot: readonly unknown[]) => void }) => {
       onSnapshot([
-        operation("running", 1),
-        operation("running", 1, "analysis/transfection", "analysis-operation"),
+        task("running", 1),
+        task("running", 1, "analysis/transfection", "analysis-task"),
       ]);
       return () => undefined;
     }),
@@ -101,7 +101,7 @@ const mocks = vi.hoisted(() => {
 
 vi.mock("@lisca/client/session/task-center", () => ({
   createTaskCenterGateway: () => mocks.gateway,
-  subscribeTaskCenterOperations: mocks.subscribe,
+  subscribeTaskCenterTasks: mocks.subscribe,
 }));
 
 import { StudioNavRail } from "../src/components/studio-nav-rail";
@@ -176,7 +176,7 @@ describe("StudioNavRail Task Center", () => {
     expect(screen.queryByRole("button", { name: /^Tasks/ })).toBeNull();
   });
 
-  it("lists analysis operations on the Analysis page", async () => {
+  it("lists analysis tasks on the Analysis page", async () => {
     renderStudioShell("/analysis");
     fireEvent.click(await screen.findByRole("button", { name: "Tasks, 1 active" }));
     expect(await screen.findByRole("dialog", { name: "Tasks" })).toBeTruthy();
@@ -219,23 +219,20 @@ describe("StudioNavRail Task Center", () => {
     expect(dialog.textContent).toContain("Background crop computations");
 
     fireEvent.click(screen.getByRole("button", { name: /Expand Crop ROI/ }));
-    await screen.findByText("Current task");
-    expect(mocks.getOperation).toHaveBeenCalledWith("crop-operation", expect.any(AbortSignal));
+    await screen.findByText("Current step");
+    expect(mocks.getTask).toHaveBeenCalledWith("crop-task", expect.any(AbortSignal));
     expectStudioState(router.state.location.href, edit, routeState, workspaceState);
 
     fireEvent.click(screen.getByRole("button", { name: "Stop" }));
     await waitFor(() =>
-      expect(mocks.gateway.cancelOperation).toHaveBeenCalledWith(
-        "crop-operation",
-        expect.any(AbortSignal),
-      ),
+      expect(mocks.gateway.cancelTask).toHaveBeenCalledWith("crop-task", expect.any(AbortSignal)),
     );
     const retry = await screen.findByRole("button", { name: "Retry" });
     expectStudioState(router.state.location.href, edit, routeState, workspaceState);
 
     fireEvent.click(retry);
     await waitFor(() =>
-      expect(mocks.retryTask).toHaveBeenCalledWith("crop-position-7", expect.any(AbortSignal)),
+      expect(mocks.retryStep).toHaveBeenCalledWith("crop-position-7", expect.any(AbortSignal)),
     );
     await waitFor(() => expect(screen.queryByRole("button", { name: "Retry" })).toBeNull());
     expectStudioState(router.state.location.href, edit, routeState, workspaceState);

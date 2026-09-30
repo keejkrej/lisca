@@ -1,4 +1,4 @@
-import type { AlignGridCellCoord, AlignGridState, ContrastWindow } from "@lisca/contracts";
+import type { AlignGridPatternCoord, AlignGridState, ContrastWindow } from "@lisca/contracts";
 import type { VariationExcludePreviewState } from "@lisca/ui/features";
 import type { FrameResult } from "@lisca/utils";
 import { Atom } from "effect/unstable/reactivity";
@@ -26,7 +26,7 @@ export type DemoAlignUiState = {
   spacingZoomLocked: boolean;
   patternZoomLocked: boolean;
   manualExclusionEnabled: boolean;
-  excludedCells: AlignGridCellCoord[];
+  excludedPatterns: AlignGridPatternCoord[];
   variationExcludePreview: VariationExcludePreviewState;
   variationExcludeLoading: boolean;
 };
@@ -41,7 +41,7 @@ export type DemoAlignSession = Pick<
   | "toolMode"
   | "spacingZoomLocked"
   | "patternZoomLocked"
-  | "excludedCells"
+  | "excludedPatterns"
 >;
 
 export function createInitialDemoAlignUiState(): DemoAlignUiState {
@@ -62,7 +62,7 @@ export function createInitialDemoAlignUiState(): DemoAlignUiState {
     spacingZoomLocked: true,
     patternZoomLocked: false,
     manualExclusionEnabled: false,
-    excludedCells: [],
+    excludedPatterns: [],
     variationExcludePreview: null,
     variationExcludeLoading: false,
   };
@@ -78,7 +78,7 @@ export function selectDemoAlignSession(state: DemoAlignUiState): DemoAlignSessio
     toolMode: state.toolMode,
     spacingZoomLocked: state.spacingZoomLocked,
     patternZoomLocked: state.patternZoomLocked,
-    excludedCells: state.excludedCells,
+    excludedPatterns: state.excludedPatterns,
   };
 }
 
@@ -163,11 +163,11 @@ export const demoAlignUiActions = {
   ) {
     patchDemoAlignUi(set, { manualExclusionEnabled });
   },
-  setExcludedCells(
+  setExcludedPatterns(
     set: (update: StateUpdater<DemoAlignUiState>) => void,
-    cells: AlignGridCellCoord[],
+    patterns: AlignGridPatternCoord[],
   ) {
-    patchDemoAlignUi(set, { excludedCells: cells });
+    patchDemoAlignUi(set, { excludedPatterns: patterns });
   },
   setVariationExcludePreview(
     set: (update: StateUpdater<DemoAlignUiState>) => void,
@@ -204,7 +204,7 @@ export const demoAlignUiActions = {
       sourceFormat,
       frame,
       contrast: null,
-      excludedCells: [],
+      excludedPatterns: [],
       variationExcludePreview: null,
       grid: {
         ...createDefaultAlignGrid(),
@@ -220,7 +220,7 @@ export const demoAlignUiActions = {
       fileName: string;
       frame: FrameResult;
       grid: AlignGridState;
-      excludedCells?: AlignGridCellCoord[];
+      excludedPatterns?: AlignGridPatternCoord[];
     },
   ) {
     patchDemoAlignUi(set, {
@@ -228,7 +228,7 @@ export const demoAlignUiActions = {
       sourceFormat: { kind: "png" },
       frame: input.frame,
       contrast: null,
-      excludedCells: input.excludedCells ?? [],
+      excludedPatterns: input.excludedPatterns ?? [],
       variationExcludePreview: null,
       grid: input.grid,
       error: null,

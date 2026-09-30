@@ -9,7 +9,7 @@ describe("runClientEffect", () => {
   it("rejects with the original tagged failure and preserves its nested TypeError", async () => {
     const networkFailure = new TypeError("fetch failed");
     const failure = new ClientError({
-      message: "Transport error (GET http://127.0.0.1:8765/tasks/operations)",
+      message: "Transport error (GET http://127.0.0.1:8765/tasks)",
       cause: networkFailure,
     });
 

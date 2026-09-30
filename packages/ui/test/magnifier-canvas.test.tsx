@@ -103,8 +103,8 @@ describe("Magnifier canvas integration", () => {
       rotation: 0,
       spacingA: 20,
       spacingB: 20,
-      cellWidth: 16,
-      cellHeight: 16,
+      patternWidth: 16,
+      patternHeight: 16,
       opacity: 0.35,
     };
     const result = render(() => (

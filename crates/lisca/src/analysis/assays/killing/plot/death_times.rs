@@ -6,16 +6,15 @@ use mplot::Color;
 
 use crate::analysis::csv_io::{column_index, parse_f64, read_csv};
 use crate::analysis::plot::{
-    figure_builder_for_grid, grid_dimensions, save_figure, slide_channel_labels,
-    SAVE_PAD_GRID_INCHES,
+    figure_builder_for_grid, grid_dimensions, sample_labels, save_figure, SAVE_PAD_GRID_INCHES,
 };
-use crate::analysis::slide::SlideMapping;
+use crate::analysis::sample::SampleMapping;
 
 const HISTOGRAM_BINS: usize = 20;
 
 pub fn run_plot_death_times(
     workspace: &Path,
-    mapping: &SlideMapping,
+    mapping: &SampleMapping,
     interval: f64,
 ) -> Result<(), String> {
     if interval <= 0.0 {
@@ -26,11 +25,12 @@ pub fn run_plot_death_times(
     let (headers, rows) = read_csv(&death_csv)?;
     let death_time_index =
         column_index(&headers, "death_time").ok_or("missing death_time in death_times.csv")?;
-    let slide_channel_index =
-        column_index(&headers, "slide").ok_or("missing slide in death_times.csv")?;
+    let sample_index =
+        column_index(&headers, "sample").ok_or("missing sample in death_times.csv")?;
 
-    let labels = slide_channel_labels(mapping);
-    let mut grouped: BTreeMap<u32, Vec<f64>> = BTreeMap::new();
+    let labels = sample_labels(mapping);
+    // Keyed by Sample index so panels follow assay order.
+    let mut grouped: BTreeMap<usize, Vec<f64>> = BTreeMap::new();
     for row in rows {
         let Some(death_time) = parse_f64(&row[death_time_index]) else {
             continue;
@@ -38,12 +38,14 @@ pub fn run_plot_death_times(
         if death_time <= 0.0 {
             continue;
         }
-        let Some(slide_channel) = parse_f64(&row[slide_channel_index]).map(|value| value as u32)
+        let Some(sample) = mapping
+            .iter()
+            .position(|entry| entry.name == row[sample_index])
         else {
             continue;
         };
         grouped
-            .entry(slide_channel)
+            .entry(sample)
             .or_default()
             .push(death_time * interval);
     }
@@ -52,16 +54,13 @@ pub fn run_plot_death_times(
         return Err("no death times to plot".to_string());
     }
 
-    let channels: Vec<u32> = grouped.keys().copied().collect();
-    let (rows, cols) = grid_dimensions(channels.len(), 2);
+    let samples: Vec<usize> = grouped.keys().copied().collect();
+    let (rows, cols) = grid_dimensions(samples.len(), 2);
     let mut builder = figure_builder_for_grid(rows, cols);
 
-    for (index, slide_channel) in channels.iter().enumerate() {
-        let values = grouped.get(slide_channel).cloned().unwrap_or_default();
-        let label = labels
-            .get(slide_channel)
-            .cloned()
-            .unwrap_or_else(|| slide_channel.to_string());
+    for (index, sample) in samples.iter().enumerate() {
+        let values = grouped.get(sample).cloned().unwrap_or_default();
+        let label = labels.get(sample).cloned().unwrap_or_default();
         let max_count = values.len() as f64;
 
         builder = builder.panel(GridPos::new(rows, cols, index + 1), move |panel| {
@@ -82,7 +81,7 @@ pub fn run_plot_death_times(
         });
     }
 
-    for index in channels.len()..(rows * cols) {
+    for index in samples.len()..(rows * cols) {
         builder = builder.panel(GridPos::new(rows, cols, index + 1), |panel| {
             panel.axes(AxesStyle::new().hide(true));
         });

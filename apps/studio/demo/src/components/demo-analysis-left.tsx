@@ -3,12 +3,6 @@ import { PanelSection } from "@lisca/ui/shell";
 import { For } from "solid-js";
 
 export function DemoAnalysisLeft(props: { fixture: AnalysisFixture }) {
-  const samples = () =>
-    Object.entries(props.fixture.slideChannelLabels).map(([slide, name]) => ({
-      slide,
-      name,
-    }));
-
   return (
     <>
       <PanelSection title="Fixture">
@@ -19,13 +13,8 @@ export function DemoAnalysisLeft(props: { fixture: AnalysisFixture }) {
       </PanelSection>
       <PanelSection title="Samples">
         <div class="flex flex-col gap-1 text-sm">
-          <For each={samples()}>
-            {(sample) => (
-              <div class="flex items-center justify-between gap-2">
-                <span class="text-muted-foreground">slide {sample.slide}</span>
-                <span class="truncate font-medium">{sample.name}</span>
-              </div>
-            )}
+          <For each={props.fixture.sampleNames}>
+            {(name) => <span class="truncate font-medium">{name}</span>}
           </For>
           <div class="mt-2 flex items-center justify-between">
             <span class="text-muted-foreground">Interval</span>

@@ -1,15 +1,15 @@
-import type { AlignGridCellCoord, AlignGridState } from "@lisca/contracts";
-import type { AutoExcludePreviewCell } from "@lisca/contracts";
+import type { AlignGridPatternCoord, AlignGridState } from "@lisca/contracts";
+import type { AlignGridPatternBox } from "@lisca/contracts";
 import type { FrameResult } from "@lisca/utils";
-import { alignGridCellCoordKey, enumerateVisibleAlignGridCells } from "@lisca/utils";
+import { alignGridPatternCoordKey, enumerateVisibleAlignGridPatterns } from "@lisca/utils";
 
-export function getSmartExcludeCandidateCells(
+export function getSmartExcludeCandidatePatterns(
   frame: FrameResult,
   grid: AlignGridState,
-  currentExcludedCells: readonly AlignGridCellCoord[],
-): AutoExcludePreviewCell[] {
-  const excludedKeys = new Set(currentExcludedCells.map(alignGridCellCoordKey));
-  return enumerateVisibleAlignGridCells(frame, grid).filter(
-    (cell) => !excludedKeys.has(alignGridCellCoordKey(cell)),
+  currentExcludedPatterns: readonly AlignGridPatternCoord[],
+): AlignGridPatternBox[] {
+  const excludedKeys = new Set(currentExcludedPatterns.map(alignGridPatternCoordKey));
+  return enumerateVisibleAlignGridPatterns(frame, grid).filter(
+    (pattern) => !excludedKeys.has(alignGridPatternCoordKey(pattern)),
   );
 }

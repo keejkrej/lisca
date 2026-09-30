@@ -7,14 +7,14 @@ is owned by [`lisca-transfection-assay`](https://github.com/keejkrej/lisca-trans
 
 ## Transfection (imported crate)
 
-| Stage      | Python                                      | Rust (`lisca-analyze` → git crate)                                     |
-| ---------- | ------------------------------------------- | ---------------------------------------------------------------------- |
-| segment    | `transfection segment WS`                   | `lisca-analyze segment WS` (Otsu via crate; `--backend onnx` is local) |
-| timeseries | `transfection timeseries WS`                | `lisca-analyze timeseries WS`                                          |
-| auc        | `transfection auc WS --interval N`          | `lisca-analyze auc WS --interval N`                                    |
-| fit        | `transfection fit WS --interval N`          | `lisca-analyze fit WS --interval N`                                    |
-| plots      | `plot-timeseries` / `plot-auc` / `plot-fit` | same names on `lisca-analyze`                                          |
-| full       | `transfection pipeline WS`                  | `lisca-analyze pipeline WS`                                            |
+| Stage   | Python                                  | Rust (`lisca-analyze` → git crate)                                     |
+| ------- | --------------------------------------- | ---------------------------------------------------------------------- |
+| segment | `transfection segment WS`               | `lisca-analyze segment WS` (Otsu via crate; `--backend onnx` is local) |
+| traces  | `transfection traces WS`                | `lisca-analyze traces WS`                                              |
+| auc     | `transfection auc WS --interval N`      | `lisca-analyze auc WS --interval N`                                    |
+| fit     | `transfection fit WS --interval N`      | `lisca-analyze fit WS --interval N`                                    |
+| plots   | `plot-traces` / `plot-auc` / `plot-fit` | same names on `lisca-analyze`                                          |
+| full    | `transfection pipeline WS`              | `lisca-analyze pipeline WS`                                            |
 
 Build:
 

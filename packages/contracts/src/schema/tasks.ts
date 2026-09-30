@@ -2,7 +2,7 @@ import * as Schema from "effect/Schema";
 
 import { U32, U64 } from "./primitives";
 
-export const OperationStatusSchema = Schema.Literals([
+export const TaskStatusSchema = Schema.Literals([
   "queued",
   "running",
   "partially-complete",
@@ -10,9 +10,9 @@ export const OperationStatusSchema = Schema.Literals([
   "failed",
   "cancelled",
   "cancellation-requested",
-]).annotate({ identifier: "OperationStatus" });
+]).annotate({ identifier: "TaskStatus" });
 
-export const TaskStatusSchema = Schema.Literals([
+export const StepStatusSchema = Schema.Literals([
   "queued",
   "blocked",
   "running",
@@ -20,27 +20,27 @@ export const TaskStatusSchema = Schema.Literals([
   "failed",
   "cancelled",
   "cancellation-requested",
-]).annotate({ identifier: "TaskStatus" });
+]).annotate({ identifier: "StepStatus" });
 
-export const OperationAttentionSchema = Schema.Literals(["none", "error"]).annotate({
-  identifier: "OperationAttention",
+export const TaskAttentionSchema = Schema.Literals(["none", "error"]).annotate({
+  identifier: "TaskAttention",
 });
 
-export const TaskErrorSchema = Schema.Struct({
+export const StepErrorSchema = Schema.Struct({
   code: Schema.String,
   message: Schema.String,
-}).annotate({ identifier: "TaskError" });
+}).annotate({ identifier: "StepError" });
 
-export const TaskWorkProgressSchema = Schema.Struct({
+export const StepWorkProgressSchema = Schema.Struct({
   unit: Schema.String,
   completed: U32,
   total: U32,
   phase: Schema.NullOr(Schema.String),
   message: Schema.NullOr(Schema.String),
   updatedAtMs: U64,
-}).annotate({ identifier: "TaskWorkProgress" });
+}).annotate({ identifier: "StepWorkProgress" });
 
-export const OperationProgressSchema = Schema.Struct({
+export const TaskProgressSchema = Schema.Struct({
   total: U32,
   queued: U32,
   blocked: U32,
@@ -49,97 +49,97 @@ export const OperationProgressSchema = Schema.Struct({
   failed: U32,
   cancelled: U32,
   cancellationRequested: U32,
-}).annotate({ identifier: "OperationProgress" });
+}).annotate({ identifier: "TaskProgress" });
 
-export const OperationSummarySchema = Schema.Struct({
-  operationId: Schema.String,
+export const TaskSummarySchema = Schema.Struct({
+  taskId: Schema.String,
   kind: Schema.String,
   workspaceId: Schema.String,
   workspacePath: Schema.String,
   mutating: Schema.Boolean,
-  status: OperationStatusSchema,
-  attention: OperationAttentionSchema,
-  progress: OperationProgressSchema,
-  activeTaskKind: Schema.optional(Schema.NullOr(Schema.String)),
-  workProgress: Schema.optional(Schema.NullOr(TaskWorkProgressSchema)),
+  status: TaskStatusSchema,
+  attention: TaskAttentionSchema,
+  progress: TaskProgressSchema,
+  activeStepKind: Schema.optional(Schema.NullOr(Schema.String)),
+  workProgress: Schema.optional(Schema.NullOr(StepWorkProgressSchema)),
   createdAtMs: U64,
   updatedAtMs: U64,
-}).annotate({ identifier: "OperationSummary" });
+}).annotate({ identifier: "TaskSummary" });
 
-export const OperationListSchema = Schema.mutable(Schema.Array(OperationSummarySchema)).annotate({
-  identifier: "OperationList",
+export const TaskListSchema = Schema.mutable(Schema.Array(TaskSummarySchema)).annotate({
+  identifier: "TaskList",
 });
-
-export const OperationDetailQuerySchema = Schema.Struct({
-  operationId: Schema.String,
-}).annotate({ identifier: "OperationDetailQuery" });
 
 export const TaskDetailQuerySchema = Schema.Struct({
   taskId: Schema.String,
 }).annotate({ identifier: "TaskDetailQuery" });
 
-export const OperationCancelRequestSchema = Schema.Struct({
-  operationId: Schema.String,
-}).annotate({ identifier: "OperationCancelRequest" });
+export const StepDetailQuerySchema = Schema.Struct({
+  stepId: Schema.String,
+}).annotate({ identifier: "StepDetailQuery" });
 
 export const TaskCancelRequestSchema = Schema.Struct({
   taskId: Schema.String,
 }).annotate({ identifier: "TaskCancelRequest" });
 
-export const TaskRetryRequestSchema = Schema.Struct({
-  taskId: Schema.String,
-}).annotate({ identifier: "TaskRetryRequest" });
+export const StepCancelRequestSchema = Schema.Struct({
+  stepId: Schema.String,
+}).annotate({ identifier: "StepCancelRequest" });
 
-export const TaskAttemptSchema = Schema.Struct({
+export const StepRetryRequestSchema = Schema.Struct({
+  stepId: Schema.String,
+}).annotate({ identifier: "StepRetryRequest" });
+
+export const StepAttemptSchema = Schema.Struct({
   attemptId: Schema.String,
-  operationId: Schema.String,
   taskId: Schema.String,
-  status: TaskStatusSchema,
+  stepId: Schema.String,
+  status: StepStatusSchema,
   startedAtMs: Schema.NullOr(U64),
   finishedAtMs: Schema.NullOr(U64),
-  error: Schema.NullOr(TaskErrorSchema),
-}).annotate({ identifier: "TaskAttempt" });
+  error: Schema.NullOr(StepErrorSchema),
+}).annotate({ identifier: "StepAttempt" });
 
-export const TaskDependencyBlockSchema = Schema.Struct({
-  taskId: Schema.String,
-  taskKind: Schema.String,
-  status: TaskStatusSchema,
-  error: Schema.NullOr(TaskErrorSchema),
-}).annotate({ identifier: "TaskDependencyBlock" });
+export const StepDependencyBlockSchema = Schema.Struct({
+  stepId: Schema.String,
+  stepKind: Schema.String,
+  status: StepStatusSchema,
+  error: Schema.NullOr(StepErrorSchema),
+}).annotate({ identifier: "StepDependencyBlock" });
 
-export const TaskDetailSchema = Schema.Struct({
+export const StepDetailSchema = Schema.Struct({
+  stepId: Schema.String,
   taskId: Schema.String,
-  operationId: Schema.String,
-  taskKind: Schema.String,
+  stepKind: Schema.String,
   workspaceId: Schema.String,
-  status: TaskStatusSchema,
+  status: StepStatusSchema,
   weight: U32,
   enqueueOrder: U64,
   dependencies: Schema.mutable(Schema.Array(Schema.String)),
-  blockedBy: Schema.mutable(Schema.Array(TaskDependencyBlockSchema)),
-  attempts: Schema.mutable(Schema.Array(TaskAttemptSchema)),
-  workProgress: Schema.optional(Schema.NullOr(TaskWorkProgressSchema)),
+  blockedBy: Schema.mutable(Schema.Array(StepDependencyBlockSchema)),
+  attempts: Schema.mutable(Schema.Array(StepAttemptSchema)),
+  workProgress: Schema.optional(Schema.NullOr(StepWorkProgressSchema)),
+}).annotate({ identifier: "StepDetail" });
+
+export const TaskDetailSchema = Schema.Struct({
+  task: TaskSummarySchema,
+  steps: Schema.mutable(Schema.Array(StepDetailSchema)),
 }).annotate({ identifier: "TaskDetail" });
 
-export const OperationDetailSchema = Schema.Struct({
-  operation: OperationSummarySchema,
-  tasks: Schema.mutable(Schema.Array(TaskDetailSchema)),
-}).annotate({ identifier: "OperationDetail" });
-
-export type OperationStatus = typeof OperationStatusSchema.Type;
 export type TaskStatus = typeof TaskStatusSchema.Type;
-export type OperationAttention = typeof OperationAttentionSchema.Type;
-export type TaskError = typeof TaskErrorSchema.Type;
-export type TaskWorkProgress = typeof TaskWorkProgressSchema.Type;
-export type OperationProgress = typeof OperationProgressSchema.Type;
-export type OperationSummary = typeof OperationSummarySchema.Type;
-export type OperationList = typeof OperationListSchema.Type;
-export type OperationDetailQuery = typeof OperationDetailQuerySchema.Type;
+export type StepStatus = typeof StepStatusSchema.Type;
+export type TaskAttention = typeof TaskAttentionSchema.Type;
+export type StepError = typeof StepErrorSchema.Type;
+export type StepWorkProgress = typeof StepWorkProgressSchema.Type;
+export type TaskProgress = typeof TaskProgressSchema.Type;
+export type TaskSummary = typeof TaskSummarySchema.Type;
+export type TaskList = typeof TaskListSchema.Type;
 export type TaskDetailQuery = typeof TaskDetailQuerySchema.Type;
-export type OperationCancelRequest = typeof OperationCancelRequestSchema.Type;
+export type StepDetailQuery = typeof StepDetailQuerySchema.Type;
 export type TaskCancelRequest = typeof TaskCancelRequestSchema.Type;
-export type TaskRetryRequest = typeof TaskRetryRequestSchema.Type;
-export type TaskAttempt = typeof TaskAttemptSchema.Type;
-export type TaskDependencyBlock = typeof TaskDependencyBlockSchema.Type;
+export type StepCancelRequest = typeof StepCancelRequestSchema.Type;
+export type StepRetryRequest = typeof StepRetryRequestSchema.Type;
+export type StepAttempt = typeof StepAttemptSchema.Type;
+export type StepDependencyBlock = typeof StepDependencyBlockSchema.Type;
+export type StepDetail = typeof StepDetailSchema.Type;
 export type TaskDetail = typeof TaskDetailSchema.Type;
-export type OperationDetail = typeof OperationDetailSchema.Type;

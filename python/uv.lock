@@ -1182,7 +1182,7 @@ requires-dist = [
     { name = "pydantic", specifier = ">=2.10,<3" },
     { name = "pylibczirw", marker = "extra == 'crop'", specifier = ">=4.1" },
     { name = "tifffile", specifier = ">=2025.1.10,<2026" },
-    { name = "transfection", marker = "python_full_version >= '3.12' and extra == 'analysis'", git = "https://github.com/keejkrej/lisca-transfection-assay?rev=869a231e089cde21cf44af1d6ed155b2610ca383" },
+    { name = "transfection", marker = "python_full_version >= '3.12' and extra == 'analysis'", git = "https://github.com/keejkrej/lisca-transfection-assay?rev=d560156fe7520efe7c7796b792d21902cc6fed63" },
     { name = "typer", specifier = ">=0.15,<1" },
 ]
 provides-extras = ["analysis", "crop"]
@@ -3239,7 +3239,7 @@ wheels = [
 [[package]]
 name = "transfection"
 version = "0.1.3"
-source = { git = "https://github.com/keejkrej/lisca-transfection-assay?rev=869a231e089cde21cf44af1d6ed155b2610ca383#869a231e089cde21cf44af1d6ed155b2610ca383" }
+source = { git = "https://github.com/keejkrej/lisca-transfection-assay?rev=d560156fe7520efe7c7796b792d21902cc6fed63#d560156fe7520efe7c7796b792d21902cc6fed63" }
 dependencies = [
     { name = "imageio" },
     { name = "imageio-ffmpeg" },

@@ -2,17 +2,48 @@
 //!
 //! Ordered, idempotent rewrites of on-disk workspace files so live parsers can
 //! stay strict. Call [`migrate_workspace`] once when a tool opens a workspace,
-//! before any bbox read or write.
+//! before any bbox, align state, or `assay.json` read or write.
 
+mod align_excluded_patterns;
+mod assay_samples_by_name;
 mod bbox_crop_to_roi;
+mod killing_traces_dir;
+mod ordered_json;
 
-use std::path::Path;
+use std::{fs, path::Path};
+
+use uuid::Uuid;
 
 /// Run registered workspace migrations in order.
 ///
 /// Returns paths that were rewritten. A second call is a no-op.
 pub fn migrate_workspace(workspace: &Path) -> Result<Vec<String>, String> {
-    bbox_crop_to_roi::apply(workspace)
+    let mut rewritten = bbox_crop_to_roi::apply(workspace)?;
+    rewritten.extend(align_excluded_patterns::apply(workspace)?);
+    rewritten.extend(assay_samples_by_name::apply(workspace)?);
+    rewritten.extend(killing_traces_dir::apply(workspace)?);
+    Ok(rewritten)
+}
+
+/// Replace `path` with `contents` via a sibling temp file and rename.
+fn atomic_write(path: &Path, contents: &str) -> Result<(), String> {
+    let parent = path
+        .parent()
+        .ok_or_else(|| format!("{} has no parent directory", path.display()))?;
+    let file_name = path
+        .file_name()
+        .and_then(|name| name.to_str())
+        .ok_or_else(|| format!("{} has a non-utf8 name", path.display()))?;
+    let tmp = parent.join(format!(".{file_name}.{}.tmp", Uuid::new_v4().simple()));
+    if let Err(error) = fs::write(&tmp, contents) {
+        let _ = fs::remove_file(&tmp);
+        return Err(error.to_string());
+    }
+    if let Err(error) = fs::rename(&tmp, path) {
+        let _ = fs::remove_file(&tmp);
+        return Err(error.to_string());
+    }
+    Ok(())
 }
 
 #[cfg(test)]
@@ -82,9 +113,57 @@ mod tests {
     }
 
     #[test]
+    fn migrate_workspace_rewrites_align_excluded_cells_to_patterns() {
+        let root = tempfile::tempdir().expect("tempdir");
+        let workspace = root.path();
+        let align_dir = workspace.join(lisca_workspace::ALIGN_DIR);
+        fs::create_dir_all(&align_dir).expect("align dir");
+        fs::write(
+            align_dir.join("Pos0.json"),
+            r#"{"grid":{"cellWidth":4,"cellHeight":4},"excludedCells":[{"i":0,"j":1}]}"#,
+        )
+        .expect("write align");
+
+        let rewritten = migrate_workspace(workspace).expect("migrate");
+        assert_eq!(rewritten.len(), 1);
+        assert!(rewritten[0].ends_with("Pos0.json"));
+        let value: serde_json::Value = serde_json::from_str(
+            &fs::read_to_string(lisca_workspace::align_json_path(workspace, 0)).expect("read"),
+        )
+        .expect("json");
+        assert_eq!(
+            value["excludedPatterns"],
+            serde_json::json!([{ "i": 0, "j": 1 }])
+        );
+        assert_eq!(value["grid"]["patternWidth"], serde_json::json!(4));
+        assert!(migrate_workspace(workspace).expect("second").is_empty());
+    }
+
+    #[test]
     fn migrate_workspace_is_noop_without_bbox_dir() {
         let root = tempfile::tempdir().expect("tempdir");
         let rewritten = migrate_workspace(root.path()).expect("migrate");
         assert!(rewritten.is_empty());
+    }
+
+    #[test]
+    fn migrate_workspace_runs_assay_and_traces_migrations() {
+        let root = tempfile::tempdir().expect("tempdir");
+        let workspace = root.path();
+        fs::write(
+            workspace.join("assay.json"),
+            r#"{"samples":[{"slideChannel":0,"name":"WT","positions":"1"}]}"#,
+        )
+        .expect("assay.json");
+        fs::create_dir_all(workspace.join("timeseries/Pos1")).expect("timeseries dir");
+        fs::write(workspace.join("timeseries/Pos1/ch0.csv"), "roi,t,p_dead\n").expect("csv");
+
+        let rewritten = migrate_workspace(workspace).expect("migrate");
+        assert_eq!(rewritten.len(), 2, "{rewritten:?}");
+        assert!(!fs::read_to_string(workspace.join("assay.json"))
+            .expect("read")
+            .contains("slideChannel"));
+        assert!(workspace.join("traces/Pos1/ch0.csv").is_file());
+        assert!(migrate_workspace(workspace).expect("second").is_empty());
     }
 }

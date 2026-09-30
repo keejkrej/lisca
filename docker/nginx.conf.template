@@ -33,6 +33,12 @@ server {
         proxy_set_header Host $host;
     }
 
+    # `GET /tasks` lists Tasks; `/tasks/...` covers Task and Step detail and commands.
+    location = /tasks {
+        proxy_pass http://127.0.0.1:${PORT};
+        proxy_set_header Host $host;
+    }
+
     location /tasks/ {
         proxy_pass http://127.0.0.1:${PORT};
         proxy_set_header Host $host;

@@ -8,9 +8,9 @@ use axum::{
 use lisca::{
     http::FsError,
     protocol::{
-        OperationCancelRequest, OperationDetail, OperationDetailQuery, OperationList,
-        TaskCancelRequest, TaskCommandError, TaskCommandErrorCode, TaskCommandErrorEntity,
-        TaskCommandErrorTag, TaskDetail, TaskDetailQuery, TaskRetryRequest,
+        StepCancelRequest, StepDetail, StepDetailQuery, StepRetryRequest, TaskCancelRequest,
+        TaskCommandError, TaskCommandErrorCode, TaskCommandErrorEntity, TaskCommandErrorTag,
+        TaskDetail, TaskDetailQuery, TaskList,
     },
 };
 
@@ -25,32 +25,21 @@ where
     S: HasTaskScheduler + Clone + Send + Sync + 'static,
 {
     Router::new()
-        .route("/tasks/operations", get(list_operations::<S>))
-        .route("/tasks/operation", get(get_operation::<S>))
+        .route("/tasks", get(list_tasks::<S>))
         .route("/tasks/task", get(get_task::<S>))
-        .route("/tasks/operation/cancel", post(cancel_operation::<S>))
+        .route("/tasks/step", get(get_step::<S>))
         .route("/tasks/task/cancel", post(cancel_task::<S>))
-        .route("/tasks/task/retry", post(retry_task::<S>))
+        .route("/tasks/step/cancel", post(cancel_step::<S>))
+        .route("/tasks/step/retry", post(retry_step::<S>))
 }
 
-async fn list_operations<S: HasTaskScheduler>(
+async fn list_tasks<S: HasTaskScheduler>(
     State(state): State<S>,
-) -> Result<Json<OperationList>, FsError> {
+) -> Result<Json<TaskList>, FsError> {
     state
         .task_scheduler()
-        .list_operations()
-        .map(OperationList::from)
-        .map(Json)
-        .map_err(|error| FsError::new(error.to_string()))
-}
-
-async fn get_operation<S: HasTaskScheduler>(
-    State(state): State<S>,
-    Query(query): Query<OperationDetailQuery>,
-) -> Result<Json<OperationDetail>, FsError> {
-    state
-        .task_scheduler()
-        .operation(&query.operation_id)
+        .list_tasks()
+        .map(TaskList::from)
         .map(Json)
         .map_err(|error| FsError::new(error.to_string()))
 }
@@ -66,21 +55,21 @@ async fn get_task<S: HasTaskScheduler>(
         .map_err(|error| FsError::new(error.to_string()))
 }
 
-async fn cancel_operation<S: HasTaskScheduler>(
+async fn get_step<S: HasTaskScheduler>(
     State(state): State<S>,
-    Json(request): Json<OperationCancelRequest>,
-) -> Result<Json<OperationDetail>, TaskCommandHttpError> {
+    Query(query): Query<StepDetailQuery>,
+) -> Result<Json<StepDetail>, FsError> {
     state
         .task_scheduler()
-        .cancel_operation(&request.operation_id)
+        .step(&query.step_id)
         .map(Json)
-        .map_err(TaskCommandHttpError::from)
+        .map_err(|error| FsError::new(error.to_string()))
 }
 
 async fn cancel_task<S: HasTaskScheduler>(
     State(state): State<S>,
     Json(request): Json<TaskCancelRequest>,
-) -> Result<Json<OperationDetail>, TaskCommandHttpError> {
+) -> Result<Json<TaskDetail>, TaskCommandHttpError> {
     state
         .task_scheduler()
         .cancel_task(&request.task_id)
@@ -88,13 +77,24 @@ async fn cancel_task<S: HasTaskScheduler>(
         .map_err(TaskCommandHttpError::from)
 }
 
-async fn retry_task<S: HasTaskScheduler>(
+async fn cancel_step<S: HasTaskScheduler>(
     State(state): State<S>,
-    Json(request): Json<TaskRetryRequest>,
-) -> Result<Json<OperationDetail>, TaskCommandHttpError> {
+    Json(request): Json<StepCancelRequest>,
+) -> Result<Json<TaskDetail>, TaskCommandHttpError> {
     state
         .task_scheduler()
-        .retry_task(&request.task_id)
+        .cancel_step(&request.step_id)
+        .map(Json)
+        .map_err(TaskCommandHttpError::from)
+}
+
+async fn retry_step<S: HasTaskScheduler>(
+    State(state): State<S>,
+    Json(request): Json<StepRetryRequest>,
+) -> Result<Json<TaskDetail>, TaskCommandHttpError> {
+    state
+        .task_scheduler()
+        .retry_step(&request.step_id)
         .map(Json)
         .map_err(TaskCommandHttpError::from)
 }
@@ -120,7 +120,7 @@ impl From<SchedulerError> for TaskCommandHttpError {
             ),
             _ => (
                 TaskCommandErrorCode::InvalidTransition,
-                TaskCommandErrorEntity::Task,
+                TaskCommandErrorEntity::Step,
                 String::new(),
                 None,
             ),
@@ -143,9 +143,9 @@ impl IntoResponse for TaskCommandHttpError {
 }
 
 fn command_entity(entity: &str) -> TaskCommandErrorEntity {
-    if entity == "operation" {
-        TaskCommandErrorEntity::Operation
-    } else {
+    if entity == "task" {
         TaskCommandErrorEntity::Task
+    } else {
+        TaskCommandErrorEntity::Step
     }
 }

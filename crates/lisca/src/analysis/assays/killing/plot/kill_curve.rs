@@ -5,14 +5,14 @@ use mplot::prelude::{AxesStyle, GridPos};
 
 use crate::analysis::csv_io::{column_index, parse_f64, read_csv};
 use crate::analysis::plot::{
-    figure_builder_for_grid, grid_dimensions, save_figure, slide_channel_labels, trace_line_style,
+    figure_builder_for_grid, grid_dimensions, sample_labels, save_figure, trace_line_style,
     SAVE_PAD_GRID_INCHES,
 };
-use crate::analysis::slide::SlideMapping;
+use crate::analysis::sample::SampleMapping;
 
 pub fn run_plot_kill(
     workspace: &Path,
-    mapping: &SlideMapping,
+    mapping: &SampleMapping,
     interval: f64,
 ) -> Result<(), String> {
     if interval <= 0.0 {
@@ -24,11 +24,12 @@ pub fn run_plot_kill(
     let t_index = column_index(&headers, "t").ok_or("missing t in kill_curve.csv")?;
     let alive_index =
         column_index(&headers, "n_alive").ok_or("missing n_alive in kill_curve.csv")?;
-    let slide_channel_index =
-        column_index(&headers, "slide").ok_or("missing slide in kill_curve.csv")?;
+    let sample_index =
+        column_index(&headers, "sample").ok_or("missing sample in kill_curve.csv")?;
 
-    let labels = slide_channel_labels(mapping);
-    let mut grouped: BTreeMap<u32, Vec<(f64, f64)>> = BTreeMap::new();
+    let labels = sample_labels(mapping);
+    // Keyed by Sample index so panels follow assay order.
+    let mut grouped: BTreeMap<usize, Vec<(f64, f64)>> = BTreeMap::new();
     for row in rows {
         let Some(t) = parse_f64(&row[t_index]) else {
             continue;
@@ -36,12 +37,14 @@ pub fn run_plot_kill(
         let Some(n_alive) = parse_f64(&row[alive_index]) else {
             continue;
         };
-        let Some(slide_channel) = parse_f64(&row[slide_channel_index]).map(|value| value as u32)
+        let Some(sample) = mapping
+            .iter()
+            .position(|entry| entry.name == row[sample_index])
         else {
             continue;
         };
         grouped
-            .entry(slide_channel)
+            .entry(sample)
             .or_default()
             .push((t * interval, n_alive));
     }
@@ -58,16 +61,13 @@ pub fn run_plot_kill(
         });
     }
 
-    let channels: Vec<u32> = grouped.keys().copied().collect();
-    let (rows, cols) = grid_dimensions(channels.len(), 2);
+    let samples: Vec<usize> = grouped.keys().copied().collect();
+    let (rows, cols) = grid_dimensions(samples.len(), 2);
     let mut builder = figure_builder_for_grid(rows, cols);
 
-    for (index, slide_channel) in channels.iter().enumerate() {
-        let points = grouped.get(slide_channel).cloned().unwrap_or_default();
-        let label = labels
-            .get(slide_channel)
-            .cloned()
-            .unwrap_or_else(|| slide_channel.to_string());
+    for (index, sample) in samples.iter().enumerate() {
+        let points = grouped.get(sample).cloned().unwrap_or_default();
+        let label = labels.get(sample).cloned().unwrap_or_default();
         let max_x = points.iter().map(|point| point.0).fold(0.0f64, f64::max);
         let max_y = points.iter().map(|point| point.1).fold(0.0f64, f64::max);
 
@@ -86,7 +86,7 @@ pub fn run_plot_kill(
         });
     }
 
-    for index in channels.len()..(rows * cols) {
+    for index in samples.len()..(rows * cols) {
         builder = builder.panel(GridPos::new(rows, cols, index + 1), |panel| {
             panel.axes(AxesStyle::new().hide(true));
         });

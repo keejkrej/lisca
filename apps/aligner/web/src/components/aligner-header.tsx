@@ -20,7 +20,7 @@ function filePickerTitle(mode: HostFilePickerMode): string {
   return "File";
 }
 
-/** Aligner shell header — no task center (crop jobs live in Studio / CLI). */
+/** Aligner shell header — no task center (crop tasks live in Studio / CLI). */
 export function AlignerHeader() {
   const alignSource = useAlignSource();
   const workspace = useShellWorkspace();

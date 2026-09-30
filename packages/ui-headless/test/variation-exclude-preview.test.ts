@@ -1,9 +1,9 @@
-import type { AutoExcludePreviewResponse } from "@lisca/contracts";
+import type { VariationExcludePreviewResponse } from "@lisca/contracts";
 import { describe, expect, it } from "vite-plus/test";
 
 import {
   clampVariationThreshold,
-  countVariationExcludedCells,
+  countVariationExcludedPatterns,
   deriveVariationExcludeMetrics,
   deriveVariationExcludePreview,
   formatVariationScore,
@@ -11,9 +11,9 @@ import {
   nextVariationExcludeThreshold,
 } from "../src/variation-exclude-preview";
 
-const preview: AutoExcludePreviewResponse = {
-  eligibleCellCount: 4,
-  cellScores: [
+const preview: VariationExcludePreviewResponse = {
+  eligiblePatternCount: 4,
+  patternScores: [
     { i: 0, j: 0, score: 0.1 },
     { i: 0, j: 1, score: 0.5 },
     { i: 1, j: 0, score: 0.9 },
@@ -47,9 +47,9 @@ describe("variation exclude preview", () => {
     expect(metrics.maxBinCount).toBe(2);
   });
 
-  it("counts selected cells at or below threshold", () => {
-    expect(countVariationExcludedCells(preview, 0.5)).toBe(2);
-    expect(countVariationExcludedCells(preview, 1.5)).toBe(4);
+  it("counts selected patterns at or below threshold", () => {
+    expect(countVariationExcludedPatterns(preview, 0.5)).toBe(2);
+    expect(countVariationExcludedPatterns(preview, 1.5)).toBe(4);
   });
 
   it("marks histogram bins active through threshold", () => {

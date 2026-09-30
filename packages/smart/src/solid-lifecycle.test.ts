@@ -1,4 +1,4 @@
-import type { AlignGridCellCoord, AlignGridState } from "@lisca/contracts";
+import type { AlignGridPatternCoord, AlignGridState } from "@lisca/contracts";
 import { createDefaultAlignGrid, type FrameResult } from "@lisca/utils";
 import { createRoot, createSignal } from "solid-js";
 import { describe, expect, it, vi } from "vite-plus/test";
@@ -30,16 +30,16 @@ const visibleGrid = (): AlignGridState => ({
   enabled: true,
   spacingA: 1,
   spacingB: 1,
-  cellWidth: 1,
-  cellHeight: 1,
+  patternWidth: 1,
+  patternHeight: 1,
 });
 
 describe("Solid smart-hook lifecycle", () => {
   it("keeps Smart Exclude inputs live after the owner is created", async () => {
     const [currentFrame, setCurrentFrame] = createSignal<FrameResult | null>(null);
-    const [excluded, setExcluded] = createSignal<AlignGridCellCoord[]>([]);
-    const classify = vi.fn<SmartExcludeProvider["classify"]>(async ({ cells }) =>
-      cells.slice(0, 1),
+    const [excluded, setExcluded] = createSignal<AlignGridPatternCoord[]>([]);
+    const classify = vi.fn<SmartExcludeProvider["classify"]>(async ({ patterns }) =>
+      patterns.slice(0, 1),
     );
     const onComplete = vi.fn();
 
@@ -49,7 +49,7 @@ describe("Solid smart-hook lifecycle", () => {
         provider: { classify },
         frame: currentFrame,
         grid: createSignal(visibleGrid())[0],
-        currentExcludedCells: excluded,
+        currentExcludedPatterns: excluded,
         enabled: () => currentFrame() !== null,
         onComplete,
       });
@@ -116,7 +116,7 @@ describe("Solid smart-hook lifecycle", () => {
     };
     const onComplete = vi.fn();
 
-    let ensureAndClassify!: () => Promise<AlignGridCellCoord[]>;
+    let ensureAndClassify!: () => Promise<AlignGridPatternCoord[]>;
     let downloadState!: ReturnType<typeof useSmartExclude>["downloadState"];
     const dispose = createRoot((ownerDispose) => {
       const smart = useSmartExclude({
@@ -124,7 +124,7 @@ describe("Solid smart-hook lifecycle", () => {
         model,
         frame: () => frame([1, 2, 3, 4]),
         grid: visibleGrid,
-        currentExcludedCells: () => [],
+        currentExcludedPatterns: () => [],
         enabled: () => true,
         onComplete,
       });

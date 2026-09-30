@@ -1,13 +1,13 @@
-import type { OperationSummary } from "@lisca/contracts";
+import type { TaskSummary } from "@lisca/contracts";
 import type { TaskCenterGateway } from "@lisca/utils";
 import { Effect } from "effect";
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
-import { createTaskCenterGateway, subscribeTaskCenterOperations } from "../src/session/task-center";
+import { createTaskCenterGateway, subscribeTaskCenterTasks } from "../src/session/task-center";
 import type { TaskDataPort } from "../src/ports/types";
 
-const operation: OperationSummary = {
-  operationId: "operation-1",
+const task: TaskSummary = {
+  taskId: "task-1",
   kind: "crop-roi",
   workspaceId: "workspace-1",
   workspacePath: "/workspace",
@@ -33,34 +33,34 @@ afterEach(() => {
 });
 
 describe("Task Center client IO", () => {
-  it("adapts the Effect task port without bypassing typed client IO", async () => {
-    const detail = { operation, tasks: [] };
+  it("adapts the Effect step port without bypassing typed client IO", async () => {
+    const detail = { task, steps: [] };
     const port: TaskDataPort = {
-      listOperations: () => Effect.succeed([operation]),
-      getOperation: () => Effect.succeed(detail),
-      getTask: () => Effect.die("not used"),
-      cancelOperation: () => Effect.succeed(detail),
+      listTasks: () => Effect.succeed([task]),
+      getTask: () => Effect.succeed(detail),
+      getStep: () => Effect.die("not used"),
       cancelTask: () => Effect.succeed(detail),
-      retryTask: () => Effect.succeed(detail),
+      cancelStep: () => Effect.succeed(detail),
+      retryStep: () => Effect.succeed(detail),
     };
 
     const gateway = createTaskCenterGateway(port);
-    await expect(gateway.listOperations()).resolves.toEqual([operation]);
-    await expect(gateway.cancelOperation("operation-1")).resolves.toEqual(detail);
+    await expect(gateway.listTasks()).resolves.toEqual([task]);
+    await expect(gateway.cancelTask("task-1")).resolves.toEqual(detail);
   });
 
   it("keeps the last good view through a poll error and recovers on the next snapshot", async () => {
     vi.useFakeTimers();
-    const listOperations = vi
-      .fn<TaskCenterGateway["listOperations"]>()
-      .mockResolvedValueOnce([operation])
+    const listTasks = vi
+      .fn<TaskCenterGateway["listTasks"]>()
+      .mockResolvedValueOnce([task])
       .mockRejectedValueOnce(new Error("server restarting"))
-      .mockResolvedValueOnce([{ ...operation, status: "completed" }]);
-    const snapshots: (readonly OperationSummary[])[] = [];
+      .mockResolvedValueOnce([{ ...task, status: "completed" }]);
+    const snapshots: (readonly TaskSummary[])[] = [];
     const errors: unknown[] = [];
 
-    const stop = subscribeTaskCenterOperations({
-      gateway: { listOperations },
+    const stop = subscribeTaskCenterTasks({
+      gateway: { listTasks },
       onSnapshot: (snapshot) => snapshots.push(snapshot),
       onError: (error) => errors.push(error),
       pollIntervalMs: 100,
@@ -70,10 +70,10 @@ describe("Task Center client IO", () => {
     await vi.advanceTimersByTimeAsync(100);
     await vi.advanceTimersByTimeAsync(100);
 
-    expect(snapshots).toEqual([[operation], [{ ...operation, status: "completed" }]]);
+    expect(snapshots).toEqual([[task], [{ ...task, status: "completed" }]]);
     expect(errors).toHaveLength(1);
     stop();
     await vi.advanceTimersByTimeAsync(500);
-    expect(listOperations).toHaveBeenCalledTimes(3);
+    expect(listTasks).toHaveBeenCalledTimes(3);
   });
 });

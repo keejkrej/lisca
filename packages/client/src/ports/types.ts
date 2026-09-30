@@ -11,8 +11,8 @@ import type {
   FrameRequest,
   HostListDirectoryResult,
   LoadedRoiFrameAnnotation,
-  OperationDetail,
-  OperationSummary,
+  TaskDetail,
+  TaskSummary,
   RoiFrameAnnotation,
   RoiFrameAnnotationPayload,
   RoiFrameRequest,
@@ -24,7 +24,7 @@ import type {
   SmartExcludeResponse,
   SmartSegmentRequest,
   SmartSegmentResponse,
-  TaskDetail,
+  StepDetail,
   WorkspaceScan,
 } from "@lisca/contracts";
 import type { TaskCommandError } from "@lisca/contracts/http-api";
@@ -39,12 +39,12 @@ export type HostPort = {
 };
 
 export type TaskDataPort = {
-  listOperations(): ClientEffect<OperationSummary[]>;
-  getOperation(operationId: string): ClientEffect<OperationDetail>;
+  listTasks(): ClientEffect<TaskSummary[]>;
   getTask(taskId: string): ClientEffect<TaskDetail>;
-  cancelOperation(operationId: string): ClientEffect<OperationDetail, TaskCommandError>;
-  cancelTask(taskId: string): ClientEffect<OperationDetail, TaskCommandError>;
-  retryTask(taskId: string): ClientEffect<OperationDetail, TaskCommandError>;
+  getStep(stepId: string): ClientEffect<StepDetail>;
+  cancelTask(taskId: string): ClientEffect<TaskDetail, TaskCommandError>;
+  cancelStep(stepId: string): ClientEffect<TaskDetail, TaskCommandError>;
+  retryStep(stepId: string): ClientEffect<TaskDetail, TaskCommandError>;
 };
 
 export type StudioHostPort = HostPort & {

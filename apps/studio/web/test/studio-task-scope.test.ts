@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vite-plus/test";
 
 import {
-  filterStudioTaskOperations,
-  operationMatchesStudioTaskScope,
+  filterStudioTasks,
+  taskMatchesStudioTaskScope,
   studioTaskCenterCopy,
   studioTaskScopeForPath,
 } from "../src/components/studio-task-scope";
 
-const operation = (kind: string) => ({ kind });
+const task = (kind: string) => ({ kind });
 
 describe("studio task scope", () => {
   it("keeps crop tasks on Align and analysis tasks on Analysis", () => {
@@ -17,19 +17,17 @@ describe("studio task scope", () => {
     expect(studioTaskScopeForPath("/annotate")).toBeNull();
     expect(studioTaskScopeForPath("/assay")).toBeNull();
 
-    const operations = [
-      operation("crop-roi"),
-      operation("analysis/transfection"),
-      operation("analysis/killing"),
-      operation("analysis/custom"),
+    const tasks = [
+      task("crop-roi"),
+      task("analysis/transfection"),
+      task("analysis/killing"),
+      task("analysis/custom"),
     ];
 
-    expect(operationMatchesStudioTaskScope("crop-roi", "crop")).toBe(true);
-    expect(operationMatchesStudioTaskScope("analysis/transfection", "crop")).toBe(false);
-    expect(filterStudioTaskOperations(operations, "crop").map((item) => item.kind)).toEqual([
-      "crop-roi",
-    ]);
-    expect(filterStudioTaskOperations(operations, "analysis").map((item) => item.kind)).toEqual([
+    expect(taskMatchesStudioTaskScope("crop-roi", "crop")).toBe(true);
+    expect(taskMatchesStudioTaskScope("analysis/transfection", "crop")).toBe(false);
+    expect(filterStudioTasks(tasks, "crop").map((item) => item.kind)).toEqual(["crop-roi"]);
+    expect(filterStudioTasks(tasks, "analysis").map((item) => item.kind)).toEqual([
       "analysis/transfection",
       "analysis/killing",
       "analysis/custom",

@@ -61,11 +61,10 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 function emptySampleRow(id: string): BasicInfoSampleRow {
   return {
     id,
-    slideChannel: "",
     name: "",
     positionStart: "",
     positionFinish: "",
-    mask: "",
+    segmentation: "",
     signal: "",
   };
 }
@@ -211,11 +210,10 @@ const initialAnalysis: AssayAnalysisConfig | null =
 function cloneSampleRow(id: string, row: BasicInfoSampleRow): BasicInfoSampleRow {
   return {
     id,
-    slideChannel: row.slideChannel,
     name: row.name,
     positionStart: row.positionStart,
     positionFinish: row.positionFinish,
-    mask: row.mask,
+    segmentation: row.segmentation,
     signal: row.signal,
   };
 }
@@ -305,10 +303,7 @@ function createInitialWizardData(): StudioWizardState {
     workspacePath: "",
     intervalValue: defaultIntervalMinutesForAssay(DEFAULT_ASSAY_ID),
     intervalUnit: "minute",
-    samples: [
-      { ...emptySampleRow("sample:0"), slideChannel: "0" },
-      { ...emptySampleRow("sample:1"), slideChannel: "1" },
-    ],
+    samples: [emptySampleRow("sample:0"), emptySampleRow("sample:1")],
     analysis: initialAnalysis,
     basicInfoSavedSnapshot: null,
   };

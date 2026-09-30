@@ -1,13 +1,13 @@
-import type { OperationDetail, OperationSummary, TaskAttempt, TaskDetail } from "@lisca/contracts";
+import type { TaskDetail, TaskSummary, StepAttempt, StepDetail } from "@lisca/contracts";
 import type { TaskCenterGateway } from "@lisca/utils";
 import { cleanup, fireEvent, render, screen, waitFor } from "@solidjs/testing-library";
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
 import { TaskCenter } from "../src/shell/task-center/task-center";
 
-function summary(status: OperationSummary["status"], updatedAtMs: number): OperationSummary {
+function summary(status: TaskSummary["status"], updatedAtMs: number): TaskSummary {
   return {
-    operationId: "operation-1",
+    taskId: "task-1",
     kind: "crop-roi",
     workspaceId: "workspace-1",
     workspacePath: "/workspace",
@@ -24,7 +24,7 @@ function summary(status: OperationSummary["status"], updatedAtMs: number): Opera
       cancelled: 0,
       cancellationRequested: 0,
     },
-    activeTaskKind: status === "running" ? "crop-roi/Pos4" : null,
+    activeStepKind: status === "running" ? "crop-roi/Pos4" : null,
     workProgress:
       status === "running"
         ? {
@@ -41,11 +41,11 @@ function summary(status: OperationSummary["status"], updatedAtMs: number): Opera
   };
 }
 
-function attempt(status: TaskAttempt["status"]): TaskAttempt {
+function attempt(status: StepAttempt["status"]): StepAttempt {
   return {
     attemptId: "attempt-1",
-    operationId: "operation-1",
     taskId: "task-1",
+    stepId: "step-1",
     status,
     startedAtMs: 10,
     finishedAtMs: status === "running" ? null : 20,
@@ -53,15 +53,15 @@ function attempt(status: TaskAttempt["status"]): TaskAttempt {
   };
 }
 
-function task(
-  status: TaskDetail["status"],
-  attempts: TaskAttempt[] = [],
-  workProgress: TaskDetail["workProgress"] = null,
-): TaskDetail {
+function step(
+  status: StepDetail["status"],
+  attempts: StepAttempt[] = [],
+  workProgress: StepDetail["workProgress"] = null,
+): StepDetail {
   return {
+    stepId: "step-1",
     taskId: "task-1",
-    operationId: "operation-1",
-    taskKind: "crop-roi/Pos4",
+    stepKind: "crop-roi/Pos4",
     workspaceId: "workspace-1",
     status,
     weight: 1,
@@ -73,7 +73,7 @@ function task(
   };
 }
 
-function runningWorkProgress(updatedAtMs: number): NonNullable<TaskDetail["workProgress"]> {
+function runningWorkProgress(updatedAtMs: number): NonNullable<StepDetail["workProgress"]> {
   return {
     unit: "roiframe",
     completed: 1200,
@@ -85,19 +85,19 @@ function runningWorkProgress(updatedAtMs: number): NonNullable<TaskDetail["workP
 }
 
 function detail(
-  status: OperationSummary["status"],
+  status: TaskSummary["status"],
   updatedAtMs: number,
-  attempts: TaskAttempt[] = [],
-): OperationDetail {
-  const taskStatus =
+  attempts: StepAttempt[] = [],
+): TaskDetail {
+  const stepStatus =
     status === "completed" ? "completed" : status === "failed" ? "failed" : "running";
   return {
-    operation: summary(status, updatedAtMs),
-    tasks: [
-      task(
-        taskStatus,
+    task: summary(status, updatedAtMs),
+    steps: [
+      step(
+        stepStatus,
         attempts,
-        taskStatus === "running" ? runningWorkProgress(updatedAtMs) : null,
+        stepStatus === "running" ? runningWorkProgress(updatedAtMs) : null,
       ),
     ],
   };
@@ -124,17 +124,17 @@ function renderTaskCenter(
 ) {
   let handlers:
     | {
-        onSnapshot: (snapshot: readonly OperationSummary[]) => void;
+        onSnapshot: (snapshot: readonly TaskSummary[]) => void;
         onError: (error: unknown) => void;
       }
     | undefined;
   const gateway: TaskCenterGateway = {
-    listOperations: async () => [],
-    getOperation: async () => detail("running", 1),
-    getTask: async () => task("running"),
-    cancelOperation: async () => detail("completed", 2),
+    listTasks: async () => [],
+    getTask: async () => detail("running", 1),
+    getStep: async () => step("running"),
     cancelTask: async () => detail("completed", 2),
-    retryTask: async () => detail("running", 2),
+    cancelStep: async () => detail("completed", 2),
+    retryStep: async () => detail("running", 2),
     ...gatewayOverrides,
   };
   const view = render(() => (
@@ -159,7 +159,7 @@ function renderTaskCenter(
   return {
     ...view,
     gateway,
-    snapshot: (value: readonly OperationSummary[]) => handlers!.onSnapshot(value),
+    snapshot: (value: readonly TaskSummary[]) => handlers!.onSnapshot(value),
   };
 }
 
@@ -195,7 +195,7 @@ describe("Task Center dialog", () => {
     expect(screen.getByText("Long-running crop computations will appear here.")).toBeTruthy();
   });
 
-  it("offers an opt-in quiet status link with a running-operation badge", () => {
+  it("offers an opt-in quiet status link with a running-task badge", () => {
     const view = renderTaskCenter({}, "status-link");
     const trigger = view.getByRole("button", { name: "Tasks, 0 active" });
 
@@ -252,12 +252,12 @@ describe("Task Center dialog", () => {
   });
 
   it("refreshes expanded and reopened detail while ignoring an older GET response", async () => {
-    const first = deferred<OperationDetail>();
-    const second = deferred<OperationDetail>();
-    const third = deferred<OperationDetail>();
+    const first = deferred<TaskDetail>();
+    const second = deferred<TaskDetail>();
+    const third = deferred<TaskDetail>();
     const responses = [first, second, third];
-    const getOperation = vi.fn(() => responses.shift()!.promise);
-    const view = renderTaskCenter({ getOperation });
+    const getTask = vi.fn(() => responses.shift()!.promise);
+    const view = renderTaskCenter({ getTask });
     view.snapshot([summary("running", 1)]);
 
     fireEvent.click(view.getByRole("button", { name: "Tasks, 1 active" }));
@@ -279,17 +279,17 @@ describe("Task Center dialog", () => {
     ).toBeTruthy();
   });
 
-  it("hides per-position progress when collapsed and shows it on each task when expanded", async () => {
-    const first = deferred<OperationDetail>();
-    const second = deferred<OperationDetail>();
+  it("hides per-position progress when collapsed and shows it on each step when expanded", async () => {
+    const first = deferred<TaskDetail>();
+    const second = deferred<TaskDetail>();
     const responses = [first, second];
-    const getOperation = vi.fn(() => responses.shift()!.promise);
-    const view = renderTaskCenter({ getOperation });
+    const getTask = vi.fn(() => responses.shift()!.promise);
+    const view = renderTaskCenter({ getTask });
     view.snapshot([summary("running", 1)]);
 
     fireEvent.click(view.getByRole("button", { name: "Tasks, 1 active" }));
     expect(screen.queryByRole("progressbar", { name: "Pos4 roiframe progress" })).toBeNull();
-    expect(screen.getByRole("progressbar", { name: /tasks completed/ })).toBeTruthy();
+    expect(screen.getByRole("progressbar", { name: /steps completed/ })).toBeTruthy();
     expect(screen.getByRole("button", { name: /Expand Crop ROI, Running/ })).toBeTruthy();
 
     fireEvent.click(screen.getByRole("button", { name: /Expand Crop ROI/ }));
@@ -303,7 +303,7 @@ describe("Task Center dialog", () => {
     expect(screen.getAllByRole("button", { name: "Stop" })).toHaveLength(1);
 
     view.snapshot([summary("failed", 2)]);
-    await waitFor(() => expect(getOperation).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(getTask).toHaveBeenCalledTimes(2));
     second.resolve(detail("failed", 2, [attempt("failed")]));
 
     await screen.findByText(/Crop analysis failed/);

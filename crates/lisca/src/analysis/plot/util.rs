@@ -1,27 +1,27 @@
 use std::collections::BTreeMap;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use crate::analysis::array::percentile;
-use crate::analysis::slide::SlideMapping;
-use crate::analysis::timeseries::resolve_slide_channel;
+use crate::analysis::sample::SampleMapping;
 
 /// Historical CLI default when callers force an explicit column count.
 /// Auto layout (`columns = None`) prefers [`subplot_grid_shape`] instead.
 pub const DEFAULT_PLOT_COLUMNS: usize = 3;
 
-/// Display labels for the in-tree killing plot path: one entry per slide
-/// channel whose `sample_name` is non-empty (after trimming in
-/// [`build_slide_mapping_from_parts`]). Channels with an empty name are
-/// omitted here so their subplot titles fall back to the channel id at the
-/// call sites (`labels.get(&ch).unwrap_or_else(...)`). This mirrors the
-/// Python goal source's `named_sample_mapping`, which drops empty names for
-/// plot/results grouping while analysis stages still ran for every channel.
-pub fn slide_channel_labels(mapping: &SlideMapping) -> BTreeMap<u32, String> {
+/// Sample names keyed by Sample index (assay order).
+pub fn sample_labels(mapping: &SampleMapping) -> BTreeMap<usize, String> {
     mapping
         .iter()
-        .filter(|(_, entry)| !entry.sample_name.is_empty())
-        .map(|(channel, entry)| (*channel, entry.sample_name.clone()))
+        .enumerate()
+        .map(|(index, sample)| (index, sample.name.clone()))
         .collect()
+}
+
+fn sample_label(sample: usize, mapping: &SampleMapping) -> String {
+    mapping
+        .get(sample)
+        .map(|entry| entry.name.clone())
+        .unwrap_or_else(|| format!("sample {sample}"))
 }
 
 /// Y-limits: ``low_margin * p_lo`` … ``p_hi / high_margin``.
@@ -113,69 +113,17 @@ pub fn grid_dimensions(count: usize, columns: usize) -> (usize, usize) {
     resolve_subplot_grid(count, Some(columns))
 }
 
-#[allow(dead_code)] // path-based titles; killing plots use sample_subplot_title
-pub fn subplot_title(csv_path: &Path, trace_count: usize, mapping: &SlideMapping) -> String {
-    let labels = slide_channel_labels(mapping);
-    let label = match resolve_slide_channel(csv_path, mapping) {
-        Ok(channel) => labels
-            .get(&channel)
-            .cloned()
-            .unwrap_or_else(|| format!("slide channel {channel}")),
-        Err(_) => csv_path
-            .file_stem()
-            .and_then(|stem| stem.to_str())
-            .unwrap_or("timeseries")
-            .to_string(),
-    };
+pub fn sample_subplot_title(sample: usize, trace_count: usize, mapping: &SampleMapping) -> String {
+    let label = sample_label(sample, mapping);
     format!("{label} ({trace_count} traces)")
-}
-
-pub fn sample_subplot_title(
-    slide_channel: u32,
-    trace_count: usize,
-    mapping: &SlideMapping,
-) -> String {
-    let labels = slide_channel_labels(mapping);
-    let label = labels
-        .get(&slide_channel)
-        .cloned()
-        .unwrap_or_else(|| format!("slide channel {slide_channel}"));
-    format!("{label} ({trace_count} traces)")
-}
-
-#[allow(dead_code)] // path-based color haystack; killing plots use sample_trace_naming_haystack
-pub fn trace_naming_haystack(csv_path: &Path, mapping: &SlideMapping) -> String {
-    let labels = slide_channel_labels(mapping);
-    let mut parts = vec![
-        csv_path
-            .file_name()
-            .and_then(|name| name.to_str())
-            .unwrap_or("")
-            .to_string(),
-        csv_path
-            .file_stem()
-            .and_then(|stem| stem.to_str())
-            .unwrap_or("")
-            .to_string(),
-    ];
-    if let Ok(channel) = resolve_slide_channel(csv_path, mapping) {
-        if let Some(label) = labels.get(&channel) {
-            parts.push(label.clone());
-        }
-    }
-    parts.join(" ")
 }
 
 pub fn sample_trace_naming_haystack(
-    slide_channel: u32,
+    sample: usize,
     paths: &[PathBuf],
-    mapping: &SlideMapping,
+    mapping: &SampleMapping,
 ) -> String {
-    let labels = slide_channel_labels(mapping);
-    let mut parts = vec![labels
-        .get(&slide_channel)
-        .cloned()
-        .unwrap_or_else(|| format!("slide channel {slide_channel}"))];
+    let mut parts = vec![sample_label(sample, mapping)];
     for path in paths {
         if let Some(name) = path.file_name().and_then(|value| value.to_str()) {
             parts.push(name.to_string());
@@ -198,25 +146,6 @@ pub fn trace_color_alpha(haystack: &str) -> (&'static str, f64) {
         "gray"
     };
     (color, 0.1)
-}
-
-#[allow(dead_code)] // transfection boxplots moved to lisca-transfection
-pub fn boxplot_tick_label(channel: u32, count: usize, labels: &BTreeMap<u32, String>) -> String {
-    let name = labels
-        .get(&channel)
-        .cloned()
-        .unwrap_or_else(|| channel.to_string());
-    // Single line so vertical tick labels stay readable when rotated.
-    format!("{name} (n={count})")
-}
-
-#[allow(dead_code)] // transfection boxplots moved to lisca-transfection
-pub fn boxplot_x_axis_label(labels: &BTreeMap<u32, String>) -> &'static str {
-    if labels.is_empty() {
-        "slide channel"
-    } else {
-        "sample"
-    }
 }
 
 #[allow(dead_code)] // transfection boxplots moved to lisca-transfection
@@ -246,41 +175,19 @@ mod tests {
     use super::*;
 
     #[test]
-    fn slide_channel_labels_drop_empty_names_for_plot_grouping() {
-        // Mirrors the Python goal source's `named_sample_mapping`: empty-name
-        // channels are omitted from the plot labels so their subplot titles
-        // fall back to the channel id (analysis still ran for them).
-        use crate::analysis::slide::SlideChannelMapping;
-        let mut mapping = SlideMapping::new();
-        mapping.insert(
-            1,
-            SlideChannelMapping {
-                positions: vec![1],
-                signal: vec![1],
-                mask: 0,
-                sample_name: "condA".to_string(),
-            },
-        );
-        mapping.insert(
-            2,
-            SlideChannelMapping {
-                positions: vec![1, 2, 3],
-                signal: vec![1],
-                mask: 0,
-                sample_name: "".to_string(),
-            },
-        );
-        let labels = slide_channel_labels(&mapping);
-        assert_eq!(labels.keys().copied().collect::<Vec<_>>(), vec![1]);
-        assert_eq!(labels.get(&1), Some(&"condA".to_string()));
-        assert!(labels.get(&2).is_none());
-        // The killing plot title resolution falls back to the channel id when
-        // the empty-name label is absent.
-        assert_eq!(sample_subplot_title(1, 4, &mapping), "condA (4 traces)");
-        assert_eq!(
-            sample_subplot_title(2, 4, &mapping),
-            "slide channel 2 (4 traces)"
-        );
+    fn sample_labels_follow_assay_order() {
+        use crate::analysis::sample::SampleAnalysis;
+        let sample = |name: &str| SampleAnalysis {
+            name: name.to_string(),
+            positions: vec![1],
+            signal: vec![1],
+            segmentation: 0,
+        };
+        let mapping = SampleMapping(vec![sample("zeta"), sample("alpha")]);
+        let labels = sample_labels(&mapping);
+        assert_eq!(labels.get(&0), Some(&"zeta".to_string()));
+        assert_eq!(labels.get(&1), Some(&"alpha".to_string()));
+        assert_eq!(sample_subplot_title(1, 4, &mapping), "alpha (4 traces)");
     }
 
     #[test]

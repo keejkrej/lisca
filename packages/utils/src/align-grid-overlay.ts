@@ -1,6 +1,6 @@
 import type { AlignGridState } from "@lisca/contracts";
 
-import { alignGridBasis, enumerateVisibleAlignGridCells } from "./align-grid";
+import { alignGridBasis, enumerateVisibleAlignGridPatterns } from "./align-grid";
 import { computeFrameLayout, type FrameLayout } from "./frame-display";
 import type { FrameResult } from "./frame";
 
@@ -16,7 +16,7 @@ export const alignGridOverlayColors = {
   frameHaloStroke: "rgba(255,255,255,0.08)",
 } as const;
 
-export type AlignGridOverlayCell = {
+export type AlignGridOverlayPattern = {
   i: number;
   j: number;
   x: number;
@@ -42,7 +42,7 @@ export type AlignGridOverlayScene = {
   frameLayout: FrameLayout;
   haloRect: AlignGridOverlayRect;
   clipRect: AlignGridOverlayRect;
-  cells: AlignGridOverlayCell[];
+  patterns: AlignGridOverlayPattern[];
   origin: AlignGridOverlayPoint;
   spacingA: { start: AlignGridOverlayPoint; end: AlignGridOverlayPoint };
   spacingB: { start: AlignGridOverlayPoint; end: AlignGridOverlayPoint };
@@ -58,7 +58,7 @@ export function alignGridOverlayStrokeOpacity(grid: AlignGridState): number {
   return Math.max(0.45, grid.opacity * 0.9);
 }
 
-export function alignGridOverlayCellRgba(excluded: boolean, opacity: number): string {
+export function alignGridOverlayPatternRgba(excluded: boolean, opacity: number): string {
   const rgb = excluded ? alignGridOverlayColors.excludedRgb : alignGridOverlayColors.includedRgb;
   return `rgba(${rgb}, ${opacity})`;
 }
@@ -101,14 +101,14 @@ export function buildAlignGridOverlayScene(
     y: basis.b.y * scale,
   };
   const origin = { x: originX, y: originY };
-  const cells = enumerateVisibleAlignGridCells(frame, grid).map((cell) => ({
-    i: cell.i,
-    j: cell.j,
-    x: drawX + cell.x * scale,
-    y: drawY + cell.y * scale,
-    w: cell.w * scale,
-    h: cell.h * scale,
-    excluded: excludedKeys.has(`${cell.i}:${cell.j}`),
+  const patterns = enumerateVisibleAlignGridPatterns(frame, grid).map((pattern) => ({
+    i: pattern.i,
+    j: pattern.j,
+    x: drawX + pattern.x * scale,
+    y: drawY + pattern.y * scale,
+    w: pattern.w * scale,
+    h: pattern.h * scale,
+    excluded: excludedKeys.has(`${pattern.i}:${pattern.j}`),
   }));
 
   return {
@@ -120,7 +120,7 @@ export function buildAlignGridOverlayScene(
       w: frameLayout.drawWidth,
       h: frameLayout.drawHeight,
     },
-    cells,
+    patterns,
     origin,
     spacingA: {
       start: origin,

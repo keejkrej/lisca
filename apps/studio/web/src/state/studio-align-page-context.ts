@@ -13,7 +13,7 @@ export type StudioAlignPageContextValue = {
   smartExclude: StudioSmartExclude;
   varExclude: StudioVarExclude;
   excludeActive: () => boolean;
-  /** Selection var exclude — additive on current exclusions; applying also excludes edge cells. */
+  /** Selection var exclude — additive on current exclusions; applying also excludes edge patterns. */
   requestVarExclude: () => Promise<void>;
   applyExcludePreview: () => void;
   cancelExcludePreview: () => void;

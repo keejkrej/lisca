@@ -1,8 +1,8 @@
 import type { SmartExcludeProvider } from "../provider";
-import { classifyExclusionCandidates } from "./classify-cells";
+import { classifyExclusionCandidates } from "./classify-patterns";
 
 export function createBrowserSmartExcludeProvider(): SmartExcludeProvider {
   return {
-    classify: (input, options) => classifyExclusionCandidates(input.frame, input.cells, options),
+    classify: (input, options) => classifyExclusionCandidates(input.frame, input.patterns, options),
   };
 }

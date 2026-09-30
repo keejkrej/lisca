@@ -41,7 +41,7 @@ workspace, or CSV key for the lifetime of the app.
 **Mutation atoms** write through the port and call `invalidateAfter` so related queries refresh.
 
 **Imperative port calls** (`runClientEffect(client.*)`) handle ephemeral loads, explicit
-checkpoints, and long-running jobs. Cancellation is attached once, where an Effect is executed as
+checkpoints, and long-running Tasks. Cancellation is attached once, where an Effect is executed as
 a Promise. Effect-returning ports do not also accept `AbortSignal`; fiber interruption propagates
 to the HTTP client.
 
@@ -56,7 +56,7 @@ to the HTTP client.
 | Align checkpoint       | port Effect                | —                          | port Effect                              |
 | Crop/analysis progress | interruptible Effect fiber | —                          | interruptible Effect fiber               |
 
-Frame loads, per-navigation align state, bbox save/list, crop jobs, and one-off file or assay saves
+Frame loads, per-navigation align state, bbox save/list, crop tasks, and one-off file or assay saves
 are deliberately not query-backed.
 
 ## Family keys and invalidation

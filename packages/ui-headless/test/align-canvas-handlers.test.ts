@@ -246,9 +246,9 @@ describe("useAlignCanvasPointerHandlers", () => {
         setGrid,
         toolMode: "pan",
         manualExclusionEnabled: false,
-        excludedCells: [],
+        excludedPatterns: [],
         frame: { width: 200, height: 200 },
-        onExcludedCellsChange: vi.fn(),
+        onExcludedPatternsChange: vi.fn(),
       }));
       return null;
     });
@@ -268,9 +268,9 @@ describe("useAlignCanvasPointerHandlers", () => {
         setGrid,
         toolMode: "pan",
         manualExclusionEnabled: true,
-        excludedCells: [],
+        excludedPatterns: [],
         frame: { width: 200, height: 200 },
-        onExcludedCellsChange: vi.fn(),
+        onExcludedPatternsChange: vi.fn(),
       }));
       return null;
     });

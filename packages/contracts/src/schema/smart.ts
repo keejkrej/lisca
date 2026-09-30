@@ -1,7 +1,7 @@
 import * as Schema from "effect/Schema";
 
 import { RoiFrameRequestSchema } from "./annotate";
-import { AlignGridCellCoordSchema, AutoExcludePreviewCellSchema } from "./align";
+import { AlignGridPatternCoordSchema, AlignGridPatternBoxSchema } from "./align";
 import { F64, NumArray } from "./primitives";
 import { AlignerSourceSchema, ContrastWindowSchema, FrameRequestSchema } from "./shared";
 
@@ -9,12 +9,12 @@ export const SmartExcludeRequestSchema = Schema.Struct({
   source: AlignerSourceSchema,
   request: FrameRequestSchema,
   contrast: Schema.NullOr(ContrastWindowSchema),
-  cells: Schema.mutable(Schema.Array(AutoExcludePreviewCellSchema)),
+  patterns: Schema.mutable(Schema.Array(AlignGridPatternBoxSchema)),
   threshold: Schema.optional(F64),
 }).annotate({ identifier: "SmartExcludeRequest" });
 
 export const SmartExcludeResponseSchema = Schema.Struct({
-  excludedCells: Schema.mutable(Schema.Array(AlignGridCellCoordSchema)),
+  excludedPatterns: Schema.mutable(Schema.Array(AlignGridPatternCoordSchema)),
 }).annotate({ identifier: "SmartExcludeResponse" });
 
 export const SmartSegmentPointSchema = Schema.Struct({

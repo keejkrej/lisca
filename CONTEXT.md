@@ -41,7 +41,8 @@ _Avoid_: bare "channel", lane
 
 **Sample**:
 A named group of Positions that analysis reports on together, typically one
-experimental condition.
+experimental condition. A Sample is identified by its name, which is unique
+within the Assay.
 _Avoid_: condition, group
 
 **Segmentation channel**:
@@ -113,6 +114,12 @@ _Avoid_: timeseries
 One unit of background work a user starts and follows to completion. ROI crop
 and Analysis run are the two kinds.
 _Avoid_: Operation, job
+
+**Step**:
+One independently scheduled piece of a Task, such as ROI crop of one Position.
+A Step can wait on other Steps and be retried or cancelled on its own; the Task
+aggregates its Steps' status and progress.
+_Avoid_: Task (for the piece), subtask
 
 ### Products
 

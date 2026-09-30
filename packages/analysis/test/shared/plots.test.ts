@@ -48,7 +48,7 @@ describe("collectResultPlots", () => {
   it("orders transfection plots from the catalog and skips CSVs", () => {
     const plots = collectResultPlots(
       [
-        { kind: "timeseries", fileName: "Pos1/ch1.csv", path: "/analysis/Pos1/ch1.csv" },
+        { kind: "traces", fileName: "Pos1/ch1.csv", path: "/analysis/Pos1/ch1.csv" },
         { kind: "plot", fileName: "onset_time.png", path: "/results/onset_time.png" },
         { kind: "plot", fileName: "traces.png", path: "/results/Mock_(fixture)/traces.png" },
         { kind: "plot", fileName: "auc.png", path: "/results/auc.png" },
@@ -63,7 +63,7 @@ describe("collectResultPlots", () => {
       "/results/onset_time.png",
     ]);
     expect(plots[0]?.title).toBe("Intensity traces (Mock_(fixture))");
-    expect(plots[0]?.section).toBe("timeseries");
+    expect(plots[0]?.section).toBe("traces");
     expect(plots[1]?.title).toBe("AUC");
     expect(plots[1]?.section).toBe("parameters");
   });
@@ -157,7 +157,7 @@ describe("result sections", () => {
     expect(resultSectionLabel("parameters", "transfection")).toBe("Parameters");
   });
 
-  it("defaults to Timeseries when traces exist", () => {
+  it("defaults to Traces when traces exist", () => {
     const plots = collectResultPlots(
       [
         { kind: "plot", fileName: "traces.png", path: "/traces.png" },
@@ -165,14 +165,14 @@ describe("result sections", () => {
       ],
       "transfection",
     );
-    expect(defaultResultPlotSection(plots)).toBe("timeseries");
+    expect(defaultResultPlotSection(plots)).toBe("traces");
     expect(filterResultPlotsBySection(plots, "parameters")).toHaveLength(1);
   });
 });
 
 describe("resultSectionInstruction", () => {
   it("uses scientist-facing copy without pipeline jargon", () => {
-    expect(resultSectionInstruction("timeseries", "transfection")).toBe(
+    expect(resultSectionInstruction("traces", "transfection")).toBe(
       "Intensity, area, and fitted traces for each sample.",
     );
     expect(resultSectionInstruction("parameters", "transfection")).toBe(

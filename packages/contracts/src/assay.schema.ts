@@ -57,10 +57,12 @@ export const AssayIntervalSchema = Schema.Struct({
   unit: AssayIntervalUnitSchema,
 }).annotate({ identifier: "AssayInterval" });
 
-/** Sample identity / layout only — intensity/mask channels live under `analysis`. */
+/**
+ * Sample identity / layout only — segmentation/signal channels live under `analysis`.
+ * A Sample is identified by its `name`, which is non-empty (trimmed) and unique
+ * within the assay.
+ */
 export const AssaySampleRowSchema = Schema.Struct({
-  /** Logical sample / slide-channel key (a physical slide may expose several). */
-  slideChannel: U32,
   name: Schema.String,
   positions: Schema.String,
 }).annotate({ identifier: "AssaySampleRow" });
@@ -74,16 +76,16 @@ export const AssaySignalChannelsSchema = Schema.mutable(Schema.NonEmptyArray(U32
   identifier: "AssaySignalChannels",
 });
 
-/** Default mask + signal channel indices for an assay. */
+/** Default segmentation + signal channel indices for an assay. */
 export const AssayChannelsSchema = Schema.Struct({
-  mask: U32,
+  segmentation: U32,
   signal: AssaySignalChannelsSchema,
 }).annotate({ identifier: "AssayChannels" });
 
-/** Per-sample channel override; `slideChannel` matches `samples[].slideChannel`. */
+/** Per-sample channel override; `sample` matches `samples[].name`. */
 export const AssaySampleChannelsSchema = Schema.Struct({
-  slideChannel: U32,
-  mask: U32,
+  sample: Schema.String,
+  segmentation: U32,
   signal: AssaySignalChannelsSchema,
 }).annotate({ identifier: "AssaySampleChannels" });
 
@@ -91,12 +93,12 @@ export const AssaySampleChannelsSchema = Schema.Struct({
  * Assay-dependent analysis options on assay.json.
  * `maxOnsetMinutes` (onset time t0 search cap) / `skipSegment` are transfection-oriented;
  * other assays ignore them.
- * `channels` / `sampleChannels` resolve mask (segmentation) and signal (intensity) indices.
+ * `channels` / `sampleChannels` resolve segmentation and signal (intensity) channel indices.
  */
 export const AssayAnalysisConfigSchema = Schema.Struct({
   /** Cap on onset time t0 search (minutes). Default 120; 0 fixes onset at 0. */
   maxOnsetMinutes: Schema.optional(F64),
-  /** When true, skip Otsu segmentation and use full-ROI (10th-percentile bg) timeseries. */
+  /** When true, skip Otsu segmentation and use full-ROI (10th-percentile bg) traces. */
   skipSegment: Schema.optional(Schema.Boolean),
   channels: Schema.optional(AssayChannelsSchema),
   sampleChannels: Schema.optional(Schema.mutable(Schema.Array(AssaySampleChannelsSchema))),

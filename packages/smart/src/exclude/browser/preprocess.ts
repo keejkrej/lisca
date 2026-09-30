@@ -3,7 +3,7 @@ import type { FrameResult } from "@lisca/utils";
 const IMAGENET_MEAN = [0.485, 0.456, 0.406] as const;
 const IMAGENET_STD = [0.229, 0.224, 0.225] as const;
 
-export function normalizeCellPixels(
+export function normalizePatternPixels(
   values: Float32Array | Uint16Array | Uint8Array,
 ): Uint8ClampedArray {
   if (values.length === 0) return new Uint8ClampedArray(0);
@@ -29,7 +29,7 @@ export function normalizeCellPixels(
   return rgba;
 }
 
-export function cropCellToCanvas(
+export function cropPatternToCanvas(
   frame: FrameResult,
   x: number,
   y: number,

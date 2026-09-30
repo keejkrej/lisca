@@ -1,7 +1,7 @@
 import { KILLING_PLOTS, type KillingPlotSpec } from "../assays/killing/catalog";
 import { TRANSFECTION_PLOTS, type TransfectionPlotSpec } from "../assays/transfection/catalog";
 
-export type ResultPlotSection = "timeseries" | "parameters";
+export type ResultPlotSection = "traces" | "parameters";
 
 export type ResultAssayKind = "transfection" | "killing" | "unknown";
 
@@ -55,7 +55,7 @@ export function catalogForAssay(assay: ResultAssayKind): readonly ResultPlotSpec
 }
 
 export function resultSectionLabel(section: ResultPlotSection, assay: ResultAssayKind): string {
-  if (section === "timeseries") return "Timeseries";
+  if (section === "traces") return "Traces";
   if (assay === "killing") return "Survival";
   return "Parameters";
 }
@@ -64,7 +64,7 @@ export function resultSectionInstruction(
   section: ResultPlotSection,
   assay: ResultAssayKind,
 ): string {
-  if (section === "timeseries") {
+  if (section === "traces") {
     return assay === "killing"
       ? "Death-probability traces (P(dead)) for each sample."
       : "Intensity, area, and fitted traces for each sample.";
@@ -82,7 +82,7 @@ function guessPlotSection(fileName: string): ResultPlotSection {
     stem === "traces_fit" ||
     stem === "traces_fit_shared_y"
   ) {
-    return "timeseries";
+    return "traces";
   }
   return "parameters";
 }
@@ -202,7 +202,7 @@ export function filterResultPlotsBySection(
 }
 
 export function defaultResultPlotSection(plots: ResultPlot[]): ResultPlotSection {
-  if (plots.some((plot) => plot.section === "timeseries")) return "timeseries";
+  if (plots.some((plot) => plot.section === "traces")) return "traces";
   return "parameters";
 }
 

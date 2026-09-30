@@ -1,5 +1,5 @@
 import type {
-  AlignGridCellCoord,
+  AlignGridPatternCoord,
   AlignGridState,
   AlignerSource,
   ContrastWindow,
@@ -13,14 +13,14 @@ import {
   createDefaultAlignGrid,
   normalizeAlignGridState,
   resolveAxisSelection,
-  setExcludedAlignGridCellsForPosition,
+  setExcludedAlignGridPatternsForPosition,
   type AlignGridToolMode,
 } from "@lisca/utils";
 import { liscaSessionStorage, readStorageJson, writeStorageJson } from "@lisca/utils";
 import { Atom } from "effect/unstable/reactivity";
 import { touchAlignerWorkSessionFromState } from "../session/work-session";
 
-export type ExcludedByPosition = Record<number, AlignGridCellCoord[]>;
+export type ExcludedByPosition = Record<number, AlignGridPatternCoord[]>;
 
 export type StateUpdater<T> = T | ((current: T) => T);
 
@@ -45,7 +45,7 @@ export type AlignUiState = {
   spacingZoomLocked: boolean;
   patternZoomLocked: boolean;
   manualExclusionEnabled: boolean;
-  excludedCellsByPosition: ExcludedByPosition;
+  excludedPatternsByPosition: ExcludedByPosition;
   frameLoading: boolean;
   saving: boolean;
   cropProgress: CropRoiProgress | null;
@@ -91,7 +91,7 @@ export function createInitialAlignUiState(): AlignUiState {
     spacingZoomLocked: true,
     patternZoomLocked: true,
     manualExclusionEnabled: false,
-    excludedCellsByPosition: {},
+    excludedPatternsByPosition: {},
     frameLoading: false,
     saving: false,
     cropProgress: null,
@@ -191,7 +191,7 @@ export function createAlignUiActions(persist: AlignUiPersist, behavior: AlignUiB
           frame: null,
           contrast: null,
           grid: normalizeAlignGridState(createDefaultAlignGrid()),
-          excludedCellsByPosition: {},
+          excludedPatternsByPosition: {},
           error: null,
           status: source ? "Scanning source" : null,
         };
@@ -227,7 +227,7 @@ export function createAlignUiActions(persist: AlignUiPersist, behavior: AlignUiB
           frame: null,
           contrast: null,
           grid: createVisibleDefaultAlignGrid(),
-          excludedCellsByPosition: {},
+          excludedPatternsByPosition: {},
           error: null,
           status: "Source loaded",
         };
@@ -245,19 +245,19 @@ export function createAlignUiActions(persist: AlignUiPersist, behavior: AlignUiB
           return nextState;
         }
         const nextExcluded = savedAlignState.saved
-          ? setExcludedAlignGridCellsForPosition(
-              state.excludedCellsByPosition,
+          ? setExcludedAlignGridPatternsForPosition(
+              state.excludedPatternsByPosition,
               savedAlignState.pos,
-              savedAlignState.saved.excludedCells,
+              savedAlignState.saved.excludedPatterns,
             )
-          : state.excludedCellsByPosition;
+          : state.excludedPatternsByPosition;
         return {
           ...nextState,
           appliedAlignStateKey: savedAlignState.stateKey,
           grid: savedAlignState.saved
             ? normalizeAlignGridState(savedAlignState.saved.grid)
             : state.grid,
-          excludedCellsByPosition: nextExcluded,
+          excludedPatternsByPosition: nextExcluded,
         };
       });
     },
@@ -330,30 +330,30 @@ export function createAlignUiActions(persist: AlignUiPersist, behavior: AlignUiB
     ) {
       patchAlignUi(set, persist, (state) => ({ ...state, manualExclusionEnabled }));
     },
-    setExcludedCellsForCurrentPosition(
+    setExcludedPatternsForCurrentPosition(
       set: (update: StateUpdater<AlignUiState>) => void,
-      cells: Iterable<AlignGridCellCoord>,
+      patterns: Iterable<AlignGridPatternCoord>,
     ) {
       patchAlignUi(set, persist, (state) => ({
         ...state,
-        excludedCellsByPosition: setExcludedAlignGridCellsForPosition(
-          state.excludedCellsByPosition,
+        excludedPatternsByPosition: setExcludedAlignGridPatternsForPosition(
+          state.excludedPatternsByPosition,
           state.selection.pos,
-          cells,
+          patterns,
         ),
       }));
     },
-    setExcludedCellsForPosition(
+    setExcludedPatternsForPosition(
       set: (update: StateUpdater<AlignUiState>) => void,
       position: number,
-      cells: Iterable<AlignGridCellCoord>,
+      patterns: Iterable<AlignGridPatternCoord>,
     ) {
       patchAlignUi(set, persist, (state) => ({
         ...state,
-        excludedCellsByPosition: setExcludedAlignGridCellsForPosition(
-          state.excludedCellsByPosition,
+        excludedPatternsByPosition: setExcludedAlignGridPatternsForPosition(
+          state.excludedPatternsByPosition,
           position,
-          cells,
+          patterns,
         ),
       }));
     },
@@ -394,17 +394,17 @@ export function createAlignUiActions(persist: AlignUiPersist, behavior: AlignUiB
           patchAlignUi(set, persist, (state) => {
             if (state.appliedAlignStateKey === stateKey) return state;
             const nextExcluded = saved
-              ? setExcludedAlignGridCellsForPosition(
-                  state.excludedCellsByPosition,
+              ? setExcludedAlignGridPatternsForPosition(
+                  state.excludedPatternsByPosition,
                   pos,
-                  saved.excludedCells,
+                  saved.excludedPatterns,
                 )
-              : state.excludedCellsByPosition;
+              : state.excludedPatternsByPosition;
             return {
               ...state,
               appliedAlignStateKey: stateKey,
               grid: saved ? normalizeAlignGridState(saved.grid) : state.grid,
-              excludedCellsByPosition: nextExcluded,
+              excludedPatternsByPosition: nextExcluded,
               status: saved ? null : state.status,
             };
           });

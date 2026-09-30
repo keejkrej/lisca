@@ -6,11 +6,11 @@ import {
   allAlignPositionsSaved,
   applyDockVariationExcludeWithEdge,
   applyVariationExcludeWithEdge,
-  cellsBelowVariationThreshold,
+  patternsBelowVariationThreshold,
   cropPositionsAfterSkip,
   deriveVisibleCounts,
   mergeAlignGridEdgeExclusion,
-  mergeAutoExcludedAlignCells,
+  mergeEdgeAndVariationExcludedPatterns,
   nextAlignPosition,
   nextUnsavedAlignPosition,
   resolveFirstUnalignedTarget,
@@ -46,12 +46,12 @@ describe("align-session helpers", () => {
     expect(allAlignPositionsSaved([], new Set())).toBe(false);
   });
 
-  it("cellsBelowVariationThreshold maps scores to cell coords", () => {
-    const cells = cellsBelowVariationThreshold(
+  it("patternsBelowVariationThreshold maps scores to pattern coords", () => {
+    const patterns = patternsBelowVariationThreshold(
       {
         threshold: 5,
-        eligibleCellCount: 2,
-        cellScores: [
+        eligiblePatternCount: 2,
+        patternScores: [
           { i: 0, j: 0, score: 1 },
           { i: 1, j: 1, score: 9 },
         ],
@@ -61,15 +61,15 @@ describe("align-session helpers", () => {
       },
       5,
     );
-    expect(cells).toEqual([{ i: 0, j: 0 }]);
+    expect(patterns).toEqual([{ i: 0, j: 0 }]);
   });
 
   it("updateVariationExcludeThreshold preserves preview while changing threshold", () => {
     const preview = {
       preview: {
         threshold: 5,
-        eligibleCellCount: 1,
-        cellScores: [{ i: 0, j: 0, score: 1 }],
+        eligiblePatternCount: 1,
+        patternScores: [{ i: 0, j: 0, score: 1 }],
         histogramBins: [],
         scoreMin: 1,
         scoreMax: 1,
@@ -83,7 +83,7 @@ describe("align-session helpers", () => {
     expect(updateVariationExcludeThreshold(null, 3)).toBeNull();
   });
 
-  it("mergeAlignGridEdgeExclusion adds visible edge cells", () => {
+  it("mergeAlignGridEdgeExclusion adds visible edge patterns", () => {
     const frame = {
       width: 4,
       height: 4,
@@ -93,8 +93,8 @@ describe("align-session helpers", () => {
     const grid = normalizeAlignGridState({
       ...createDefaultAlignGrid(),
       enabled: true,
-      cellWidth: 2,
-      cellHeight: 2,
+      patternWidth: 2,
+      patternHeight: 2,
       spacingA: 2,
       spacingB: 2,
     });
@@ -112,16 +112,16 @@ describe("align-session helpers", () => {
     const grid = normalizeAlignGridState({
       ...createDefaultAlignGrid(),
       enabled: true,
-      cellWidth: 2,
-      cellHeight: 2,
+      patternWidth: 2,
+      patternHeight: 2,
       spacingA: 2,
       spacingB: 2,
     });
     const preview = {
       preview: {
         threshold: 5,
-        eligibleCellCount: 1,
-        cellScores: [{ i: 0, j: 0, score: 1 }],
+        eligiblePatternCount: 1,
+        patternScores: [{ i: 0, j: 0, score: 1 }],
         histogramBins: [],
         scoreMin: 1,
         scoreMax: 1,
@@ -129,8 +129,8 @@ describe("align-session helpers", () => {
       threshold: 5,
     };
     const applied = applyDockVariationExcludeWithEdge(frame, grid, preview);
-    expect(applied.cells).not.toEqual(expect.arrayContaining([{ i: 2, j: 2 }]));
-    expect(applied.variationCells).toEqual([{ i: 0, j: 0 }]);
+    expect(applied.patterns).not.toEqual(expect.arrayContaining([{ i: 2, j: 2 }]));
+    expect(applied.variationPatterns).toEqual([{ i: 0, j: 0 }]);
   });
 
   it("applyVariationExcludeWithEdge pairs var exclude with edge exclude", () => {
@@ -143,16 +143,16 @@ describe("align-session helpers", () => {
     const grid = normalizeAlignGridState({
       ...createDefaultAlignGrid(),
       enabled: true,
-      cellWidth: 2,
-      cellHeight: 2,
+      patternWidth: 2,
+      patternHeight: 2,
       spacingA: 2,
       spacingB: 2,
     });
     const preview = {
       preview: {
         threshold: 5,
-        eligibleCellCount: 1,
-        cellScores: [{ i: 0, j: 0, score: 1 }],
+        eligiblePatternCount: 1,
+        patternScores: [{ i: 0, j: 0, score: 1 }],
         histogramBins: [],
         scoreMin: 1,
         scoreMax: 1,
@@ -160,11 +160,11 @@ describe("align-session helpers", () => {
       threshold: 5,
     };
     const applied = applyVariationExcludeWithEdge([], frame, grid, preview);
-    expect(applied.variationCells).toEqual([{ i: 0, j: 0 }]);
-    expect(applied.cells.length).toBeGreaterThan(applied.variationCells.length);
+    expect(applied.variationPatterns).toEqual([{ i: 0, j: 0 }]);
+    expect(applied.patterns.length).toBeGreaterThan(applied.variationPatterns.length);
   });
 
-  it("mergeAutoExcludedAlignCells combines edge and variation exclusions", () => {
+  it("mergeEdgeAndVariationExcludedPatterns combines edge and variation exclusions", () => {
     const frame = {
       width: 4,
       height: 4,
@@ -174,19 +174,19 @@ describe("align-session helpers", () => {
     const grid = normalizeAlignGridState({
       ...createDefaultAlignGrid(),
       enabled: true,
-      cellWidth: 2,
-      cellHeight: 2,
+      patternWidth: 2,
+      patternHeight: 2,
       spacingA: 2,
       spacingB: 2,
     });
-    const merged = mergeAutoExcludedAlignCells(
+    const merged = mergeEdgeAndVariationExcludedPatterns(
       [{ i: 9, j: 9 }],
       frame,
       grid,
       {
         threshold: 5,
-        eligibleCellCount: 1,
-        cellScores: [{ i: 0, j: 0, score: 1 }],
+        eligiblePatternCount: 1,
+        patternScores: [{ i: 0, j: 0, score: 1 }],
         histogramBins: [],
         scoreMin: 1,
         scoreMax: 1,
@@ -219,7 +219,7 @@ describe("Studio Continue helpers", () => {
     expect(nextUnsavedAlignPosition(positions, 90, new Set(positions))).toBeNull();
   });
 
-  it("alignSnapshotKey ignores exclusion order but tracks grid and cell changes", () => {
+  it("alignSnapshotKey ignores exclusion order but tracks grid and pattern changes", () => {
     const grid = createDefaultAlignGrid();
     const a = alignSnapshotKey(grid, [
       { i: 1, j: 2 },

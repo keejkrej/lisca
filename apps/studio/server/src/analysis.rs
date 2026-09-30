@@ -7,14 +7,13 @@ use std::{
 use lisca::{
     analysis,
     protocol::{
-        AnalysisProgress, AnalysisStage, AnalysisStatus, OperationDetail, OperationStatus,
-        TaskStatus,
+        AnalysisProgress, AnalysisStage, AnalysisStatus, StepStatus, TaskDetail, TaskStatus,
     },
 };
 use lisca_server::{normalize_workspace_path, SchedulerError, TaskScheduler};
 
 #[derive(Clone)]
-pub struct AnalysisJobState {
+pub struct AnalysisTaskState {
     inner: Arc<Mutex<AnalysisBook>>,
 }
 
@@ -28,10 +27,10 @@ struct AnalysisBook {
 struct AnalysisRecord {
     request_id: String,
     workspace_path: String,
-    operation_id: String,
+    task_id: String,
 }
 
-impl AnalysisJobState {
+impl AnalysisTaskState {
     pub fn new() -> Self {
         Self {
             inner: Arc::new(Mutex::new(AnalysisBook::default())),
@@ -45,13 +44,13 @@ impl AnalysisJobState {
         create: F,
     ) -> Result<AnalysisProgress, String>
     where
-        F: FnOnce() -> Result<OperationDetail, SchedulerError>,
+        F: FnOnce() -> Result<TaskDetail, SchedulerError>,
     {
         let workspace_path = normalize_workspace_path(workspace_path);
         let mut book = self
             .inner
             .lock()
-            .map_err(|_| "analysis operation index is poisoned".to_string())?;
+            .map_err(|_| "analysis task index is poisoned".to_string())?;
         if book.by_request.contains_key(request_id) {
             return Err("analysis request id already exists".to_string());
         }
@@ -59,7 +58,7 @@ impl AnalysisJobState {
         let record = AnalysisRecord {
             request_id: request_id.to_string(),
             workspace_path: workspace_path.clone(),
-            operation_id: detail.operation.operation_id.clone(),
+            task_id: detail.task.task_id.clone(),
         };
         book.latest_by_workspace
             .insert(workspace_path, request_id.to_string());
@@ -76,14 +75,14 @@ impl AnalysisJobState {
         let record = self
             .inner
             .lock()
-            .map_err(|_| "analysis operation index is poisoned".to_string())?
+            .map_err(|_| "analysis task index is poisoned".to_string())?
             .by_request
             .get(request_id)
             .cloned();
         record
             .map(|record| {
                 scheduler
-                    .operation(&record.operation_id)
+                    .task(&record.task_id)
                     .map_err(|error| error.to_string())
                     .and_then(|detail| project_progress(&record, &detail))
             })
@@ -100,7 +99,7 @@ impl AnalysisJobState {
             let book = self
                 .inner
                 .lock()
-                .map_err(|_| "analysis operation index is poisoned".to_string())?;
+                .map_err(|_| "analysis task index is poisoned".to_string())?;
             book.latest_by_workspace
                 .get(&workspace_path)
                 .and_then(|request_id| book.by_request.get(request_id))
@@ -109,7 +108,7 @@ impl AnalysisJobState {
         record
             .map(|record| {
                 scheduler
-                    .operation(&record.operation_id)
+                    .task(&record.task_id)
                     .map_err(|error| error.to_string())
                     .and_then(|detail| project_progress(&record, &detail))
             })
@@ -117,7 +116,7 @@ impl AnalysisJobState {
     }
 }
 
-impl Default for AnalysisJobState {
+impl Default for AnalysisTaskState {
     fn default() -> Self {
         Self::new()
     }
@@ -125,39 +124,37 @@ impl Default for AnalysisJobState {
 
 fn project_progress(
     record: &AnalysisRecord,
-    detail: &OperationDetail,
+    detail: &TaskDetail,
 ) -> Result<AnalysisProgress, String> {
-    let total = detail.operation.progress.total.max(1);
+    let total = detail.task.progress.total.max(1);
     let settled = detail
-        .operation
+        .task
         .progress
         .completed
-        .saturating_add(detail.operation.progress.failed)
-        .saturating_add(detail.operation.progress.cancelled);
+        .saturating_add(detail.task.progress.failed)
+        .saturating_add(detail.task.progress.cancelled);
     let active_kind = detail
-        .tasks
+        .steps
         .iter()
-        .find(|task| {
+        .find(|step| {
             matches!(
-                task.status,
-                TaskStatus::Running | TaskStatus::CancellationRequested
+                step.status,
+                StepStatus::Running | StepStatus::CancellationRequested
             )
         })
-        .map(|task| task.task_kind.as_str());
-    let error = detail.tasks.iter().find_map(|task| {
-        task.attempts
+        .map(|step| step.step_kind.as_str());
+    let error = detail.steps.iter().find_map(|step| {
+        step.attempts
             .last()
             .and_then(|attempt| attempt.error.as_ref())
-            .map(|error| format!("{}: {}", task.task_kind, error.message))
+            .map(|error| format!("{}: {}", step.step_kind, error.message))
     });
-    let status = match detail.operation.status {
-        OperationStatus::Queued => AnalysisStatus::Queued,
-        OperationStatus::Running | OperationStatus::CancellationRequested => {
-            AnalysisStatus::Running
-        }
-        OperationStatus::Completed => AnalysisStatus::Completed,
-        OperationStatus::Failed | OperationStatus::PartiallyComplete => AnalysisStatus::Error,
-        OperationStatus::Cancelled => AnalysisStatus::Error,
+    let status = match detail.task.status {
+        TaskStatus::Queued => AnalysisStatus::Queued,
+        TaskStatus::Running | TaskStatus::CancellationRequested => AnalysisStatus::Running,
+        TaskStatus::Completed => AnalysisStatus::Completed,
+        TaskStatus::Failed | TaskStatus::PartiallyComplete => AnalysisStatus::Error,
+        TaskStatus::Cancelled => AnalysisStatus::Error,
     };
     let stage = stage_for_kind(active_kind, status);
     let result_files = if status == AnalysisStatus::Completed {
@@ -191,8 +188,8 @@ fn stage_for_kind(kind: Option<&str>, status: AnalysisStatus) -> AnalysisStage {
     let kind = kind.unwrap_or_default();
     if kind.contains("segment") || kind.contains("predict") {
         AnalysisStage::Segment
-    } else if kind.contains("timeseries") || kind.contains("clean") {
-        AnalysisStage::Timeseries
+    } else if kind.contains("traces") || kind.contains("clean") {
+        AnalysisStage::Traces
     } else if kind.contains("auc") || kind.contains("death") || kind.contains("kill") {
         AnalysisStage::Auc
     } else if kind.contains("fit") || kind.contains("plot") {
@@ -202,6 +199,6 @@ fn stage_for_kind(kind: Option<&str>, status: AnalysisStatus) -> AnalysisStage {
     }
 }
 
-pub trait HasAnalysisJobs: Clone + Send + Sync + 'static {
-    fn analysis_jobs(&self) -> &AnalysisJobState;
+pub trait HasAnalysisTasks: Clone + Send + Sync + 'static {
+    fn analysis_tasks(&self) -> &AnalysisTaskState;
 }

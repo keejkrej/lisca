@@ -1,4 +1,4 @@
-import type { AlignGridCellCoord } from "@lisca/contracts";
+import type { AlignGridPatternCoord } from "@lisca/contracts";
 import { formatSelectedAxisValueLabel } from "@lisca/utils";
 import {
   AlignCanvas,
@@ -46,10 +46,10 @@ export function StudioAlignMain() {
     spacingZoomLocked: canvas.spacingZoomLocked,
     patternZoomLocked: canvas.patternZoomLocked,
     manualExclusionEnabled: canvas.manualExclusionEnabled,
-    excludedCells: canvas.currentExcludedCells,
+    excludedPatterns: canvas.currentExcludedPatterns,
     frame: canvas.frame,
-    onExcludedCellsChange: (cells: AlignGridCellCoord[]) =>
-      canvas.setExcludedCellsForCurrentPosition(cells),
+    onExcludedPatternsChange: (patterns: AlignGridPatternCoord[]) =>
+      canvas.setExcludedPatternsForCurrentPosition(patterns),
   }));
   const visibleStatus = useCanvasTransientStatus(() => canvas.status);
   const activeToastStatus = createMemo(() =>
@@ -97,7 +97,7 @@ export function StudioAlignMain() {
           <AlignCanvas
             class="h-full w-full"
             cursor={pointer.cursor()}
-            excludedCells={canvas.displayedExcludedCells}
+            excludedPatterns={canvas.displayedExcludedPatterns}
             frame={canvas.frame}
             grid={canvas.grid}
             toolMode={canvas.toolMode}

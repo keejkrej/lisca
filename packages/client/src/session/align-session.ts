@@ -1,7 +1,7 @@
 import type {
-  AlignGridCellCoord,
+  AlignGridPatternCoord,
   AlignGridState,
-  AutoExcludePreviewResponse,
+  VariationExcludePreviewResponse,
   CropRoiProgress,
   CropRoiRequest,
   FrameRequest,
@@ -9,16 +9,16 @@ import type {
 import type { FrameResult } from "@lisca/utils";
 import { isDoneCropStatus } from "@lisca/client/crop-status";
 import {
-  collectAlignGridEdgeCells,
-  countVisibleAlignGridCells,
-  mergeExcludedAlignGridCells,
+  collectAlignGridEdgePatterns,
+  countVisibleAlignGridPatterns,
+  mergeExcludedAlignGridPatterns,
 } from "@lisca/utils";
 
 import type { AlignerDataPort } from "../ports/types";
 import { runClientEffect } from "../infra/runtime";
 import { acknowledgeCropRecovery, rememberCropRecovery } from "./crop-recovery";
 
-/** Initial `queued` progress for a freshly-submitted crop job. */
+/** Initial `queued` progress for a freshly-submitted crop task. */
 export function makeQueuedCropProgress(requestId: string, totalPositions: number): CropRoiProgress {
   return {
     requestId,
@@ -32,7 +32,7 @@ export function makeQueuedCropProgress(requestId: string, totalPositions: number
   };
 }
 
-/** Terminal `error` progress for a crop job that failed before/while running. */
+/** Terminal `error` progress for a crop task that failed before/while running. */
 export function makeErrorCropProgress(
   requestId: string,
   totalPositions: number,
@@ -56,45 +56,47 @@ export type RunCropRoiOptions = {
   request: CropRoiRequest;
   /** Called with the queued progress, every progress update, and any error progress. */
   onProgress: (progress: CropRoiProgress) => void;
-  /** Called with a human-readable message when the job fails. */
+  /** Called with a human-readable message when the task fails. */
   onError: (message: string) => void;
-  /** Called once with the terminal progress when the job completes. */
+  /** Called once with the terminal progress when the task completes. */
   onCompleted: (progress: CropRoiProgress) => void;
   /** Format a thrown cause into a user-facing message. */
   toErrorMessage: (cause: unknown, fallback: string) => string;
 };
 
 /**
- * Submit a crop ROI job and drive its progress subscription to a terminal
+ * Submit a crop ROI task and drive its progress subscription to a terminal
  * state. Shared by the aligner and studio align sessions; callers supply the
  * request and the side effects (progress/status/navigation) they care about.
  */
-export type ExcludedByPosition = Record<number, AlignGridCellCoord[]>;
+export type ExcludedByPosition = Record<number, AlignGridPatternCoord[]>;
 
-const emptyExcludedCells: AlignGridCellCoord[] = [];
+const emptyExcludedPatterns: AlignGridPatternCoord[] = [];
 
-export function deriveCurrentExcludedCells(
-  excludedCellsByPosition: ExcludedByPosition,
+export function deriveCurrentExcludedPatterns(
+  excludedPatternsByPosition: ExcludedByPosition,
   position: number,
-): AlignGridCellCoord[] {
-  return excludedCellsByPosition[position] ?? emptyExcludedCells;
+): AlignGridPatternCoord[] {
+  return excludedPatternsByPosition[position] ?? emptyExcludedPatterns;
 }
 
-export function deriveDisplayedExcludedCells(
-  excludedCellsByPosition: ExcludedByPosition,
+export function deriveDisplayedExcludedPatterns(
+  excludedPatternsByPosition: ExcludedByPosition,
   loadedFramePosition: number | undefined,
   selectionPosition: number,
-): AlignGridCellCoord[] {
-  return excludedCellsByPosition[loadedFramePosition ?? selectionPosition] ?? emptyExcludedCells;
+): AlignGridPatternCoord[] {
+  return (
+    excludedPatternsByPosition[loadedFramePosition ?? selectionPosition] ?? emptyExcludedPatterns
+  );
 }
 
 export function deriveVisibleCounts(
   frame: FrameResult | null,
   grid: AlignGridState,
-  displayedExcludedCells: Iterable<AlignGridCellCoord>,
+  displayedExcludedPatterns: Iterable<AlignGridPatternCoord>,
 ): { included: number; excluded: number } {
   return frame
-    ? countVisibleAlignGridCells(frame, grid, displayedExcludedCells)
+    ? countVisibleAlignGridPatterns(frame, grid, displayedExcludedPatterns)
     : { included: 0, excluded: 0 };
 }
 
@@ -106,15 +108,17 @@ export function cropRequestIdForCancellation(progress: CropRoiProgress | null): 
   return progress && !isDoneCropStatus(progress.status) ? progress.requestId : null;
 }
 
-export function cellsBelowVariationThreshold(
-  preview: AutoExcludePreviewResponse,
+export function patternsBelowVariationThreshold(
+  preview: VariationExcludePreviewResponse,
   threshold: number,
-): AlignGridCellCoord[] {
-  return preview.cellScores.filter((cell) => cell.score <= threshold).map(({ i, j }) => ({ i, j }));
+): AlignGridPatternCoord[] {
+  return preview.patternScores
+    .filter((pattern) => pattern.score <= threshold)
+    .map(({ i, j }) => ({ i, j }));
 }
 
 export type VariationExcludePreview = {
-  preview: AutoExcludePreviewResponse;
+  preview: VariationExcludePreviewResponse;
   threshold: number;
 };
 
@@ -125,37 +129,40 @@ export function updateVariationExcludeThreshold(
   return current ? { ...current, threshold } : null;
 }
 
-/** Var-exclude apply paired with edge exclude (same merge as auto-exclude). */
+/** Var-exclude apply paired with edge exclude (same merge as excludeEdgeAndVariation). */
 export function applyVariationExcludeWithEdge(
-  currentExcludedCells: AlignGridCellCoord[],
+  currentExcludedPatterns: AlignGridPatternCoord[],
   frame: FrameResult,
   grid: AlignGridState,
   preview: VariationExcludePreview,
 ): {
-  cells: AlignGridCellCoord[];
-  variationCells: AlignGridCellCoord[];
-  eligibleCellCount: number;
+  patterns: AlignGridPatternCoord[];
+  variationPatterns: AlignGridPatternCoord[];
+  eligiblePatternCount: number;
 } {
-  const variationCells = cellsBelowVariationThreshold(preview.preview, preview.threshold);
+  const variationPatterns = patternsBelowVariationThreshold(preview.preview, preview.threshold);
   return {
-    cells: mergeAutoExcludedAlignCells(
-      currentExcludedCells,
+    patterns: mergeEdgeAndVariationExcludedPatterns(
+      currentExcludedPatterns,
       frame,
       grid,
       preview.preview,
       preview.threshold,
     ),
-    variationCells,
-    eligibleCellCount: preview.preview.eligibleCellCount,
+    variationPatterns,
+    eligiblePatternCount: preview.preview.eligiblePatternCount,
   };
 }
 
 export function mergeAlignGridEdgeExclusion(
-  currentExcludedCells: AlignGridCellCoord[],
+  currentExcludedPatterns: AlignGridPatternCoord[],
   frame: FrameResult,
   grid: AlignGridState,
-): AlignGridCellCoord[] {
-  return mergeExcludedAlignGridCells(currentExcludedCells, collectAlignGridEdgeCells(frame, grid));
+): AlignGridPatternCoord[] {
+  return mergeExcludedAlignGridPatterns(
+    currentExcludedPatterns,
+    collectAlignGridEdgePatterns(frame, grid),
+  );
 }
 
 /** Dock exclude: replace prior exclusions with edge + var (non-additive). */
@@ -167,19 +174,22 @@ export function applyDockVariationExcludeWithEdge(
   return applyVariationExcludeWithEdge([], frame, grid, preview);
 }
 
-export function mergeAutoExcludedAlignCells(
-  currentExcludedCells: AlignGridCellCoord[],
+export function mergeEdgeAndVariationExcludedPatterns(
+  currentExcludedPatterns: AlignGridPatternCoord[],
   frame: FrameResult,
   grid: AlignGridState,
-  variationPreview: AutoExcludePreviewResponse | null,
+  variationPreview: VariationExcludePreviewResponse | null,
   variationThreshold?: number,
-): AlignGridCellCoord[] {
-  const edgeCells = collectAlignGridEdgeCells(frame, grid);
-  const variationCells =
+): AlignGridPatternCoord[] {
+  const edgePatterns = collectAlignGridEdgePatterns(frame, grid);
+  const variationPatterns =
     variationPreview != null && variationThreshold != null
-      ? cellsBelowVariationThreshold(variationPreview, variationThreshold)
+      ? patternsBelowVariationThreshold(variationPreview, variationThreshold)
       : [];
-  return mergeExcludedAlignGridCells(currentExcludedCells, [...edgeCells, ...variationCells]);
+  return mergeExcludedAlignGridPatterns(currentExcludedPatterns, [
+    ...edgePatterns,
+    ...variationPatterns,
+  ]);
 }
 
 export type CropConfirmState = {
@@ -221,12 +231,12 @@ export function nextUnsavedAlignPosition(
 /** Order-independent key for a position's grid + exclusions, used to detect unsaved changes. */
 export function alignSnapshotKey(
   grid: AlignGridState,
-  excludedCells: AlignGridCellCoord[],
+  excludedPatterns: AlignGridPatternCoord[],
 ): string {
-  const cells = excludedCells
-    .map((cell) => [cell.i, cell.j] as const)
+  const patterns = excludedPatterns
+    .map((pattern) => [pattern.i, pattern.j] as const)
     .sort((a, b) => a[0] - b[0] || a[1] - b[1]);
-  return JSON.stringify({ grid, cells });
+  return JSON.stringify({ grid, patterns });
 }
 
 export function nextAlignPosition(positions: number[], currentPosition: number): number | null {

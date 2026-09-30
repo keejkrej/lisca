@@ -1,29 +1,34 @@
 import type {
-  AlignGridCellCoord,
+  AlignGridPatternCoord,
   AlignGridState,
-  AutoExcludePreviewResponse,
+  VariationExcludePreviewResponse,
 } from "@lisca/contracts";
 import type { FrameResult } from "@lisca/utils";
-import { collectAlignGridEdgeCells, mergeExcludedAlignGridCells } from "@lisca/utils";
+import { collectAlignGridEdgePatterns, mergeExcludedAlignGridPatterns } from "@lisca/utils";
 
-export function cellsBelowVariationThreshold(
-  preview: AutoExcludePreviewResponse,
+export function patternsBelowVariationThreshold(
+  preview: VariationExcludePreviewResponse,
   threshold: number,
-): AlignGridCellCoord[] {
-  return preview.cellScores.filter((cell) => cell.score <= threshold).map(({ i, j }) => ({ i, j }));
+): AlignGridPatternCoord[] {
+  return preview.patternScores
+    .filter((pattern) => pattern.score <= threshold)
+    .map(({ i, j }) => ({ i, j }));
 }
 
-export function mergeAutoExcludedAlignCells(
-  currentExcludedCells: AlignGridCellCoord[],
+export function mergeEdgeAndVariationExcludedPatterns(
+  currentExcludedPatterns: AlignGridPatternCoord[],
   frame: FrameResult,
   grid: AlignGridState,
-  variationPreview: AutoExcludePreviewResponse | null,
+  variationPreview: VariationExcludePreviewResponse | null,
   variationThreshold?: number,
-): AlignGridCellCoord[] {
-  const edgeCells = collectAlignGridEdgeCells(frame, grid);
-  const variationCells =
+): AlignGridPatternCoord[] {
+  const edgePatterns = collectAlignGridEdgePatterns(frame, grid);
+  const variationPatterns =
     variationPreview != null && variationThreshold != null
-      ? cellsBelowVariationThreshold(variationPreview, variationThreshold)
+      ? patternsBelowVariationThreshold(variationPreview, variationThreshold)
       : [];
-  return mergeExcludedAlignGridCells(currentExcludedCells, [...edgeCells, ...variationCells]);
+  return mergeExcludedAlignGridPatterns(currentExcludedPatterns, [
+    ...edgePatterns,
+    ...variationPatterns,
+  ]);
 }

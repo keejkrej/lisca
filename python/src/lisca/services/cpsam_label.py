@@ -166,8 +166,8 @@ def segment_bf_binary_batch(
     return results
 
 
-def _sample_key(position: int, roi: int, timepoint: int) -> str:
-    return f"Pos{position}_Roi{roi}_t{timepoint:04d}"
+def _sample_key(position: int, roi: int, frame: int) -> str:
+    return f"Pos{position}_Roi{roi}_t{frame:04d}"
 
 
 def _sample_paths(output: Path, key: str) -> tuple[Path, Path]:
@@ -203,8 +203,8 @@ def label_cpsam(options: LabelCpsamOptions) -> dict:
                 raise FileNotFoundError(msg)
 
             pending_times: list[int] = []
-            for timepoint in times:
-                key = _sample_key(position, roi_entry.roi, timepoint)
+            for frame in times:
+                key = _sample_key(position, roi_entry.roi, frame)
                 image_path, mask_path = _sample_paths(output, key)
                 if mask_path.is_file() and image_path.is_file() and not options.force:
                     skipped += 1
@@ -213,7 +213,7 @@ def label_cpsam(options: LabelCpsamOptions) -> dict:
                             "key": key,
                             "position": position,
                             "roi": roi_entry.roi,
-                            "time": timepoint,
+                            "time": frame,
                             "image": str(image_path.relative_to(output)),
                             "mask": str(mask_path.relative_to(output)),
                             "height": int(roi_entry.shape[3]),
@@ -222,32 +222,32 @@ def label_cpsam(options: LabelCpsamOptions) -> dict:
                         }
                     )
                     continue
-                pending_times.append(timepoint)
+                pending_times.append(frame)
 
             if not pending_times:
                 continue
 
             stack = load_roi_stack(roi_path, roi_entry.shape)
-            pending_frames = [
+            pending_images = [
                 roi_frame_2d(
                     stack,
                     index.axis_order,
-                    timepoint,
+                    frame,
                     options.channel,
                     options.z,
                 )
-                for timepoint in pending_times
+                for frame in pending_times
             ]
 
             binary_masks = segment_bf_binary_batch(
-                pending_frames, batch_size=options.batch_size
+                pending_images, batch_size=options.batch_size
             )
-            for timepoint, frame, binary in zip(
-                pending_times, pending_frames, binary_masks, strict=True
+            for frame, image, binary in zip(
+                pending_times, pending_images, binary_masks, strict=True
             ):
-                key = _sample_key(position, roi_entry.roi, timepoint)
+                key = _sample_key(position, roi_entry.roi, frame)
                 image_path, mask_path = _sample_paths(output, key)
-                image_u8 = normalize_frame_to_uint8(frame)
+                image_u8 = normalize_frame_to_uint8(image)
                 save_grayscale_png(str(image_path), image_u8)
                 write_mask_png(binary, mask_path)
                 labeled += 1
@@ -256,7 +256,7 @@ def label_cpsam(options: LabelCpsamOptions) -> dict:
                         "key": key,
                         "position": position,
                         "roi": roi_entry.roi,
-                        "time": timepoint,
+                        "time": frame,
                         "image": str(image_path.relative_to(output)),
                         "mask": str(mask_path.relative_to(output)),
                         "height": int(binary.shape[0]),

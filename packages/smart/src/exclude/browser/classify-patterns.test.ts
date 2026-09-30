@@ -1,12 +1,12 @@
-import type { AutoExcludePreviewCell } from "@lisca/contracts";
+import type { AlignGridPatternBox } from "@lisca/contracts";
 import type { FrameResult } from "@lisca/utils";
 import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
-const { getSmartExcludeClassifier, loadTransformers, cropCellToCanvas, resizeCanvasToSquare } =
+const { getSmartExcludeClassifier, loadTransformers, cropPatternToCanvas, resizeCanvasToSquare } =
   vi.hoisted(() => ({
     getSmartExcludeClassifier: vi.fn(),
     loadTransformers: vi.fn(),
-    cropCellToCanvas: vi.fn(),
+    cropPatternToCanvas: vi.fn(),
     resizeCanvasToSquare: vi.fn(),
   }));
 
@@ -20,11 +20,11 @@ vi.mock("../../shared/transformers", () => ({
 }));
 
 vi.mock("./preprocess", () => ({
-  cropCellToCanvas,
+  cropPatternToCanvas,
   resizeCanvasToSquare,
 }));
 
-import { classifyExclusionCandidates } from "./classify-cells";
+import { classifyExclusionCandidates } from "./classify-patterns";
 
 function createFrame(width: number, height: number, value = 128): FrameResult {
   return {
@@ -34,7 +34,7 @@ function createFrame(width: number, height: number, value = 128): FrameResult {
   };
 }
 
-function createCell(overrides: Partial<AutoExcludePreviewCell> = {}): AutoExcludePreviewCell {
+function createPattern(overrides: Partial<AlignGridPatternBox> = {}): AlignGridPatternBox {
   return {
     i: 0,
     j: 0,
@@ -50,10 +50,10 @@ describe("classifyExclusionCandidates", () => {
   beforeEach(() => {
     getSmartExcludeClassifier.mockReset();
     loadTransformers.mockReset();
-    cropCellToCanvas.mockReset();
+    cropPatternToCanvas.mockReset();
     resizeCanvasToSquare.mockReset();
     const canvas = { width: 224, height: 224 };
-    cropCellToCanvas.mockReturnValue(canvas);
+    cropPatternToCanvas.mockReturnValue(canvas);
     resizeCanvasToSquare.mockReturnValue(canvas);
     loadTransformers.mockResolvedValue({
       RawImage: {
@@ -62,12 +62,12 @@ describe("classifyExclusionCandidates", () => {
     });
   });
 
-  it("returns empty when there are no candidate cells", async () => {
+  it("returns empty when there are no candidate patterns", async () => {
     await expect(classifyExclusionCandidates(createFrame(4, 4), [])).resolves.toEqual([]);
     expect(getSmartExcludeClassifier).not.toHaveBeenCalled();
   });
 
-  it("excludes cells when the exclude label score meets the threshold", async () => {
+  it("excludes patterns when the exclude label score meets the threshold", async () => {
     const classifier = vi
       .fn()
       .mockResolvedValueOnce([
@@ -81,11 +81,11 @@ describe("classifyExclusionCandidates", () => {
     getSmartExcludeClassifier.mockResolvedValue(classifier);
 
     const frame = createFrame(4, 4);
-    const cells = [createCell({ i: 1, j: 2 }), createCell({ i: 3, j: 4, x: 2, y: 2 })];
+    const patterns = [createPattern({ i: 1, j: 2 }), createPattern({ i: 3, j: 4, x: 2, y: 2 })];
 
-    await expect(classifyExclusionCandidates(frame, cells, { threshold: 0.5 })).resolves.toEqual([
-      { i: 1, j: 2 },
-    ]);
+    await expect(classifyExclusionCandidates(frame, patterns, { threshold: 0.5 })).resolves.toEqual(
+      [{ i: 1, j: 2 }],
+    );
     expect(getSmartExcludeClassifier).toHaveBeenCalledTimes(1);
     expect(classifier).toHaveBeenCalledTimes(2);
   });

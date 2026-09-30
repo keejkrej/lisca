@@ -1,6 +1,6 @@
 import {
   createTaskCenterGateway,
-  subscribeTaskCenterOperations,
+  subscribeTaskCenterTasks,
 } from "@lisca/client/session/task-center";
 import { TaskCenter } from "@lisca/ui/shell";
 
@@ -14,7 +14,7 @@ export function AnnotatorTaskCenter() {
       appearance="status-link"
       gateway={gateway}
       subscribe={({ onSnapshot, onError }) =>
-        subscribeTaskCenterOperations({ gateway, onSnapshot, onError })
+        subscribeTaskCenterTasks({ gateway, onSnapshot, onError })
       }
     />
   );

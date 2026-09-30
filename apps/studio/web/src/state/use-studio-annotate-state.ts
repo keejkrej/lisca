@@ -24,7 +24,7 @@ import {
   useStudioStore,
 } from "./studio-store";
 import { setStudioAnnotateDirty } from "./studio-annotate-guard";
-import { nextStudioAnnotateSite, previousStudioAnnotateSite } from "./studio-annotate-navigation";
+import { nextStudioAnnotateRoi, previousStudioAnnotateRoi } from "./studio-annotate-navigation";
 
 const noop = () => {};
 
@@ -135,21 +135,21 @@ export function useStudioAnnotateState(): StudioAnnotateState {
   };
   const nextSite = () => {
     const current = annotate();
-    return nextStudioAnnotateSite(current.scan, current.selection);
+    return nextStudioAnnotateRoi(current.scan, current.selection);
   };
   const goToNextSite = () => {
     const current = annotate();
-    const target = nextStudioAnnotateSite(current.scan, current.selection);
+    const target = nextStudioAnnotateRoi(current.scan, current.selection);
     if (!target) return;
     current.changeSelection(() => current.setSelection(target));
   };
   const previousSite = () => {
     const current = annotate();
-    return previousStudioAnnotateSite(current.scan, current.selection);
+    return previousStudioAnnotateRoi(current.scan, current.selection);
   };
   const goToPreviousSite = () => {
     const current = annotate();
-    const target = previousStudioAnnotateSite(current.scan, current.selection);
+    const target = previousStudioAnnotateRoi(current.scan, current.selection);
     if (!target) return;
     current.changeSelection(() => current.setSelection(target));
   };

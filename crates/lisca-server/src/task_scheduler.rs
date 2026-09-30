@@ -9,8 +9,8 @@ use std::{
 };
 
 use lisca::protocol::{
-    OperationAttention, OperationDetail, OperationProgress, OperationStatus, OperationSummary,
-    TaskAttempt, TaskDependencyBlock, TaskDetail, TaskError, TaskStatus, TaskWorkProgress,
+    StepAttempt, StepDependencyBlock, StepDetail, StepError, StepStatus, StepWorkProgress,
+    TaskAttention, TaskDetail, TaskProgress, TaskStatus, TaskSummary,
 };
 use tokio::sync::{watch, Notify};
 use tracing::Instrument;
@@ -20,10 +20,10 @@ use crate::normalize_workspace_path;
 
 const DEFAULT_HISTORY_CAP: usize = 100;
 
-type TaskFuture = Pin<Box<dyn Future<Output = Result<(), TaskFailure>> + Send + 'static>>;
-type TaskHandlerFactory = Arc<dyn Fn(TaskContext) -> TaskFuture + Send + Sync + 'static>;
+type StepFuture = Pin<Box<dyn Future<Output = Result<(), StepFailure>> + Send + 'static>>;
+type StepHandlerFactory = Arc<dyn Fn(StepContext) -> StepFuture + Send + Sync + 'static>;
 
-struct TaskProgressUpdate {
+struct StepProgressUpdate {
     unit: String,
     completed: u32,
     total: u32,
@@ -32,21 +32,21 @@ struct TaskProgressUpdate {
 }
 
 #[derive(Clone)]
-pub struct TaskContext {
+pub struct StepContext {
     cancellation: watch::Receiver<bool>,
     scheduler: TaskScheduler,
-    operation_id: String,
     task_id: String,
+    step_id: String,
 }
 
-impl TaskContext {
+impl StepContext {
     pub fn is_cancellation_requested(&self) -> bool {
         *self.cancellation.borrow()
     }
 
-    pub fn checkpoint(&self) -> Result<(), TaskFailure> {
+    pub fn checkpoint(&self) -> Result<(), StepFailure> {
         if self.is_cancellation_requested() {
-            Err(TaskFailure::cancelled())
+            Err(StepFailure::cancelled())
         } else {
             Ok(())
         }
@@ -67,12 +67,12 @@ impl TaskContext {
         total: u32,
         phase: Option<String>,
         message: Option<String>,
-    ) -> Result<(), TaskFailure> {
+    ) -> Result<(), StepFailure> {
         self.scheduler
             .report_work_progress(
-                &self.operation_id,
                 &self.task_id,
-                TaskProgressUpdate {
+                &self.step_id,
+                StepProgressUpdate {
                     unit: unit.into(),
                     completed,
                     total,
@@ -80,7 +80,7 @@ impl TaskContext {
                     message,
                 },
             )
-            .map_err(|error| TaskFailure::new("progress_report_failed", error.to_string()))
+            .map_err(|error| StepFailure::new("progress_report_failed", error.to_string()))
     }
 }
 
@@ -92,7 +92,7 @@ pub struct SchedulerConfig {
 
 impl SchedulerConfig {
     pub fn from_environment() -> Self {
-        let capacity = std::env::var("LISCA_TASK_CAPACITY")
+        let capacity = std::env::var("LISCA_STEP_CAPACITY")
             .ok()
             .and_then(|value| value.parse().ok())
             .unwrap_or_else(|| {
@@ -118,12 +118,12 @@ impl Default for SchedulerConfig {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct TaskFailure {
+pub struct StepFailure {
     pub code: String,
     pub message: String,
 }
 
-impl TaskFailure {
+impl StepFailure {
     pub fn new(code: impl Into<String>, message: impl Into<String>) -> Self {
         Self {
             code: code.into(),
@@ -132,27 +132,27 @@ impl TaskFailure {
     }
 
     pub fn cancelled() -> Self {
-        Self::new("task_cancelled", "task execution was cancelled")
+        Self::new("step_cancelled", "step execution was cancelled")
     }
 
     fn is_cancellation(&self) -> bool {
-        self.code == "task_cancelled"
+        self.code == "step_cancelled"
     }
 }
 
-pub struct TaskSpec {
+pub struct StepSpec {
     id: String,
     kind: String,
     weight: u32,
     dependencies: Vec<String>,
-    handler_factory: TaskHandlerFactory,
+    handler_factory: StepHandlerFactory,
 }
 
-impl TaskSpec {
+impl StepSpec {
     pub fn new<F, Fut>(kind: impl Into<String>, weight: u32, handler_factory: F) -> Self
     where
-        F: Fn(TaskContext) -> Fut + Send + Sync + 'static,
-        Fut: Future<Output = Result<(), TaskFailure>> + Send + 'static,
+        F: Fn(StepContext) -> Fut + Send + Sync + 'static,
+        Fut: Future<Output = Result<(), StepFailure>> + Send + 'static,
     {
         Self {
             id: Uuid::new_v4().to_string(),
@@ -163,7 +163,7 @@ impl TaskSpec {
         }
     }
 
-    pub fn task_id(&self) -> &str {
+    pub fn step_id(&self) -> &str {
         &self.id
     }
 
@@ -177,25 +177,25 @@ impl TaskSpec {
     }
 }
 
-pub struct OperationSpec {
+pub struct TaskSpec {
     kind: String,
     workspace_path: String,
     mutating: bool,
-    tasks: Vec<TaskSpec>,
+    steps: Vec<StepSpec>,
 }
 
-impl OperationSpec {
+impl TaskSpec {
     pub fn new(
         kind: impl Into<String>,
         workspace_path: impl Into<String>,
         mutating: bool,
-        tasks: Vec<TaskSpec>,
+        steps: Vec<StepSpec>,
     ) -> Self {
         Self {
             kind: kind.into(),
             workspace_path: workspace_path.into(),
             mutating,
-            tasks,
+            steps,
         }
     }
 }
@@ -204,25 +204,25 @@ impl OperationSpec {
 pub enum SchedulerError {
     InvalidCapacity,
     InvalidHistoryCap,
-    EmptyOperation,
-    InvalidOperationKind,
+    EmptyTask,
     InvalidTaskKind,
+    InvalidStepKind,
     InvalidWorkspace,
     InvalidWeight {
         weight: u32,
         capacity: u32,
     },
     MissingDependency {
-        task_id: String,
+        step_id: String,
         dependency_id: String,
     },
-    CrossOperationDependency {
-        task_id: String,
+    CrossTaskDependency {
+        step_id: String,
         dependency_id: String,
-        operation_id: String,
+        task_id: String,
     },
     CyclicDependency {
-        task_ids: Vec<String>,
+        step_ids: Vec<String>,
     },
     NotFound {
         entity: &'static str,
@@ -242,39 +242,37 @@ pub enum SchedulerError {
 impl fmt::Display for SchedulerError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::InvalidCapacity => formatter.write_str("task capacity must be greater than zero"),
+            Self::InvalidCapacity => formatter.write_str("step capacity must be greater than zero"),
             Self::InvalidHistoryCap => {
                 formatter.write_str("task history cap must be greater than zero")
             }
-            Self::EmptyOperation => {
-                formatter.write_str("an operation must contain at least one task")
-            }
-            Self::InvalidOperationKind => formatter.write_str("operation kind is required"),
+            Self::EmptyTask => formatter.write_str("a task must contain at least one step"),
             Self::InvalidTaskKind => formatter.write_str("task kind is required"),
+            Self::InvalidStepKind => formatter.write_str("step kind is required"),
             Self::InvalidWorkspace => formatter.write_str("workspace path is required"),
             Self::InvalidWeight { weight, capacity } => write!(
                 formatter,
-                "task weight {weight} must be between 1 and scheduler capacity {capacity}"
+                "step weight {weight} must be between 1 and scheduler capacity {capacity}"
             ),
             Self::MissingDependency {
-                task_id,
+                step_id,
                 dependency_id,
             } => write!(
                 formatter,
-                "task {task_id} references missing dependency {dependency_id}"
+                "step {step_id} references missing dependency {dependency_id}"
             ),
-            Self::CrossOperationDependency {
-                task_id,
+            Self::CrossTaskDependency {
+                step_id,
                 dependency_id,
-                operation_id,
+                task_id,
             } => write!(
                 formatter,
-                "task {task_id} references dependency {dependency_id} from operation {operation_id}"
+                "step {step_id} references dependency {dependency_id} from task {task_id}"
             ),
-            Self::CyclicDependency { task_ids } => write!(
+            Self::CyclicDependency { step_ids } => write!(
                 formatter,
-                "task dependency graph contains a cycle involving {}",
-                task_ids.join(", ")
+                "step dependency graph contains a cycle involving {}",
+                step_ids.join(", ")
             ),
             Self::NotFound { entity, id } => write!(formatter, "{entity} {id} was not found"),
             Self::InvalidTransition {
@@ -314,8 +312,8 @@ struct SchedulerInner {
 }
 
 struct SchedulerState {
-    operations: HashMap<String, OperationRecord>,
-    operation_order: Vec<String>,
+    tasks: HashMap<String, TaskRecord>,
+    task_order: Vec<String>,
     round_robin: VecDeque<String>,
     last_dispatched: Option<String>,
     terminal_history: VecDeque<String>,
@@ -325,48 +323,48 @@ struct SchedulerState {
     revision: u64,
 }
 
-struct OperationRecord {
+struct TaskRecord {
     id: String,
     kind: String,
     workspace_id: String,
     workspace_path: String,
     mutating: bool,
     admitted: bool,
-    tasks: Vec<TaskRecord>,
+    steps: Vec<StepRecord>,
     created_at_ms: u64,
     updated_at_ms: u64,
     terminal_recorded: bool,
 }
 
-struct TaskRecord {
+struct StepRecord {
     id: String,
     kind: String,
     weight: u32,
     enqueue_order: u64,
     dependencies: Vec<String>,
-    status: TaskStatus,
-    handler_factory: TaskHandlerFactory,
+    status: StepStatus,
+    handler_factory: StepHandlerFactory,
     cancellation: watch::Sender<bool>,
     attempts: Vec<AttemptRecord>,
-    work_progress: Option<TaskWorkProgress>,
+    work_progress: Option<StepWorkProgress>,
 }
 
 struct AttemptRecord {
     id: String,
-    status: TaskStatus,
+    status: StepStatus,
     started_at_ms: Option<u64>,
     finished_at_ms: Option<u64>,
-    error: Option<TaskFailure>,
+    error: Option<StepFailure>,
 }
 
 struct Dispatch {
-    operation_id: String,
     task_id: String,
+    step_id: String,
     attempt_id: String,
     workspace_id: String,
-    task_kind: String,
-    handler_factory: TaskHandlerFactory,
-    context: TaskContext,
+    step_kind: String,
+    handler_factory: StepHandlerFactory,
+    context: StepContext,
 }
 
 impl TaskScheduler {
@@ -384,8 +382,8 @@ impl TaskScheduler {
             inner: Arc::new(SchedulerInner {
                 config,
                 state: Mutex::new(SchedulerState {
-                    operations: HashMap::new(),
-                    operation_order: Vec::new(),
+                    tasks: HashMap::new(),
+                    task_order: Vec::new(),
                     round_robin: VecDeque::new(),
                     last_dispatched: None,
                     terminal_history: VecDeque::new(),
@@ -403,34 +401,34 @@ impl TaskScheduler {
         Ok(scheduler)
     }
 
-    pub fn submit(&self, spec: OperationSpec) -> Result<OperationDetail, SchedulerError> {
-        let operation_kind = spec.kind.trim().to_string();
-        if operation_kind.is_empty() {
-            return Err(SchedulerError::InvalidOperationKind);
+    pub fn submit(&self, spec: TaskSpec) -> Result<TaskDetail, SchedulerError> {
+        let task_kind = spec.kind.trim().to_string();
+        if task_kind.is_empty() {
+            return Err(SchedulerError::InvalidTaskKind);
         }
-        if spec.tasks.is_empty() {
-            return Err(SchedulerError::EmptyOperation);
+        if spec.steps.is_empty() {
+            return Err(SchedulerError::EmptyTask);
         }
         let workspace_path = normalize_workspace_path(&spec.workspace_path);
         if workspace_path.is_empty() {
             return Err(SchedulerError::InvalidWorkspace);
         }
-        for task in &spec.tasks {
-            if task.kind.trim().is_empty() {
-                return Err(SchedulerError::InvalidTaskKind);
+        for step in &spec.steps {
+            if step.kind.trim().is_empty() {
+                return Err(SchedulerError::InvalidStepKind);
             }
-            if task.weight == 0 || task.weight > self.inner.config.capacity {
+            if step.weight == 0 || step.weight > self.inner.config.capacity {
                 return Err(SchedulerError::InvalidWeight {
-                    weight: task.weight,
+                    weight: step.weight,
                     capacity: self.inner.config.capacity,
                 });
             }
         }
 
         let mut state = self.lock()?;
-        validate_graph(&spec.tasks, &state)?;
+        validate_graph(&spec.steps, &state)?;
 
-        let operation_id = Uuid::new_v4().to_string();
+        let task_id = Uuid::new_v4().to_string();
         let workspace_id =
             Uuid::new_v5(&Uuid::NAMESPACE_URL, workspace_path.as_bytes()).to_string();
         let now = timestamp_ms();
@@ -438,27 +436,27 @@ impl TaskScheduler {
         if spec.mutating && admitted {
             state
                 .admitted_workspaces
-                .insert(workspace_path.clone(), operation_id.clone());
+                .insert(workspace_path.clone(), task_id.clone());
         }
-        let mut tasks = Vec::with_capacity(spec.tasks.len());
-        for task in spec.tasks {
+        let mut steps = Vec::with_capacity(spec.steps.len());
+        for step in spec.steps {
             let attempt_id = Uuid::new_v4().to_string();
             let (cancellation, _) = watch::channel(false);
             let enqueue_order = state.next_enqueue_order;
             state.next_enqueue_order += 1;
-            let status = if task.dependencies.is_empty() {
-                TaskStatus::Queued
+            let status = if step.dependencies.is_empty() {
+                StepStatus::Queued
             } else {
-                TaskStatus::Blocked
+                StepStatus::Blocked
             };
-            tasks.push(TaskRecord {
-                id: task.id,
-                kind: task.kind.trim().to_string(),
-                weight: task.weight,
+            steps.push(StepRecord {
+                id: step.id,
+                kind: step.kind.trim().to_string(),
+                weight: step.weight,
                 enqueue_order,
-                dependencies: task.dependencies,
+                dependencies: step.dependencies,
                 status,
-                handler_factory: task.handler_factory,
+                handler_factory: step.handler_factory,
                 cancellation,
                 attempts: vec![AttemptRecord {
                     id: attempt_id,
@@ -470,42 +468,37 @@ impl TaskScheduler {
                 work_progress: None,
             });
         }
-        state.operations.insert(
-            operation_id.clone(),
-            OperationRecord {
-                id: operation_id.clone(),
-                kind: operation_kind,
+        state.tasks.insert(
+            task_id.clone(),
+            TaskRecord {
+                id: task_id.clone(),
+                kind: task_kind,
                 workspace_id,
                 workspace_path,
                 mutating: spec.mutating,
                 admitted,
-                tasks,
+                steps,
                 created_at_ms: now,
                 updated_at_ms: now,
                 terminal_recorded: false,
             },
         );
-        state.operation_order.push(operation_id.clone());
-        state.round_robin.push_back(operation_id.clone());
+        state.task_order.push(task_id.clone());
+        state.round_robin.push_back(task_id.clone());
         self.changed(&mut state);
-        let detail = project_operation(
-            state
-                .operations
-                .get(&operation_id)
-                .expect("operation inserted"),
-        );
+        let detail = project_task(state.tasks.get(&task_id).expect("task inserted"));
         drop(state);
         self.inner.dispatch.notify_one();
         Ok(detail)
     }
 
-    pub fn list_operations(&self) -> Result<Vec<OperationSummary>, SchedulerError> {
+    pub fn list_tasks(&self) -> Result<Vec<TaskSummary>, SchedulerError> {
         let state = self.lock()?;
         let mut list = state
-            .operation_order
+            .task_order
             .iter()
-            .filter_map(|id| state.operations.get(id))
-            .filter(|operation| !operation_status(operation).is_terminal())
+            .filter_map(|id| state.tasks.get(id))
+            .filter(|task| !task_status(task).is_terminal())
             .map(project_summary)
             .collect::<Vec<_>>();
         list.extend(
@@ -513,208 +506,202 @@ impl TaskScheduler {
                 .terminal_history
                 .iter()
                 .rev()
-                .filter_map(|id| state.operations.get(id))
+                .filter_map(|id| state.tasks.get(id))
                 .map(project_summary),
         );
         Ok(list)
     }
 
-    pub fn operation(&self, operation_id: &str) -> Result<OperationDetail, SchedulerError> {
-        let state = self.lock()?;
-        state
-            .operations
-            .get(operation_id)
-            .map(project_operation)
-            .ok_or_else(|| SchedulerError::NotFound {
-                entity: "operation",
-                id: operation_id.to_string(),
-            })
-    }
-
     pub fn task(&self, task_id: &str) -> Result<TaskDetail, SchedulerError> {
         let state = self.lock()?;
         state
-            .operations
-            .values()
-            .find_map(|operation| {
-                operation
-                    .tasks
-                    .iter()
-                    .find(|task| task.id == task_id)
-                    .map(|task| project_task(operation, task))
-            })
+            .tasks
+            .get(task_id)
+            .map(project_task)
             .ok_or_else(|| SchedulerError::NotFound {
                 entity: "task",
                 id: task_id.to_string(),
             })
     }
 
-    pub fn cancel_operation(&self, operation_id: &str) -> Result<OperationDetail, SchedulerError> {
+    pub fn step(&self, step_id: &str) -> Result<StepDetail, SchedulerError> {
+        let state = self.lock()?;
+        state
+            .tasks
+            .values()
+            .find_map(|task| {
+                task.steps
+                    .iter()
+                    .find(|step| step.id == step_id)
+                    .map(|step| project_step(task, step))
+            })
+            .ok_or_else(|| SchedulerError::NotFound {
+                entity: "step",
+                id: step_id.to_string(),
+            })
+    }
+
+    pub fn cancel_task(&self, task_id: &str) -> Result<TaskDetail, SchedulerError> {
         let mut state = self.lock()?;
-        let Some(operation) = state.operations.get_mut(operation_id) else {
+        let Some(task) = state.tasks.get_mut(task_id) else {
             return Err(SchedulerError::NotFound {
-                entity: "operation",
-                id: operation_id.to_string(),
+                entity: "task",
+                id: task_id.to_string(),
             });
         };
 
-        let has_cancellable = operation.tasks.iter().any(|task| {
+        let has_cancellable = task.steps.iter().any(|step| {
             matches!(
-                task.status,
-                TaskStatus::Queued | TaskStatus::Blocked | TaskStatus::Running
+                step.status,
+                StepStatus::Queued | StepStatus::Blocked | StepStatus::Running
             )
         });
         if !has_cancellable {
-            if operation.tasks.iter().any(|task| {
+            if task.steps.iter().any(|step| {
                 matches!(
-                    task.status,
-                    TaskStatus::Cancelled | TaskStatus::CancellationRequested
+                    step.status,
+                    StepStatus::Cancelled | StepStatus::CancellationRequested
                 )
             }) {
-                return Ok(project_operation(operation));
+                return Ok(project_task(task));
             }
             return Err(SchedulerError::InvalidTransition {
-                entity: "operation",
-                id: operation_id.to_string(),
-                status: operation_status_name(operation_status(operation)).to_string(),
+                entity: "task",
+                id: task_id.to_string(),
+                status: task_status_name(task_status(task)).to_string(),
                 command: "cancel",
                 reason: None,
             });
         }
 
-        let now = next_operation_timestamp(operation);
-        for task in &mut operation.tasks {
-            cancel_task_record(task, now);
+        let now = next_task_timestamp(task);
+        for step in &mut task.steps {
+            cancel_step_record(step, now);
         }
-        operation.updated_at_ms = now;
-        self.record_terminal_and_admit_next(&mut state, operation_id);
+        task.updated_at_ms = now;
+        self.record_terminal_and_admit_next(&mut state, task_id);
         self.changed(&mut state);
-        let detail = project_operation(
+        let detail = project_task(
             state
-                .operations
-                .get(operation_id)
-                .expect("cancelled operation remains retained"),
+                .tasks
+                .get(task_id)
+                .expect("cancelled task remains retained"),
         );
         drop(state);
         self.inner.dispatch.notify_one();
         Ok(detail)
     }
 
-    pub fn cancel_task(&self, task_id: &str) -> Result<OperationDetail, SchedulerError> {
+    pub fn cancel_step(&self, step_id: &str) -> Result<TaskDetail, SchedulerError> {
         let mut state = self.lock()?;
-        let Some(operation_id) = state.operations.values().find_map(|operation| {
-            operation
-                .tasks
+        let Some(task_id) = state.tasks.values().find_map(|task| {
+            task.steps
                 .iter()
-                .any(|task| task.id == task_id)
-                .then(|| operation.id.clone())
+                .any(|step| step.id == step_id)
+                .then(|| task.id.clone())
         }) else {
             return Err(SchedulerError::NotFound {
-                entity: "task",
-                id: task_id.to_string(),
+                entity: "step",
+                id: step_id.to_string(),
             });
         };
 
         {
-            let operation = state
-                .operations
-                .get_mut(&operation_id)
-                .expect("task owner exists");
-            let task_index = operation
-                .tasks
+            let task = state.tasks.get_mut(&task_id).expect("step owner exists");
+            let step_index = task
+                .steps
                 .iter()
-                .position(|task| task.id == task_id)
-                .expect("task belongs to owner");
-            let status = operation.tasks[task_index].status;
+                .position(|step| step.id == step_id)
+                .expect("step belongs to owner");
+            let status = task.steps[step_index].status;
             match status {
-                TaskStatus::Queued | TaskStatus::Blocked | TaskStatus::Running => {
-                    let now = next_operation_timestamp(operation);
-                    cancel_task_record(&mut operation.tasks[task_index], now);
-                    operation.updated_at_ms = now;
+                StepStatus::Queued | StepStatus::Blocked | StepStatus::Running => {
+                    let now = next_task_timestamp(task);
+                    cancel_step_record(&mut task.steps[step_index], now);
+                    task.updated_at_ms = now;
                 }
-                TaskStatus::Cancelled | TaskStatus::CancellationRequested => {
-                    return Ok(project_operation(operation));
+                StepStatus::Cancelled | StepStatus::CancellationRequested => {
+                    return Ok(project_task(task));
                 }
-                TaskStatus::Completed | TaskStatus::Failed => {
+                StepStatus::Completed | StepStatus::Failed => {
                     return Err(SchedulerError::InvalidTransition {
-                        entity: "task",
-                        id: task_id.to_string(),
-                        status: task_status_name(status).to_string(),
+                        entity: "step",
+                        id: step_id.to_string(),
+                        status: step_status_name(status).to_string(),
                         command: "cancel",
                         reason: None,
                     });
                 }
             }
         }
-        self.record_terminal_and_admit_next(&mut state, &operation_id);
+        self.record_terminal_and_admit_next(&mut state, &task_id);
         self.changed(&mut state);
-        let detail = project_operation(
+        let detail = project_task(
             state
-                .operations
-                .get(&operation_id)
-                .expect("task owner remains retained"),
+                .tasks
+                .get(&task_id)
+                .expect("step owner remains retained"),
         );
         drop(state);
         self.inner.dispatch.notify_one();
         Ok(detail)
     }
 
-    pub fn retry_task(&self, task_id: &str) -> Result<OperationDetail, SchedulerError> {
+    pub fn retry_step(&self, step_id: &str) -> Result<TaskDetail, SchedulerError> {
         let mut state = self.lock()?;
-        let Some(operation_id) = state.operations.values().find_map(|operation| {
-            operation
-                .tasks
+        let Some(task_id) = state.tasks.values().find_map(|task| {
+            task.steps
                 .iter()
-                .any(|task| task.id == task_id)
-                .then(|| operation.id.clone())
+                .any(|step| step.id == step_id)
+                .then(|| task.id.clone())
         }) else {
             return Err(SchedulerError::NotFound {
-                entity: "task",
-                id: task_id.to_string(),
+                entity: "step",
+                id: step_id.to_string(),
             });
         };
 
         let current_status = state
-            .operations
-            .get(&operation_id)
-            .and_then(|operation| operation.tasks.iter().find(|task| task.id == task_id))
-            .map(|task| task.status)
-            .expect("task belongs to owner");
-        if !matches!(current_status, TaskStatus::Failed | TaskStatus::Cancelled) {
+            .tasks
+            .get(&task_id)
+            .and_then(|task| task.steps.iter().find(|step| step.id == step_id))
+            .map(|step| step.status)
+            .expect("step belongs to owner");
+        if !matches!(current_status, StepStatus::Failed | StepStatus::Cancelled) {
             return Err(SchedulerError::InvalidTransition {
-                entity: "task",
-                id: task_id.to_string(),
-                status: task_status_name(current_status).to_string(),
+                entity: "step",
+                id: step_id.to_string(),
+                status: step_status_name(current_status).to_string(),
                 command: "retry",
                 reason: None,
             });
         }
         let incomplete_dependencies = state
-            .operations
-            .get(&operation_id)
-            .map(|operation| {
-                let task = operation
-                    .tasks
+            .tasks
+            .get(&task_id)
+            .map(|task| {
+                let step = task
+                    .steps
                     .iter()
-                    .find(|task| task.id == task_id)
-                    .expect("task belongs to owner");
-                task.dependencies
+                    .find(|step| step.id == step_id)
+                    .expect("step belongs to owner");
+                step.dependencies
                     .iter()
                     .filter(|dependency_id| {
-                        !operation.tasks.iter().any(|dependency| {
+                        !task.steps.iter().any(|dependency| {
                             dependency.id == dependency_id.as_str()
-                                && dependency.status == TaskStatus::Completed
+                                && dependency.status == StepStatus::Completed
                         })
                     })
                     .cloned()
                     .collect::<Vec<_>>()
             })
-            .expect("task owner exists");
+            .expect("step owner exists");
         if !incomplete_dependencies.is_empty() {
             return Err(SchedulerError::InvalidTransition {
-                entity: "task",
-                id: task_id.to_string(),
-                status: task_status_name(current_status).to_string(),
+                entity: "step",
+                id: step_id.to_string(),
+                status: step_status_name(current_status).to_string(),
                 command: "retry",
                 reason: Some(format!(
                     "dependencies must complete successfully before retry: {}",
@@ -722,55 +709,47 @@ impl TaskScheduler {
                 )),
             });
         }
-        reactivate_operation(&mut state, &operation_id);
+        reactivate_task(&mut state, &task_id);
         {
-            let operation = state
-                .operations
-                .get_mut(&operation_id)
-                .expect("task owner exists");
-            let task_index = operation
-                .tasks
+            let task = state.tasks.get_mut(&task_id).expect("step owner exists");
+            let step_index = task
+                .steps
                 .iter()
-                .position(|task| task.id == task_id)
-                .expect("task belongs to owner");
-            let now = next_operation_timestamp(operation);
-            let status = TaskStatus::Queued;
+                .position(|step| step.id == step_id)
+                .expect("step belongs to owner");
+            let now = next_task_timestamp(task);
+            let status = StepStatus::Queued;
             let (cancellation, _) = watch::channel(false);
-            let task = &mut operation.tasks[task_index];
-            task.status = status;
-            task.cancellation = cancellation;
-            task.work_progress = None;
-            task.attempts.push(AttemptRecord {
+            let step = &mut task.steps[step_index];
+            step.status = status;
+            step.cancellation = cancellation;
+            step.work_progress = None;
+            step.attempts.push(AttemptRecord {
                 id: Uuid::new_v4().to_string(),
                 status,
                 started_at_ms: None,
                 finished_at_ms: None,
                 error: None,
             });
-            operation.updated_at_ms = now;
-            refresh_dependency_states(operation);
+            task.updated_at_ms = now;
+            refresh_dependency_states(task);
         }
         self.changed(&mut state);
-        let detail = project_operation(
-            state
-                .operations
-                .get(&operation_id)
-                .expect("reactivated operation exists"),
-        );
+        let detail = project_task(state.tasks.get(&task_id).expect("reactivated task exists"));
         drop(state);
         self.inner.dispatch.notify_one();
         Ok(detail)
     }
 
-    pub async fn wait_for_operation_terminal(
+    pub async fn wait_for_task_terminal(
         &self,
-        operation_id: &str,
-    ) -> Result<OperationDetail, SchedulerError> {
+        task_id: &str,
+    ) -> Result<TaskDetail, SchedulerError> {
         let mut changes = self.inner.changes.subscribe();
         loop {
-            let operation = self.operation(operation_id)?;
-            if operation.operation.status.is_terminal() {
-                return Ok(operation);
+            let task = self.task(task_id)?;
+            if task.task.status.is_terminal() {
+                return Ok(task);
             }
             changes
                 .changed()
@@ -781,41 +760,40 @@ impl TaskScheduler {
 
     fn report_work_progress(
         &self,
-        operation_id: &str,
         task_id: &str,
-        update: TaskProgressUpdate,
+        step_id: &str,
+        update: StepProgressUpdate,
     ) -> Result<(), SchedulerError> {
         let mut state = self.lock()?;
-        let operation =
-            state
-                .operations
-                .get_mut(operation_id)
-                .ok_or_else(|| SchedulerError::NotFound {
-                    entity: "operation",
-                    id: operation_id.to_string(),
-                })?;
-        let now = next_operation_timestamp(operation);
-        let task = operation
+        let task = state
             .tasks
-            .iter_mut()
-            .find(|task| task.id == task_id)
+            .get_mut(task_id)
             .ok_or_else(|| SchedulerError::NotFound {
                 entity: "task",
                 id: task_id.to_string(),
             })?;
+        let now = next_task_timestamp(task);
+        let step = task
+            .steps
+            .iter_mut()
+            .find(|step| step.id == step_id)
+            .ok_or_else(|| SchedulerError::NotFound {
+                entity: "step",
+                id: step_id.to_string(),
+            })?;
         if !matches!(
-            task.status,
-            TaskStatus::Running | TaskStatus::CancellationRequested
+            step.status,
+            StepStatus::Running | StepStatus::CancellationRequested
         ) {
             return Err(SchedulerError::InvalidTransition {
-                entity: "task",
-                id: task_id.to_string(),
-                status: task_status_name(task.status).to_string(),
+                entity: "step",
+                id: step_id.to_string(),
+                status: step_status_name(step.status).to_string(),
                 command: "report progress",
                 reason: None,
             });
         }
-        task.work_progress = Some(TaskWorkProgress {
+        step.work_progress = Some(StepWorkProgress {
             completed: update.completed.min(update.total),
             message: update.message,
             phase: update.phase,
@@ -823,7 +801,7 @@ impl TaskScheduler {
             unit: update.unit,
             updated_at_ms: now,
         });
-        operation.updated_at_ms = now;
+        task.updated_at_ms = now;
         self.changed(&mut state);
         Ok(())
     }
@@ -834,12 +812,12 @@ impl TaskScheduler {
             while let Ok(Some(dispatch)) = self.take_dispatch() {
                 let scheduler = self.clone();
                 let span = tracing::info_span!(
-                    "task_attempt",
-                    operation_id = %dispatch.operation_id,
+                    "step_attempt",
                     task_id = %dispatch.task_id,
+                    step_id = %dispatch.step_id,
                     attempt_id = %dispatch.attempt_id,
                     workspace_id = %dispatch.workspace_id,
-                    task_kind = %dispatch.task_kind,
+                    step_kind = %dispatch.step_kind,
                 );
                 let handler_span = span.clone();
                 tokio::spawn(
@@ -852,16 +830,16 @@ impl TaskScheduler {
                         .await
                         {
                             Ok(result) => result,
-                            Err(error) if error.is_panic() => Err(TaskFailure::new(
-                                "task_panicked",
-                                "task handler panicked during execution",
+                            Err(error) if error.is_panic() => Err(StepFailure::new(
+                                "step_panicked",
+                                "step handler panicked during execution",
                             )),
-                            Err(_) => Err(TaskFailure::new(
-                                "task_aborted",
-                                "task handler was aborted during execution",
+                            Err(_) => Err(StepFailure::new(
+                                "step_aborted",
+                                "step handler was aborted during execution",
                             )),
                         };
-                        scheduler.finish_task(&dispatch.operation_id, &dispatch.task_id, result);
+                        scheduler.finish_step(&dispatch.task_id, &dispatch.step_id, result);
                     }
                     .instrument(span),
                 );
@@ -885,75 +863,74 @@ impl TaskScheduler {
             if let Some(position) = state
                 .round_robin
                 .iter()
-                .position(|operation_id| operation_id == last_dispatched)
+                .position(|task_id| task_id == last_dispatched)
             {
                 state.round_robin.rotate_left(position + 1);
             }
         }
         for _ in 0..candidates {
-            let Some(operation_id) = state.round_robin.pop_front() else {
+            let Some(task_id) = state.round_robin.pop_front() else {
                 break;
             };
             let terminal = state
-                .operations
-                .get(&operation_id)
-                .is_none_or(|operation| operation_status(operation).is_terminal());
+                .tasks
+                .get(&task_id)
+                .is_none_or(|task| task_status(task).is_terminal());
             if terminal {
                 continue;
             }
-            state.round_robin.push_back(operation_id.clone());
-            let selected = state.operations.get(&operation_id).and_then(|operation| {
-                if !operation.admitted {
+            state.round_robin.push_back(task_id.clone());
+            let selected = state.tasks.get(&task_id).and_then(|task| {
+                if !task.admitted {
                     return None;
                 }
-                operation
-                    .tasks
+                task.steps
                     .iter()
-                    .position(|task| {
-                        task.status == TaskStatus::Queued && dependencies_completed(operation, task)
+                    .position(|step| {
+                        step.status == StepStatus::Queued && dependencies_completed(task, step)
                     })
-                    .filter(|index| operation.tasks[*index].weight <= available)
+                    .filter(|index| task.steps[*index].weight <= available)
             });
-            let Some(task_index) = selected else {
+            let Some(step_index) = selected else {
                 continue;
             };
 
-            let (task_id, attempt_id, workspace_id, task_kind, weight, handler_factory, context) = {
-                let operation = state
-                    .operations
-                    .get_mut(&operation_id)
-                    .expect("round-robin operation exists");
-                let now = next_operation_timestamp(operation);
-                operation.updated_at_ms = now;
-                let task = &mut operation.tasks[task_index];
-                task.status = TaskStatus::Running;
-                let attempt = task.attempts.last_mut().expect("initial attempt exists");
-                attempt.status = TaskStatus::Running;
+            let (step_id, attempt_id, workspace_id, step_kind, weight, handler_factory, context) = {
+                let task = state
+                    .tasks
+                    .get_mut(&task_id)
+                    .expect("round-robin task exists");
+                let now = next_task_timestamp(task);
+                task.updated_at_ms = now;
+                let step = &mut task.steps[step_index];
+                step.status = StepStatus::Running;
+                let attempt = step.attempts.last_mut().expect("initial attempt exists");
+                attempt.status = StepStatus::Running;
                 attempt.started_at_ms = Some(now);
                 (
-                    task.id.clone(),
+                    step.id.clone(),
                     attempt.id.clone(),
-                    operation.workspace_id.clone(),
-                    task.kind.clone(),
-                    task.weight,
-                    task.handler_factory.clone(),
-                    TaskContext {
-                        cancellation: task.cancellation.subscribe(),
+                    task.workspace_id.clone(),
+                    step.kind.clone(),
+                    step.weight,
+                    step.handler_factory.clone(),
+                    StepContext {
+                        cancellation: step.cancellation.subscribe(),
                         scheduler: self.clone(),
-                        operation_id: operation_id.clone(),
-                        task_id: task.id.clone(),
+                        task_id: task_id.clone(),
+                        step_id: step.id.clone(),
                     },
                 )
             };
             state.running_weight += weight;
-            state.last_dispatched = Some(operation_id.clone());
+            state.last_dispatched = Some(task_id.clone());
             self.changed(&mut state);
             return Ok(Some(Dispatch {
-                operation_id,
                 task_id,
+                step_id,
                 attempt_id,
                 workspace_id,
-                task_kind,
+                step_kind,
                 handler_factory,
                 context,
             }));
@@ -961,76 +938,77 @@ impl TaskScheduler {
         Ok(None)
     }
 
-    fn finish_task(&self, operation_id: &str, task_id: &str, result: Result<(), TaskFailure>) {
+    fn finish_step(&self, task_id: &str, step_id: &str, result: Result<(), StepFailure>) {
         let Ok(mut state) = self.lock() else {
-            tracing::error!(operation_id, task_id, "task scheduler state poisoned");
+            tracing::error!(task_id, step_id, "task scheduler state poisoned");
             return;
         };
         let mut finished_weight = None;
-        if let Some(operation) = state.operations.get_mut(operation_id) {
-            let now = next_operation_timestamp(operation);
-            if let Some(task) = operation.tasks.iter_mut().find(|task| task.id == task_id) {
+        if let Some(task) = state.tasks.get_mut(task_id) {
+            let now = next_task_timestamp(task);
+            if let Some(step) = task.steps.iter_mut().find(|step| step.id == step_id) {
                 if !matches!(
-                    task.status,
-                    TaskStatus::Running | TaskStatus::CancellationRequested
+                    step.status,
+                    StepStatus::Running | StepStatus::CancellationRequested
                 ) {
                     return;
                 }
-                finished_weight = Some(task.weight);
-                let attempt = task.attempts.last_mut().expect("running attempt exists");
+                finished_weight = Some(step.weight);
+                let attempt = step.attempts.last_mut().expect("running attempt exists");
                 match result {
                     Ok(()) => {
-                        task.status = TaskStatus::Completed;
-                        attempt.status = TaskStatus::Completed;
+                        step.status = StepStatus::Completed;
+                        attempt.status = StepStatus::Completed;
                     }
                     Err(failure) if failure.is_cancellation() => {
-                        task.status = TaskStatus::Cancelled;
-                        attempt.status = TaskStatus::Cancelled;
+                        step.status = StepStatus::Cancelled;
+                        attempt.status = StepStatus::Cancelled;
                     }
                     Err(failure) => {
-                        task.status = TaskStatus::Failed;
-                        attempt.status = TaskStatus::Failed;
+                        step.status = StepStatus::Failed;
+                        attempt.status = StepStatus::Failed;
                         attempt.error = Some(failure);
                     }
                 }
                 attempt.finished_at_ms = Some(now);
-                operation.updated_at_ms = now;
-                refresh_dependency_states(operation);
+                task.updated_at_ms = now;
+                refresh_dependency_states(task);
             }
         }
         let Some(weight) = finished_weight else {
             return;
         };
         state.running_weight = state.running_weight.saturating_sub(weight);
-        self.record_terminal_and_admit_next(&mut state, operation_id);
+        self.record_terminal_and_admit_next(&mut state, task_id);
         self.changed(&mut state);
         drop(state);
         self.inner.dispatch.notify_one();
     }
 
-    fn record_terminal_and_admit_next(&self, state: &mut SchedulerState, operation_id: &str) {
-        let release_workspace = state.operations.get(operation_id).and_then(|operation| {
-            (operation_status(operation).is_terminal() && operation.mutating && operation.admitted)
-                .then(|| operation.workspace_path.clone())
+    fn record_terminal_and_admit_next(&self, state: &mut SchedulerState, task_id: &str) {
+        let release_workspace = state.tasks.get(task_id).and_then(|task| {
+            (task_status(task).is_terminal() && task.mutating && task.admitted)
+                .then(|| task.workspace_path.clone())
         });
-        let terminal_new = state.operations.get(operation_id).is_some_and(|operation| {
-            operation_status(operation).is_terminal() && !operation.terminal_recorded
-        });
+        let terminal_new = state
+            .tasks
+            .get(task_id)
+            .is_some_and(|task| task_status(task).is_terminal() && !task.terminal_recorded);
         if !terminal_new {
             return;
         }
-        if let Some(operation) = state.operations.get_mut(operation_id) {
-            operation.terminal_recorded = true;
-            if operation.mutating {
-                operation.admitted = false;
+        if let Some(task) = state.tasks.get_mut(task_id) {
+            task.terminal_recorded = true;
+            if task.mutating {
+                task.admitted = false;
             }
         }
-        state.terminal_history.push_back(operation_id.to_string());
+        state.terminal_history.push_back(task_id.to_string());
 
         if let Some(workspace_path) = release_workspace {
             state.admitted_workspaces.remove(&workspace_path);
-            let next = state.operation_order.iter().find_map(|candidate_id| {
-                let candidate = state.operations.get(candidate_id)?;
+            let next = state.task_order.iter().find_map(|candidate_id| {
+                let candidate = state.tasks.get(candidate_id)?;
                 (!candidate.terminal_recorded
                     && candidate.mutating
                     && !candidate.admitted
@@ -1038,9 +1016,9 @@ impl TaskScheduler {
                     .then(|| candidate_id.clone())
             });
             if let Some(next_id) = next {
-                if let Some(operation) = state.operations.get_mut(&next_id) {
-                    operation.admitted = true;
-                    operation.updated_at_ms = next_operation_timestamp(operation);
+                if let Some(task) = state.tasks.get_mut(&next_id) {
+                    task.admitted = true;
+                    task.updated_at_ms = next_task_timestamp(task);
                 }
                 state.admitted_workspaces.insert(workspace_path, next_id);
             }
@@ -1048,8 +1026,8 @@ impl TaskScheduler {
 
         while state.terminal_history.len() > self.inner.config.history_cap {
             if let Some(evicted) = state.terminal_history.pop_front() {
-                state.operations.remove(&evicted);
-                state.operation_order.retain(|id| id != &evicted);
+                state.tasks.remove(&evicted);
+                state.task_order.retain(|id| id != &evicted);
                 state.round_robin.retain(|id| id != &evicted);
             }
         }
@@ -1068,134 +1046,134 @@ impl TaskScheduler {
     }
 }
 
-fn cancel_task_record(task: &mut TaskRecord, now: u64) {
-    match task.status {
-        TaskStatus::Queued | TaskStatus::Blocked => {
-            task.status = TaskStatus::Cancelled;
-            task.cancellation.send_replace(true);
-            let attempt = task.attempts.last_mut().expect("active attempt exists");
-            attempt.status = TaskStatus::Cancelled;
+fn cancel_step_record(step: &mut StepRecord, now: u64) {
+    match step.status {
+        StepStatus::Queued | StepStatus::Blocked => {
+            step.status = StepStatus::Cancelled;
+            step.cancellation.send_replace(true);
+            let attempt = step.attempts.last_mut().expect("active attempt exists");
+            attempt.status = StepStatus::Cancelled;
             attempt.finished_at_ms = Some(now);
         }
-        TaskStatus::Running => {
-            task.status = TaskStatus::CancellationRequested;
-            task.cancellation.send_replace(true);
-            task.attempts
+        StepStatus::Running => {
+            step.status = StepStatus::CancellationRequested;
+            step.cancellation.send_replace(true);
+            step.attempts
                 .last_mut()
                 .expect("running attempt exists")
-                .status = TaskStatus::CancellationRequested;
+                .status = StepStatus::CancellationRequested;
         }
-        TaskStatus::CancellationRequested
-        | TaskStatus::Completed
-        | TaskStatus::Failed
-        | TaskStatus::Cancelled => {}
+        StepStatus::CancellationRequested
+        | StepStatus::Completed
+        | StepStatus::Failed
+        | StepStatus::Cancelled => {}
     }
 }
 
-fn reactivate_operation(state: &mut SchedulerState, operation_id: &str) {
-    state.terminal_history.retain(|id| id != operation_id);
-    if !state.round_robin.iter().any(|id| id == operation_id) {
-        state.round_robin.push_back(operation_id.to_string());
+fn reactivate_task(state: &mut SchedulerState, task_id: &str) {
+    state.terminal_history.retain(|id| id != task_id);
+    if !state.round_robin.iter().any(|id| id == task_id) {
+        state.round_robin.push_back(task_id.to_string());
     }
 
     let (mutating, workspace_path) = state
-        .operations
-        .get(operation_id)
-        .map(|operation| (operation.mutating, operation.workspace_path.clone()))
-        .expect("reactivated operation exists");
+        .tasks
+        .get(task_id)
+        .map(|task| (task.mutating, task.workspace_path.clone()))
+        .expect("reactivated task exists");
     let admitted = if mutating {
         match state.admitted_workspaces.get(&workspace_path) {
-            Some(admitted_id) => admitted_id == operation_id,
+            Some(admitted_id) => admitted_id == task_id,
             None => {
                 state
                     .admitted_workspaces
-                    .insert(workspace_path, operation_id.to_string());
+                    .insert(workspace_path, task_id.to_string());
                 true
             }
         }
     } else {
         true
     };
-    let operation = state
-        .operations
-        .get_mut(operation_id)
-        .expect("reactivated operation exists");
-    operation.admitted = admitted;
-    operation.terminal_recorded = false;
+    let task = state
+        .tasks
+        .get_mut(task_id)
+        .expect("reactivated task exists");
+    task.admitted = admitted;
+    task.terminal_recorded = false;
 }
 
-fn project_operation(operation: &OperationRecord) -> OperationDetail {
-    OperationDetail {
-        operation: project_summary(operation),
-        tasks: operation
-            .tasks
+fn project_task(task: &TaskRecord) -> TaskDetail {
+    TaskDetail {
+        task: project_summary(task),
+        steps: task
+            .steps
             .iter()
-            .map(|task| project_task(operation, task))
+            .map(|step| project_step(task, step))
             .collect(),
     }
 }
 
-fn project_summary(operation: &OperationRecord) -> OperationSummary {
-    let progress = operation_progress(operation);
-    let active_task = operation.tasks.iter().find(|task| {
+fn project_summary(task: &TaskRecord) -> TaskSummary {
+    let progress = task_progress(task);
+    let active_step = task.steps.iter().find(|step| {
         matches!(
-            task.status,
-            TaskStatus::Running | TaskStatus::CancellationRequested
+            step.status,
+            StepStatus::Running | StepStatus::CancellationRequested
         )
     });
-    OperationSummary {
-        active_task_kind: active_task.map(|task| task.kind.clone()),
+    TaskSummary {
+        active_step_kind: active_step.map(|step| step.kind.clone()),
         attention: if progress.failed > 0 {
-            OperationAttention::Error
+            TaskAttention::Error
         } else {
-            OperationAttention::None
+            TaskAttention::None
         },
-        created_at_ms: operation.created_at_ms,
-        kind: operation.kind.clone(),
-        mutating: operation.mutating,
-        operation_id: operation.id.clone(),
+        created_at_ms: task.created_at_ms,
+        kind: task.kind.clone(),
+        mutating: task.mutating,
+        task_id: task.id.clone(),
         progress,
-        status: operation_status(operation),
-        updated_at_ms: operation.updated_at_ms,
-        workspace_id: operation.workspace_id.clone(),
-        workspace_path: operation.workspace_path.clone(),
-        work_progress: active_task.and_then(|task| task.work_progress.clone()),
+        status: task_status(task),
+        updated_at_ms: task.updated_at_ms,
+        workspace_id: task.workspace_id.clone(),
+        workspace_path: task.workspace_path.clone(),
+        work_progress: active_step.and_then(|step| step.work_progress.clone()),
     }
 }
 
-fn project_task(operation: &OperationRecord, task: &TaskRecord) -> TaskDetail {
-    TaskDetail {
-        attempts: task
+fn project_step(task: &TaskRecord, step: &StepRecord) -> StepDetail {
+    StepDetail {
+        attempts: step
             .attempts
             .iter()
-            .map(|attempt| TaskAttempt {
+            .map(|attempt| StepAttempt {
                 attempt_id: attempt.id.clone(),
-                error: attempt.error.as_ref().map(|failure| TaskError {
+                error: attempt.error.as_ref().map(|failure| StepError {
                     code: failure.code.clone(),
                     message: failure.message.clone(),
                 }),
                 finished_at_ms: attempt.finished_at_ms,
-                operation_id: operation.id.clone(),
+                task_id: task.id.clone(),
                 started_at_ms: attempt.started_at_ms,
                 status: attempt.status,
-                task_id: task.id.clone(),
+                step_id: step.id.clone(),
             })
             .collect(),
-        blocked_by: dependency_blocks(operation, task),
-        dependencies: task.dependencies.clone(),
-        enqueue_order: task.enqueue_order,
-        operation_id: operation.id.clone(),
-        status: task.status,
+        blocked_by: dependency_blocks(task, step),
+        dependencies: step.dependencies.clone(),
+        enqueue_order: step.enqueue_order,
         task_id: task.id.clone(),
-        task_kind: task.kind.clone(),
-        weight: task.weight,
-        work_progress: task.work_progress.clone(),
-        workspace_id: operation.workspace_id.clone(),
+        status: step.status,
+        step_id: step.id.clone(),
+        step_kind: step.kind.clone(),
+        weight: step.weight,
+        work_progress: step.work_progress.clone(),
+        workspace_id: task.workspace_id.clone(),
     }
 }
 
-fn operation_progress(operation: &OperationRecord) -> OperationProgress {
-    let mut progress = OperationProgress {
+fn task_progress(task: &TaskRecord) -> TaskProgress {
+    let mut progress = TaskProgress {
         blocked: 0,
         cancellation_requested: 0,
         cancelled: 0,
@@ -1203,50 +1181,62 @@ fn operation_progress(operation: &OperationRecord) -> OperationProgress {
         failed: 0,
         queued: 0,
         running: 0,
-        total: operation.tasks.len() as u32,
+        total: task.steps.len() as u32,
     };
-    for task in &operation.tasks {
-        match task.status {
-            TaskStatus::Queued => progress.queued += 1,
-            TaskStatus::Blocked => progress.blocked += 1,
-            TaskStatus::Running => progress.running += 1,
-            TaskStatus::Completed => progress.completed += 1,
-            TaskStatus::Failed => progress.failed += 1,
-            TaskStatus::Cancelled => progress.cancelled += 1,
-            TaskStatus::CancellationRequested => progress.cancellation_requested += 1,
+    for step in &task.steps {
+        match step.status {
+            StepStatus::Queued => progress.queued += 1,
+            StepStatus::Blocked => progress.blocked += 1,
+            StepStatus::Running => progress.running += 1,
+            StepStatus::Completed => progress.completed += 1,
+            StepStatus::Failed => progress.failed += 1,
+            StepStatus::Cancelled => progress.cancelled += 1,
+            StepStatus::CancellationRequested => progress.cancellation_requested += 1,
         }
     }
     progress
 }
 
-fn operation_status(operation: &OperationRecord) -> OperationStatus {
-    let progress = operation_progress(operation);
+fn task_status(task: &TaskRecord) -> TaskStatus {
+    let progress = task_progress(task);
     if progress.cancellation_requested > 0 {
-        OperationStatus::CancellationRequested
+        TaskStatus::CancellationRequested
     } else if progress.running > 0 {
-        OperationStatus::Running
+        TaskStatus::Running
     } else if progress.queued > 0 {
-        OperationStatus::Queued
+        TaskStatus::Queued
     } else if progress.completed == progress.total {
-        OperationStatus::Completed
+        TaskStatus::Completed
     } else if progress.cancelled == progress.total {
-        OperationStatus::Cancelled
+        TaskStatus::Cancelled
     } else if progress.completed > 0
         && (progress.failed > 0 || progress.cancelled > 0 || progress.blocked > 0)
     {
-        OperationStatus::PartiallyComplete
+        TaskStatus::PartiallyComplete
     } else if progress.failed > 0 || progress.blocked > 0 {
-        OperationStatus::Failed
+        TaskStatus::Failed
     } else {
-        OperationStatus::Cancelled
+        TaskStatus::Cancelled
+    }
+}
+
+fn step_status_name(status: StepStatus) -> &'static str {
+    match status {
+        StepStatus::Queued => "queued",
+        StepStatus::Blocked => "blocked",
+        StepStatus::Running => "running",
+        StepStatus::Completed => "completed",
+        StepStatus::Failed => "failed",
+        StepStatus::Cancelled => "cancelled",
+        StepStatus::CancellationRequested => "cancellation-requested",
     }
 }
 
 fn task_status_name(status: TaskStatus) -> &'static str {
     match status {
         TaskStatus::Queued => "queued",
-        TaskStatus::Blocked => "blocked",
         TaskStatus::Running => "running",
+        TaskStatus::PartiallyComplete => "partially-complete",
         TaskStatus::Completed => "completed",
         TaskStatus::Failed => "failed",
         TaskStatus::Cancelled => "cancelled",
@@ -1254,90 +1244,77 @@ fn task_status_name(status: TaskStatus) -> &'static str {
     }
 }
 
-fn operation_status_name(status: OperationStatus) -> &'static str {
-    match status {
-        OperationStatus::Queued => "queued",
-        OperationStatus::Running => "running",
-        OperationStatus::PartiallyComplete => "partially-complete",
-        OperationStatus::Completed => "completed",
-        OperationStatus::Failed => "failed",
-        OperationStatus::Cancelled => "cancelled",
-        OperationStatus::CancellationRequested => "cancellation-requested",
-    }
-}
-
 trait TerminalStatus {
     fn is_terminal(&self) -> bool;
 }
 
-impl TerminalStatus for OperationStatus {
+impl TerminalStatus for TaskStatus {
     fn is_terminal(&self) -> bool {
         matches!(
             *self,
-            OperationStatus::PartiallyComplete
-                | OperationStatus::Completed
-                | OperationStatus::Failed
-                | OperationStatus::Cancelled
+            TaskStatus::PartiallyComplete
+                | TaskStatus::Completed
+                | TaskStatus::Failed
+                | TaskStatus::Cancelled
         )
     }
 }
 
-fn validate_graph(tasks: &[TaskSpec], state: &SchedulerState) -> Result<(), SchedulerError> {
-    let local_ids = tasks
+fn validate_graph(steps: &[StepSpec], state: &SchedulerState) -> Result<(), SchedulerError> {
+    let local_ids = steps
         .iter()
-        .map(|task| task.id.as_str())
+        .map(|step| step.id.as_str())
         .collect::<HashSet<_>>();
     let existing_owners = state
-        .operations
+        .tasks
         .values()
-        .flat_map(|operation| {
-            operation
-                .tasks
+        .flat_map(|task| {
+            task.steps
                 .iter()
-                .map(move |task| (task.id.as_str(), operation.id.as_str()))
+                .map(move |step| (step.id.as_str(), task.id.as_str()))
         })
         .collect::<HashMap<_, _>>();
 
-    for task in tasks {
-        for dependency_id in &task.dependencies {
+    for step in steps {
+        for dependency_id in &step.dependencies {
             if local_ids.contains(dependency_id.as_str()) {
                 continue;
             }
-            if let Some(operation_id) = existing_owners.get(dependency_id.as_str()) {
-                return Err(SchedulerError::CrossOperationDependency {
-                    task_id: task.id.clone(),
+            if let Some(task_id) = existing_owners.get(dependency_id.as_str()) {
+                return Err(SchedulerError::CrossTaskDependency {
+                    step_id: step.id.clone(),
                     dependency_id: dependency_id.clone(),
-                    operation_id: (*operation_id).to_string(),
+                    task_id: (*task_id).to_string(),
                 });
             }
             return Err(SchedulerError::MissingDependency {
-                task_id: task.id.clone(),
+                step_id: step.id.clone(),
                 dependency_id: dependency_id.clone(),
             });
         }
     }
 
-    let mut remaining_dependencies = tasks
+    let mut remaining_dependencies = steps
         .iter()
-        .map(|task| (task.id.as_str(), task.dependencies.len()))
+        .map(|step| (step.id.as_str(), step.dependencies.len()))
         .collect::<HashMap<_, _>>();
     let mut dependents = HashMap::<&str, Vec<&str>>::new();
-    for task in tasks {
-        for dependency_id in &task.dependencies {
+    for step in steps {
+        for dependency_id in &step.dependencies {
             dependents
                 .entry(dependency_id.as_str())
                 .or_default()
-                .push(task.id.as_str());
+                .push(step.id.as_str());
         }
     }
     let mut ready = remaining_dependencies
         .iter()
-        .filter_map(|(task_id, count)| (*count == 0).then_some(*task_id))
+        .filter_map(|(step_id, count)| (*count == 0).then_some(*step_id))
         .collect::<VecDeque<_>>();
     let mut visited = 0;
-    while let Some(task_id) = ready.pop_front() {
+    while let Some(step_id) = ready.pop_front() {
         visited += 1;
-        for dependent_id in dependents.get(task_id).into_iter().flatten() {
+        for dependent_id in dependents.get(step_id).into_iter().flatten() {
             let count = remaining_dependencies
                 .get_mut(dependent_id)
                 .expect("dependent belongs to graph");
@@ -1347,104 +1324,102 @@ fn validate_graph(tasks: &[TaskSpec], state: &SchedulerState) -> Result<(), Sche
             }
         }
     }
-    if visited != tasks.len() {
-        let mut task_ids = tasks
+    if visited != steps.len() {
+        let mut step_ids = steps
             .iter()
-            .filter(|task| remaining_dependencies[task.id.as_str()] > 0)
-            .map(|task| task.id.clone())
+            .filter(|step| remaining_dependencies[step.id.as_str()] > 0)
+            .map(|step| step.id.clone())
             .collect::<Vec<_>>();
-        task_ids.sort();
-        return Err(SchedulerError::CyclicDependency { task_ids });
+        step_ids.sort();
+        return Err(SchedulerError::CyclicDependency { step_ids });
     }
     Ok(())
 }
 
-fn dependencies_completed(operation: &OperationRecord, task: &TaskRecord) -> bool {
-    task.dependencies.iter().all(|dependency_id| {
-        operation
-            .tasks
+fn dependencies_completed(task: &TaskRecord, step: &StepRecord) -> bool {
+    step.dependencies.iter().all(|dependency_id| {
+        task.steps
             .iter()
             .find(|candidate| candidate.id == *dependency_id)
-            .is_some_and(|dependency| dependency.status == TaskStatus::Completed)
+            .is_some_and(|dependency| dependency.status == StepStatus::Completed)
     })
 }
 
-fn refresh_dependency_states(operation: &mut OperationRecord) {
-    let completed = operation
-        .tasks
+fn refresh_dependency_states(task: &mut TaskRecord) {
+    let completed = task
+        .steps
         .iter()
-        .filter(|task| task.status == TaskStatus::Completed)
-        .map(|task| task.id.clone())
+        .filter(|step| step.status == StepStatus::Completed)
+        .map(|step| step.id.clone())
         .collect::<HashSet<_>>();
-    for task in &mut operation.tasks {
-        if task.status == TaskStatus::Blocked
-            && task
+    for step in &mut task.steps {
+        if step.status == StepStatus::Blocked
+            && step
                 .dependencies
                 .iter()
                 .all(|dependency_id| completed.contains(dependency_id))
         {
-            task.status = TaskStatus::Queued;
-            task.attempts
+            step.status = StepStatus::Queued;
+            step.attempts
                 .last_mut()
-                .expect("blocked task has an attempt")
-                .status = TaskStatus::Queued;
+                .expect("blocked step has an attempt")
+                .status = StepStatus::Queued;
         }
     }
 }
 
-fn dependency_blocks(operation: &OperationRecord, task: &TaskRecord) -> Vec<TaskDependencyBlock> {
+fn dependency_blocks(task: &TaskRecord, step: &StepRecord) -> Vec<StepDependencyBlock> {
     let mut blocks = Vec::new();
     let mut visited = HashSet::new();
-    for dependency_id in &task.dependencies {
-        collect_dependency_blocks(operation, dependency_id, &mut visited, &mut blocks);
+    for dependency_id in &step.dependencies {
+        collect_dependency_blocks(task, dependency_id, &mut visited, &mut blocks);
     }
     blocks.sort_by_key(|block| {
-        operation
-            .tasks
+        task.steps
             .iter()
-            .find(|task| task.id == block.task_id)
-            .map_or(u64::MAX, |task| task.enqueue_order)
+            .find(|step| step.id == block.step_id)
+            .map_or(u64::MAX, |step| step.enqueue_order)
     });
     blocks
 }
 
 fn collect_dependency_blocks(
-    operation: &OperationRecord,
-    task_id: &str,
+    task: &TaskRecord,
+    step_id: &str,
     visited: &mut HashSet<String>,
-    blocks: &mut Vec<TaskDependencyBlock>,
+    blocks: &mut Vec<StepDependencyBlock>,
 ) {
-    if !visited.insert(task_id.to_string()) {
+    if !visited.insert(step_id.to_string()) {
         return;
     }
-    let Some(task) = operation.tasks.iter().find(|task| task.id == task_id) else {
+    let Some(step) = task.steps.iter().find(|step| step.id == step_id) else {
         return;
     };
-    match task.status {
-        TaskStatus::Failed | TaskStatus::Cancelled => {
-            blocks.push(TaskDependencyBlock {
-                error: task
+    match step.status {
+        StepStatus::Failed | StepStatus::Cancelled => {
+            blocks.push(StepDependencyBlock {
+                error: step
                     .attempts
                     .last()
                     .and_then(|attempt| attempt.error.as_ref())
-                    .map(|failure| TaskError {
+                    .map(|failure| StepError {
                         code: failure.code.clone(),
                         message: failure.message.clone(),
                     }),
-                status: task.status,
-                task_id: task.id.clone(),
-                task_kind: task.kind.clone(),
+                status: step.status,
+                step_id: step.id.clone(),
+                step_kind: step.kind.clone(),
             });
         }
-        TaskStatus::Blocked => {
-            for dependency_id in &task.dependencies {
-                collect_dependency_blocks(operation, dependency_id, visited, blocks);
+        StepStatus::Blocked => {
+            for dependency_id in &step.dependencies {
+                collect_dependency_blocks(task, dependency_id, visited, blocks);
             }
         }
-        TaskStatus::Queued
-        | TaskStatus::Running
-        | TaskStatus::Completed
-        | TaskStatus::CancellationRequested => {}
+        StepStatus::Queued
+        | StepStatus::Running
+        | StepStatus::Completed
+        | StepStatus::CancellationRequested => {}
     }
 }
 
@@ -1455,6 +1430,6 @@ fn timestamp_ms() -> u64 {
         .as_millis() as u64
 }
 
-fn next_operation_timestamp(operation: &OperationRecord) -> u64 {
-    timestamp_ms().max(operation.updated_at_ms.saturating_add(1))
+fn next_task_timestamp(task: &TaskRecord) -> u64 {
+    timestamp_ms().max(task.updated_at_ms.saturating_add(1))
 }

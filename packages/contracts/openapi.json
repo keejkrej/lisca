@@ -1519,72 +1519,21 @@
         }
       }
     },
-    "/tasks/operations": {
+    "/tasks": {
       "get": {
         "tags": [
           "tasks"
         ],
-        "operationId": "tasks.listOperations",
+        "operationId": "tasks.listTasks",
         "parameters": [],
         "security": [],
         "responses": {
           "200": {
-            "description": "OperationList",
+            "description": "TaskList",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/OperationList"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "RequestError",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/RequestErrorEncoded"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/UnauthorizedEncoded"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/tasks/operation": {
-      "get": {
-        "tags": [
-          "tasks"
-        ],
-        "operationId": "tasks.getOperation",
-        "parameters": [
-          {
-            "name": "operationId",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            },
-            "required": true
-          }
-        ],
-        "security": [],
-        "responses": {
-          "200": {
-            "description": "OperationDetail",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OperationDetail"
+                  "$ref": "#/components/schemas/TaskList"
                 }
               }
             }
@@ -1663,21 +1612,30 @@
         }
       }
     },
-    "/tasks/operation/cancel": {
-      "post": {
+    "/tasks/step": {
+      "get": {
         "tags": [
           "tasks"
         ],
-        "operationId": "tasks.cancelOperation",
-        "parameters": [],
+        "operationId": "tasks.getStep",
+        "parameters": [
+          {
+            "name": "stepId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
         "security": [],
         "responses": {
           "200": {
-            "description": "OperationDetail",
+            "description": "StepDetail",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/OperationDetail"
+                  "$ref": "#/components/schemas/StepDetail"
                 }
               }
             }
@@ -1701,27 +1659,7 @@
                 }
               }
             }
-          },
-          "409": {
-            "description": "TaskCommandError",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TaskCommandErrorEncoded"
-                }
-              }
-            }
           }
-        },
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/OperationCancelRequest"
-              }
-            }
-          },
-          "required": true
         }
       }
     },
@@ -1735,11 +1673,11 @@
         "security": [],
         "responses": {
           "200": {
-            "description": "OperationDetail",
+            "description": "TaskDetail",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/OperationDetail"
+                  "$ref": "#/components/schemas/TaskDetail"
                 }
               }
             }
@@ -1787,21 +1725,21 @@
         }
       }
     },
-    "/tasks/task/retry": {
+    "/tasks/step/cancel": {
       "post": {
         "tags": [
           "tasks"
         ],
-        "operationId": "tasks.retryTask",
+        "operationId": "tasks.cancelStep",
         "parameters": [],
         "security": [],
         "responses": {
           "200": {
-            "description": "OperationDetail",
+            "description": "TaskDetail",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/OperationDetail"
+                  "$ref": "#/components/schemas/TaskDetail"
                 }
               }
             }
@@ -1841,7 +1779,69 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/TaskRetryRequest"
+                "$ref": "#/components/schemas/StepCancelRequest"
+              }
+            }
+          },
+          "required": true
+        }
+      }
+    },
+    "/tasks/step/retry": {
+      "post": {
+        "tags": [
+          "tasks"
+        ],
+        "operationId": "tasks.retryStep",
+        "parameters": [],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "TaskDetail",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RequestError",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestErrorEncoded"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedEncoded"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "TaskCommandError",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskCommandErrorEncoded"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StepRetryRequest"
               }
             }
           },
@@ -2686,7 +2686,7 @@
               }
             ]
           },
-          "cellWidth": {
+          "patternWidth": {
             "type": "number",
             "allOf": [
               {
@@ -2694,7 +2694,7 @@
               }
             ]
           },
-          "cellHeight": {
+          "patternHeight": {
             "type": "number",
             "allOf": [
               {
@@ -2719,13 +2719,13 @@
           "rotation",
           "spacingA",
           "spacingB",
-          "cellWidth",
-          "cellHeight",
+          "patternWidth",
+          "patternHeight",
           "opacity"
         ],
         "additionalProperties": false
       },
-      "AlignGridCellCoord": {
+      "AlignGridPatternCoord": {
         "type": "object",
         "properties": {
           "i": {
@@ -2757,16 +2757,16 @@
           "grid": {
             "$ref": "#/components/schemas/AlignGridState"
           },
-          "excludedCells": {
+          "excludedPatterns": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/AlignGridCellCoord"
+              "$ref": "#/components/schemas/AlignGridPatternCoord"
             }
           }
         },
         "required": [
           "grid",
-          "excludedCells"
+          "excludedPatterns"
         ],
         "additionalProperties": false
       },
@@ -3087,7 +3087,7 @@
           }
         ]
       },
-      "AutoExcludePreviewCell": {
+      "AlignGridPatternBox": {
         "type": "object",
         "properties": {
           "i": {
@@ -3172,10 +3172,10 @@
               }
             ]
           },
-          "cells": {
+          "patterns": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/AutoExcludePreviewCell"
+              "$ref": "#/components/schemas/AlignGridPatternBox"
             }
           },
           "threshold": {
@@ -3198,22 +3198,22 @@
           "source",
           "request",
           "contrast",
-          "cells"
+          "patterns"
         ],
         "additionalProperties": false
       },
       "SmartExcludeResponse": {
         "type": "object",
         "properties": {
-          "excludedCells": {
+          "excludedPatterns": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/AlignGridCellCoord"
+              "$ref": "#/components/schemas/AlignGridPatternCoord"
             }
           }
         },
         "required": [
-          "excludedCells"
+          "excludedPatterns"
         ],
         "additionalProperties": false
       },
@@ -4113,7 +4113,7 @@
         ],
         "additionalProperties": false
       },
-      "OperationStatus": {
+      "TaskStatus": {
         "type": "string",
         "enum": [
           "queued",
@@ -4125,14 +4125,14 @@
           "cancellation-requested"
         ]
       },
-      "OperationAttention": {
+      "TaskAttention": {
         "type": "string",
         "enum": [
           "none",
           "error"
         ]
       },
-      "OperationProgress": {
+      "TaskProgress": {
         "type": "object",
         "properties": {
           "total": {
@@ -4220,7 +4220,7 @@
         ],
         "additionalProperties": false
       },
-      "TaskWorkProgress": {
+      "StepWorkProgress": {
         "type": "object",
         "properties": {
           "unit": {
@@ -4285,10 +4285,10 @@
         ],
         "additionalProperties": false
       },
-      "OperationSummary": {
+      "TaskSummary": {
         "type": "object",
         "properties": {
-          "operationId": {
+          "taskId": {
             "type": "string"
           },
           "kind": {
@@ -4304,15 +4304,15 @@
             "type": "boolean"
           },
           "status": {
-            "$ref": "#/components/schemas/OperationStatus"
+            "$ref": "#/components/schemas/TaskStatus"
           },
           "attention": {
-            "$ref": "#/components/schemas/OperationAttention"
+            "$ref": "#/components/schemas/TaskAttention"
           },
           "progress": {
-            "$ref": "#/components/schemas/OperationProgress"
+            "$ref": "#/components/schemas/TaskProgress"
           },
-          "activeTaskKind": {
+          "activeStepKind": {
             "anyOf": [
               {
                 "anyOf": [
@@ -4334,7 +4334,7 @@
               {
                 "anyOf": [
                   {
-                    "$ref": "#/components/schemas/TaskWorkProgress"
+                    "$ref": "#/components/schemas/StepWorkProgress"
                   },
                   {
                     "type": "null"
@@ -4368,7 +4368,7 @@
           }
         },
         "required": [
-          "operationId",
+          "taskId",
           "kind",
           "workspaceId",
           "workspacePath",
@@ -4381,13 +4381,13 @@
         ],
         "additionalProperties": false
       },
-      "OperationList": {
+      "TaskList": {
         "type": "array",
         "items": {
-          "$ref": "#/components/schemas/OperationSummary"
+          "$ref": "#/components/schemas/TaskSummary"
         }
       },
-      "TaskStatus": {
+      "StepStatus": {
         "type": "string",
         "enum": [
           "queued",
@@ -4399,7 +4399,7 @@
           "cancellation-requested"
         ]
       },
-      "TaskError": {
+      "StepError": {
         "type": "object",
         "properties": {
           "code": {
@@ -4415,22 +4415,22 @@
         ],
         "additionalProperties": false
       },
-      "TaskDependencyBlock": {
+      "StepDependencyBlock": {
         "type": "object",
         "properties": {
-          "taskId": {
+          "stepId": {
             "type": "string"
           },
-          "taskKind": {
+          "stepKind": {
             "type": "string"
           },
           "status": {
-            "$ref": "#/components/schemas/TaskStatus"
+            "$ref": "#/components/schemas/StepStatus"
           },
           "error": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/TaskError"
+                "$ref": "#/components/schemas/StepError"
               },
               {
                 "type": "null"
@@ -4439,27 +4439,27 @@
           }
         },
         "required": [
-          "taskId",
-          "taskKind",
+          "stepId",
+          "stepKind",
           "status",
           "error"
         ],
         "additionalProperties": false
       },
-      "TaskAttempt": {
+      "StepAttempt": {
         "type": "object",
         "properties": {
           "attemptId": {
             "type": "string"
           },
-          "operationId": {
-            "type": "string"
-          },
           "taskId": {
             "type": "string"
           },
+          "stepId": {
+            "type": "string"
+          },
           "status": {
-            "$ref": "#/components/schemas/TaskStatus"
+            "$ref": "#/components/schemas/StepStatus"
           },
           "startedAtMs": {
             "anyOf": [
@@ -4498,7 +4498,7 @@
           "error": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/TaskError"
+                "$ref": "#/components/schemas/StepError"
               },
               {
                 "type": "null"
@@ -4508,8 +4508,8 @@
         },
         "required": [
           "attemptId",
-          "operationId",
           "taskId",
+          "stepId",
           "status",
           "startedAtMs",
           "finishedAtMs",
@@ -4517,23 +4517,23 @@
         ],
         "additionalProperties": false
       },
-      "TaskDetail": {
+      "StepDetail": {
         "type": "object",
         "properties": {
+          "stepId": {
+            "type": "string"
+          },
           "taskId": {
             "type": "string"
           },
-          "operationId": {
-            "type": "string"
-          },
-          "taskKind": {
+          "stepKind": {
             "type": "string"
           },
           "workspaceId": {
             "type": "string"
           },
           "status": {
-            "$ref": "#/components/schemas/TaskStatus"
+            "$ref": "#/components/schemas/StepStatus"
           },
           "weight": {
             "type": "integer",
@@ -4563,13 +4563,13 @@
           "blockedBy": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/TaskDependencyBlock"
+              "$ref": "#/components/schemas/StepDependencyBlock"
             }
           },
           "attempts": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/TaskAttempt"
+              "$ref": "#/components/schemas/StepAttempt"
             }
           },
           "workProgress": {
@@ -4577,7 +4577,7 @@
               {
                 "anyOf": [
                   {
-                    "$ref": "#/components/schemas/TaskWorkProgress"
+                    "$ref": "#/components/schemas/StepWorkProgress"
                   },
                   {
                     "type": "null"
@@ -4591,9 +4591,9 @@
           }
         },
         "required": [
+          "stepId",
           "taskId",
-          "operationId",
-          "taskKind",
+          "stepKind",
           "workspaceId",
           "status",
           "weight",
@@ -4604,34 +4604,34 @@
         ],
         "additionalProperties": false
       },
-      "OperationDetail": {
+      "TaskDetail": {
         "type": "object",
         "properties": {
-          "operation": {
-            "$ref": "#/components/schemas/OperationSummary"
+          "task": {
+            "$ref": "#/components/schemas/TaskSummary"
           },
-          "tasks": {
+          "steps": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/TaskDetail"
+              "$ref": "#/components/schemas/StepDetail"
             }
           }
         },
         "required": [
-          "operation",
-          "tasks"
+          "task",
+          "steps"
         ],
         "additionalProperties": false
       },
-      "OperationCancelRequest": {
+      "TaskCancelRequest": {
         "type": "object",
         "properties": {
-          "operationId": {
+          "taskId": {
             "type": "string"
           }
         },
         "required": [
-          "operationId"
+          "taskId"
         ],
         "additionalProperties": false
       },
@@ -4654,8 +4654,8 @@
           "entity": {
             "type": "string",
             "enum": [
-              "operation",
-              "task"
+              "task",
+              "step"
             ]
           },
           "id": {
@@ -4685,27 +4685,27 @@
         ],
         "additionalProperties": false
       },
-      "TaskCancelRequest": {
+      "StepCancelRequest": {
         "type": "object",
         "properties": {
-          "taskId": {
+          "stepId": {
             "type": "string"
           }
         },
         "required": [
-          "taskId"
+          "stepId"
         ],
         "additionalProperties": false
       },
-      "TaskRetryRequest": {
+      "StepRetryRequest": {
         "type": "object",
         "properties": {
-          "taskId": {
+          "stepId": {
             "type": "string"
           }
         },
         "required": [
-          "taskId"
+          "stepId"
         ],
         "additionalProperties": false
       },
@@ -4772,7 +4772,7 @@
           "queued",
           "preparing",
           "segment",
-          "timeseries",
+          "traces",
           "auc",
           "fit",
           "completed"

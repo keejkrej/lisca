@@ -1,4 +1,4 @@
-import type { AlignGridCellCoord, AlignGridState } from "@lisca/contracts";
+import type { AlignGridPatternCoord, AlignGridState } from "@lisca/contracts";
 import type { FrameResult } from "@lisca/utils";
 
 import type { AnnotationValue } from "../annotation-value";
@@ -16,7 +16,7 @@ export type AlignerDemoPreset = {
   fileName: string;
   frame: FrameResult;
   grid: AlignGridState;
-  excludedCells: AlignGridCellCoord[];
+  excludedPatterns: AlignGridPatternCoord[];
 };
 
 export type AnnotatorDemoPreset = {
@@ -42,7 +42,7 @@ export { IBIDI_DEMO_SAMPLE_IMAGES, IBIDI_MICROPATTERNING_IMAGE_BASE } from "./lo
 export function alignGridForFrame(frame: FrameResult): AlignGridState {
   const scale = Math.min(frame.width, frame.height) / 409;
   const spacing = Math.round(38 * scale);
-  const cell = Math.round(28 * scale);
+  const pattern = Math.round(28 * scale);
   return {
     enabled: true,
     shape: "rect",
@@ -51,8 +51,8 @@ export function alignGridForFrame(frame: FrameResult): AlignGridState {
     rotation: 0,
     spacingA: spacing,
     spacingB: spacing,
-    cellWidth: cell,
-    cellHeight: cell,
+    patternWidth: pattern,
+    patternHeight: pattern,
     opacity: 0.35,
   };
 }
@@ -66,7 +66,7 @@ export async function loadAlignerDemoPreset(
     fileName: fileNameFromSampleId(sampleId),
     frame,
     grid: alignGridForFrame(frame),
-    excludedCells: [],
+    excludedPatterns: [],
   };
 }
 

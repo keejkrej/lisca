@@ -77,7 +77,7 @@ Prefer this order:
    ```
 
 2. **Synthetic fixture** in `crates/lisca/tests/*_parity.rs` +
-   `tests/support/*_reference.rs` (tiny ROI, few timepoints) — always-on unit
+   `tests/support/*_reference.rs` (tiny ROI, few frames) — always-on unit
    cage.
 
 3. **Ignored e2e** that shells out to `uv run …` when the sibling checkout
@@ -105,7 +105,7 @@ passes on a known-good stage (paste invocation + verdict).
   fit grid sizes), and **edge semantics** (inclusive position ranges, onset
   cap).
 - Export stages through a parity CLI with **the same command names and flag
-  shapes** as Python when practical (`segment`, `timeseries`, `auc`, `fit`, …).
+  shapes** as Python when practical (`segment`, `traces`, `auc`, `fit`, …).
 - Shared kernels that crop or killing still need stay in this repo
   (`roi_stack`, `csv_io`, `array.rs`). Transfection kernels live in the sidecar.
 

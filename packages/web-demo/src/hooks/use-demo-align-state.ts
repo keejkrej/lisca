@@ -1,14 +1,14 @@
-import type { AlignGridCellCoord, AlignGridState, ContrastWindow } from "@lisca/contracts";
-import type { AutoExcludePreviewResponse } from "@lisca/contracts";
+import type { AlignGridPatternCoord, AlignGridState, ContrastWindow } from "@lisca/contracts";
+import type { VariationExcludePreviewResponse } from "@lisca/contracts";
 import type { VariationExcludePreviewState } from "@lisca/ui/features";
 import type { FrameResult } from "@lisca/utils";
-import { cellsBelowVariationThreshold } from "@lisca/client/align-session";
+import { patternsBelowVariationThreshold } from "@lisca/client/align-session";
 import {
-  collectAlignGridEdgeCells,
-  computeAutoExcludePreview,
-  countVisibleAlignGridCells,
-  enumerateVisibleAlignGridCells,
-  mergeExcludedAlignGridCells,
+  collectAlignGridEdgePatterns,
+  computeVariationExcludePreview,
+  countVisibleAlignGridPatterns,
+  enumerateVisibleAlignGridPatterns,
+  mergeExcludedAlignGridPatterns,
   type AlignGridToolMode,
 } from "@lisca/utils";
 import { useAtom } from "@effect/atom-solid";
@@ -45,18 +45,18 @@ export type DemoAlignState = {
   setPatternZoomLocked: (locked: boolean) => void;
   manualExclusionEnabled: boolean;
   setManualExclusionEnabled: (enabled: boolean) => void;
-  excludedCells: AlignGridCellCoord[];
-  setExcludedCells: (cells: Iterable<AlignGridCellCoord>) => void;
-  excludeAllCells: () => void;
-  excludeEdgeCells: () => void;
-  resetExcludedCells: () => void;
+  excludedPatterns: AlignGridPatternCoord[];
+  setExcludedPatterns: (patterns: Iterable<AlignGridPatternCoord>) => void;
+  excludeAllPatterns: () => void;
+  excludeEdgePatterns: () => void;
+  resetExcludedPatterns: () => void;
   variationExcludePreview: VariationExcludePreviewState;
   variationExcludeLoading: boolean;
   variationExclude: () => Promise<void>;
   setVariationExcludeThreshold: (threshold: number) => void;
   cancelVariationExclude: () => void;
   applyVariationExclude: () => void;
-  applySmartExclusion: (modelCells: AlignGridCellCoord[]) => void;
+  applySmartExclusion: (modelPatterns: AlignGridPatternCoord[]) => void;
   reportError: (message: string | null) => void;
   visibleCounts: {
     included: number;
@@ -70,12 +70,12 @@ export type DemoAlignState = {
 export function useDemoAlignState(): Accessor<DemoAlignState> {
   const [state, setState] = useAtom(() => demoAlignUiAtom);
 
-  const previewVariationExclude = (): AutoExcludePreviewResponse | null => {
+  const previewVariationExclude = (): VariationExcludePreviewResponse | null => {
     const current = state();
     if (!current.frame) return null;
-    const cells = enumerateVisibleAlignGridCells(current.frame, current.grid);
-    if (cells.length === 0) return null;
-    return computeAutoExcludePreview(current.frame, cells);
+    const patterns = enumerateVisibleAlignGridPatterns(current.frame, current.grid);
+    if (patterns.length === 0) return null;
+    return computeVariationExcludePreview(current.frame, patterns);
   };
 
   return createMemo<DemoAlignState>(() => {
@@ -93,7 +93,7 @@ export function useDemoAlignState(): Accessor<DemoAlignState> {
       spacingZoomLocked,
       patternZoomLocked,
       manualExclusionEnabled,
-      excludedCells,
+      excludedPatterns,
       variationExcludePreview,
       variationExcludeLoading,
     } = state();
@@ -119,23 +119,27 @@ export function useDemoAlignState(): Accessor<DemoAlignState> {
       manualExclusionEnabled,
       setManualExclusionEnabled: (enabled) =>
         demoAlignUiActions.setManualExclusionEnabled(setState, enabled),
-      excludedCells,
-      setExcludedCells: (cells) => demoAlignUiActions.setExcludedCells(setState, Array.from(cells)),
-      excludeAllCells: () => {
+      excludedPatterns,
+      setExcludedPatterns: (patterns) =>
+        demoAlignUiActions.setExcludedPatterns(setState, Array.from(patterns)),
+      excludeAllPatterns: () => {
         if (!frame) return;
-        demoAlignUiActions.setExcludedCells(
+        demoAlignUiActions.setExcludedPatterns(
           setState,
-          enumerateVisibleAlignGridCells(frame, grid).map(({ i, j }) => ({ i, j })),
+          enumerateVisibleAlignGridPatterns(frame, grid).map(({ i, j }) => ({ i, j })),
         );
       },
-      excludeEdgeCells: () => {
+      excludeEdgePatterns: () => {
         if (!frame) return;
-        demoAlignUiActions.setExcludedCells(
+        demoAlignUiActions.setExcludedPatterns(
           setState,
-          mergeExcludedAlignGridCells(excludedCells, collectAlignGridEdgeCells(frame, grid)),
+          mergeExcludedAlignGridPatterns(
+            excludedPatterns,
+            collectAlignGridEdgePatterns(frame, grid),
+          ),
         );
       },
-      resetExcludedCells: () => demoAlignUiActions.setExcludedCells(setState, []),
+      resetExcludedPatterns: () => demoAlignUiActions.setExcludedPatterns(setState, []),
       variationExcludePreview,
       variationExcludeLoading,
       variationExclude: async () => {
@@ -145,7 +149,7 @@ export function useDemoAlignState(): Accessor<DemoAlignState> {
         try {
           const preview = previewVariationExclude();
           if (!preview) {
-            demoAlignUiActions.setStatus(setState, "No visible cells for var exclude");
+            demoAlignUiActions.setStatus(setState, "No visible patterns for var exclude");
             return;
           }
           demoAlignUiActions.setVariationExcludePreview(setState, {
@@ -175,37 +179,37 @@ export function useDemoAlignState(): Accessor<DemoAlignState> {
       },
       applyVariationExclude: () => {
         if (!variationExcludePreview || !frame) return;
-        const variationCells = cellsBelowVariationThreshold(
+        const variationPatterns = patternsBelowVariationThreshold(
           variationExcludePreview.preview,
           variationExcludePreview.threshold,
         );
-        const edgeCells = collectAlignGridEdgeCells(frame, grid);
-        demoAlignUiActions.setExcludedCells(
+        const edgePatterns = collectAlignGridEdgePatterns(frame, grid);
+        demoAlignUiActions.setExcludedPatterns(
           setState,
-          mergeExcludedAlignGridCells(excludedCells, [...edgeCells, ...variationCells]),
+          mergeExcludedAlignGridPatterns(excludedPatterns, [...edgePatterns, ...variationPatterns]),
         );
         demoAlignUiActions.setVariationExcludePreview(setState, null);
         demoAlignUiActions.setStatus(
           setState,
-          `Var excluded ${variationCells.length} of ${variationExcludePreview.preview.eligibleCellCount} cells`,
+          `Var excluded ${variationPatterns.length} of ${variationExcludePreview.preview.eligiblePatternCount} patterns`,
         );
       },
-      applySmartExclusion: (modelCells) => {
+      applySmartExclusion: (modelPatterns) => {
         if (!frame) return;
-        const edgeCells = collectAlignGridEdgeCells(frame, grid);
-        const nextExcluded = mergeExcludedAlignGridCells(excludedCells, [
-          ...edgeCells,
-          ...modelCells,
+        const edgePatterns = collectAlignGridEdgePatterns(frame, grid);
+        const nextExcluded = mergeExcludedAlignGridPatterns(excludedPatterns, [
+          ...edgePatterns,
+          ...modelPatterns,
         ]);
-        demoAlignUiActions.setExcludedCells(setState, nextExcluded);
+        demoAlignUiActions.setExcludedPatterns(setState, nextExcluded);
         demoAlignUiActions.setStatus(
           setState,
-          `Smart excluded ${nextExcluded.length - excludedCells.length} cells`,
+          `Smart excluded ${nextExcluded.length - excludedPatterns.length} patterns`,
         );
       },
       reportError: (message) => demoAlignUiActions.setError(setState, message),
       visibleCounts: frame
-        ? countVisibleAlignGridCells(frame, grid, excludedCells)
+        ? countVisibleAlignGridPatterns(frame, grid, excludedPatterns)
         : { included: 0, excluded: 0 },
       openImage: async (file) => {
         demoAlignUiActions.setFrameLoading(setState, true);
@@ -244,11 +248,11 @@ export function useDemoAlignState(): Accessor<DemoAlignState> {
       },
       saveCurrent: async () => {
         if (!frame || !fileName || !sourceFormat) return false;
-        const { included } = countVisibleAlignGridCells(frame, grid, excludedCells);
+        const { included } = countVisibleAlignGridPatterns(frame, grid, excludedPatterns);
         if (included === 0) {
           demoAlignUiActions.setError(
             setState,
-            "All grid cells are excluded — adjust exclusions before saving.",
+            "All grid patterns are excluded — adjust exclusions before saving.",
           );
           return false;
         }
@@ -261,7 +265,7 @@ export function useDemoAlignState(): Accessor<DemoAlignState> {
             frame,
             sourceFormat,
             grid,
-            excludedCells,
+            excludedPatterns,
           });
           downloadBlob(
             `${stem}-rois.zip`,

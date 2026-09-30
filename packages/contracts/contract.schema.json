@@ -438,11 +438,11 @@
           "type": "number",
           "format": "double"
         },
-        "cellWidth": {
+        "patternWidth": {
           "type": "number",
           "format": "double"
         },
-        "cellHeight": {
+        "patternHeight": {
           "type": "number",
           "format": "double"
         },
@@ -459,12 +459,12 @@
         "rotation",
         "spacingA",
         "spacingB",
-        "cellWidth",
-        "cellHeight",
+        "patternWidth",
+        "patternHeight",
         "opacity"
       ]
     },
-    "AlignGridCellCoord": {
+    "AlignGridPatternCoord": {
       "type": "object",
       "properties": {
         "i": {
@@ -487,16 +487,16 @@
         "grid": {
           "$ref": "#/definitions/AlignGridState"
         },
-        "excludedCells": {
+        "excludedPatterns": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/AlignGridCellCoord"
+            "$ref": "#/definitions/AlignGridPatternCoord"
           }
         }
       },
       "required": [
         "grid",
-        "excludedCells"
+        "excludedPatterns"
       ]
     },
     "SaveBboxRequest": {
@@ -755,7 +755,7 @@
         }
       ]
     },
-    "AutoExcludePreviewCell": {
+    "AlignGridPatternBox": {
       "type": "object",
       "properties": {
         "i": {
@@ -815,10 +815,10 @@
             }
           ]
         },
-        "cells": {
+        "patterns": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/AutoExcludePreviewCell"
+            "$ref": "#/definitions/AlignGridPatternBox"
           }
         },
         "threshold": {
@@ -830,21 +830,21 @@
         "source",
         "request",
         "contrast",
-        "cells"
+        "patterns"
       ]
     },
     "SmartExcludeResponse": {
       "type": "object",
       "properties": {
-        "excludedCells": {
+        "excludedPatterns": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/AlignGridCellCoord"
+            "$ref": "#/definitions/AlignGridPatternCoord"
           }
         }
       },
       "required": [
-        "excludedCells"
+        "excludedPatterns"
       ]
     },
     "ScanRoiWorkspaceRequest": {
@@ -1554,7 +1554,7 @@
         "ok"
       ]
     },
-    "OperationStatus": {
+    "TaskStatus": {
       "type": "string",
       "enum": [
         "queued",
@@ -1566,14 +1566,14 @@
         "cancellation-requested"
       ]
     },
-    "OperationAttention": {
+    "TaskAttention": {
       "type": "string",
       "enum": [
         "none",
         "error"
       ]
     },
-    "OperationProgress": {
+    "TaskProgress": {
       "type": "object",
       "properties": {
         "total": {
@@ -1628,7 +1628,7 @@
         "cancellationRequested"
       ]
     },
-    "TaskWorkProgress": {
+    "StepWorkProgress": {
       "type": "object",
       "properties": {
         "unit": {
@@ -1680,10 +1680,10 @@
         "updatedAtMs"
       ]
     },
-    "OperationSummary": {
+    "TaskSummary": {
       "type": "object",
       "properties": {
-        "operationId": {
+        "taskId": {
           "type": "string"
         },
         "kind": {
@@ -1699,15 +1699,15 @@
           "type": "boolean"
         },
         "status": {
-          "$ref": "#/definitions/OperationStatus"
+          "$ref": "#/definitions/TaskStatus"
         },
         "attention": {
-          "$ref": "#/definitions/OperationAttention"
+          "$ref": "#/definitions/TaskAttention"
         },
         "progress": {
-          "$ref": "#/definitions/OperationProgress"
+          "$ref": "#/definitions/TaskProgress"
         },
-        "activeTaskKind": {
+        "activeStepKind": {
           "anyOf": [
             {
               "type": "string"
@@ -1720,7 +1720,7 @@
         "workProgress": {
           "anyOf": [
             {
-              "$ref": "#/definitions/TaskWorkProgress"
+              "$ref": "#/definitions/StepWorkProgress"
             },
             {
               "type": "null"
@@ -1741,7 +1741,7 @@
         }
       },
       "required": [
-        "operationId",
+        "taskId",
         "kind",
         "workspaceId",
         "workspacePath",
@@ -1753,13 +1753,13 @@
         "updatedAtMs"
       ]
     },
-    "OperationList": {
+    "TaskList": {
       "type": "array",
       "items": {
-        "$ref": "#/definitions/OperationSummary"
+        "$ref": "#/definitions/TaskSummary"
       }
     },
-    "TaskStatus": {
+    "StepStatus": {
       "type": "string",
       "enum": [
         "queued",
@@ -1771,7 +1771,7 @@
         "cancellation-requested"
       ]
     },
-    "TaskError": {
+    "StepError": {
       "type": "object",
       "properties": {
         "code": {
@@ -1786,22 +1786,22 @@
         "message"
       ]
     },
-    "TaskDependencyBlock": {
+    "StepDependencyBlock": {
       "type": "object",
       "properties": {
-        "taskId": {
+        "stepId": {
           "type": "string"
         },
-        "taskKind": {
+        "stepKind": {
           "type": "string"
         },
         "status": {
-          "$ref": "#/definitions/TaskStatus"
+          "$ref": "#/definitions/StepStatus"
         },
         "error": {
           "anyOf": [
             {
-              "$ref": "#/definitions/TaskError"
+              "$ref": "#/definitions/StepError"
             },
             {
               "type": "null"
@@ -1810,26 +1810,26 @@
         }
       },
       "required": [
-        "taskId",
-        "taskKind",
+        "stepId",
+        "stepKind",
         "status",
         "error"
       ]
     },
-    "TaskAttempt": {
+    "StepAttempt": {
       "type": "object",
       "properties": {
         "attemptId": {
           "type": "string"
         },
-        "operationId": {
-          "type": "string"
-        },
         "taskId": {
           "type": "string"
         },
+        "stepId": {
+          "type": "string"
+        },
         "status": {
-          "$ref": "#/definitions/TaskStatus"
+          "$ref": "#/definitions/StepStatus"
         },
         "startedAtMs": {
           "anyOf": [
@@ -1860,7 +1860,7 @@
         "error": {
           "anyOf": [
             {
-              "$ref": "#/definitions/TaskError"
+              "$ref": "#/definitions/StepError"
             },
             {
               "type": "null"
@@ -1870,31 +1870,31 @@
       },
       "required": [
         "attemptId",
-        "operationId",
         "taskId",
+        "stepId",
         "status",
         "startedAtMs",
         "finishedAtMs",
         "error"
       ]
     },
-    "TaskDetail": {
+    "StepDetail": {
       "type": "object",
       "properties": {
+        "stepId": {
+          "type": "string"
+        },
         "taskId": {
           "type": "string"
         },
-        "operationId": {
-          "type": "string"
-        },
-        "taskKind": {
+        "stepKind": {
           "type": "string"
         },
         "workspaceId": {
           "type": "string"
         },
         "status": {
-          "$ref": "#/definitions/TaskStatus"
+          "$ref": "#/definitions/StepStatus"
         },
         "weight": {
           "type": "integer",
@@ -1916,19 +1916,19 @@
         "blockedBy": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/TaskDependencyBlock"
+            "$ref": "#/definitions/StepDependencyBlock"
           }
         },
         "attempts": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/TaskAttempt"
+            "$ref": "#/definitions/StepAttempt"
           }
         },
         "workProgress": {
           "anyOf": [
             {
-              "$ref": "#/definitions/TaskWorkProgress"
+              "$ref": "#/definitions/StepWorkProgress"
             },
             {
               "type": "null"
@@ -1937,9 +1937,9 @@
         }
       },
       "required": [
+        "stepId",
         "taskId",
-        "operationId",
-        "taskKind",
+        "stepKind",
         "workspaceId",
         "status",
         "weight",
@@ -1949,33 +1949,22 @@
         "attempts"
       ]
     },
-    "OperationDetail": {
+    "TaskDetail": {
       "type": "object",
       "properties": {
-        "operation": {
-          "$ref": "#/definitions/OperationSummary"
+        "task": {
+          "$ref": "#/definitions/TaskSummary"
         },
-        "tasks": {
+        "steps": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/TaskDetail"
+            "$ref": "#/definitions/StepDetail"
           }
         }
       },
       "required": [
-        "operation",
-        "tasks"
-      ]
-    },
-    "OperationCancelRequest": {
-      "type": "object",
-      "properties": {
-        "operationId": {
-          "type": "string"
-        }
-      },
-      "required": [
-        "operationId"
+        "task",
+        "steps"
       ]
     },
     "TaskCancelRequest": {
@@ -1989,15 +1978,26 @@
         "taskId"
       ]
     },
-    "TaskRetryRequest": {
+    "StepCancelRequest": {
       "type": "object",
       "properties": {
-        "taskId": {
+        "stepId": {
           "type": "string"
         }
       },
       "required": [
-        "taskId"
+        "stepId"
+      ]
+    },
+    "StepRetryRequest": {
+      "type": "object",
+      "properties": {
+        "stepId": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "stepId"
       ]
     },
     "SaveAssayJsonRequest": {
@@ -2060,7 +2060,7 @@
         "queued",
         "preparing",
         "segment",
-        "timeseries",
+        "traces",
         "auc",
         "fit",
         "completed"
@@ -2329,11 +2329,6 @@
     "AssaySampleRow": {
       "type": "object",
       "properties": {
-        "slideChannel": {
-          "type": "integer",
-          "minimum": 0,
-          "format": "uint32"
-        },
         "name": {
           "type": "string"
         },
@@ -2342,7 +2337,6 @@
         }
       },
       "required": [
-        "slideChannel",
         "name",
         "positions"
       ]
@@ -2372,7 +2366,7 @@
     "AssayChannels": {
       "type": "object",
       "properties": {
-        "mask": {
+        "segmentation": {
           "type": "integer",
           "minimum": 0,
           "format": "uint32"
@@ -2382,19 +2376,17 @@
         }
       },
       "required": [
-        "mask",
+        "segmentation",
         "signal"
       ]
     },
     "AssaySampleChannels": {
       "type": "object",
       "properties": {
-        "slideChannel": {
-          "type": "integer",
-          "minimum": 0,
-          "format": "uint32"
+        "sample": {
+          "type": "string"
         },
-        "mask": {
+        "segmentation": {
           "type": "integer",
           "minimum": 0,
           "format": "uint32"
@@ -2404,8 +2396,8 @@
         }
       },
       "required": [
-        "slideChannel",
-        "mask",
+        "sample",
+        "segmentation",
         "signal"
       ]
     },
@@ -2605,15 +2597,15 @@
         "type"
       ]
     },
-    "OperationDetailQuery": {
+    "TaskDetailQuery": {
       "type": "object",
       "properties": {
-        "operationId": {
+        "taskId": {
           "type": "string"
         }
       },
       "required": [
-        "operationId"
+        "taskId"
       ]
     },
     "OutputPathsQuery": {
@@ -2668,15 +2660,15 @@
         "workspacePath"
       ]
     },
-    "TaskDetailQuery": {
+    "StepDetailQuery": {
       "type": "object",
       "properties": {
-        "taskId": {
+        "stepId": {
           "type": "string"
         }
       },
       "required": [
-        "taskId"
+        "stepId"
       ]
     },
     "RequestError": {
@@ -2734,8 +2726,8 @@
         "entity": {
           "type": "string",
           "enum": [
-            "operation",
-            "task"
+            "task",
+            "step"
           ]
         },
         "id": {

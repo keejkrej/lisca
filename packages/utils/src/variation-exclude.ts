@@ -1,16 +1,16 @@
 import type {
-  AutoExcludeHistogramBin,
-  AutoExcludePreviewCell,
-  AutoExcludePreviewResponse,
+  VariationExcludeHistogramBin,
+  AlignGridPatternBox,
+  VariationExcludePreviewResponse,
 } from "@lisca/contracts";
 import { ascending, bin, extent, mean, sort, sum } from "d3-array";
 
 import type { FrameResult } from "./frame";
 
-const AUTO_EXCLUDE_BIN_COUNT = 40;
-const AUTO_EXCLUDE_EPSILON = 1.0;
+const VARIATION_EXCLUDE_BIN_COUNT = 40;
+const VARIATION_EXCLUDE_EPSILON = 1.0;
 
-type CellScore = {
+type PatternScore = {
   i: number;
   j: number;
   score: number;
@@ -23,7 +23,7 @@ function flatnessScore(values: readonly number[]): number | null {
   const bandLength = Math.max(1, Math.min(sorted.length, Math.ceil(sorted.length * 0.1)));
   const lowMean = mean(sorted.slice(0, bandLength)) ?? 0;
   const highMean = mean(sorted.slice(sorted.length - bandLength)) ?? 0;
-  return highMean / Math.max(lowMean, AUTO_EXCLUDE_EPSILON);
+  return highMean / Math.max(lowMean, VARIATION_EXCLUDE_EPSILON);
 }
 
 function entropyFromProbabilities(probabilities: readonly number[]): number {
@@ -80,11 +80,11 @@ export function maxEntropyThresholdOnHistogram(
   return bestThreshold;
 }
 
-function collectCellValues(frame: FrameResult, cell: AutoExcludePreviewCell): number[] {
-  const left = Math.min(cell.x, frame.width);
-  const top = Math.min(cell.y, frame.height);
-  const right = Math.min(cell.x + cell.w, frame.width);
-  const bottom = Math.min(cell.y + cell.h, frame.height);
+function collectPatternValues(frame: FrameResult, pattern: AlignGridPatternBox): number[] {
+  const left = Math.min(pattern.x, frame.width);
+  const top = Math.min(pattern.y, frame.height);
+  const right = Math.min(pattern.x + pattern.w, frame.width);
+  const bottom = Math.min(pattern.y + pattern.h, frame.height);
   if (right <= left || bottom <= top) return [];
 
   const values: number[] = [];
@@ -101,7 +101,7 @@ function collectCellValues(frame: FrameResult, cell: AutoExcludePreviewCell): nu
 }
 
 function buildHistogram(scores: number[]): {
-  bins: AutoExcludeHistogramBin[];
+  bins: VariationExcludeHistogramBin[];
   scoreMin: number;
   scoreMax: number;
   threshold: number;
@@ -121,10 +121,10 @@ function buildHistogram(scores: number[]): {
 
   const histogram = bin<number, number>()
     .domain([scoreMin, scoreMax])
-    .thresholds(AUTO_EXCLUDE_BIN_COUNT);
+    .thresholds(VARIATION_EXCLUDE_BIN_COUNT);
 
   const groups = histogram(scores);
-  const bins: AutoExcludeHistogramBin[] = groups.map((group) => ({
+  const bins: VariationExcludeHistogramBin[] = groups.map((group) => ({
     start: group.x0 ?? scoreMin,
     end: group.x1 ?? scoreMax,
     count: group.length,
@@ -141,29 +141,29 @@ function buildHistogram(scores: number[]): {
   };
 }
 
-function compareCellScores(left: CellScore, right: CellScore): number {
+function comparePatternScores(left: PatternScore, right: PatternScore): number {
   return (
     ascending(left.score, right.score) || ascending(left.i, right.i) || ascending(left.j, right.j)
   );
 }
 
-export function computeAutoExcludePreview(
+export function computeVariationExcludePreview(
   frame: FrameResult,
-  cells: readonly AutoExcludePreviewCell[],
-): AutoExcludePreviewResponse {
-  const cellScores = sort(
-    cells.flatMap((cell): CellScore[] => {
-      const score = flatnessScore(collectCellValues(frame, cell));
-      return score == null ? [] : [{ i: cell.i, j: cell.j, score }];
+  patterns: readonly AlignGridPatternBox[],
+): VariationExcludePreviewResponse {
+  const patternScores = sort(
+    patterns.flatMap((pattern): PatternScore[] => {
+      const score = flatnessScore(collectPatternValues(frame, pattern));
+      return score == null ? [] : [{ i: pattern.i, j: pattern.j, score }];
     }),
-    compareCellScores,
+    comparePatternScores,
   );
 
-  const histogram = buildHistogram(cellScores.map((cell) => cell.score));
+  const histogram = buildHistogram(patternScores.map((pattern) => pattern.score));
 
   return {
-    eligibleCellCount: cellScores.length,
-    cellScores,
+    eligiblePatternCount: patternScores.length,
+    patternScores,
     histogramBins: histogram.bins,
     scoreMin: histogram.scoreMin,
     scoreMax: histogram.scoreMax,

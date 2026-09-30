@@ -1,6 +1,6 @@
 import {
   createTaskCenterGateway,
-  subscribeTaskCenterOperations,
+  subscribeTaskCenterTasks,
 } from "@lisca/client/session/task-center";
 import { TaskCenter } from "@lisca/ui/shell";
 import { useRouterState } from "@tanstack/solid-router";
@@ -8,7 +8,7 @@ import { Show } from "solid-js";
 
 import { studioClient } from "../api/studio-port";
 import {
-  filterStudioTaskOperations,
+  filterStudioTasks,
   studioTaskCenterCopy,
   studioTaskScopeForPath,
 } from "./studio-task-scope";
@@ -27,10 +27,10 @@ export function StudioTaskCenter(props: { scope: "crop" | "analysis" }) {
       label={copy().label}
       title={copy().title}
       subscribe={({ onSnapshot, onError }) =>
-        subscribeTaskCenterOperations({
+        subscribeTaskCenterTasks({
           gateway,
           onError,
-          onSnapshot: (snapshot) => onSnapshot(filterStudioTaskOperations(snapshot, props.scope)),
+          onSnapshot: (snapshot) => onSnapshot(filterStudioTasks(snapshot, props.scope)),
         })
       }
     />

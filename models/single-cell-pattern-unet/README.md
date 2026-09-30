@@ -21,10 +21,10 @@ do not treat it as a lisca-owned analysis brain, and do not add new assay
 weights under `models/`.
 
 Small dense **foreground / background** segmenter for **LISCA micropattern**
-brightfield ROI crops (~128×128 single-cell sites). Gene-expression ROI masks
+brightfield ROI crops (~128×128 single-cell ROIs). Gene-expression ROI masks
 for the transfection assay.
 
-Use it whenever you need a binary cell mask on a patterned site (gene-expression
+Use it whenever you need a binary cell mask on an ROI (gene-expression
 intensity, binding overlays, etc.) without running full Cellpose cpsam.
 
 ## Why not full Cellpose cpsam?
