@@ -10,17 +10,17 @@ export { isValidSamplePositionRange } from "@lisca/client/studio/assay-validatio
 
 export function instructionForStep(step: StudioStep): string {
   if (step === "chooseAssay") {
-    return "Pick an assay to set up, or open an existing one.";
+    return "Open a saved assay, or pick an assay type and press New to start a blank one.";
   }
   if (step === "metadata") {
     return "Choose the image source, workspace folder, and time between frames. Name each sample and the positions it covers.";
   }
   if (step === "alignPattern") {
-    return "Drag the grid onto the micropattern, exclude empty patterns, then press Save. Continue moves to the next unsaved position.";
+    return "Drag the grid onto the micropattern, exclude empty patterns, then press Save. Once every position is saved, press Crop.";
   }
   return "Finish the Metadata step before aligning.";
 }
 
 export function instructionForAnnotate(): string {
-  return "Pick a label, paint the ROI, then continue.";
+  return "Pick a label, paint the ROI, then press Save. Press Analyze when every ROI is done.";
 }

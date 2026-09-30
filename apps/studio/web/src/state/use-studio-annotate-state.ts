@@ -246,9 +246,7 @@ export function useStudioAnnotateState(): StudioAnnotateState {
   const requestContinueToAnalysis = () => {
     const current = annotate();
     if (current.annotation.dirty) {
-      const proceed = window.confirm(
-        "You have unsaved annotation changes. Continue to analysis anyway?",
-      );
+      const proceed = window.confirm("You have unsaved annotation changes. Analyze anyway?");
       if (!proceed) return;
     }
     setAnalysisStartConfirm(true);

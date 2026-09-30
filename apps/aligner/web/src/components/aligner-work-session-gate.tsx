@@ -10,7 +10,6 @@ import { alignerUiActions, alignerUiAtom, readAlignerSession } from "../atoms/al
 export function AlignerWorkSessionGate(props: { children?: JSX.Element }) {
   const workspace = useShellWorkspace();
   const [, setUi] = useAtom(() => alignerUiAtom);
-  const persistedSession = readAlignerSession();
 
   onMount(() => {
     const session = readAlignerSession();
@@ -21,7 +20,8 @@ export function AlignerWorkSessionGate(props: { children?: JSX.Element }) {
   return (
     <WorkSessionAppGate
       appId="aligner"
-      gateOptions={{ skipResumePicker: persistedSession != null }}
+      // No resume dialog: the workspace and source pickers list recent picks instead.
+      gateOptions={{ skipResumePicker: true }}
       PickerDialog={WorkSessionPickerDialog}
       onRestore={async (session) => {
         await restoreAlignerWorkSession({

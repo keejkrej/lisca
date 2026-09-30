@@ -191,8 +191,12 @@ export function serializeBasicInfoSnapshot(
   return serializeBasicInfoSnapshotCore(state);
 }
 
+/** Unsaved when the wizard differs from its last save, or from a blank assay of its type. */
 export function isBasicInfoDirty(state: StudioWizardState): boolean {
-  return isBasicInfoDirtyCore(state, serializeBasicInfoSnapshot(createInitialWizardData()));
+  return isBasicInfoDirtyCore(
+    state,
+    serializeBasicInfoSnapshot(createBlankWizardData(state.assayId)),
+  );
 }
 
 const initialFolderTemplate = {
@@ -319,6 +323,18 @@ function writeStudioSession(state: StudioWizardState): void {
   writeStorageJson(liscaSessionStorage(), STUDIO_SESSION_KEY, { state });
 }
 
+/** A blank (never saved) assay of `assayId`, with that assay's defaults. */
+function createBlankWizardData(assayId: AssayId | null): StudioWizardState {
+  const nextAssayId = enabledAssayId(assayId);
+  const blank = createInitialWizardData();
+  return {
+    ...blank,
+    assayId: nextAssayId,
+    intervalValue: defaultIntervalMinutesForAssay(nextAssayId),
+    analysis: analysisConfigForAssay(nextAssayId, blank.analysis) ?? null,
+  };
+}
+
 export function createInitialStudioWizardState(): StudioWizardState {
   return createInitialWizardData();
 }
@@ -390,6 +406,10 @@ export const studioWizardActions = {
         }),
       ),
     });
+  },
+  /** Start a blank assay of `assayId`, dropping the current document (like File → New). */
+  newAssay(set: (update: StateUpdater<StudioWizardState>) => void, assayId: AssayId | null) {
+    patchStudioWizard(set, () => createBlankWizardData(assayId));
   },
   setAssayId(set: (update: StateUpdater<StudioWizardState>) => void, assayId: AssayId | null) {
     const nextAssayId = enabledAssayId(assayId);

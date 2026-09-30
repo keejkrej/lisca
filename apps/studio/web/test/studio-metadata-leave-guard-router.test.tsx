@@ -40,7 +40,10 @@ vi.mock("@lisca/client/session/work-session", async (importOriginal) => {
   };
 });
 
-import { StudioMetadataLeaveGuard } from "../src/components/studio-metadata-leave-guard";
+import {
+  StudioMetadataLeaveGuard,
+  shouldGuardMetadataLeave,
+} from "../src/components/studio-metadata-leave-guard";
 
 type WizardState = ReturnType<typeof createInitialStudioWizardState>;
 
@@ -56,7 +59,7 @@ function AlignPage() {
   return <div>Align page</div>;
 }
 
-function renderWithRouter(initialWizard: WizardState) {
+function renderWithRouter(initialWizard: WizardState, initialPath = "/metadata") {
   const rootRoute = createRootRoute({
     component: function RootLayout() {
       return (
@@ -78,7 +81,7 @@ function renderWithRouter(initialWizard: WizardState) {
     component: AlignPage,
   });
   const routeTree = rootRoute.addChildren([infoRoute, alignRoute]);
-  const history = createMemoryHistory({ initialEntries: ["/metadata"] });
+  const history = createMemoryHistory({ initialEntries: [initialPath] });
   const router = createRouter({ routeTree, history });
 
   return { router, ...render(() => <RouterProvider router={router} />) };
@@ -145,5 +148,27 @@ describe("StudioMetadataLeaveGuard real-router integration", () => {
 
     expect(save.assayJsonExists).toHaveBeenCalledWith("/ws/run-1");
     expect(save.writeStudioAssayJson).toHaveBeenCalledWith("/ws/run-1", expect.anything());
+  });
+
+  it("lets a dirty wizard enter Metadata without asking", async () => {
+    const { router } = renderWithRouter(dirtyWizard({ workspacePath: "/ws/run-1" }), "/align");
+
+    await screen.findByText("Align page");
+    await router.navigate({ to: "/metadata" });
+
+    await screen.findByText("Metadata page");
+    expect(router.state.location.href).toBe("/metadata");
+    expect(screen.queryByRole("dialog", { name: "Metadata changed" })).toBeNull();
+  });
+});
+
+describe("shouldGuardMetadataLeave", () => {
+  it("only guards unsaved changes when leaving Metadata", () => {
+    expect(shouldGuardMetadataLeave("/metadata", "/align", true)).toBe(true);
+    expect(shouldGuardMetadataLeave("/metadata", "/assay", true)).toBe(true);
+    expect(shouldGuardMetadataLeave("/metadata", "/align", false)).toBe(false);
+    expect(shouldGuardMetadataLeave("/assay", "/metadata", true)).toBe(false);
+    expect(shouldGuardMetadataLeave("/align", "/annotate", true)).toBe(false);
+    expect(shouldGuardMetadataLeave("/metadata", "/metadata", true)).toBe(false);
   });
 });

@@ -70,11 +70,39 @@ describe("HostFilePickerDialog hidden items and favorites", () => {
     ]);
 
     const chips = screen.getByRole("list", { name: "Favorite folders" });
-    fireEvent.click(chips.querySelector("button[title='/home/user/data']")!);
+    fireEvent.click(chips.querySelector("button[title='Go to /home/user/data']")!);
     expect(await screen.findByText("assay.json")).not.toBeNull();
 
     fireEvent.click(screen.getByRole("button", { name: "Remove data from favorites" }));
     expect(screen.queryByRole("list", { name: "Favorite folders" })).toBeNull();
     expect(JSON.parse(localStorage.getItem(HOST_FILE_PICKER_FAVORITES_STORAGE_KEY)!)).toEqual([]);
+  });
+
+  it("shows recent picks as compact chips that open directly", async () => {
+    const onPickRecent = vi.fn();
+    render(() => (
+      <HostFilePickerDialog
+        open
+        hostPort={makeHostPort()}
+        mode="assay_json_file"
+        recentItems={[
+          { path: "/home/user/data/TF84/assay.json", label: "TF84" },
+          { path: "/home/user/data/TF85/assay.json" },
+          ...[1, 2, 3, 4].map((n) => ({ path: `/old/${n}/assay.json`, label: `Old ${n}` })),
+        ]}
+        title="Open assay"
+        onOpenChange={vi.fn()}
+        onPickDirectory={vi.fn()}
+        onPickFile={vi.fn()}
+        onPickRecent={onPickRecent}
+      />
+    ));
+    await screen.findByText("data");
+
+    const recent = screen.getByRole("list", { name: "Recent" });
+    expect(recent.querySelectorAll("li")).toHaveLength(5);
+    expect(screen.queryByText("Old 4")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "TF84" }));
+    expect(onPickRecent).toHaveBeenCalledWith("/home/user/data/TF84/assay.json");
   });
 });

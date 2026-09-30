@@ -170,6 +170,10 @@
       "types": "./src/studio/wizard-state.ts",
       "import": "./src/studio/wizard-state.ts"
     },
+    "./session/recent-memory": {
+      "types": "./src/session/recent-memory.ts",
+      "import": "./src/session/recent-memory.ts"
+    },
     "./studio/wizard-memory": {
       "types": "./src/studio/wizard-memory.ts",
       "import": "./src/studio/wizard-memory.ts"

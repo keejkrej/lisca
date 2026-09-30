@@ -71,7 +71,8 @@ export type StudioAlignState = {
   cropProgress: CropRoiProgress | null;
   cropStartConfirm: CropStartConfirmState | null;
   cropConfirm: CropConfirmState | null;
-  continuing: boolean;
+  /** Scanning saved positions after Crop was pressed. */
+  preparingCrop: boolean;
   status: string | null;
   /** Save state of the current position: stored on disk, never saved, or edited since last save/load. */
   positionSaveState: AlignPositionSaveState;
@@ -83,8 +84,10 @@ export type StudioAlignState = {
   changePosition: (pos: number) => void;
   resetCurrent: () => void;
   saveCurrentPosition: () => Promise<boolean>;
-  /** Go to the next unsaved position (wrapping); when all are saved, offer to crop. */
-  continueAlign: () => Promise<void>;
+  /** Crop: confirm when every position is aligned, else list the unaligned ones. */
+  requestCrop: () => Promise<void>;
+  /** From the crop prompt, jump to the next unaligned position. */
+  goToUnalignedPosition: () => void;
   unsavedChangesPrompt: boolean;
   resolveUnsavedChanges: (choice: "save" | "discard" | "cancel") => Promise<void>;
   startConfirmedCrop: () => void;
@@ -112,6 +115,8 @@ type AlignBaseline = {
 };
 export type CropStartConfirmState = {
   positions: number[];
+  /** Positions without saved alignment; cropping waits until this is empty. */
+  unaligned: number[];
 };
 export type { CropConfirmState };
 export function useStudioAlignState(): StudioAlignState {
@@ -120,7 +125,7 @@ export function useStudioAlignState(): StudioAlignState {
   const workspacePath = useStudioStore((state) => state.workspacePath);
   const samples = useStudioStore((state) => state.samples);
   const dataSourceKind = useStudioStore((state) => state.dataSourceKind);
-  const [continuing, setContinuing] = createSignal(false);
+  const [preparingCrop, setPreparingCrop] = createSignal(false);
   const [savedPositions, setSavedPositions] = createSignal<ReadonlySet<number>>(new Set());
   const [baseline, setBaseline] = createSignal<AlignBaseline | null>(null);
   const [pendingNavigation, setPendingNavigation] = createSignal<(() => void) | null>(null);
@@ -273,31 +278,34 @@ export function useStudioAlignState(): StudioAlignState {
     setStatus(`Saved Pos${pos}`);
     return true;
   };
-  const continueAlign = async () => {
+  const requestCrop = async () => {
     const positions = alignPositions();
-    if (!ui().workspacePath || positions.length === 0 || ui().saving || continuing()) return;
+    if (!ui().workspacePath || positions.length === 0 || ui().saving || preparingCrop()) return;
     if (dirty()) {
-      setPendingNavigation(() => () => void continueAlign());
+      setPendingNavigation(() => () => void requestCrop());
       return;
     }
-    setContinuing(true);
+    setPreparingCrop(true);
     setError(null);
     try {
       const saved = await refreshSavedPositions();
-      const current = lockedSelection().pos;
-      const target = nextUnsavedAlignPosition(positions, current, saved);
-      if (target == null) {
-        setCropStartConfirm({ positions });
-      } else if (target === current) {
-        setStatus(`Save Pos${current} to continue`);
-      } else {
-        setSelection({ pos: target });
-      }
+      setCropStartConfirm({ positions, unaligned: positions.filter((pos) => !saved.has(pos)) });
     } catch (cause) {
       setError(toErrorMessage(cause, "Saved position scan failed"));
     } finally {
-      setContinuing(false);
+      setPreparingCrop(false);
     }
+  };
+  const goToUnalignedPosition = () => {
+    const next = cropStartConfirm();
+    setCropStartConfirm(null);
+    if (!next || next.unaligned.length === 0) return;
+    const target = nextUnsavedAlignPosition(
+      next.positions,
+      lockedSelection().pos,
+      new Set(next.positions.filter((pos) => !next.unaligned.includes(pos))),
+    );
+    if (target != null && target !== lockedSelection().pos) setSelection({ pos: target });
   };
   const resolveUnsavedChanges = async (choice: "save" | "discard" | "cancel") => {
     const navigate = pendingNavigation();
@@ -321,7 +329,7 @@ export function useStudioAlignState(): StudioAlignState {
   };
   const startConfirmedCrop = () => {
     const next = cropStartConfirm();
-    if (!next) return;
+    if (!next || next.unaligned.length > 0) return;
     setCropStartConfirm(null);
     void session.crop.checkOverwrite(next.positions, "batch");
   };
@@ -421,8 +429,8 @@ export function useStudioAlignState(): StudioAlignState {
     get cropConfirm() {
       return session.crop.confirm();
     },
-    get continuing() {
-      return continuing();
+    get preparingCrop() {
+      return preparingCrop();
     },
     get status() {
       return ui().status;
@@ -441,7 +449,8 @@ export function useStudioAlignState(): StudioAlignState {
     changePosition,
     resetCurrent,
     saveCurrentPosition,
-    continueAlign,
+    requestCrop,
+    goToUnalignedPosition,
     get unsavedChangesPrompt() {
       return pendingNavigation() != null;
     },
