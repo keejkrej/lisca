@@ -8,7 +8,6 @@ vi.mock("@lisca/ui/features", async (importOriginal) => {
   return {
     ...actual,
     HostFilePickerDialog: () => null,
-    SourcePickerModal: () => null,
     FolderSourceParseModal: () => null,
   };
 });

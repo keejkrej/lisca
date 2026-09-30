@@ -121,4 +121,5 @@ export {
   SmartSegmentModelDialog,
   type SmartSegmentModelDialogProps,
 } from "./annotate/smart-segment-model-dialog";
+export { SourcePickerField, type SourcePickerFieldProps } from "./host/source-picker-field";
 export { SourcePickerModal, type SourcePickerModalProps } from "./host/source-picker-modal";

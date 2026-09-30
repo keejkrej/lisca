@@ -11,6 +11,32 @@ export type PathPickerFieldProps = {
   onOpen: () => void;
 };
 
+/** Shared surface for path-valued triggers (dialog or menu). */
+export const pathPickerTriggerClass =
+  "h-8 w-full min-w-0 justify-between gap-3 !bg-input/30 px-3 hover:!bg-input/50";
+
+export function PathPickerTriggerContent(props: {
+  value: string;
+  placeholder: string;
+  actionLabel: string;
+}) {
+  return (
+    <>
+      <span
+        class={cn(
+          "min-w-0 flex-1 truncate text-left",
+          props.value.trim()
+            ? "font-mono text-xs text-foreground"
+            : "text-[13px] font-normal text-muted-foreground",
+        )}
+      >
+        {props.value.trim() || props.placeholder}
+      </span>
+      <span class="shrink-0 text-[13px] font-medium text-foreground">{props.actionLabel}</span>
+    </>
+  );
+}
+
 /** A read-only path value whose whole surface opens a picker dialog. */
 export function PathPickerField(props: PathPickerFieldProps) {
   const actionLabel = () => props.actionLabel ?? "Browse";
@@ -24,7 +50,7 @@ export function PathPickerField(props: PathPickerFieldProps) {
       <Button
         aria-haspopup="dialog"
         aria-label={`${props.label}: ${displayValue()}. ${actionLabel()}`}
-        class="h-8 w-full min-w-0 justify-between gap-3 !bg-input/30 px-3 hover:!bg-input/50"
+        class={pathPickerTriggerClass}
         id={props.id}
         size="sm"
         title={props.value.trim() || props.placeholder}
@@ -32,17 +58,11 @@ export function PathPickerField(props: PathPickerFieldProps) {
         variant="outline"
         onClick={props.onOpen}
       >
-        <span
-          class={cn(
-            "min-w-0 flex-1 truncate text-left",
-            props.value.trim()
-              ? "font-mono text-xs text-foreground"
-              : "text-[13px] font-normal text-muted-foreground",
-          )}
-        >
-          {displayValue()}
-        </span>
-        <span class="shrink-0 text-[13px] font-medium text-foreground">{actionLabel()}</span>
+        <PathPickerTriggerContent
+          actionLabel={actionLabel()}
+          placeholder={props.placeholder}
+          value={props.value}
+        />
       </Button>
     </Field>
   );

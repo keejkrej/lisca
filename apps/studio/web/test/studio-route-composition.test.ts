@@ -53,7 +53,9 @@ describe("Studio workflow route composition", () => {
     expect(metadataRouteSource).not.toMatch(/infoStep/);
     expect(navSource).not.toMatch(/Basic info/);
     expect(metadataSource).toMatch(/>Info<\/h1>/);
-    expect(metadataSource.match(/<PathPickerField/g)).toHaveLength(2);
+    expect(metadataSource.match(/<SourcePickerField/g)).toHaveLength(1);
+    expect(metadataSource.match(/<PathPickerField/g)).toHaveLength(1);
+    expect(metadataSource).not.toMatch(/SourcePickerModal/);
     expect(metadataSource).not.toMatch(/Basic info/);
     expect(samplesSource).not.toMatch(/border-b/);
     expect(samplesSource).not.toMatch(/border-y/);
