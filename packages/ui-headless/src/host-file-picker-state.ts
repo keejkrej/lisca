@@ -55,6 +55,14 @@ export function favoriteLabel(path: string): string {
   return name || path;
 }
 
+/** Chip label for a recent pick: an `assay.json` is named after its folder. */
+export function recentLabel(path: string): string {
+  const name = favoriteLabel(path);
+  if (name.toLowerCase() !== "assay.json") return name;
+  const folder = path.replace(/[\\/]+$/, "").slice(0, -name.length);
+  return folder ? favoriteLabel(folder) : name;
+}
+
 export function normalizeFavoritePaths(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
   const paths = value.filter((item): item is string => typeof item === "string" && item !== "");
