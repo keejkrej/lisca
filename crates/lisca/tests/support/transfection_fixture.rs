@@ -1,4 +1,4 @@
-//! Build a tiny transfection workspace (4×4 ROI, 4 timepoints, 2 channels).
+//! Build a tiny transfection workspace (4×4 ROI, 4 frames, 2 channels).
 
 use std::fs::{self, File};
 use std::path::{Path, PathBuf};
@@ -15,8 +15,7 @@ const Z_COUNT: u32 = 1;
 const POSITION: u32 = 1;
 const ROI_ID: u32 = 1;
 const SIGNAL_CHANNEL: u32 = 1;
-const MASK_CHANNEL: u32 = 0;
-const SLIDE_CHANNEL: u32 = 0;
+const SEGMENTATION_CHANNEL: u32 = 0;
 pub const INTERVAL_MINUTES: f64 = 10.0;
 
 pub struct SyntheticWorkspace {
@@ -50,7 +49,7 @@ impl SyntheticWorkspace {
         Self { root }
     }
 
-    pub fn expected_timeseries_rows(&self) -> Vec<(u32, u32, u32, f64, f64, f64)> {
+    pub fn expected_trace_rows(&self) -> Vec<(u32, u32, u32, f64, f64, f64)> {
         (0..TIME_COUNT)
             .map(|t| {
                 let (area, intensity, background, corrected_value) = quantized_frame_metrics(t);
@@ -72,13 +71,12 @@ fn write_assay_json(root: &Path) {
         },
         "interval": { "value": INTERVAL_MINUTES, "unit": "minute" },
         "samples": [{
-            "slideChannel": SLIDE_CHANNEL,
             "name": "condA",
             "positions": POSITION.to_string()
         }],
         "analysis": {
             "channels": {
-                "mask": MASK_CHANNEL,
+                "segmentation": SEGMENTATION_CHANNEL,
                 "signal": [SIGNAL_CHANNEL]
             }
         }
@@ -122,7 +120,7 @@ fn center_mask() -> Vec<bool> {
     mask
 }
 
-fn quantized_frame_metrics(timepoint: u32) -> (u32, f64, f64, f64) {
+fn quantized_frame_metrics(frame_index: u32) -> (u32, f64, f64, f64) {
     let frame_indices: Vec<f64> = (0..TIME_COUNT).map(f64::from).collect();
     let kinetic_truth = FitResult {
         baseline_intensity: 10.0,
@@ -132,7 +130,7 @@ fn quantized_frame_metrics(timepoint: u32) -> (u32, f64, f64, f64) {
         expression_amplitude: 100.0,
     };
     let corrected = synthetic_kinetic_trace(&frame_indices, INTERVAL_MINUTES, kinetic_truth);
-    let foreground = (corrected[timepoint as usize] / 4.0 + 10.0) as u8;
+    let foreground = (corrected[frame_index as usize] / 4.0 + 10.0) as u8;
     let mut frame = vec![10.0; WIDTH * HEIGHT];
     for y in 1..3 {
         for x in 1..3 {
@@ -151,16 +149,16 @@ fn write_roi_stack(root: &Path, kinetic_truth: &FitResult) {
     let frame_indices: Vec<f64> = (0..TIME_COUNT).map(f64::from).collect();
     let corrected = synthetic_kinetic_trace(&frame_indices, INTERVAL_MINUTES, *kinetic_truth);
     let mut pages = Vec::new();
-    for timepoint in 0..TIME_COUNT {
+    for frame_index in 0..TIME_COUNT {
         for channel in 0..CHANNEL_COUNT {
             for _z in 0..Z_COUNT {
                 let mut page = vec![10u8; WIDTH * HEIGHT];
-                if channel == MASK_CHANNEL {
+                if channel == SEGMENTATION_CHANNEL {
                     for (index, value) in center_mask().into_iter().enumerate() {
                         page[index] = if value { 200 } else { 20 };
                     }
                 } else if channel == SIGNAL_CHANNEL {
-                    let foreground = (corrected[timepoint as usize] / 4.0 + 10.0) as u8;
+                    let foreground = (corrected[frame_index as usize] / 4.0 + 10.0) as u8;
                     for y in 1..3 {
                         for x in 1..3 {
                             page[y * WIDTH + x] = foreground;

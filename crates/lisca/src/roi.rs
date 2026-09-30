@@ -232,7 +232,7 @@ mod tests {
                     z: 0,
                 },
             )
-            .expect("downsampled timepoint loads");
+            .expect("downsampled frame loads");
             assert_eq!(frame.data, vec![plane as u16, plane as u16]);
         }
         fs::remove_dir_all(&workspace).expect("cleanup");
@@ -262,7 +262,7 @@ mod tests {
                     z: 0,
                 },
             )
-            .expect("shifted timepoint loads");
+            .expect("shifted frame loads");
             assert_eq!(frame.data, vec![plane as u16, plane as u16]);
         }
         fs::remove_dir_all(&workspace).expect("cleanup");

@@ -25,8 +25,8 @@ describe("analysis fixtures", () => {
     expect(fixture.plots.every((plot) => plot.src?.startsWith("data:image/png;base64,"))).toBe(
       true,
     );
-    const { timeseriesPlots, parameterPlots } = loadFixturePlots(fixture);
-    expect(timeseriesPlots).toHaveLength(4);
+    const { tracePlots, parameterPlots } = loadFixturePlots(fixture);
+    expect(tracePlots).toHaveLength(4);
     expect(parameterPlots).toHaveLength(4);
   });
 
@@ -40,8 +40,8 @@ describe("analysis fixtures", () => {
     expect(fixture.plots.every((plot) => plot.src?.startsWith("data:image/png;base64,"))).toBe(
       true,
     );
-    const { timeseriesPlots, parameterPlots } = loadFixturePlots(fixture);
-    expect(timeseriesPlots).toHaveLength(1);
+    const { tracePlots, parameterPlots } = loadFixturePlots(fixture);
+    expect(tracePlots).toHaveLength(1);
     expect(parameterPlots).toHaveLength(2);
   });
 });

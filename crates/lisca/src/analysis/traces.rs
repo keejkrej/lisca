@@ -1,15 +1,16 @@
-//! Assay-neutral loading and grouping for workspace timeseries CSV files.
+//! Assay-neutral loading and grouping for workspace trace CSV files
+//! (`<dir>/Pos{n}/ch{m}.csv`).
 
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
 use super::csv_io::{column_index, parse_f64, read_csv};
-use super::slide::SlideMapping;
+use super::sample::SampleMapping;
 
 #[derive(Debug, Clone)]
 pub(crate) struct TracePanel {
-    /// One subplot per sample (`slide` / slide_channel), not per position CSV.
-    pub slide_channel: u32,
+    /// Index of the Sample in assay order (one subplot per Sample, not per CSV).
+    pub sample: usize,
     pub paths: Vec<PathBuf>,
     pub traces: Vec<Vec<(f64, f64)>>,
     pub y_values: Vec<f64>,
@@ -17,16 +18,13 @@ pub(crate) struct TracePanel {
 
 pub(crate) type TracePointGroup = BTreeMap<i64, Vec<(f64, f64)>>;
 
-/// Discover `timeseries/Pos{n}/ch{n}.csv` files.
-pub(crate) fn discover_timeseries_csvs(timeseries_dir: &Path) -> Result<Vec<PathBuf>, String> {
-    if !timeseries_dir.is_dir() {
-        return Err(format!(
-            "Expected timeseries/ directory at {}",
-            timeseries_dir.display()
-        ));
+/// Discover `<dir>/Pos{n}/ch{n}.csv` files (killing: `traces/`).
+pub(crate) fn discover_trace_csvs(dir: &Path) -> Result<Vec<PathBuf>, String> {
+    if !dir.is_dir() {
+        return Err(format!("Expected trace directory at {}", dir.display()));
     }
     let mut csvs = Vec::new();
-    for entry in std::fs::read_dir(timeseries_dir).map_err(|error| error.to_string())? {
+    for entry in std::fs::read_dir(dir).map_err(|error| error.to_string())? {
         let entry = entry.map_err(|error| error.to_string())?;
         let pos_dir = entry.path();
         if !pos_dir.is_dir() {
@@ -71,24 +69,24 @@ pub(crate) fn discover_timeseries_csvs(timeseries_dir: &Path) -> Result<Vec<Path
     if csvs.is_empty() {
         return Err(format!(
             "No position metrics CSV files (expected Pos{{n}}/ch{{n}}.csv) in {}",
-            timeseries_dir.display()
+            dir.display()
         ));
     }
     Ok(csvs)
 }
 
 /// Parse `(position, signal_channel)` from `…/Pos{n}/ch{n}.csv`.
-pub fn parse_timeseries_path(path: &Path) -> Result<(u32, u32), String> {
+pub fn parse_trace_path(path: &Path) -> Result<(u32, u32), String> {
     let stem = path
         .file_stem()
         .and_then(|stem| stem.to_str())
-        .ok_or_else(|| format!("invalid timeseries path {}", path.display()))?;
+        .ok_or_else(|| format!("invalid trace path {}", path.display()))?;
     let channel = stem
         .strip_prefix("ch")
         .and_then(|rest| rest.parse::<u32>().ok())
         .ok_or_else(|| {
             format!(
-                "Expected timeseries path Pos{{n}}/ch{{n}}.csv, got {}",
+                "Expected trace path Pos{{n}}/ch{{n}}.csv, got {}",
                 path.display()
             )
         })?;
@@ -98,7 +96,7 @@ pub fn parse_timeseries_path(path: &Path) -> Result<(u32, u32), String> {
         .and_then(|name| name.to_str())
         .ok_or_else(|| {
             format!(
-                "Expected timeseries path Pos{{n}}/ch{{n}}.csv, got {}",
+                "Expected trace path Pos{{n}}/ch{{n}}.csv, got {}",
                 path.display()
             )
         })?;
@@ -107,37 +105,40 @@ pub fn parse_timeseries_path(path: &Path) -> Result<(u32, u32), String> {
         .and_then(|rest| rest.parse::<u32>().ok())
         .ok_or_else(|| {
             format!(
-                "Expected timeseries path Pos{{n}}/ch{{n}}.csv, got {}",
+                "Expected trace path Pos{{n}}/ch{{n}}.csv, got {}",
                 path.display()
             )
         })?;
     Ok((position, channel))
 }
 
-/// Resolve slide channel from assay mapping for a timeseries CSV path.
-pub fn resolve_slide_channel(path: &Path, mapping: &SlideMapping) -> Result<u32, String> {
-    let (position, signal_channel) = parse_timeseries_path(path)?;
-    let mut matches = mapping.iter().filter_map(|(slide_channel, entry)| {
-        (entry.signal.contains(&signal_channel) && entry.positions.contains(&position))
-            .then_some(*slide_channel)
+/// Resolve the Sample (index in assay order) that owns a trace CSV path.
+pub fn resolve_sample(path: &Path, mapping: &SampleMapping) -> Result<usize, String> {
+    let (position, signal_channel) = parse_trace_path(path)?;
+    let mut matches = mapping.iter().enumerate().filter_map(|(index, sample)| {
+        (sample.signal.contains(&signal_channel) && sample.positions.contains(&position))
+            .then_some(index)
     });
-    let Some(slide_channel) = matches.next() else {
+    let Some(index) = matches.next() else {
         return Err(format!(
             "No assay mapping entry for Pos{position} signal channel {signal_channel} ({})",
             path.display()
         ));
     };
     if let Some(other) = matches.next() {
+        let name = |index: usize| mapping.get(index).map(|sample| sample.name.clone());
         return Err(format!(
-            "Ambiguous slide channel for Pos{position} signal channel {signal_channel}: {slide_channel} and {other}"
+            "Ambiguous sample for Pos{position} signal channel {signal_channel}: {:?} and {:?}",
+            name(index).unwrap_or_default(),
+            name(other).unwrap_or_default()
         ));
     }
-    Ok(slide_channel)
+    Ok(index)
 }
 
 pub(crate) fn load_trace_panel(path: &Path, y_column: &str) -> Result<TracePanel, String> {
     let (headers, rows) = read_csv(path)?;
-    let groups = group_timeseries_rows(&headers, &rows, y_column)?;
+    let groups = group_trace_rows(&headers, &rows, y_column)?;
     let mut y_values = Vec::new();
     let traces = groups
         .into_values()
@@ -152,25 +153,25 @@ pub(crate) fn load_trace_panel(path: &Path, y_column: &str) -> Result<TracePanel
         })
         .collect();
     Ok(TracePanel {
-        slide_channel: 0,
+        sample: 0,
         paths: vec![path.to_path_buf()],
         traces,
         y_values,
     })
 }
 
-/// Load position CSVs and merge into one panel per sample (`slide_channel`).
+/// Load position CSVs and merge into one panel per Sample, in assay order.
 pub(crate) fn load_trace_panels_by_sample(
     csvs: &[PathBuf],
     y_column: &str,
-    mapping: &SlideMapping,
+    mapping: &SampleMapping,
 ) -> Result<Vec<TracePanel>, String> {
-    let mut grouped: BTreeMap<u32, TracePanel> = BTreeMap::new();
+    let mut grouped: BTreeMap<usize, TracePanel> = BTreeMap::new();
     for path in csvs {
-        let slide_channel = resolve_slide_channel(path, mapping)?;
+        let sample = resolve_sample(path, mapping)?;
         let panel = load_trace_panel(path, y_column)?;
-        let entry = grouped.entry(slide_channel).or_insert_with(|| TracePanel {
-            slide_channel,
+        let entry = grouped.entry(sample).or_insert_with(|| TracePanel {
+            sample,
             paths: Vec::new(),
             traces: Vec::new(),
             y_values: Vec::new(),
@@ -182,11 +183,11 @@ pub(crate) fn load_trace_panels_by_sample(
     Ok(grouped.into_values().collect())
 }
 
-/// Group `(t, y)` points by ROI. Timeseries CSVs are already split per
+/// Group `(t, y)` points by ROI. Trace CSVs are already split per
 /// position (`Pos{n}/ch{n}.csv`), so no `pos` column is needed or expected;
 /// callers that need the position number parse it from the file path via
-/// [`parse_timeseries_path`].
-pub(crate) fn group_timeseries_rows(
+/// [`parse_trace_path`].
+pub(crate) fn group_trace_rows(
     headers: &[String],
     rows: &[Vec<String>],
     y_column: &str,
@@ -209,28 +210,31 @@ pub(crate) fn group_timeseries_rows(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::analysis::slide::SlideChannelMapping;
-    use std::collections::BTreeMap;
+    use crate::analysis::sample::SampleAnalysis;
 
     #[test]
-    fn parse_timeseries_path_reads_pos_and_channel() {
-        let path = Path::new("/ws/timeseries/Pos7/ch2.csv");
-        assert_eq!(parse_timeseries_path(path).unwrap(), (7, 2));
+    fn parse_trace_path_reads_pos_and_channel() {
+        let path = Path::new("/ws/traces/Pos7/ch2.csv");
+        assert_eq!(parse_trace_path(path).unwrap(), (7, 2));
     }
 
     #[test]
-    fn resolve_slide_channel_uses_mapping() {
-        let mut mapping = BTreeMap::new();
-        mapping.insert(
-            3,
-            SlideChannelMapping {
+    fn resolve_sample_uses_mapping() {
+        let mapping = SampleMapping(vec![
+            SampleAnalysis {
+                name: "A".into(),
+                positions: vec![1],
+                signal: vec![2],
+                segmentation: 0,
+            },
+            SampleAnalysis {
+                name: "B".into(),
                 positions: vec![7],
                 signal: vec![2],
-                mask: 0,
-                sample_name: "A".into(),
+                segmentation: 0,
             },
-        );
-        let path = Path::new("/ws/timeseries/Pos7/ch2.csv");
-        assert_eq!(resolve_slide_channel(path, &mapping).unwrap(), 3);
+        ]);
+        let path = Path::new("/ws/traces/Pos7/ch2.csv");
+        assert_eq!(resolve_sample(path, &mapping).unwrap(), 1);
     }
 }

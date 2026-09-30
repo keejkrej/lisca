@@ -32,15 +32,28 @@ export function validAssayInterval(
   return intervalValue != null && intervalValue > 0;
 }
 
+/** Trimmed sample names that appear on more than one row, in first-seen order. */
+export function duplicateSampleNames(samples: readonly { name: string }[]): string[] {
+  const seen = new Set<string>();
+  const duplicates = new Set<string>();
+  for (const row of samples) {
+    const name = row.name.trim();
+    if (!name) continue;
+    if (seen.has(name)) duplicates.add(name);
+    seen.add(name);
+  }
+  return [...duplicates];
+}
+
 export function validAssaySamples(samples: StudioAssaySampleRow[]): boolean {
   return (
     samples.length > 0 &&
+    duplicateSampleNames(samples).length === 0 &&
     samples.every(
       (row) =>
-        parseNonNegativeInteger(row.slideChannel) != null &&
         row.name.trim().length > 0 &&
         isValidSamplePositionRange(row.positionStart, row.positionFinish) &&
-        parseNonNegativeInteger(row.mask) != null &&
+        parseNonNegativeInteger(row.segmentation) != null &&
         parseSignalChannels(row.signal) != null,
     )
   );
@@ -75,19 +88,16 @@ export function validateAssayForAnalysis(input: {
 
   input.samples.forEach((row, index) => {
     const rowLabel = `Sample row ${index + 1}`;
-    if (parseNonNegativeInteger(row.slideChannel) == null) {
-      errors.push(`${rowLabel}: slide channel must be a non-negative integer.`);
-    }
     if (row.name.trim().length === 0) {
-      errors.push(`${rowLabel}: sample name is required.`);
+      errors.push(`${rowLabel}: sample name must be non-empty.`);
     }
     if (!isValidSamplePositionRange(row.positionStart, row.positionFinish)) {
       errors.push(
         `${rowLabel}: position start and end must be whole numbers from 1, with end >= start.`,
       );
     }
-    if (parseNonNegativeInteger(row.mask) == null) {
-      errors.push(`${rowLabel}: mask channel must be a non-negative integer.`);
+    if (parseNonNegativeInteger(row.segmentation) == null) {
+      errors.push(`${rowLabel}: segmentation channel must be a non-negative integer.`);
     }
     if (parseSignalChannels(row.signal) == null) {
       errors.push(
@@ -95,6 +105,10 @@ export function validateAssayForAnalysis(input: {
       );
     }
   });
+
+  for (const name of duplicateSampleNames(input.samples)) {
+    errors.push(`Sample name "${name}" is used by more than one sample; names must be unique.`);
+  }
 
   if (errors.length > 0) {
     return { ok: false, errors };

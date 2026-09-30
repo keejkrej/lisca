@@ -201,7 +201,7 @@ export function SliderStepperField(props: SliderNavigationFieldProps) {
 export type FrameNavigationProps<T extends NavigationValue> = {
   position?: SelectNavigationControlProps<T>;
   channel?: SelectNavigationControlProps<T>;
-  timepoint?: SliderNavigationControlProps;
+  frame?: SliderNavigationControlProps;
   zPlane?: SliderNavigationControlProps;
   roi?: SelectNavigationControlProps<T>;
   class?: string;
@@ -212,7 +212,7 @@ export type FrameNavigationProps<T extends NavigationValue> = {
   sectionAppearance?: "framed" | "rail";
 };
 
-/** Shared stack in a {@link Section} card: optional position, channel, time (slider), Z (slider), ROI — render only props you pass. */
+/** Shared stack in a {@link Section} card: optional position, channel, frame (slider), Z (slider), ROI — render only props you pass. */
 export function FrameNavigation<T extends NavigationValue>(props: FrameNavigationProps<T>) {
   return (
     <Section
@@ -235,8 +235,8 @@ export function FrameNavigation<T extends NavigationValue>(props: FrameNavigatio
         <Show when={props.channel}>
           {(channel) => <SelectStepperField label="Channel" {...channel()} />}
         </Show>
-        <Show when={props.timepoint}>
-          {(timepoint) => <SliderStepperField label="Timepoint" {...timepoint()} />}
+        <Show when={props.frame}>
+          {(frame) => <SliderStepperField label="Frame" {...frame()} />}
         </Show>
         <Show when={props.zPlane}>
           {(zPlane) => <SliderStepperField label="Z plane" {...zPlane()} />}

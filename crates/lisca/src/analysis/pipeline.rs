@@ -24,6 +24,9 @@ where
         ));
     }
 
+    crate::migrations::migrate_workspace(&workspace_path)
+        .map_err(|error| AnalysisError::Failed(format!("workspace migration failed: {error}")))?;
+
     let assay_path = workspace_path.join("assay.json");
     if !assay_path.is_file() {
         return Err(AnalysisError::Failed(format!(

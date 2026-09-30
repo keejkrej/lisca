@@ -1,22 +1,22 @@
 use std::path::Path;
 
 use crate::analysis::plot::write_metric_plots;
-use crate::analysis::slide::SlideMapping;
-use crate::analysis::timeseries::{discover_timeseries_csvs, load_trace_panels_by_sample};
+use crate::analysis::sample::SampleMapping;
+use crate::analysis::traces::{discover_trace_csvs, load_trace_panels_by_sample};
 
-pub fn run_plot_timeseries(
+pub fn run_plot_traces(
     workspace: &Path,
-    mapping: &SlideMapping,
+    mapping: &SampleMapping,
     interval: f64,
     columns: Option<usize>,
 ) -> Result<(), String> {
     if interval <= 0.0 {
         return Err(format!("interval must be > 0, got {interval}"));
     }
-    let csvs = discover_timeseries_csvs(&workspace.join("timeseries"))?;
+    let csvs = discover_trace_csvs(&workspace.join("traces"))?;
     let panels = load_trace_panels_by_sample(&csvs, "p_dead", mapping)?;
     if panels.is_empty() {
-        return Err("no p_dead timeseries panels to plot".to_string());
+        return Err("no p_dead trace panels to plot".to_string());
     }
 
     let results_dir = workspace.join("results");

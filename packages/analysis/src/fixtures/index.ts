@@ -10,7 +10,8 @@ export type AnalysisFixture = {
   title: string;
   description: string;
   intervalMinutes: number;
-  slideChannelLabels: Record<number, string>;
+  /** Sample names in assay order. */
+  sampleNames: string[];
   files: StudioAnalysisCsvFile[];
   plots: ResultPlot[];
 };
@@ -55,25 +56,20 @@ export function buildTransfectionFixture(): AnalysisFixture {
     plotFile(
       "traces",
       `Intensity traces (${TRANSFECTION_FIXTURE_SAMPLE})`,
-      "timeseries",
+      "traces",
       samplePath("traces"),
     ),
     plotFile(
       "traces_summary",
       `Intensity summary (${TRANSFECTION_FIXTURE_SAMPLE})`,
-      "timeseries",
+      "traces",
       samplePath("traces_summary"),
     ),
-    plotFile(
-      "area",
-      `Mask area (${TRANSFECTION_FIXTURE_SAMPLE})`,
-      "timeseries",
-      samplePath("area"),
-    ),
+    plotFile("area", `Mask area (${TRANSFECTION_FIXTURE_SAMPLE})`, "traces", samplePath("area")),
     plotFile(
       "traces_fit",
       `Fitted traces (${TRANSFECTION_FIXTURE_SAMPLE})`,
-      "timeseries",
+      "traces",
       samplePath("traces_fit"),
     ),
     plotFile("mrna_lifetime", "mRNA lifetime τ_mRNA", "parameters"),
@@ -87,10 +83,7 @@ export function buildTransfectionFixture(): AnalysisFixture {
     description:
       "Fixture transfection workspace showing the PNG plots analysis writes (traces, area, fit, and parameter boxplots). Images are sample placeholders.",
     intervalMinutes: 10,
-    slideChannelLabels: {
-      0: "Mock (fixture)",
-      1: "GFP (fixture)",
-    },
+    sampleNames: ["Mock (fixture)", "GFP (fixture)"],
     files: plots.map(asResultFile),
     plots,
   };
@@ -98,7 +91,7 @@ export function buildTransfectionFixture(): AnalysisFixture {
 
 export function buildKillingFixture(): AnalysisFixture {
   const plots = [
-    plotFile("traces", "P(dead) traces", "timeseries"),
+    plotFile("traces", "P(dead) traces", "traces"),
     plotFile("kill_curve", "N(alive)", "parameters"),
     plotFile("death_times", "T_death", "parameters"),
   ];
@@ -108,11 +101,7 @@ export function buildKillingFixture(): AnalysisFixture {
     description:
       "Fixture killing workspace showing the PNG plots analysis writes (P(dead) traces, kill curve, death times). Images are sample placeholders.",
     intervalMinutes: 15,
-    slideChannelLabels: {
-      0: "Control (fixture)",
-      1: "CAR-T 1:4 (fixture)",
-      2: "CAR-T 1:1 (fixture)",
-    },
+    sampleNames: ["Control (fixture)", "CAR-T 1:4 (fixture)", "CAR-T 1:1 (fixture)"],
     files: plots.map(asResultFile),
     plots,
   };
@@ -128,11 +117,11 @@ export function listAnalysisFixtures(): AnalysisFixture[] {
 }
 
 export function loadFixturePlots(fixture: AnalysisFixture): {
-  timeseriesPlots: ResultPlot[];
+  tracePlots: ResultPlot[];
   parameterPlots: ResultPlot[];
 } {
   return {
-    timeseriesPlots: fixture.plots.filter((plot) => plot.section === "timeseries"),
+    tracePlots: fixture.plots.filter((plot) => plot.section === "traces"),
     parameterPlots: fixture.plots.filter((plot) => plot.section === "parameters"),
   };
 }

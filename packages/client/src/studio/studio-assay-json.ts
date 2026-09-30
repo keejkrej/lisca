@@ -137,8 +137,11 @@ export function buildStudioAssayJson({
   sampleRowToDisk: (row: StudioAssaySampleRow) => AssaySampleRow;
 }): StudioAssayJson {
   const derivedChannels = analysisChannelsFromSamples(samples);
+  // Overrides are keyed by sample name: once channels are derived from the rows, drop any
+  // previous `sampleChannels` so a renamed sample never leaves a stale override behind.
+  const { sampleChannels: _previousOverrides, ...analysisWithoutOverrides } = analysis ?? {};
   const analysisSection = analysisConfigForAssay(assayId, {
-    ...analysis,
+    ...(derivedChannels.channels ? analysisWithoutOverrides : analysis),
     ...derivedChannels,
   });
   return {

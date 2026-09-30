@@ -31,14 +31,14 @@ const FIXTURES: Record<FixtureAssayId, () => AnalysisFixture> = {
 
 export function AnalysisDemo(props: AnalysisDemoProps) {
   const [assayId, setAssayId] = createSignal<FixtureAssayId>("transfection");
-  const [section, setSection] = createSignal<ResultPlotSection>("timeseries");
+  const [section, setSection] = createSignal<ResultPlotSection>("traces");
   const fixture = createMemo(() => FIXTURES[assayId()]());
   const assayKind = createMemo(() => inferResultAssayKind(fixture().files));
   const plots = createMemo(() => fixture().plots.filter((plot) => plot.section === section()));
 
   const switchAssay = (next: FixtureAssayId) => {
     setAssayId(next);
-    setSection("timeseries");
+    setSection("traces");
   };
 
   const shell = (
@@ -72,7 +72,7 @@ export function AnalysisDemo(props: AnalysisDemoProps) {
                     </p>
                     <AnalysisPlotGallery
                       emptyTitle="No plots in this view"
-                      emptyMessage="Switch Timeseries and Parameters in the dock."
+                      emptyMessage="Switch Traces and Parameters in the dock."
                       plots={plots()}
                       section={section()}
                     />
@@ -83,7 +83,7 @@ export function AnalysisDemo(props: AnalysisDemoProps) {
                 compact
                 section={section()}
                 sectionLabels={{
-                  timeseries: resultSectionLabel("timeseries", assayKind()),
+                  traces: resultSectionLabel("traces", assayKind()),
                   parameters: resultSectionLabel("parameters", assayKind()),
                 }}
                 onSectionChange={setSection}
@@ -103,7 +103,7 @@ export function AnalysisDemo(props: AnalysisDemoProps) {
                   <p class="border-b px-4 py-2 text-xs text-muted-foreground">{fixtureBanner()}</p>
                   <AnalysisPlotGallery
                     emptyTitle="No plots in this view"
-                    emptyMessage="Switch Timeseries and Parameters in the dock."
+                    emptyMessage="Switch Traces and Parameters in the dock."
                     plots={plots()}
                     section={section()}
                   />
@@ -114,7 +114,7 @@ export function AnalysisDemo(props: AnalysisDemoProps) {
               <DemoAnalysisDock
                 section={section()}
                 sectionLabels={{
-                  timeseries: resultSectionLabel("timeseries", assayKind()),
+                  traces: resultSectionLabel("traces", assayKind()),
                   parameters: resultSectionLabel("parameters", assayKind()),
                 }}
                 onSectionChange={setSection}

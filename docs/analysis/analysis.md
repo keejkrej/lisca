@@ -22,7 +22,7 @@ boxplots and `results/<sample>/*.png` packs) and serves them at `GET /fs/file?pa
 Per-sample titles include the sample folder (for example
 `Intensity traces (A431_aiLNP)`).
 
-Sections stay assay-aware: Timeseries / Parameters (transfection) vs Timeseries /
+Sections stay assay-aware: Traces / Parameters (transfection) vs Traces /
 Survival (killing).
 
 ## Analysis demo
@@ -61,10 +61,10 @@ mature assays. ROI stacks under `roi/` come from **Studio crop**, CLI (`lisca-cr
 or the notebooks zip (`lisca.services.crop` in `python/`) — not from the light Aligner shell. The running workflow
 depends on `assay.json` → root `type`:
 
-| Assay          | Goal source (not implementation reference)                                                                                    | Pipeline                                                                                           |
-| -------------- | ----------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| `transfection` | [`lisca-transfection-assay`](https://github.com/keejkrej/lisca-transfection-assay) — Python + Rust crate imported via git URL | segment → timeseries → AUC → fit (+ plots) in `lisca-transfection`; Studio ONNX segment stays here |
-| `killing`      | [mupattern](https://github.com/keejkrej/mupattern) / future `lisca-killing-assay` — kill curve semantics, ResNet classifier   | predict → plot-timeseries → clean → death times → kill curve plot                                  |
+| Assay          | Goal source (not implementation reference)                                                                                    | Pipeline                                                                                       |
+| -------------- | ----------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `transfection` | [`lisca-transfection-assay`](https://github.com/keejkrej/lisca-transfection-assay) — Python + Rust crate imported via git URL | segment → traces → AUC → fit (+ plots) in `lisca-transfection`; Studio ONNX segment stays here |
+| `killing`      | [mupattern](https://github.com/keejkrej/mupattern) / future `lisca-killing-assay` — kill curve semantics, ResNet classifier   | predict → plot-traces → clean → death times → kill curve plot                                  |
 
 Numeric stages and PNG plots for transfection run in the imported
 [`lisca-transfection`](https://github.com/keejkrej/lisca-transfection-assay) crate
@@ -79,7 +79,7 @@ Sibling **goal sources** (`lisca-*-assay` packages, mupattern) describe **what**
 Rust in this crate should stay idiomatic:
 
 - Shared ROI I/O in `roi_stack.rs` / `csv_io.rs`; crop in `lisca-crop`.
-- Transfection stages: call `lisca-transfection` (Otsu, timeseries, AUC, fit, plots). Do not keep a second full pipeline under `assays/transfection/`.
+- Transfection stages: call `lisca-transfection` (Otsu, traces, AUC, fit, plots). Do not keep a second full pipeline under `assays/transfection/`.
 - Product Smart exclude / Smart segment models stay in `models/`. Transfection
   ONNX segment may stay as a Studio adapter (`segment_onnx.rs` + `ort`) until
   the sidecar un-stubs it; resolve `keejkrej/single-cell-pattern-unet` via
@@ -93,30 +93,39 @@ Rust in this crate should stay idiomatic:
 Order matches `transfection pipeline` / `lisca-analyze pipeline`:
 
 ```
-assay.json → segment → timeseries → plot-timeseries → auc → plot-auc → fit → plot-fit → CSV/XLSX outputs
+assay.json → segment → traces → plot-traces → auc → plot-auc → fit → plot-fit → CSV/XLSX outputs
 ```
 
-Progress stages (HTTP/WS contract): `preparing → segment → timeseries → auc → fit → completed`.
+Progress stages (HTTP/WS contract): `preparing → segment → traces → auc → fit → completed`.
 
 Plot steps run between their corresponding table stages but do not emit separate progress events.
+
+Studio schedules the Analysis run as Steps: `analysis/transfection/segment/Pos{n}`
+and `analysis/transfection/traces/Pos{n}` (one Step per Position; Rust entry point
+`lisca_transfection::run_position_traces`), then `analysis/transfection/plot-traces`,
+`auc`, `plot-auc`, `fit`, and `plot-fit`. The `traces` stage writes the per-Position
+`analysis/Pos{n}/ch{m}.csv` files (`AnalysisCsvFile.kind` `"traces"`).
 
 ## Killing pipeline
 
 Ports the mupattern kill workflow (predict → clean → plot) to Studio ROI stacks (`roi/PosN/` TIFF stacks, not crops.zarr):
 
 ```
-assay.json → predict (ResNet ONNX, P(dead) per frame) → plot-timeseries → clean (monotonicity) → death times → plot kill curve
+assay.json → predict (ResNet ONNX, P(dead) per frame) → plot-traces → clean (monotonicity) → death times → plot kill curve
 ```
+
+Steps: `analysis/killing/predict/Pos{n}` (one per Position), then
+`analysis/killing/plot-traces`, clean, and the kill curve / death time plots.
 
 Progress reuses the same HTTP stage names with kill-specific messages:
 
-| Stage        | Kill step                          |
-| ------------ | ---------------------------------- |
-| `preparing`  | Resolve ONNX model + slide mapping |
-| `segment`    | P(dead) inference per ROI frame    |
-| `timeseries` | Monotonicity clean                 |
-| `auc`        | Death times + kill curve table     |
-| `fit`        | P(dead) trace + kill curve PNGs    |
+| Stage       | Kill step                           |
+| ----------- | ----------------------------------- |
+| `preparing` | Resolve ONNX model + sample mapping |
+| `segment`   | P(dead) inference per ROI frame     |
+| `traces`    | Monotonicity clean                  |
+| `auc`       | Death times + kill curve table      |
+| `fit`       | P(dead) trace + kill curve PNGs     |
 
 ### Kill model path
 
@@ -136,16 +145,20 @@ curl -fL --retry 3 --retry-delay 2 \
 
 ### Killing outputs
 
-| Path                                                | Role                                                           |
-| --------------------------------------------------- | -------------------------------------------------------------- |
-| `timeseries/Pos{n}/ch{n}.csv`                       | Per-ROI `P(dead)` vs time (`pos, roi, t, p_dead`)              |
-| `results/predictions.csv`                           | Raw `(t, crop, p_dead, label, pos, slide_channel)` from ResNet |
-| `results/predictions_cleaned.csv`                   | Monotonicity-enforced labels                                   |
-| `results/kill_curve.csv`                            | `N(alive)` vs time per slide channel                           |
-| `results/death_times.csv`                           | Per-ROI death frame (`≥80%` true span, mupattern clean logic)  |
-| `results/traces.png`, `results/traces_shared_y.png` | P(dead) trace grids                                            |
-| `results/kill_curve.png`                            | N(alive) curve plot                                            |
-| `results/death_times.png`                           | T_death histogram per slide channel                            |
+| Path                                                | Role                                                                    |
+| --------------------------------------------------- | ----------------------------------------------------------------------- |
+| `traces/Pos{n}/ch{m}.csv`                           | Per-ROI `P(dead)` Trace (`roi, t, p_dead`)                              |
+| `results/predictions.csv`                           | Raw `t, crop, p_dead, label, pos, sample` from ResNet                   |
+| `results/predictions_cleaned.csv`                   | Monotonicity-enforced labels (`t, crop, label, pos, sample`)            |
+| `results/kill_curve.csv`                            | `N(alive)` vs time per Sample (`t, n_alive, sample`)                    |
+| `results/death_times.csv`                           | Per-ROI death frame (`crop, death_time, pos, sample`; `≥80%` true span) |
+| `results/traces.png`, `results/traces_shared_y.png` | P(dead) trace grids                                                     |
+| `results/kill_curve.png`                            | N(alive) curve plot                                                     |
+| `results/death_times.png`                           | T_death histogram per Sample                                            |
+
+`sample` is the Sample name (`samples[].name` in `assay.json`). Older killing
+Workspaces wrote `timeseries/Pos{n}/`; the `killing_traces_dir` migration renames
+it to `traces/` on open (see [Workspace migrations](#workspace-migrations)).
 
 ## Workspace I/O
 
@@ -153,7 +166,7 @@ Folder names, bbox CSV (`roi, x, y, w, h`), `roi/Pos{n}/index.json`, and locked
 analysis/results column names live in [`schema.md`](./schema.md). Import folder
 names from `lisca.core.paths` / crate `lisca-workspace`. Grid `i,j` lives in
 `align/Pos{n}.json`; bbox CSV is an export artifact. `crop` is not a live header
-alias — `migrate_workspace` rewrites it on open.
+alias — `migrate_workspace` rewrites it on open (see [Workspace migrations](#workspace-migrations)).
 
 | Path                     | Role                                                                                                                                |
 | ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- |
@@ -163,7 +176,22 @@ alias — `migrate_workspace` rewrites it on open.
 | `mask/PosN/`             | Per-frame segmentation masks (`uint8` TIFF stacks)                                                                                  |
 | `analysis/` / `results/` | Shared folder names. Table columns: [`schema.md`](./schema.md). Killing tables stay in-tree until that sidecar exists.              |
 
-There is no `timeseries/` folder for transfection, no combined results tables, and no CSV under `results/` for transfection. Studio results UI displays PNG files; it does not re-render plots from CSVs.
+There is no `traces/` folder for transfection (its Traces are `analysis/Pos{n}/ch{m}.csv`), no combined results tables, and no CSV under `results/` for transfection. Studio results UI displays PNG files; it does not re-render plots from CSVs.
+
+### Workspace migrations
+
+Tools call `migrate_workspace` (Rust `crates/lisca/src/migrations`, Python
+`lisca.migrations`) once when they open a Workspace, so live parsers stay strict
+and never read old names. Migrations run in order, are idempotent, and report the
+paths they rewrote:
+
+| Migration               | Rewrites                                                                                                                                                                                                                                                                                                                         |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `bbox_crop_to_roi`      | `bbox/Pos{n}.csv` header `crop` → `roi`                                                                                                                                                                                                                                                                                          |
+| `assay_samples_by_name` | `assay.json`: drops `samples[].slideChannel` (blank names become `Sample {slideChannel}`); `analysis.sampleChannels[].slideChannel` → `sample` (that Sample's name); `mask` → `segmentation` in `analysis.channels` and each `sampleChannels` row. Errors on duplicate names, an unknown `slideChannel`, or a key in both forms. |
+| `killing_traces_dir`    | Killing `timeseries/` → `traces/`. If both exist, an empty or byte-identical `timeseries/` is removed; differing trees are an error.                                                                                                                                                                                             |
+
+Details: [`schema.md`](./schema.md).
 
 ## Module map
 
@@ -173,25 +201,25 @@ analysis/
   pipeline.rs          # load assay.json, dispatch
   progress.rs          # shared progress + spawn_blocking helper
   array.rs             # Frame2D, masked ROI stats, trapz AUC, kinetic basis, ndarray-stats quantiles
-  slide.rs             # slide channel mapping (shared)
+  sample.rs            # SampleAnalysis / SampleMapping, build_sample_mapping (shared)
   roi_stack.rs         # ROI TIFF stacks (shared)
   csv_io.rs, output.rs, export.rs
   plot.rs + plot/      # shared mplot-rs helpers
   assays.rs            # match assay type → pipeline
   assays/
     transfection.rs + transfection/   # thin dispatch + local ONNX segment
-      mapping.rs       # lisca SlideMapping → lisca-transfection mapping
+      mapping.rs       # lisca SampleMapping → lisca-transfection mapping
       segment.rs       # Otsu → git crate; ONNX adapter stays here (HF weights)
       segment_onnx.rs  # Studio ONNX adapter (`LISCA_PATTERN_SEG_MODEL` / HF)
     killing.rs + killing/
 ```
 
-| Module                                | Goal                                                                  |
-| ------------------------------------- | --------------------------------------------------------------------- |
-| `assays/transfection/`                | Dispatch into `lisca-transfection`; Studio ONNX adapter               |
-| `assays/transfection/segment_onnx.rs` | Studio ONNX adapter; weights via `LISCA_PATTERN_SEG_MODEL` / HF       |
-| `lisca-transfection` (git)            | Otsu, timeseries, AUC, kinetic fit, PNG plots, sample XLSX publishers |
-| `assays/killing/`                     | ResNet presence, monotonicity clean, death times, kill curve          |
+| Module                                | Goal                                                              |
+| ------------------------------------- | ----------------------------------------------------------------- |
+| `assays/transfection/`                | Dispatch into `lisca-transfection`; Studio ONNX adapter           |
+| `assays/transfection/segment_onnx.rs` | Studio ONNX adapter; weights via `LISCA_PATTERN_SEG_MODEL` / HF   |
+| `lisca-transfection` (git)            | Otsu, traces, AUC, kinetic fit, PNG plots, sample XLSX publishers |
+| `assays/killing/`                     | ResNet presence, monotonicity clean, death times, kill curve      |
 
 Adding a new assay type: create `assays/<name>.rs` plus `assays/<name>/`, implement `run` (async) and optionally `run_sync`, then register in `assays.rs`.
 
@@ -225,7 +253,21 @@ Summary — full process, tolerances table, and lifecycle in [`parity.md`](./par
 
 - Fit uses the two-pass pooled-protein strategy on the **basic translation–degradation model** (onset time t0, expression rate m0 k_TL, mRNA/protein lifetimes τ = ln(2)/rate; **no maturation**). Optional `analysis.maxOnsetMinutes` in `assay.json` is **transfection-only** (default **`120`** when omitted for that assay; set `0` to fix onset time t0 at 0). Other assays ignore it. Public CSV/UI names: `onset_time`, `expression_rate`, `mrna_lifetime`, `protein_lifetime`, `baseline_intensity` (no alternate aliases). `mrna_degradation_rate` (δ), `protein_degradation_rate` (β), and `expression_amplitude` are internal solver fields, not CSV. Stored times are minutes; plots may show hours. See [`CONTEXT.md`](../../CONTEXT.md).
 - Frame interval (`interval.value` / `interval.unit`) is **general**. Transfection defaults to **10 minutes** when omitted; other assays require an explicit positive interval. Optional `analysis.skipSegment` skips Otsu and uses full-ROI p10 background.
-- Channel indices live under `analysis`, not on sample rows: `analysis.channels.{mask,signal}` (default) and optional `analysis.sampleChannels[]` overrides keyed by `slideChannel` (int). `signal` is a non-empty int list (one timeseries CSV per channel). Samples keep `slideChannel` (int), `name`, `positions` only.
+- Samples are `samples[]: {name, positions}`. A Sample is identified by its name: non-empty after trim and unique within the assay (compared trimmed). The sample mapping (`build_sample_mapping` → `SampleMapping` of `SampleAnalysis`) keeps assay order. `results/<sample>/` uses the filesystem-safe name, prefixed with the 0-based assay index (`{index}_{safe}`) only when two names sanitize to the same folder.
+- Channel indices live under `analysis`, not on sample rows: `analysis.channels.{segmentation,signal}` (default Segmentation channel and Signal channels) and optional `analysis.sampleChannels[]` overrides `{sample, segmentation, signal}`, where `sample` is a `samples[].name`. `signal` is a non-empty int list (one Trace CSV per Signal channel).
+
+  ```json
+  {
+    "samples": [
+      { "name": "A431_aiLNP", "positions": "0:39" },
+      { "name": "A549_aiLNP", "positions": "40:79" }
+    ],
+    "analysis": {
+      "channels": { "segmentation": 0, "signal": [1] },
+      "sampleChannels": [{ "sample": "A549_aiLNP", "segmentation": 0, "signal": [2] }]
+    }
+  }
+  ```
 
 ## Parity CLI (`lisca-analyze`)
 
@@ -236,10 +278,10 @@ cargo build -p lisca --release --bin lisca-analyze
 
 # Stage commands (mirror transfection CLI; mapping from assay.json)
 ./target/release/lisca-analyze segment ~/data/TF84
-./target/release/lisca-analyze timeseries ~/data/TF84
+./target/release/lisca-analyze traces ~/data/TF84
 ./target/release/lisca-analyze auc ~/data/TF84
 ./target/release/lisca-analyze fit ~/data/TF84
-./target/release/lisca-analyze plot-timeseries ~/data/TF84
+./target/release/lisca-analyze plot-traces ~/data/TF84
 ./target/release/lisca-analyze plot-auc ~/data/TF84
 ./target/release/lisca-analyze plot-fit ~/data/TF84
 

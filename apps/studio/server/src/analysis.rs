@@ -188,8 +188,8 @@ fn stage_for_kind(kind: Option<&str>, status: AnalysisStatus) -> AnalysisStage {
     let kind = kind.unwrap_or_default();
     if kind.contains("segment") || kind.contains("predict") {
         AnalysisStage::Segment
-    } else if kind.contains("timeseries") || kind.contains("clean") {
-        AnalysisStage::Timeseries
+    } else if kind.contains("traces") || kind.contains("clean") {
+        AnalysisStage::Traces
     } else if kind.contains("auc") || kind.contains("death") || kind.contains("kill") {
         AnalysisStage::Auc
     } else if kind.contains("fit") || kind.contains("plot") {

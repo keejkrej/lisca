@@ -104,7 +104,9 @@ def _parse_int_list(value: str | None) -> list[int] | None:
 def label_cpsam_cmd(
     workspace: Path = typer.Option(..., exists=True, file_okay=False),
     output: Path = typer.Option(..., file_okay=False),
-    channel: int = typer.Option(0, "--channel", help="BF / mask channel index."),
+    channel: int = typer.Option(
+        0, "--channel", help="BF / segmentation channel index."
+    ),
     z: int = typer.Option(0, "--z"),
     time_stride: int = typer.Option(20, "--time-stride"),
     times: str | None = typer.Option(

@@ -4382,7 +4382,7 @@
       },
       "AnalysisStage": {
         "type": "string",
-        "enum": ["queued", "preparing", "segment", "timeseries", "auc", "fit", "completed"]
+        "enum": ["queued", "preparing", "segment", "traces", "auc", "fit", "completed"]
       },
       "AnalysisCsvFile": {
         "type": "object",

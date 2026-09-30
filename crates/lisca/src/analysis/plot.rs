@@ -13,10 +13,9 @@ pub use mplot_config::{
 };
 #[allow(unused_imports)] // re-exported public API for assay modules / bins
 pub use util::{
-    boxplot_tick_label, boxplot_x_axis_label, expand_degenerate_ylim, grid_dimensions,
-    percentile_ylim, percentile_ylim_with, quartile_axis_upper, resolve_subplot_grid,
-    sample_subplot_title, sample_trace_naming_haystack, slide_channel_labels, subplot_grid_shape,
-    subplot_title, trace_color_alpha, trace_naming_haystack, DEFAULT_PLOT_COLUMNS,
+    expand_degenerate_ylim, grid_dimensions, percentile_ylim, percentile_ylim_with,
+    quartile_axis_upper, resolve_subplot_grid, sample_labels, sample_subplot_title,
+    sample_trace_naming_haystack, subplot_grid_shape, trace_color_alpha, DEFAULT_PLOT_COLUMNS,
 };
 
 use std::collections::BTreeMap;
@@ -26,8 +25,8 @@ use mplot::prelude::{AxesStyle, FillBetweenStyle, GridPos, LegendStyle, LineDash
 use mplot::Color;
 
 use super::array::quantile;
-use super::slide::SlideMapping;
-use super::timeseries::TracePanel;
+use super::sample::SampleMapping;
+use super::traces::TracePanel;
 
 /// Write individual-trace grids plus mean/median/IQR summary companions.
 ///
@@ -39,7 +38,7 @@ pub(crate) fn write_metric_plots(
     y_label: &str,
     interval: f64,
     columns: Option<usize>,
-    mapping: &SlideMapping,
+    mapping: &SampleMapping,
 ) -> Result<(), String> {
     let panel_ylims: Vec<(f64, f64)> = panels
         .iter()
@@ -104,7 +103,7 @@ fn write_summary_metric_plots(
     y_label: &str,
     interval: f64,
     columns: Option<usize>,
-    mapping: &SlideMapping,
+    mapping: &SampleMapping,
 ) -> Result<(), String> {
     let summaries: Vec<Option<SampleSummary>> = panels
         .iter()
@@ -221,7 +220,7 @@ fn write_subplot_grid(
     y_label: &str,
     interval: f64,
     columns: Option<usize>,
-    mapping: &SlideMapping,
+    mapping: &SampleMapping,
     ylim_for_panel: impl Fn(usize) -> (f64, f64),
 ) -> Result<(), String> {
     let (rows, cols) = resolve_subplot_grid(panels.len(), columns);
@@ -236,11 +235,11 @@ fn write_subplot_grid(
             .fold(0.0f64, f64::max)
             * interval;
         let (color, alpha) = trace_color_alpha(&sample_trace_naming_haystack(
-            panel.slide_channel,
+            panel.sample,
             &panel.paths,
             mapping,
         ));
-        let title = sample_subplot_title(panel.slide_channel, panel.traces.len(), mapping);
+        let title = sample_subplot_title(panel.sample, panel.traces.len(), mapping);
         let traces = panel.traces.clone();
         let y_label = y_label.to_string();
         // Intensity traces (not area) use scientific y-tick labels.
@@ -287,7 +286,7 @@ fn write_summary_subplot_grid(
     output_plot: &Path,
     y_label: &str,
     columns: Option<usize>,
-    mapping: &SlideMapping,
+    mapping: &SampleMapping,
     ylim_for_panel: impl Fn(usize) -> (f64, f64),
 ) -> Result<(), String> {
     let (rows, cols) = resolve_subplot_grid(panels.len(), columns);
@@ -296,7 +295,7 @@ fn write_summary_subplot_grid(
     for (index, panel) in panels.iter().enumerate() {
         let (y_low, y_high) = ylim_for_panel(index);
         let (color, _alpha) = trace_color_alpha(&sample_trace_naming_haystack(
-            panel.slide_channel,
+            panel.sample,
             &panel.paths,
             mapping,
         ));
@@ -304,7 +303,7 @@ fn write_summary_subplot_grid(
         let y_scientific = y_label.contains("intensity");
         let summary = summaries.get(index).and_then(|value| value.as_ref());
         let title = sample_subplot_title(
-            panel.slide_channel,
+            panel.sample,
             summary.map(|s| s.trace_count).unwrap_or(0),
             mapping,
         );

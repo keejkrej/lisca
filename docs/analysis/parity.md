@@ -102,7 +102,7 @@ Keep Cargo and Python on the **same SHA**. Lock files (`Cargo.lock`,
 The sidecar crate must **not** depend on crate `lisca` (that would cycle:
 `lisca` already depends on `lisca-transfection`). It **may** git-depend on
 `lisca-workspace` in this repo for folder names and bbox/ROI path helpers.
-Public analysis API is workspace-path based: `run_segment`, `run_timeseries`,
+Public analysis API is workspace-path based: `run_segment`, `run_traces`,
 `run_auc`, `run_fit`, `run_pipeline`, `run_plot_*` (PNG only),
 `publish_sample_*_xlsx`, `load_assay_for_workspace`.
 
@@ -121,8 +121,8 @@ crates); do not silently rewrite the sidecar to match this workspace.
 - Workspace layout: folder names + bbox/ROI files owned here
   ([`schema.md`](./schema.md)). Transfection analysis/results **columns** are
   owned by the sidecar. Killing tables stay in-tree until that sidecar exists.
-- Timeseries columns: `roi,t,area,background,sum,corrected` (no `pos` /
-  `slide_channel`; joined later from path + assay mapping). `background`
+- Trace columns (`analysis/Pos{n}/ch{m}.csv`): `roi,t,area,background,sum,corrected` (no `pos` /
+  `sample`; joined later from path + sample mapping). `background`
   and `sum` are QC columns. `t` uses `index.json` `timeIndices`. Segmented
   bg = median of `~mask`; `analysis.skipSegment` bg = 10th percentile.
 - Slim `index.json`: always `TCZYX`; keep `zCount`; drop `source` /
@@ -133,7 +133,7 @@ crates); do not silently rewrite the sidecar to match this workspace.
   a Pos has more than one signal channel). Fit public columns:
   `baseline_intensity`, `onset_time`, `expression_rate`, `mrna_lifetime`,
   `protein_lifetime`, `success`. Results XLSX prefix `pos` only (no
-  `slide_channel` / `sample`; the pack lives under `results/<sample>/`).
+  `sample`; the pack lives under `results/<sample>/`).
   Column contract: [`schema.md`](./schema.md).
 - Stage order for full pipelines (`transfection pipeline` / `lisca-analyze pipeline`).
 - Flag defaults that change science (`--interval`, `--max-onset-minutes`,
@@ -170,7 +170,7 @@ and humans can run differential loops.
 ### Transfection: `lisca-analyze`
 
 This binary lives in the `lisca` crate and **calls `lisca-transfection`**.
-Otsu segment / timeseries / AUC / fit / plots come from the git crate. `--backend onnx`
+Otsu segment / traces / AUC / fit / plots come from the git crate. `--backend onnx`
 uses the local Studio ONNX segmenter.
 
 ```sh
@@ -180,14 +180,14 @@ cargo build -p lisca --release --bin lisca-analyze
 
 Stage names mirror `transfection`:
 
-| Command                                     | Writes                                                                                                                                                                                      |
-| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `segment`                                   | `mask/PosN/*.tif` (default Otsu via git crate; optional ONNX U-Net in this repo)                                                                                                            |
-| `timeseries`                                | `analysis/Pos*/ch*.csv` (CSV only; CLI verb still timeseries)                                                                                                                               |
-| `auc`                                       | `analysis/Pos*/auc.csv`                                                                                                                                                                     |
-| `fit`                                       | `analysis/Pos*/fit.csv`                                                                                                                                                                     |
-| `plot-timeseries` / `plot-auc` / `plot-fit` | PNG packs + workspace boxplots. CLI/`pipeline` call `publish_sample_*_xlsx` first so one-shot still writes `results/<sample>/{traces,auc,fit}.xlsx`. Plot services themselves are PNG-only. |
-| `pipeline` (`analyze`, `all`)               | full Studio order from `assay.json`                                                                                                                                                         |
+| Command                                 | Writes                                                                                                                                                                                      |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `segment`                               | `mask/PosN/*.tif` (default Otsu via git crate; optional ONNX U-Net in this repo)                                                                                                            |
+| `traces`                                | `analysis/Pos*/ch*.csv` (CSV only)                                                                                                                                                          |
+| `auc`                                   | `analysis/Pos*/auc.csv`                                                                                                                                                                     |
+| `fit`                                   | `analysis/Pos*/fit.csv`                                                                                                                                                                     |
+| `plot-traces` / `plot-auc` / `plot-fit` | PNG packs + workspace boxplots. CLI/`pipeline` call `publish_sample_*_xlsx` first so one-shot still writes `results/<sample>/{traces,auc,fit}.xlsx`. Plot services themselves are PNG-only. |
+| `pipeline` (`analyze`, `all`)           | full Studio order from `assay.json`                                                                                                                                                         |
 
 Common flags: `--assay` (default `<workspace>/assay.json`), `--interval`,
 `--max-onset-minutes`, segment `--force` / radius / sigma. Parallel stages
@@ -226,7 +226,7 @@ Backup entire `analysis/` + `results/` before a full re-run.
 | ------------------- | ------------------------------------------------------------- | ----------------------------------------------------------------- |
 | Always-on synthetic | `cargo test -p lisca --test transfection_parity`              | Tiny workspace; wrapper still writes sidecar CSVs                 |
 | Optional Python e2e | `cargo test -p lisca --test transfection_parity -- --ignored` | Needs `../lisca-transfection-assay` (or `../transfection`) + `uv` |
-| Library units       | `cargo test -p lisca --lib`                                   | Shared kernels (`array.rs`, slide mapping, ONNX helpers)          |
+| Library units       | `cargo test -p lisca --lib`                                   | Shared kernels (`array.rs`, sample mapping, ONNX helpers)         |
 | Sidecar parity      | in `lisca-transfection-assay`                                 | Canonical Python vs Rust CSV cage                                 |
 
 Support kernels for tests: `crates/lisca/tests/support/transfection_reference.rs`

@@ -15,10 +15,10 @@ export function DemoAnalysisDock(props: {
         class="w-full justify-center"
         size="sm"
         type="button"
-        variant={props.section === "timeseries" ? "default" : "outline"}
-        onClick={() => props.onSectionChange("timeseries")}
+        variant={props.section === "traces" ? "default" : "outline"}
+        onClick={() => props.onSectionChange("traces")}
       >
-        {props.sectionLabels.timeseries}
+        {props.sectionLabels.traces}
       </Button>
       <Button
         class="w-full justify-center"
