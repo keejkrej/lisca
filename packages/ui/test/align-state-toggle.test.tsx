@@ -92,7 +92,7 @@ describe("instrument rail state toggles", () => {
 
   it("omits selection counts from the compact rail while preserving classic output", () => {
     const selectionProps = {
-      excludedCells: [],
+      excludedPatterns: [],
       frame: null,
       grid: createDefaultAlignGrid(),
       manualExclusionEnabled: false,
@@ -101,7 +101,7 @@ describe("instrument rail state toggles", () => {
       visibleCounts: { included: 24, excluded: 3 },
       onApplyVariationExclude: () => undefined,
       onCancelVariationExclude: () => undefined,
-      onExcludedCellsChange: () => undefined,
+      onExcludedPatternsChange: () => undefined,
       onManualExclusionEnabledChange: () => undefined,
       onSmartExclude: () => undefined,
       onVariationExclude: () => undefined,
@@ -109,12 +109,12 @@ describe("instrument rail state toggles", () => {
     };
 
     const classic = render(() => <AlignSelectionRail {...selectionProps} />);
-    expect(screen.getByText("Included cells")).toBeTruthy();
-    expect(screen.getByText("Excluded cells")).toBeTruthy();
+    expect(screen.getByText("Included patterns")).toBeTruthy();
+    expect(screen.getByText("Excluded patterns")).toBeTruthy();
     classic.unmount();
 
     render(() => <AlignSelectionRail {...selectionProps} sectionAppearance="rail" />);
-    expect(screen.queryByText("Included cells")).toBeNull();
-    expect(screen.queryByText("Excluded cells")).toBeNull();
+    expect(screen.queryByText("Included patterns")).toBeNull();
+    expect(screen.queryByText("Excluded patterns")).toBeNull();
   });
 });

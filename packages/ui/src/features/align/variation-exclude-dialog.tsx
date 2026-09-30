@@ -5,11 +5,11 @@ import {
   formatVariationScore,
   nextVariationExcludeThreshold,
 } from "@lisca/ui-headless/variation-exclude-preview";
-import type { AutoExcludePreviewResponse } from "@lisca/contracts";
+import type { VariationExcludePreviewResponse } from "@lisca/contracts";
 import { DialogSurface, ModalScrim } from "../../shell";
 
 export type VariationExcludePreviewState = {
-  preview: AutoExcludePreviewResponse;
+  preview: VariationExcludePreviewResponse;
   threshold: number;
 } | null;
 
@@ -96,7 +96,7 @@ export function VariationExcludeDialog(props: {
                     onValueChange={setThreshold}
                   />
                   <p class="text-muted-foreground text-sm">
-                    Exclude {selectedCount()} of {preview().eligibleCellCount} sites
+                    Exclude {selectedCount()} of {preview().eligiblePatternCount} sites
                   </p>
                 </div>
               </div>

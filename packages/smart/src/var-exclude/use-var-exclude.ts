@@ -1,4 +1,4 @@
-import type { AlignGridCellCoord, AlignGridState } from "@lisca/contracts";
+import type { AlignGridPatternCoord, AlignGridState } from "@lisca/contracts";
 import type { FrameResult } from "@lisca/utils";
 import { createMemo, createSignal, onCleanup, type Accessor } from "solid-js";
 
@@ -9,7 +9,7 @@ export function useVarExclude(options: {
   provider: VarExcludeProvider;
   frame: Accessor<FrameResult | null>;
   grid: Accessor<AlignGridState>;
-  currentExcludedCells: Accessor<AlignGridCellCoord[]>;
+  currentExcludedPatterns: Accessor<AlignGridPatternCoord[]>;
   enabled: Accessor<boolean>;
   onPreview?: (preview: NonNullable<Awaited<ReturnType<VarExcludeProvider["preview"]>>>) => void;
   onStatus?: (status: string | null) => void;
@@ -32,11 +32,11 @@ export function useVarExclude(options: {
     return {
       frame,
       grid: options.grid(),
-      currentExcludedCells: options.currentExcludedCells(),
+      currentExcludedPatterns: options.currentExcludedPatterns(),
     };
   };
 
-  const autoExclude = async (): Promise<AlignGridCellCoord[]> => {
+  const excludeEdgeAndVariation = async (): Promise<AlignGridPatternCoord[]> => {
     const input = buildInput();
     if (!input || !options.enabled()) return [];
     const generation = runGeneration + 1;
@@ -46,10 +46,10 @@ export function useVarExclude(options: {
     onStatusRef.current?.("Var exclude");
     setBusy(true);
     try {
-      const cells = await options.provider.autoExclude(input);
+      const patterns = await options.provider.excludeEdgeAndVariation(input);
       if (runGeneration !== generation) return [];
       onStatusRef.current?.(null);
-      return cells;
+      return patterns;
     } catch (cause) {
       if (runGeneration !== generation) return [];
       onErrorRef.current?.(cause instanceof Error ? cause.message : String(cause));
@@ -73,7 +73,7 @@ export function useVarExclude(options: {
       const preview = await options.provider.preview(input);
       if (runGeneration !== generation) return;
       if (!preview) {
-        onStatusRef.current?.("No visible cells for var exclude");
+        onStatusRef.current?.("No visible patterns for var exclude");
         return;
       }
       onPreviewRef.current?.(preview);
@@ -89,7 +89,7 @@ export function useVarExclude(options: {
 
   return {
     active,
-    autoExclude,
+    excludeEdgeAndVariation,
     requestPreview,
   };
 }

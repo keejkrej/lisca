@@ -1,16 +1,16 @@
-import type { AlignGridCellCoord, AlignGridState } from "@lisca/contracts";
+import type { AlignGridPatternCoord, AlignGridState } from "@lisca/contracts";
 import type { FrameResult } from "@lisca/utils";
 import { createMemo, createSignal, onCleanup, type Accessor } from "solid-js";
 
 import type { SmartModelDownloadState, SmartModelGate } from "../shared/model-gate";
 import { useLatestRef } from "../shared/use-latest-ref";
 import type { SmartExcludeProvider } from "./provider";
-import { getSmartExcludeCandidateCells } from "./shared";
+import { getSmartExcludeCandidatePatterns } from "./shared";
 
 export type SmartExcludeDownloadState = SmartModelDownloadState;
 
 type PendingRun = {
-  resolve: (modelCells: AlignGridCellCoord[]) => void;
+  resolve: (modelPatterns: AlignGridPatternCoord[]) => void;
   reject: (cause: Error) => void;
 };
 
@@ -19,9 +19,9 @@ export function useSmartExclude(options: {
   model?: SmartModelGate;
   frame: Accessor<FrameResult | null>;
   grid: Accessor<AlignGridState>;
-  currentExcludedCells: Accessor<AlignGridCellCoord[]>;
+  currentExcludedPatterns: Accessor<AlignGridPatternCoord[]>;
   enabled: Accessor<boolean>;
-  onComplete: (modelCells: AlignGridCellCoord[]) => void;
+  onComplete: (modelPatterns: AlignGridPatternCoord[]) => void;
   onStatus?: (status: string | null) => void;
   onError?: (error: string | null) => void;
 }) {
@@ -37,7 +37,7 @@ export function useSmartExclude(options: {
   let runGeneration = 0;
   let disposed = false;
   let pendingRun: PendingRun | null = null;
-  let consentPromise: Promise<AlignGridCellCoord[]> | null = null;
+  let consentPromise: Promise<AlignGridPatternCoord[]> | null = null;
 
   const onCompleteRef = useLatestRef(() => options.onComplete);
   const onStatusRef = useLatestRef(() => options.onStatus);
@@ -69,15 +69,15 @@ export function useSmartExclude(options: {
     }));
   };
 
-  const runClassify = async (generation: number): Promise<AlignGridCellCoord[]> => {
+  const runClassify = async (generation: number): Promise<AlignGridPatternCoord[]> => {
     const frame = options.frame();
     if (!frame) return [];
-    const cells = getSmartExcludeCandidateCells(
+    const patterns = getSmartExcludeCandidatePatterns(
       frame,
       options.grid(),
-      options.currentExcludedCells(),
+      options.currentExcludedPatterns(),
     );
-    if (cells.length === 0) return [];
+    if (patterns.length === 0) return [];
 
     onErrorRef.current?.(null);
     onStatusRef.current?.("Smart exclude");
@@ -86,12 +86,12 @@ export function useSmartExclude(options: {
         ...current,
         open: true,
         requiresDownload: false,
-        message: "Classifying cells…",
+        message: "Classifying patterns…",
       }));
     }
 
-    const modelCells = await options.provider.classify(
-      { frame, cells },
+    const modelPatterns = await options.provider.classify(
+      { frame, patterns },
       options.model
         ? {
             onProgress: (progress) => {
@@ -102,10 +102,10 @@ export function useSmartExclude(options: {
     );
     if (runGeneration !== generation) return [];
     closeDownloadState();
-    return modelCells;
+    return modelPatterns;
   };
 
-  const classifyNow = async (generation: number): Promise<AlignGridCellCoord[]> => {
+  const classifyNow = async (generation: number): Promise<AlignGridPatternCoord[]> => {
     if (!options.model) {
       return runClassify(generation);
     }
@@ -128,11 +128,11 @@ export function useSmartExclude(options: {
       return runClassify(generation);
     }
 
-    return new Promise<AlignGridCellCoord[]>((resolve, reject) => {
+    return new Promise<AlignGridPatternCoord[]>((resolve, reject) => {
       pendingRun = {
-        resolve: (modelCells) => {
+        resolve: (modelPatterns) => {
           consentPromise = null;
-          resolve(modelCells);
+          resolve(modelPatterns);
         },
         reject: (cause) => {
           consentPromise = null;
@@ -150,7 +150,7 @@ export function useSmartExclude(options: {
     });
   };
 
-  const ensureAndClassify = async (): Promise<AlignGridCellCoord[]> => {
+  const ensureAndClassify = async (): Promise<AlignGridPatternCoord[]> => {
     const frame = options.frame();
     if (disposed || !options.enabled() || !frame) return [];
     if (consentPromise) return consentPromise;
@@ -160,15 +160,15 @@ export function useSmartExclude(options: {
     setBusy(true);
 
     try {
-      const cells = getSmartExcludeCandidateCells(
+      const patterns = getSmartExcludeCandidatePatterns(
         frame,
         options.grid(),
-        options.currentExcludedCells(),
+        options.currentExcludedPatterns(),
       );
-      if (cells.length === 0) return [];
+      if (patterns.length === 0) return [];
 
       if (!options.model) {
-        return await options.provider.classify({ frame, cells });
+        return await options.provider.classify({ frame, patterns });
       }
 
       consentPromise = classifyNow(generation);
@@ -206,12 +206,12 @@ export function useSmartExclude(options: {
     });
 
     try {
-      const modelCells = await runClassify(generation);
+      const modelPatterns = await runClassify(generation);
       if (pending) {
-        pending.resolve(modelCells);
+        pending.resolve(modelPatterns);
         pendingRun = null;
       } else {
-        onCompleteRef.current(modelCells);
+        onCompleteRef.current(modelPatterns);
       }
     } catch (cause) {
       if (disposed) return;
@@ -242,9 +242,9 @@ export function useSmartExclude(options: {
   const request = async () => {
     if (disposed || !options.enabled() || !options.frame() || busy() || pendingRun) return;
     try {
-      const modelCells = await ensureAndClassify();
+      const modelPatterns = await ensureAndClassify();
       if (disposed) return;
-      onCompleteRef.current(modelCells);
+      onCompleteRef.current(modelPatterns);
       onStatusRef.current?.(null);
     } catch (cause) {
       if (disposed) return;

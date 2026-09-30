@@ -1,19 +1,19 @@
-import { computeAutoExcludePreview, enumerateVisibleAlignGridCells } from "@lisca/utils";
+import { computeVariationExcludePreview, enumerateVisibleAlignGridPatterns } from "@lisca/utils";
 
-import { mergeAutoExcludedAlignCells } from "../merge";
+import { mergeEdgeAndVariationExcludedPatterns } from "../merge";
 import type { VarExcludeProvider } from "../provider";
 
 export function createLocalVarExcludeProvider(): VarExcludeProvider {
   return {
     async preview(input) {
-      const cells = enumerateVisibleAlignGridCells(input.frame, input.grid);
-      if (cells.length === 0) return null;
-      return computeAutoExcludePreview(input.frame, cells);
+      const patterns = enumerateVisibleAlignGridPatterns(input.frame, input.grid);
+      if (patterns.length === 0) return null;
+      return computeVariationExcludePreview(input.frame, patterns);
     },
-    async autoExclude(input) {
+    async excludeEdgeAndVariation(input) {
       const preview = await this.preview(input);
-      return mergeAutoExcludedAlignCells(
-        input.currentExcludedCells,
+      return mergeEdgeAndVariationExcludedPatterns(
+        input.currentExcludedPatterns,
         input.frame,
         input.grid,
         preview,

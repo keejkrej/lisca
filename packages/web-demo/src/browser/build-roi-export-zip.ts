@@ -1,10 +1,10 @@
-import type { AlignGridCellCoord, AlignGridState, SavedAlignState } from "@lisca/contracts";
+import type { AlignGridPatternCoord, AlignGridState, SavedAlignState } from "@lisca/contracts";
 import type { FrameResult } from "@lisca/utils";
 import {
   alignStateFromCurrent,
   buildBboxCsv,
   cropFrameRegion,
-  enumerateVisibleAlignGridCells,
+  enumerateVisibleAlignGridPatterns,
 } from "@lisca/utils";
 import { strToU8, zipSync } from "fflate";
 
@@ -19,11 +19,11 @@ export type BuildRoiExportZipInput = {
   frame: FrameResult;
   sourceFormat: SourceImageFormat;
   grid: AlignGridState;
-  excludedCells: readonly AlignGridCellCoord[];
+  excludedPatterns: readonly AlignGridPatternCoord[];
 };
 
-function alignGridCellKey(cell: AlignGridCellCoord): string {
-  return `${cell.i}:${cell.j}`;
+function alignGridPatternKey(pattern: AlignGridPatternCoord): string {
+  return `${pattern.i}:${pattern.j}`;
 }
 
 function demoRoiIndexJson(
@@ -44,22 +44,24 @@ function demoRoiIndexJson(
 }
 
 export async function buildRoiExportZip(input: BuildRoiExportZipInput): Promise<Uint8Array> {
-  const excluded = new Set(input.excludedCells.map(alignGridCellKey));
-  const cells = enumerateVisibleAlignGridCells(input.frame, input.grid).filter(
-    (cell) => !excluded.has(alignGridCellKey(cell)),
+  const excluded = new Set(input.excludedPatterns.map(alignGridPatternKey));
+  const patterns = enumerateVisibleAlignGridPatterns(input.frame, input.grid).filter(
+    (pattern) => !excluded.has(alignGridPatternKey(pattern)),
   );
 
-  if (cells.length === 0) {
-    throw new Error("All grid cells are excluded — adjust exclusions before downloading.");
+  if (patterns.length === 0) {
+    throw new Error("All grid patterns are excluded — adjust exclusions before downloading.");
   }
-  if (cells.length > MAX_DEMO_ROI_EXPORT) {
+  if (patterns.length > MAX_DEMO_ROI_EXPORT) {
     throw new Error(
-      `Too many ROIs to export in the browser (${cells.length}). Narrow the grid or exclude more cells (max ${MAX_DEMO_ROI_EXPORT}).`,
+      `Too many ROIs to export in the browser (${patterns.length}). Narrow the grid or exclude more patterns (max ${MAX_DEMO_ROI_EXPORT}).`,
     );
   }
 
-  const alignState: SavedAlignState = alignStateFromCurrent(input.grid, [...input.excludedCells]);
-  const bboxCsv = buildBboxCsv(input.frame, input.grid, input.excludedCells);
+  const alignState: SavedAlignState = alignStateFromCurrent(input.grid, [
+    ...input.excludedPatterns,
+  ]);
+  const bboxCsv = buildBboxCsv(input.frame, input.grid, input.excludedPatterns);
   const stem = input.fileName.replace(/\.[^.]+$/, "");
   const files: Record<string, Uint8Array> = {
     [`${stem}.bbox.csv`]: strToU8(bboxCsv),
@@ -75,14 +77,14 @@ export async function buildRoiExportZip(input: BuildRoiExportZipInput): Promise<
   const roiExtension = roiImageExtension(input.sourceFormat);
 
   const encodedRois = await Promise.all(
-    cells.map(async (cell, roi) => {
-      const pixels = cropFrameRegion(input.frame, cell);
+    patterns.map(async (pattern, roi) => {
+      const pixels = cropFrameRegion(input.frame, pattern);
       const roiName = `Roi${roi}.${roiExtension}`;
       const roiPath = `roi/Pos${DEMO_POSITION}/${roiName}`;
       const bytes = await encodeRoiImage(
         input.sourceFormat,
-        cell.w,
-        cell.h,
+        pattern.w,
+        pattern.h,
         pixels,
         input.frame.pixelType,
       );
@@ -94,10 +96,10 @@ export async function buildRoiExportZip(input: BuildRoiExportZipInput): Promise<
           fileName: roiName,
           bbox: {
             roi,
-            x: cell.x,
-            y: cell.y,
-            w: cell.w,
-            h: cell.h,
+            x: pattern.x,
+            y: pattern.y,
+            w: pattern.w,
+            h: pattern.h,
           },
         },
       };

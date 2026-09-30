@@ -43,14 +43,14 @@ export function AlignGridRail(props: {
           enabled,
         })
       }
-      onPatternHeightChange={(cellHeight) =>
+      onPatternHeightChange={(patternHeight) =>
         updateGrid({
-          cellHeight,
+          patternHeight,
         })
       }
-      onPatternWidthChange={(cellWidth) =>
+      onPatternWidthChange={(patternWidth) =>
         updateGrid({
-          cellWidth,
+          patternWidth,
         })
       }
       onReset={() =>
@@ -82,9 +82,9 @@ export function AlignGridRail(props: {
       }
       overlayOpacity={props.grid.opacity}
       overlayVisible={props.grid.enabled}
-      patternHeight={props.grid.cellHeight}
+      patternHeight={props.grid.patternHeight}
       patternMin={1}
-      patternWidth={props.grid.cellWidth}
+      patternWidth={props.grid.patternWidth}
       rotationDegrees={radiansToDegrees(props.grid.rotation)}
       sectionClassName="min-h-0 shrink-0"
       shape={props.grid.shape}

@@ -19,8 +19,8 @@ describe("align grid overlay scene", () => {
     const grid = normalizeAlignGridState({
       ...createDefaultAlignGrid(),
       enabled: true,
-      cellWidth: 16,
-      cellHeight: 16,
+      patternWidth: 16,
+      patternHeight: 16,
       spacingA: 20,
       spacingB: 20,
       tx: 10,
@@ -44,8 +44,8 @@ describe("align grid overlay scene", () => {
     const tight = normalizeAlignGridState({
       ...createDefaultAlignGrid(),
       enabled: true,
-      cellWidth: 16,
-      cellHeight: 16,
+      patternWidth: 16,
+      patternHeight: 16,
       spacingA: 20,
       spacingB: 20,
     });
@@ -67,19 +67,23 @@ describe("align grid overlay scene", () => {
     expect(wideLen).toBeGreaterThan(tightLen);
   });
 
-  test("partitions excluded cells", () => {
+  test("partitions excluded patterns", () => {
     const frame = { width: 200, height: 200, pixels: new Uint8Array(200 * 200) };
     const grid = normalizeAlignGridState({
       ...createDefaultAlignGrid(),
       enabled: true,
       spacingA: 20,
       spacingB: 20,
-      cellWidth: 16,
-      cellHeight: 16,
+      patternWidth: 16,
+      patternHeight: 16,
     });
     const scene = buildAlignGridOverlayScene(frame, grid, 400, 400, new Set(["0:0"]));
-    expect(scene!.cells.some((cell) => cell.i === 0 && cell.j === 0 && cell.excluded)).toBe(true);
-    expect(scene!.cells.some((cell) => cell.i === 1 && cell.j === 0 && !cell.excluded)).toBe(true);
+    expect(
+      scene!.patterns.some((pattern) => pattern.i === 0 && pattern.j === 0 && pattern.excluded),
+    ).toBe(true);
+    expect(
+      scene!.patterns.some((pattern) => pattern.i === 1 && pattern.j === 0 && !pattern.excluded),
+    ).toBe(true);
   });
 
   test("computes halo rect around frame draw bounds", () => {

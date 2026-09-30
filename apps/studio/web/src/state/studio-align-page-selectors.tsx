@@ -1,4 +1,4 @@
-import type { AlignGridCellCoord } from "@lisca/contracts";
+import type { AlignGridPatternCoord } from "@lisca/contracts";
 
 import { useStudioAlignPage } from "./studio-align-page-context";
 
@@ -23,11 +23,11 @@ export function useStudioAlignCanvas() {
     get manualExclusionEnabled() {
       return state.manualExclusionEnabled;
     },
-    get currentExcludedCells() {
-      return state.currentExcludedCells;
+    get currentExcludedPatterns() {
+      return state.currentExcludedPatterns;
     },
-    get displayedExcludedCells() {
-      return state.displayedExcludedCells;
+    get displayedExcludedPatterns() {
+      return state.displayedExcludedPatterns;
     },
     get workspacePath() {
       return state.workspacePath;
@@ -49,8 +49,8 @@ export function useStudioAlignCanvas() {
     setSpacingZoomLocked: state.setSpacingZoomLocked,
     setPatternZoomLocked: state.setPatternZoomLocked,
     setManualExclusionEnabled: state.setManualExclusionEnabled,
-    setExcludedCellsForCurrentPosition: (cells: Iterable<AlignGridCellCoord>) =>
-      state.setExcludedCellsForCurrentPosition(cells),
+    setExcludedPatternsForCurrentPosition: (patterns: Iterable<AlignGridPatternCoord>) =>
+      state.setExcludedPatternsForCurrentPosition(patterns),
   };
 }
 export function useStudioAlignCrop() {

@@ -25,19 +25,19 @@ class AlignGridState:
     rotation: float
     spacing_a: float
     spacing_b: float
-    cell_width: float
-    cell_height: float
+    pattern_width: float
+    pattern_height: float
     opacity: float = 0.35
 
 
 @dataclass(frozen=True)
-class CellCoord:
+class PatternCoord:
     i: int
     j: int
 
 
 @dataclass(frozen=True)
-class CellBox:
+class PatternBox:
     i: int
     j: int
     x: int
@@ -57,8 +57,8 @@ def normalize_radians(value: float) -> float:
     return normalized if math.isfinite(normalized) else 0.0
 
 
-def minimum_align_grid_spacing(cell_width: float, cell_height: float) -> float:
-    return max(1.0, min(cell_width, cell_height))
+def minimum_align_grid_spacing(pattern_width: float, pattern_height: float) -> float:
+    return max(1.0, min(pattern_width, pattern_height))
 
 
 def normalize_align_grid_shape(shape: str | None) -> AlignGridShape:
@@ -72,9 +72,9 @@ def normalize_align_grid_shape(shape: str | None) -> AlignGridShape:
 
 
 def align_grid_state_from_json(data: dict[str, object]) -> AlignGridState:
-    cell_width = max(1.0, float(data.get("cellWidth", 128)))
-    cell_height = max(1.0, float(data.get("cellHeight", 128)))
-    min_spacing = minimum_align_grid_spacing(cell_width, cell_height)
+    pattern_width = max(1.0, float(data.get("patternWidth", 128)))
+    pattern_height = max(1.0, float(data.get("patternHeight", 128)))
+    min_spacing = minimum_align_grid_spacing(pattern_width, pattern_height)
     return AlignGridState(
         enabled=bool(data.get("enabled", False)),
         shape=normalize_align_grid_shape(str(data.get("shape", "rect"))),
@@ -83,8 +83,8 @@ def align_grid_state_from_json(data: dict[str, object]) -> AlignGridState:
         rotation=normalize_radians(float(data.get("rotation", 0))),
         spacing_a=max(min_spacing, float(data.get("spacingA", 160))),
         spacing_b=max(min_spacing, float(data.get("spacingB", 160))),
-        cell_width=cell_width,
-        cell_height=cell_height,
+        pattern_width=pattern_width,
+        pattern_height=pattern_height,
         opacity=clamp(float(data.get("opacity", 0.35)), 0.0, 1.0),
     )
 
@@ -138,8 +138,8 @@ def resolve_visible_align_grid_index_bounds(
     basis = align_grid_basis(grid.shape, grid.rotation, grid.spacing_a, grid.spacing_b)
     origin_x = frame.width / 2 + grid.tx
     origin_y = frame.height / 2 + grid.ty
-    half_width = grid.cell_width / 2
-    half_height = grid.cell_height / 2
+    half_width = grid.pattern_width / 2
+    half_height = grid.pattern_height / 2
     determinant = basis.ax * basis.by - basis.ay * basis.bx
 
     if abs(determinant) <= GRID_BOUNDS_EPSILON:
@@ -191,26 +191,18 @@ def resolve_visible_align_grid_index_bounds(
     )
 
 
-def enumerate_visible_align_grid_cells(
+def enumerate_visible_align_grid_patterns(
     frame: FrameBounds, grid: AlignGridState
-) -> list[CellBox]:
+) -> list[PatternBox]:
     bounds = resolve_visible_align_grid_index_bounds(frame, grid)
-    cells: list[CellBox] = []
-    raw_width = max(1, round(grid.cell_width))
-    raw_height = max(1, round(grid.cell_height))
+    patterns: list[PatternBox] = []
+    raw_width = max(1, round(grid.pattern_width))
+    raw_height = max(1, round(grid.pattern_height))
 
     for i in range(bounds.i_min, bounds.i_max + 1):
         for j in range(bounds.j_min, bounds.j_max + 1):
-            center_x = (
-                bounds.origin_x
-                + i * bounds.basis.ax
-                + j * bounds.basis.bx
-            )
-            center_y = (
-                bounds.origin_y
-                + i * bounds.basis.ay
-                + j * bounds.basis.by
-            )
+            center_x = bounds.origin_x + i * bounds.basis.ax + j * bounds.basis.bx
+            center_y = bounds.origin_y + i * bounds.basis.ay + j * bounds.basis.by
             raw_x = round(center_x - bounds.half_width)
             raw_y = round(center_y - bounds.half_height)
             clipped_x = round(clamp(raw_x, 0, frame.width))
@@ -221,37 +213,39 @@ def enumerate_visible_align_grid_cells(
             height = clipped_bottom - clipped_y
             if width <= 0 or height <= 0:
                 continue
-            cells.append(
-                CellBox(i=i, j=j, x=clipped_x, y=clipped_y, w=width, h=height)
+            patterns.append(
+                PatternBox(i=i, j=j, x=clipped_x, y=clipped_y, w=width, h=height)
             )
-    return cells
+    return patterns
 
 
-def cell_area_ratio(cell: CellBox, *, full_width: int, full_height: int) -> float:
+def pattern_area_ratio(
+    pattern: PatternBox, *, full_width: int, full_height: int
+) -> float:
     full_area = max(1, full_width * full_height)
-    return (cell.w * cell.h) / full_area
+    return (pattern.w * pattern.h) / full_area
 
 
 def filter_user_preference_excluded(
-    excluded: list[CellCoord],
-    cell_boxes: dict[tuple[int, int], CellBox],
+    excluded: list[PatternCoord],
+    pattern_boxes: dict[tuple[int, int], PatternBox],
     *,
     full_width: int,
     full_height: int,
     min_area_ratio: float,
-) -> tuple[list[tuple[CellCoord, CellBox, float]], int, int]:
+) -> tuple[list[tuple[PatternCoord, PatternBox, float]], int, int]:
     """Return user-preference excludes, ratio-filtered count, and missing count."""
-    kept: list[tuple[CellCoord, CellBox, float]] = []
+    kept: list[tuple[PatternCoord, PatternBox, float]] = []
     ratio_filtered = 0
     missing = 0
 
     for coord in excluded:
         key = (coord.i, coord.j)
-        box = cell_boxes.get(key)
+        box = pattern_boxes.get(key)
         if box is None:
             missing += 1
             continue
-        ratio = cell_area_ratio(box, full_width=full_width, full_height=full_height)
+        ratio = pattern_area_ratio(box, full_width=full_width, full_height=full_height)
         if ratio < min_area_ratio:
             ratio_filtered += 1
             continue

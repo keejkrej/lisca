@@ -1,4 +1,4 @@
-import type { AlignGridCellCoord } from "@lisca/contracts";
+import type { AlignGridPatternCoord } from "@lisca/contracts";
 import type { FrameResult } from "@lisca/utils";
 
 import type { ClassifyExclusionCandidatesOptions, ClassifyExclusionInput } from "./types";
@@ -7,7 +7,7 @@ export type SmartExcludeProvider = {
   classify(
     input: ClassifyExclusionInput,
     options?: ClassifyExclusionCandidatesOptions,
-  ): Promise<AlignGridCellCoord[]>;
+  ): Promise<AlignGridPatternCoord[]>;
 };
 
 export type SmartExcludeProviderFrameInput = {

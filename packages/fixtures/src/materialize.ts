@@ -210,11 +210,11 @@ function writeAlignment(write: WriteRel): void {
       rotation: 0,
       spacingA: 8,
       spacingB: 8,
-      cellWidth: 4,
-      cellHeight: 4,
+      patternWidth: 4,
+      patternHeight: 4,
       opacity: 0.6,
     },
-    excludedCells: [],
+    excludedPatterns: [],
   };
   decodeJson(SavedAlignStateSchema, align);
 

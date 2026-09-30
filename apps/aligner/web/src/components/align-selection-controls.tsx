@@ -26,7 +26,7 @@ export function AlignSelectionControls() {
     provider: createLocalVarExcludeProvider(),
     frame: () => state().frame,
     grid: () => state().grid,
-    currentExcludedCells: () => state().currentExcludedCells,
+    currentExcludedPatterns: () => state().currentExcludedPatterns,
     enabled: () => !disabled(),
     onPreview: (preview) => state().showVariationExcludePreview(preview),
     onError: (error) => state().reportError(error),
@@ -35,9 +35,9 @@ export function AlignSelectionControls() {
     provider: smartExcludeProvider,
     frame: () => state().frame,
     grid: () => state().grid,
-    currentExcludedCells: () => state().currentExcludedCells,
+    currentExcludedPatterns: () => state().currentExcludedPatterns,
     enabled: () => !disabled(),
-    onComplete: (cells) => state().applySmartExclusion(cells),
+    onComplete: (patterns) => state().applySmartExclusion(patterns),
     onError: (error) => state().reportError(error),
   });
 
@@ -45,7 +45,7 @@ export function AlignSelectionControls() {
     <>
       <AlignSelectionRail
         disabled={disabled()}
-        excludedCells={state().currentExcludedCells}
+        excludedPatterns={state().currentExcludedPatterns}
         frame={state().frame}
         grid={state().grid}
         manualExclusionEnabled={state().manualExclusionEnabled}
@@ -57,7 +57,9 @@ export function AlignSelectionControls() {
         onApplyVariationExclude={() => state().applyVariationExclude()}
         onSmartExclude={() => void smartExclude.request()}
         onCancelVariationExclude={() => state().cancelVariationExclude()}
-        onExcludedCellsChange={(cells) => state().setExcludedCellsForCurrentPosition(cells)}
+        onExcludedPatternsChange={(patterns) =>
+          state().setExcludedPatternsForCurrentPosition(patterns)
+        }
         onManualExclusionEnabledChange={(enabled) => state().setManualExclusionEnabled(enabled)}
         onVariationExclude={() => void varExclude.requestPreview()}
         onVariationExcludeThresholdChange={(threshold) =>

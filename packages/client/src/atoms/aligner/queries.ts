@@ -1,4 +1,4 @@
-import type { AutoExcludePreviewResponse, WorkspaceScan } from "@lisca/contracts";
+import type { VariationExcludePreviewResponse, WorkspaceScan } from "@lisca/contracts";
 
 import type { AlignerDataPort } from "../../ports/types";
 import type { AppRuntime } from "../runtime";
@@ -15,4 +15,4 @@ export function createAlignerQueryAtoms(
 
 export type ScanSourceAtom = AlignerQueryAtoms["scanSourceAtom"];
 
-export type { WorkspaceScan, AutoExcludePreviewResponse };
+export type { WorkspaceScan, VariationExcludePreviewResponse };

@@ -16,8 +16,8 @@ const visibleGrid = () => ({
   enabled: true,
   spacingA: 1,
   spacingB: 1,
-  cellWidth: 1,
-  cellHeight: 1,
+  patternWidth: 1,
+  patternHeight: 1,
 });
 
 describe("Smart Exclude cancel", () => {
@@ -35,7 +35,7 @@ describe("Smart Exclude cancel", () => {
         model,
         frame: () => frame([1, 2, 3, 4]),
         grid: visibleGrid,
-        currentExcludedCells: () => [],
+        currentExcludedPatterns: () => [],
         enabled: () => true,
         onComplete,
         onError,
@@ -70,7 +70,7 @@ describe("Smart Exclude cancel", () => {
         provider: { classify } as unknown as SmartExcludeProvider,
         frame: () => frame([1, 2, 3, 4]),
         grid: visibleGrid,
-        currentExcludedCells: () => [],
+        currentExcludedPatterns: () => [],
         enabled: () => true,
         onComplete,
         onError,

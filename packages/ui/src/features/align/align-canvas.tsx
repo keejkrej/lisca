@@ -1,4 +1,4 @@
-import type { AlignGridCellCoord, AlignGridState } from "@lisca/contracts";
+import type { AlignGridPatternCoord, AlignGridState } from "@lisca/contracts";
 import type { AlignGridToolMode, FrameLayout, FrameResult } from "@lisca/utils";
 import { createFrameViewController, type CanvasStatusMessage } from "@lisca/ui-headless";
 import {
@@ -40,7 +40,7 @@ export type AlignCanvasProps = {
   grid: AlignGridState;
   previewGridRef?: { current: AlignGridState | null };
   previewRedrawRef?: { current: (() => void) | null };
-  excludedCells?: Iterable<AlignGridCellCoord>;
+  excludedPatterns?: Iterable<AlignGridPatternCoord>;
   emptyText?: string;
   messages?: CanvasStatusMessage[];
   alertMessages?: CanvasStatusMessage[];
@@ -100,15 +100,20 @@ function drawGridOverlayFromScene(
   ctx.beginPath();
   ctx.rect(scene.clipRect.x, scene.clipRect.y, scene.clipRect.w, scene.clipRect.h);
   ctx.clip();
-  for (const cell of scene.cells) {
-    const rgb = cell.excluded
+  for (const pattern of scene.patterns) {
+    const rgb = pattern.excluded
       ? alignGridOverlayColors.excludedRgb
       : alignGridOverlayColors.includedRgb;
     ctx.fillStyle = `rgba(${rgb}, ${scene.fillOpacity})`;
     ctx.strokeStyle = `rgba(${rgb}, ${scene.strokeOpacity})`;
     ctx.lineWidth = 1;
-    ctx.fillRect(cell.x, cell.y, cell.w, cell.h);
-    ctx.strokeRect(cell.x + 0.5, cell.y + 0.5, Math.max(0, cell.w - 1), Math.max(0, cell.h - 1));
+    ctx.fillRect(pattern.x, pattern.y, pattern.w, pattern.h);
+    ctx.strokeRect(
+      pattern.x + 0.5,
+      pattern.y + 0.5,
+      Math.max(0, pattern.w - 1),
+      Math.max(0, pattern.h - 1),
+    );
   }
   ctx.restore();
   ctx.strokeStyle = alignGridOverlayColors.origin;
@@ -139,7 +144,7 @@ export function AlignCanvas(props: AlignCanvasProps) {
   const gridRef = { current: props.grid };
   const frameRef = { current: props.frame };
   const dprRef = { current: 1 };
-  const excludedCellKeysRef = { current: new Set<string>() };
+  const excludedPatternKeysRef = { current: new Set<string>() };
   const frameView = createFrameViewController();
 
   createEffect(() => {
@@ -152,8 +157,11 @@ export function AlignCanvas(props: AlignCanvasProps) {
   });
 
   createEffect(() => {
-    excludedCellKeysRef.current = new Set(
-      Array.from(props.excludedCells ?? [], (cell: AlignGridCellCoord) => `${cell.i}:${cell.j}`),
+    excludedPatternKeysRef.current = new Set(
+      Array.from(
+        props.excludedPatterns ?? [],
+        (pattern: AlignGridPatternCoord) => `${pattern.i}:${pattern.j}`,
+      ),
     );
   });
 
@@ -208,7 +216,7 @@ export function AlignCanvas(props: AlignCanvasProps) {
       activeGrid,
       cssWidth,
       cssHeight,
-      excludedCellKeysRef.current,
+      excludedPatternKeysRef.current,
       frameView.layout(cssWidth, cssHeight, currentFrame),
     );
     if (scene) {
@@ -240,7 +248,7 @@ export function AlignCanvas(props: AlignCanvasProps) {
 
   createEffect(() => {
     props.grid;
-    props.excludedCells;
+    props.excludedPatterns;
     scheduleOverlayRender();
   });
 

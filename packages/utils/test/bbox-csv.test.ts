@@ -10,8 +10,8 @@ describe("buildBboxCsv", () => {
         enabled: true,
         spacingA: 10,
         spacingB: 10,
-        cellWidth: 8,
-        cellHeight: 8,
+        patternWidth: 8,
+        patternHeight: 8,
       }),
       [],
     );

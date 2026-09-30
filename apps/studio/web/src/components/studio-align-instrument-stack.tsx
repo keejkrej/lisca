@@ -57,7 +57,7 @@ export function StudioAlignInstrumentStack(props: { expert?: boolean }) {
       </Show>
       <AlignSelectionRail
         disabled={disabled()}
-        excludedCells={state.currentExcludedCells}
+        excludedPatterns={state.currentExcludedPatterns}
         frame={state.frame}
         grid={state.grid}
         manualExclusionEnabled={state.manualExclusionEnabled}
@@ -68,7 +68,9 @@ export function StudioAlignInstrumentStack(props: { expert?: boolean }) {
         variationExcludePreview={state.variationExcludePreview}
         onApplyVariationExclude={applyExcludePreview}
         onCancelVariationExclude={cancelExcludePreview}
-        onExcludedCellsChange={(cells) => state.setExcludedCellsForCurrentPosition(cells)}
+        onExcludedPatternsChange={(patterns) =>
+          state.setExcludedPatternsForCurrentPosition(patterns)
+        }
         onManualExclusionEnabledChange={(enabled) => state.setManualExclusionEnabled(enabled)}
         onSmartExclude={() => void smartExclude.request()}
         onVariationExclude={() => void requestVarExclude()}

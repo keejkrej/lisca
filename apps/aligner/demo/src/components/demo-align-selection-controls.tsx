@@ -13,7 +13,7 @@ export function DemoAlignSelectionControls(props: { state: Accessor<DemoAlignSta
     model: browserSmartExclude.model,
     frame: () => props.state().frame,
     grid: () => props.state().grid,
-    currentExcludedCells: () => props.state().excludedCells,
+    currentExcludedPatterns: () => props.state().excludedPatterns,
     enabled: () => !disabled(),
     onComplete: props.state().applySmartExclusion,
     onError: props.state().reportError,
@@ -29,7 +29,7 @@ export function DemoAlignSelectionControls(props: { state: Accessor<DemoAlignSta
       />
       <AlignSelectionRail
         disabled={disabled()}
-        excludedCells={props.state().excludedCells}
+        excludedPatterns={props.state().excludedPatterns}
         frame={props.state().frame}
         grid={props.state().grid}
         manualExclusionEnabled={props.state().manualExclusionEnabled}
@@ -41,7 +41,7 @@ export function DemoAlignSelectionControls(props: { state: Accessor<DemoAlignSta
         onApplyVariationExclude={props.state().applyVariationExclude}
         onSmartExclude={() => void smartExclude.request()}
         onCancelVariationExclude={props.state().cancelVariationExclude}
-        onExcludedCellsChange={props.state().setExcludedCells}
+        onExcludedPatternsChange={props.state().setExcludedPatterns}
         onManualExclusionEnabledChange={props.state().setManualExclusionEnabled}
         onVariationExclude={() => void props.state().variationExclude()}
         onVariationExcludeThresholdChange={props.state().setVariationExcludeThreshold}

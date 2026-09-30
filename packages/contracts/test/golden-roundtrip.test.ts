@@ -65,7 +65,7 @@ describe("golden wire roundtrip", () => {
   it("decodes SaveBboxRequest wrapper", () => {
     const decoded = decodeFixture(SaveBboxRequestSchema, "save-bbox-request.json");
     expect(decoded.workspacePath).toBe("/workspace/Pos0");
-    expect(decoded.alignState.excludedCells).toEqual([{ i: 0, j: 1 }]);
+    expect(decoded.alignState.excludedPatterns).toEqual([{ i: 0, j: 1 }]);
   });
 
   it("decodes WorkspaceScan dimensions", () => {

@@ -1,11 +1,11 @@
-import type { AlignGridCellCoord } from "@lisca/contracts";
-import type { AutoExcludePreviewCell } from "@lisca/contracts";
+import type { AlignGridPatternCoord } from "@lisca/contracts";
+import type { AlignGridPatternBox } from "@lisca/contracts";
 import type { FrameResult } from "@lisca/utils";
 
 export const EXCLUDE_LABEL = 0;
 export const INCLUDE_LABEL = 1;
 
-export type SmartExcludeCellScore = AlignGridCellCoord & {
+export type SmartExcludePatternScore = AlignGridPatternCoord & {
   excludeScore: number;
 };
 
@@ -23,5 +23,5 @@ export type ClassifyExclusionCandidatesOptions = {
 
 export type ClassifyExclusionInput = {
   frame: FrameResult;
-  cells: readonly AutoExcludePreviewCell[];
+  patterns: readonly AlignGridPatternBox[];
 };
