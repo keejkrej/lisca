@@ -7,7 +7,7 @@ import { resumeStudioPendingRuns } from "@lisca/client/session/resume-pending-ru
 import { createSubscriptionOwner } from "@lisca/client/session/subscription-owner";
 import { restoreStudioWorkSession } from "@lisca/client/session/studio-work-session-restore";
 import { WorkSessionAppGate } from "@lisca/client/session/work-session-app-gate";
-import type { WorkSession } from "@lisca/client/session/work-session-gate";
+import type { StudioAssayJson } from "@lisca/contracts/assay";
 import { useShellWorkspace, WorkSessionPickerDialog } from "@lisca/ui/shell";
 import { onCleanup, onMount, type JSX } from "solid-js";
 
@@ -22,6 +22,7 @@ import {
   studioAnnotateUiAtom,
   type StudioAnnotateStoreState,
 } from "../state/studio-annotate-store";
+import { StudioSessionContext } from "../state/studio-session-context";
 import { parseStudioAssayJson, studioWizardActions, studioWizardAtom } from "../state/studio-store";
 
 export function StudioWorkSessionGate(props: { children?: JSX.Element }) {
@@ -63,44 +64,49 @@ export function StudioWorkSessionGate(props: { children?: JSX.Element }) {
   });
   onCleanup(() => pendingRunSubscription.clear());
 
+  const openAssay = (assayJsonPath: string) =>
+    restoreStudioSession(
+      assayJsonPath,
+      setWizard,
+      setAlignUi,
+      setAnnotateUi,
+      workspace.setWorkspacePath,
+      attachPendingRuns,
+    );
+
   return (
     <WorkSessionAppGate
       appId="studio"
       // No welcome picker: Studio starts on the Assay page, where Open lists recent assays.
       gateOptions={{ skipResumePicker: true }}
       PickerDialog={WorkSessionPickerDialog}
-      onRestore={(session) =>
-        restoreStudioSession(
-          session,
-          setWizard,
-          setAlignUi,
-          setAnnotateUi,
-          workspace.setWorkspacePath,
-          attachPendingRuns,
-        )
-      }
+      onRestore={(session) => {
+        const assayJsonPath = session.assayJsonPath?.trim();
+        if (assayJsonPath) void openAssay(assayJsonPath);
+      }}
     >
-      {props.children}
+      <StudioSessionContext.Provider value={{ openAssay }}>
+        {props.children}
+      </StudioSessionContext.Provider>
     </WorkSessionAppGate>
   );
 }
 
 async function restoreStudioSession(
-  session: WorkSession,
+  assayJsonPath: string,
   setWizard: (update: StateUpdater<StudioWizardData>) => void,
   setAlignUi: (update: StateUpdater<import("@lisca/client/atoms/align-ui").AlignUiState>) => void,
   setAnnotateUi: (update: StateUpdater<StudioAnnotateStoreState>) => void,
   setShellWorkspacePath: (path: string | null) => void,
   attachPendingRuns: (workspacePath: string) => Promise<void>,
-) {
-  const assayJsonPath = session.assayJsonPath?.trim();
-  if (!assayJsonPath) return;
-
+): Promise<StudioAssayJson> {
+  let loaded: StudioAssayJson | undefined;
   await restoreStudioWorkSession({
     assayJsonPath,
     readAssayJson: async (path) => {
       const contents = await runClientEffect(studioClient.readTextFile(path));
-      return parseStudioAssayJson(contents);
+      loaded = parseStudioAssayJson(contents);
+      return loaded;
     },
     loadAssayJson: (assayJson) => studioWizardActions.loadAssayJson(setWizard, assayJson),
     setShellWorkspacePath,
@@ -108,8 +114,10 @@ async function restoreStudioSession(
     setAnnotateWorkspacePath: (path) =>
       studioAnnotateUiActions.setWorkspacePath(setAnnotateUi, path),
     setAlignSource: (source) => studioAlignUiActions.setSource(setAlignUi, source),
+    // Reattach in the background: a lookup failure must not block opening the assay.
     resumePendingRuns: async (workspacePath) => {
-      await attachPendingRuns(workspacePath);
+      void attachPendingRuns(workspacePath).catch(() => undefined);
     },
   });
+  return loaded!;
 }
