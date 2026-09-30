@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vite-plus/test";
 
-import { computeAutoExcludePreview, maxEntropyThresholdOnHistogram } from "../src/auto-exclude";
+import {
+  computeVariationExcludePreview,
+  maxEntropyThresholdOnHistogram,
+} from "../src/variation-exclude";
 
 describe("maxEntropyThresholdOnHistogram", () => {
   it("splits a bimodal histogram at the bin edge between the modes", () => {
@@ -17,8 +20,8 @@ describe("maxEntropyThresholdOnHistogram", () => {
   });
 });
 
-describe("computeAutoExcludePreview", () => {
-  it("scores uniform cells lower than high-contrast cells", () => {
+describe("computeVariationExcludePreview", () => {
+  it("scores uniform patterns lower than high-contrast patterns", () => {
     const width = 20;
     const height = 20;
     const pixels = new Uint8Array(width * height);
@@ -33,21 +36,22 @@ describe("computeAutoExcludePreview", () => {
       }
     }
 
-    const preview = computeAutoExcludePreview({ width, height, pixels }, [
+    const preview = computeVariationExcludePreview({ width, height, pixels }, [
       { i: 0, j: 0, x: 0, y: 0, w: 10, h: 10 },
       { i: 1, j: 0, x: 10, y: 0, w: 10, h: 10 },
     ]);
 
-    expect(preview.eligibleCellCount).toBe(2);
-    expect(preview.cellScores[0]?.score).toBeLessThan(preview.cellScores[1]?.score ?? 0);
+    expect(preview.eligiblePatternCount).toBe(2);
+    expect(preview.patternScores[0]?.score).toBeLessThan(preview.patternScores[1]?.score ?? 0);
     expect(preview.threshold).toBeGreaterThan(preview.scoreMin);
   });
 
-  it("skips empty clipped cells", () => {
-    const preview = computeAutoExcludePreview({ width: 8, height: 8, pixels: new Uint8Array(64) }, [
-      { i: 0, j: 0, x: 10, y: 10, w: 4, h: 4 },
-    ]);
-    expect(preview.eligibleCellCount).toBe(0);
-    expect(preview.cellScores).toEqual([]);
+  it("skips empty clipped patterns", () => {
+    const preview = computeVariationExcludePreview(
+      { width: 8, height: 8, pixels: new Uint8Array(64) },
+      [{ i: 0, j: 0, x: 10, y: 10, w: 4, h: 4 }],
+    );
+    expect(preview.eligiblePatternCount).toBe(0);
+    expect(preview.patternScores).toEqual([]);
   });
 });

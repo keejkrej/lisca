@@ -19,7 +19,7 @@ function sectionFor(name: string) {
 }
 
 const selectionProps = {
-  excludedCells: [],
+  excludedPatterns: [],
   frame: null,
   grid: createDefaultAlignGrid(),
   manualExclusionEnabled: false,
@@ -28,7 +28,7 @@ const selectionProps = {
   visibleCounts: { included: 0, excluded: 0 },
   onApplyVariationExclude: () => undefined,
   onCancelVariationExclude: () => undefined,
-  onExcludedCellsChange: () => undefined,
+  onExcludedPatternsChange: () => undefined,
   onManualExclusionEnabledChange: () => undefined,
   onSmartExclude: () => undefined,
   onVariationExclude: () => undefined,

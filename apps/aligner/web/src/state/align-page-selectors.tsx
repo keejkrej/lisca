@@ -1,5 +1,5 @@
 import type {
-  AlignGridCellCoord,
+  AlignGridPatternCoord,
   AlignGridState,
   AlignerSource,
   ContrastWindow,
@@ -30,11 +30,11 @@ export function useAlignCanvas() {
     get manualExclusionEnabled() {
       return state().manualExclusionEnabled;
     },
-    get displayedExcludedCells() {
-      return state().displayedExcludedCells;
+    get displayedExcludedPatterns() {
+      return state().displayedExcludedPatterns;
     },
-    get currentExcludedCells() {
-      return state().currentExcludedCells;
+    get currentExcludedPatterns() {
+      return state().currentExcludedPatterns;
     },
     get visibleCounts() {
       return state().visibleCounts;
@@ -67,8 +67,8 @@ export function useAlignCanvas() {
     setPatternZoomLocked: (locked: boolean) => state().setPatternZoomLocked(locked),
     setManualExclusionEnabled: (enabled: boolean) => state().setManualExclusionEnabled(enabled),
     setContrast: (contrast: ContrastWindow | null) => state().setContrast(contrast),
-    setExcludedCellsForCurrentPosition: (cells: Iterable<AlignGridCellCoord>) =>
-      state().setExcludedCellsForCurrentPosition(cells),
+    setExcludedPatternsForCurrentPosition: (patterns: Iterable<AlignGridPatternCoord>) =>
+      state().setExcludedPatternsForCurrentPosition(patterns),
   };
 }
 

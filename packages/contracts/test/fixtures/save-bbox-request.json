@@ -11,10 +11,10 @@
       "rotation": 0,
       "spacingA": 10,
       "spacingB": 10,
-      "cellWidth": 12,
-      "cellHeight": 20,
+      "patternWidth": 12,
+      "patternHeight": 20,
       "opacity": 0.5
     },
-    "excludedCells": [{ "i": 0, "j": 1 }]
+    "excludedPatterns": [{ "i": 0, "j": 1 }]
   }
 }

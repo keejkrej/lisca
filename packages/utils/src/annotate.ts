@@ -1,5 +1,5 @@
-import type { AlignGridCellCoord, AlignGridState } from "@lisca/contracts";
-import { enumerateVisibleAlignGridCells } from "./align-grid";
+import type { AlignGridPatternCoord, AlignGridState } from "@lisca/contracts";
+import { enumerateVisibleAlignGridPatterns } from "./align-grid";
 import type { FrameResult } from "./frame";
 import { clamp } from "./frame";
 
@@ -147,12 +147,12 @@ function pointInPolygon(x: number, y: number, points: MaskPoint[]) {
 export function buildBboxCsv(
   frame: FrameResult,
   grid: AlignGridState,
-  excludedCells: readonly AlignGridCellCoord[],
+  excludedPatterns: readonly AlignGridPatternCoord[],
 ): string {
-  const excluded = new Set(excludedCells.map((cell) => `${cell.i}:${cell.j}`));
-  const rows = enumerateVisibleAlignGridCells(frame, grid)
-    .filter((cell) => !excluded.has(`${cell.i}:${cell.j}`))
-    .map((cell, roi) => [roi, cell.x, cell.y, cell.w, cell.h].join(","));
+  const excluded = new Set(excludedPatterns.map((pattern) => `${pattern.i}:${pattern.j}`));
+  const rows = enumerateVisibleAlignGridPatterns(frame, grid)
+    .filter((pattern) => !excluded.has(`${pattern.i}:${pattern.j}`))
+    .map((pattern, roi) => [roi, pattern.x, pattern.y, pattern.w, pattern.h].join(","));
   return ["roi,x,y,w,h", ...rows].join("\n");
 }
 

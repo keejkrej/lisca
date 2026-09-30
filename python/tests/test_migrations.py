@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import pytest
 
+from lisca.core.align_grid import PatternCoord
 from lisca.core.bbox import parse_bbox_csv
-from lisca.core.workspace import load_bbox_rows
+from lisca.core.workspace import load_bbox_rows, load_saved_align_state
 from lisca.migrations import migrate_workspace
 from lisca.services import crop
 
@@ -105,3 +107,123 @@ def test_load_bbox_rows_migrates_crop_header(tmp_path: Path) -> None:
     assert rows[0].y == 2
     assert rows[0].w == 3
     assert rows[0].h == 4
+
+
+def _write_align(workspace: Path, name: str, data: dict[str, object]) -> Path:
+    align_dir = workspace / "align"
+    align_dir.mkdir(parents=True, exist_ok=True)
+    path = align_dir / name
+    path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+    return path
+
+
+def _grid(width_key: str, height_key: str) -> dict[str, object]:
+    return {
+        "enabled": True,
+        "shape": "rect",
+        "tx": 0,
+        "ty": 0,
+        "rotation": 0,
+        "spacingA": 10,
+        "spacingB": 10,
+        width_key: 12,
+        height_key: 20,
+        "opacity": 0.5,
+    }
+
+
+def test_migrate_rewrites_align_cell_keys_to_pattern_keys(tmp_path: Path) -> None:
+    path = _write_align(
+        tmp_path,
+        "Pos0.json",
+        {
+            "grid": _grid("cellWidth", "cellHeight"),
+            "excludedCells": [{"i": 0, "j": 1}],
+        },
+    )
+
+    rewritten = migrate_workspace(tmp_path)
+
+    assert rewritten == [str(path.resolve())]
+    data = json.loads(path.read_text(encoding="utf-8"))
+    assert data["excludedPatterns"] == [{"i": 0, "j": 1}]
+    assert "excludedCells" not in data
+    assert data["grid"]["patternWidth"] == 12
+    assert data["grid"]["patternHeight"] == 20
+    assert "cellWidth" not in data["grid"]
+    assert "cellHeight" not in data["grid"]
+
+
+def test_migrate_align_is_idempotent(tmp_path: Path) -> None:
+    path = _write_align(
+        tmp_path,
+        "Pos1.json",
+        {"grid": _grid("cellWidth", "cellHeight"), "excludedCells": []},
+    )
+
+    assert len(migrate_workspace(tmp_path)) == 1
+    after_first = path.read_text(encoding="utf-8")
+    assert migrate_workspace(tmp_path) == []
+    assert path.read_text(encoding="utf-8") == after_first
+
+
+def test_migrate_align_leaves_current_files_untouched(tmp_path: Path) -> None:
+    path = _write_align(
+        tmp_path,
+        "Pos2.json",
+        {
+            "grid": _grid("patternWidth", "patternHeight"),
+            "excludedPatterns": [{"i": 1, "j": 1}],
+        },
+    )
+    before = path.read_text(encoding="utf-8")
+
+    assert migrate_workspace(tmp_path) == []
+    assert path.read_text(encoding="utf-8") == before
+
+
+def test_migrate_align_errors_when_cells_and_patterns_both_present(
+    tmp_path: Path,
+) -> None:
+    _write_align(
+        tmp_path,
+        "Pos3.json",
+        {
+            "grid": _grid("patternWidth", "patternHeight"),
+            "excludedCells": [],
+            "excludedPatterns": [],
+        },
+    )
+
+    with pytest.raises(ValueError, match="both `excludedCells` and `excludedPatterns`"):
+        migrate_workspace(tmp_path)
+
+
+def test_migrate_align_errors_when_grid_cell_and_pattern_width_both_present(
+    tmp_path: Path,
+) -> None:
+    grid = _grid("patternWidth", "patternHeight")
+    grid["cellWidth"] = 12
+    _write_align(tmp_path, "Pos4.json", {"grid": grid, "excludedPatterns": []})
+
+    with pytest.raises(
+        ValueError, match="both `grid.cellWidth` and `grid.patternWidth`"
+    ):
+        migrate_workspace(tmp_path)
+
+
+def test_load_saved_align_state_migrates_excluded_cells(tmp_path: Path) -> None:
+    workspace = tmp_path / "ws"
+    _write_align(
+        workspace,
+        "Pos0.json",
+        {
+            "grid": _grid("cellWidth", "cellHeight"),
+            "excludedCells": [{"i": 2, "j": 3}],
+        },
+    )
+
+    state = load_saved_align_state(workspace, 0)
+
+    assert state.excluded_patterns == [PatternCoord(i=2, j=3)]
+    assert state.grid.pattern_width == 12

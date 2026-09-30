@@ -68,7 +68,7 @@ export function StudioAnnotateMain() {
           <ViewportCard>
             <StageCanvas
               captionCenter={<CanvasToastStack layout="inline" messages={toasts()} />}
-              captionLeft={`Site ${nav.selection.roi ?? "—"} · Channel ${nav.selection.channel ?? "—"}`}
+              captionLeft={`ROI ${nav.selection.roi ?? "—"} · Channel ${nav.selection.channel ?? "—"}`}
               captionRight={
                 canvas.frame ? `${canvas.frame.width} × ${canvas.frame.height} px` : "No frame"
               }
@@ -99,7 +99,7 @@ export function StudioAnnotateMain() {
         <ViewportCard contentClass="relative max-w-[480px]">
           <StudioEmptyState
             actionLabel="Go to Metadata"
-            description="Choose a workspace on the Metadata step, then align and crop sites before annotating."
+            description="Choose a workspace on the Metadata step, then align and crop ROIs before annotating."
             title="Workspace not set"
             onAction={() => navigateTo("/metadata")}
           />
@@ -111,8 +111,8 @@ export function StudioAnnotateMain() {
         <ViewportCard contentClass="relative max-w-[480px]">
           <StudioEmptyState
             actionLabel="Go to Align"
-            description="Align the pattern and crop site images first. Annotation needs those ROI stacks."
-            title="No cropped sites"
+            description="Align the grid and crop ROI images first. Annotation needs those ROI stacks."
+            title="No cropped ROIs"
             onAction={() => navigateTo("/align")}
           />
         </ViewportCard>

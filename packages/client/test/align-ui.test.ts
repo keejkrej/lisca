@@ -102,7 +102,7 @@ describe("align-ui actions", () => {
         pos: 1,
         saved: {
           grid: savedGrid,
-          excludedCells: [{ i: 0, j: 0 }],
+          excludedPatterns: [{ i: 0, j: 0 }],
         },
       }),
     );
@@ -110,7 +110,7 @@ describe("align-ui actions", () => {
     expect(next.loadedFrameSelection).toEqual(selection);
     expect(next.appliedAlignStateKey).toBe("pos:1");
     expect(next.grid.opacity).toBe(0.8);
-    expect(next.excludedCellsByPosition[1]).toEqual([{ i: 0, j: 0 }]);
+    expect(next.excludedPatternsByPosition[1]).toEqual([{ i: 0, j: 0 }]);
   });
 
   it("applyLoadedFrame skips saved state when key already applied", () => {
@@ -132,7 +132,7 @@ describe("align-ui actions", () => {
         pos: 1,
         saved: {
           grid: normalizeAlignGridState({ opacity: 0.9 }),
-          excludedCells: [],
+          excludedPatterns: [],
         },
       }),
     );
@@ -148,25 +148,25 @@ describe("align-ui actions", () => {
     const next = runReducer(initial, (set) =>
       studioActions.applySavedAlignState!(set, "pos:1", 1, {
         grid: normalizeAlignGridState({ opacity: 0.8 }),
-        excludedCells: [{ i: 0, j: 0 }],
+        excludedPatterns: [{ i: 0, j: 0 }],
       }),
     );
 
     expect(next.appliedAlignStateKey).toBe("pos:1");
     expect(next.grid.opacity).toBe(0.8);
-    expect(next.excludedCellsByPosition[1]).toEqual([{ i: 0, j: 0 }]);
+    expect(next.excludedPatternsByPosition[1]).toEqual([{ i: 0, j: 0 }]);
     expect(next.status).toBeNull();
 
     const repeated = runReducer(next, (set) =>
       studioActions.applySavedAlignState!(set, "pos:1", 1, {
         grid: normalizeAlignGridState({ opacity: 0.9 }),
-        excludedCells: [{ i: 2, j: 2 }],
+        excludedPatterns: [{ i: 2, j: 2 }],
       }),
     );
 
     expect(repeated).toBe(next);
     expect(repeated.grid.opacity).toBe(0.8);
-    expect(repeated.excludedCellsByPosition[1]).toEqual([{ i: 0, j: 0 }]);
+    expect(repeated.excludedPatternsByPosition[1]).toEqual([{ i: 0, j: 0 }]);
   });
 
   it("setSelection clears appliedAlignStateKey when position changes", () => {
@@ -186,10 +186,10 @@ describe("align-ui actions", () => {
       selection: { pos: 1, channel: 0, time: 0, z: 0 },
     };
     const next = runReducer(initial, (set) =>
-      actions.setExcludedCellsForPosition(set, 4, [{ i: 2, j: 3 }]),
+      actions.setExcludedPatternsForPosition(set, 4, [{ i: 2, j: 3 }]),
     );
     expect(next.selection.pos).toBe(1);
-    expect(next.excludedCellsByPosition[4]).toEqual([{ i: 2, j: 3 }]);
+    expect(next.excludedPatternsByPosition[4]).toEqual([{ i: 2, j: 3 }]);
   });
 
   it("setContrast clears manual contrast window", () => {

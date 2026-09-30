@@ -2531,7 +2531,7 @@
               }
             ]
           },
-          "cellWidth": {
+          "patternWidth": {
             "type": "number",
             "allOf": [
               {
@@ -2539,7 +2539,7 @@
               }
             ]
           },
-          "cellHeight": {
+          "patternHeight": {
             "type": "number",
             "allOf": [
               {
@@ -2564,13 +2564,13 @@
           "rotation",
           "spacingA",
           "spacingB",
-          "cellWidth",
-          "cellHeight",
+          "patternWidth",
+          "patternHeight",
           "opacity"
         ],
         "additionalProperties": false
       },
-      "AlignGridCellCoord": {
+      "AlignGridPatternCoord": {
         "type": "object",
         "properties": {
           "i": {
@@ -2599,14 +2599,14 @@
           "grid": {
             "$ref": "#/components/schemas/AlignGridState"
           },
-          "excludedCells": {
+          "excludedPatterns": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/AlignGridCellCoord"
+              "$ref": "#/components/schemas/AlignGridPatternCoord"
             }
           }
         },
-        "required": ["grid", "excludedCells"],
+        "required": ["grid", "excludedPatterns"],
         "additionalProperties": false
       },
       "SaveBboxRequest": {
@@ -2889,7 +2889,7 @@
           }
         ]
       },
-      "AutoExcludePreviewCell": {
+      "AlignGridPatternBox": {
         "type": "object",
         "properties": {
           "i": {
@@ -2967,10 +2967,10 @@
               }
             ]
           },
-          "cells": {
+          "patterns": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/AutoExcludePreviewCell"
+              "$ref": "#/components/schemas/AlignGridPatternBox"
             }
           },
           "threshold": {
@@ -2989,20 +2989,20 @@
             ]
           }
         },
-        "required": ["source", "request", "contrast", "cells"],
+        "required": ["source", "request", "contrast", "patterns"],
         "additionalProperties": false
       },
       "SmartExcludeResponse": {
         "type": "object",
         "properties": {
-          "excludedCells": {
+          "excludedPatterns": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/AlignGridCellCoord"
+              "$ref": "#/components/schemas/AlignGridPatternCoord"
             }
           }
         },
-        "required": ["excludedCells"],
+        "required": ["excludedPatterns"],
         "additionalProperties": false
       },
       "ScanRoiWorkspaceRequest": {

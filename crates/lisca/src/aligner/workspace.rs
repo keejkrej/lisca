@@ -157,11 +157,11 @@ mod tests {
                 "rotation": 0,
                 "spacingA": 10,
                 "spacingB": 10,
-                "cellWidth": 12,
-                "cellHeight": 20,
+                "patternWidth": 12,
+                "patternHeight": 20,
                 "opacity": 0.5
             },
-            "excludedCells": []
+            "excludedPatterns": []
         }))
         .expect("align state")
     }
@@ -248,6 +248,41 @@ mod tests {
         assert!(loaded.is_none());
         let text = fs::read_to_string(workspace.join("bbox/Pos1.csv")).expect("read");
         assert!(text.starts_with("roi,x,y,w,h"));
+    }
+
+    #[test]
+    fn load_align_state_migrates_excluded_cells_to_patterns() {
+        let root = tempfile::tempdir().expect("tempdir");
+        let workspace = root.path();
+        let mut legacy = serde_json::to_value(dummy_align_state()).expect("value");
+        let object = legacy.as_object_mut().expect("object");
+        object.remove("excludedPatterns");
+        object.insert(
+            "excludedCells".to_string(),
+            serde_json::json!([{ "i": 2, "j": 3 }]),
+        );
+        let grid = object
+            .get_mut("grid")
+            .and_then(serde_json::Value::as_object_mut)
+            .expect("grid");
+        let width = grid.remove("patternWidth").expect("width");
+        let height = grid.remove("patternHeight").expect("height");
+        grid.insert("cellWidth".to_string(), width);
+        grid.insert("cellHeight".to_string(), height);
+        fs::create_dir_all(workspace.join("align")).expect("align dir");
+        fs::write(
+            workspace.join("align/Pos1.json"),
+            serde_json::to_vec_pretty(&legacy).expect("json"),
+        )
+        .expect("write");
+
+        let loaded = load_align_state(&workspace.to_string_lossy(), 1)
+            .expect("load")
+            .expect("align state");
+        assert_eq!(loaded.excluded_patterns.len(), 1);
+        assert_eq!(loaded.excluded_patterns[0].i, 2);
+        assert_eq!(loaded.excluded_patterns[0].j, 3);
+        assert_eq!(loaded.grid.pattern_width, 12.0);
     }
 
     #[test]

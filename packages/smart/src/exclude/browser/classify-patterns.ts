@@ -1,11 +1,11 @@
-import type { AlignGridCellCoord, AutoExcludePreviewCell } from "@lisca/contracts";
+import type { AlignGridPatternCoord, AlignGridPatternBox } from "@lisca/contracts";
 import type { FrameResult } from "@lisca/utils";
 import { loadTransformers } from "../../shared/transformers";
 
 import type { ClassifyExclusionCandidatesOptions } from "../types";
 import { EXCLUDE_LABEL } from "../types";
 import { getSmartExcludeClassifier, SMART_EXCLUDE_IMAGE_SIZE } from "./exclude-engine";
-import { cropCellToCanvas, resizeCanvasToSquare } from "./preprocess";
+import { cropPatternToCanvas, resizeCanvasToSquare } from "./preprocess";
 
 const DEFAULT_THRESHOLD = 0.5;
 const DEFAULT_BATCH_SIZE = 16;
@@ -15,7 +15,7 @@ function scoreForLabel(outputs: Array<{ label: string; score: number }>, label: 
   return match?.score ?? 0;
 }
 
-async function classifyCellCanvas(
+async function classifyPatternCanvas(
   classifier: (image: unknown) => Promise<Array<{ label: string; score: number }>>,
   canvas: HTMLCanvasElement,
 ): Promise<number> {
@@ -28,23 +28,23 @@ async function classifyCellCanvas(
 
 export async function classifyExclusionCandidates(
   frame: FrameResult,
-  cells: readonly AutoExcludePreviewCell[],
+  patterns: readonly AlignGridPatternBox[],
   options: ClassifyExclusionCandidatesOptions = {},
-): Promise<AlignGridCellCoord[]> {
-  if (cells.length === 0) return [];
+): Promise<AlignGridPatternCoord[]> {
+  if (patterns.length === 0) return [];
 
   const threshold = options.threshold ?? DEFAULT_THRESHOLD;
   const batchSize = options.batchSize ?? DEFAULT_BATCH_SIZE;
   const classifier = await getSmartExcludeClassifier(options.onProgress);
-  const excluded: AlignGridCellCoord[] = [];
+  const excluded: AlignGridPatternCoord[] = [];
 
-  for (let offset = 0; offset < cells.length; offset += batchSize) {
-    const batch = cells.slice(offset, offset + batchSize);
-    for (const cell of batch) {
-      const canvas = cropCellToCanvas(frame, cell.x, cell.y, cell.w, cell.h);
-      const excludeScore = await classifyCellCanvas(classifier, canvas);
+  for (let offset = 0; offset < patterns.length; offset += batchSize) {
+    const batch = patterns.slice(offset, offset + batchSize);
+    for (const pattern of batch) {
+      const canvas = cropPatternToCanvas(frame, pattern.x, pattern.y, pattern.w, pattern.h);
+      const excludeScore = await classifyPatternCanvas(classifier, canvas);
       if (excludeScore >= threshold) {
-        excluded.push({ i: cell.i, j: cell.j });
+        excluded.push({ i: pattern.i, j: pattern.j });
       }
     }
     await Promise.resolve();
@@ -55,10 +55,10 @@ export async function classifyExclusionCandidates(
 
 export async function runSmartExclude(
   frame: FrameResult,
-  cells: readonly AutoExcludePreviewCell[],
+  patterns: readonly AlignGridPatternBox[],
   options?: ClassifyExclusionCandidatesOptions,
-): Promise<AlignGridCellCoord[]> {
-  return classifyExclusionCandidates(frame, cells, options);
+): Promise<AlignGridPatternCoord[]> {
+  return classifyExclusionCandidates(frame, patterns, options);
 }
 
 export { EXCLUDE_LABEL, DEFAULT_THRESHOLD as SMART_EXCLUDE_DEFAULT_THRESHOLD };

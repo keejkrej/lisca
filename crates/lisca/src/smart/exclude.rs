@@ -11,7 +11,7 @@ use crate::onnx::{
     workspace_models_dir, IMAGE_SIZE,
 };
 use crate::protocol::{
-    AlignGridCellCoord, AutoExcludePreviewCell, FramePayload, SmartExcludeRequest,
+    AlignGridPatternBox, AlignGridPatternCoord, FramePayload, SmartExcludeRequest,
     SmartExcludeResponse,
 };
 
@@ -23,17 +23,17 @@ static EXCLUDE_SESSION: OnceLock<Result<Mutex<Session>, String>> = OnceLock::new
 
 pub fn classify_exclusion(request: SmartExcludeRequest) -> Result<SmartExcludeResponse, String> {
     let frame = aligner::load_frame_payload(request.source, request.request, request.contrast)?;
-    classify_exclusion_on_frame(&frame, &request.cells, request.threshold)
+    classify_exclusion_on_frame(&frame, &request.patterns, request.threshold)
 }
 
 fn classify_exclusion_on_frame(
     frame: &FramePayload,
-    cells: &[AutoExcludePreviewCell],
+    patterns: &[AlignGridPatternBox],
     threshold: Option<f64>,
 ) -> Result<SmartExcludeResponse, String> {
-    if cells.is_empty() {
+    if patterns.is_empty() {
         return Ok(SmartExcludeResponse {
-            excluded_cells: Vec::new(),
+            excluded_patterns: Vec::new(),
         });
     }
 
@@ -43,19 +43,20 @@ fn classify_exclusion_on_frame(
     let height = frame.height as usize;
     let mut session = exclude_session()?;
     let input_name = "pixel_values";
-    let mut excluded_cells = Vec::new();
+    let mut excluded_patterns = Vec::new();
 
-    for cell in cells {
-        let exclude_score = classify_cell(&mut session, input_name, &pixels, width, height, cell)?;
+    for pattern in patterns {
+        let exclude_score =
+            classify_pattern(&mut session, input_name, &pixels, width, height, pattern)?;
         if exclude_score >= threshold {
-            excluded_cells.push(AlignGridCellCoord {
-                i: cell.i,
-                j: cell.j,
+            excluded_patterns.push(AlignGridPatternCoord {
+                i: pattern.i,
+                j: pattern.j,
             });
         }
     }
 
-    Ok(SmartExcludeResponse { excluded_cells })
+    Ok(SmartExcludeResponse { excluded_patterns })
 }
 
 fn exclude_session() -> Result<std::sync::MutexGuard<'static, Session>, String> {
@@ -89,16 +90,16 @@ pub fn resolve_model_path() -> Result<PathBuf, String> {
     )
 }
 
-fn classify_cell(
+fn classify_pattern(
     session: &mut Session,
     input_name: &str,
     pixels: &[f64],
     frame_width: usize,
     frame_height: usize,
-    cell: &AutoExcludePreviewCell,
+    pattern: &AlignGridPatternBox,
 ) -> Result<f64, String> {
-    let normalized = crop_and_normalize_cell(pixels, frame_width, frame_height, cell)?;
-    let resized = resize_to_224(&normalized, cell.w, cell.h)?;
+    let normalized = crop_and_normalize_pattern(pixels, frame_width, frame_height, pattern)?;
+    let resized = resize_to_224(&normalized, pattern.w, pattern.h)?;
     let nchw = to_nchw_normalized(&resized);
     let shape: Ix4 = ndarray::Dim([1, 3, IMAGE_SIZE as usize, IMAGE_SIZE as usize]);
     let array = Array::from_shape_vec(shape, nchw).map_err(|error| error.to_string())?;
@@ -120,16 +121,16 @@ fn exclude_probability_from_logits(logits: &ArrayView<f32, ndarray::IxDyn>) -> R
     Ok(first_class_probability(exclude_logit, include_logit))
 }
 
-fn crop_and_normalize_cell(
+fn crop_and_normalize_pattern(
     pixels: &[f64],
     frame_width: usize,
     frame_height: usize,
-    cell: &AutoExcludePreviewCell,
+    pattern: &AlignGridPatternBox,
 ) -> Result<Vec<u8>, String> {
-    let left = cell.x as usize;
-    let top = cell.y as usize;
-    let right = (cell.x + cell.w).min(frame_width as u32) as usize;
-    let bottom = (cell.y + cell.h).min(frame_height as u32) as usize;
+    let left = pattern.x as usize;
+    let top = pattern.y as usize;
+    let right = (pattern.x + pattern.w).min(frame_width as u32) as usize;
+    let bottom = (pattern.y + pattern.h).min(frame_height as u32) as usize;
     let crop_width = right.saturating_sub(left);
     let crop_height = bottom.saturating_sub(top);
     if crop_width == 0 || crop_height == 0 {
@@ -178,7 +179,7 @@ mod tests {
     }
 
     #[test]
-    fn classify_exclusion_returns_empty_for_no_cells() {
+    fn classify_exclusion_returns_empty_for_no_patterns() {
         use crate::protocol::{ContrastWindow, FramePayload, PixelType};
 
         let frame = FramePayload {
@@ -191,11 +192,11 @@ mod tests {
             applied_contrast: ContrastWindow { min: 0, max: 255 },
         };
         let response = classify_exclusion_on_frame(&frame, &[], None).expect("classify");
-        assert!(response.excluded_cells.is_empty());
+        assert!(response.excluded_patterns.is_empty());
     }
 
     #[test]
-    fn classify_exclusion_runs_for_preview_cell() {
+    fn classify_exclusion_runs_for_preview_pattern() {
         use crate::protocol::{ContrastWindow, FramePayload, PixelType};
 
         if resolve_model_path().is_err() {
@@ -217,7 +218,7 @@ mod tests {
         };
         let response = classify_exclusion_on_frame(
             &frame,
-            &[AutoExcludePreviewCell {
+            &[AlignGridPatternBox {
                 i: 0,
                 j: 0,
                 x: 0,
@@ -228,6 +229,6 @@ mod tests {
             Some(2.0),
         )
         .expect("classify");
-        assert!(response.excluded_cells.is_empty());
+        assert!(response.excluded_patterns.is_empty());
     }
 }

@@ -1,8 +1,8 @@
-import type { AlignGridCellCoord, AlignGridState } from "@lisca/contracts";
+import type { AlignGridPatternCoord, AlignGridState } from "@lisca/contracts";
 import {
-  collectAlignGridStrokeToggleCells,
-  findAlignGridCellAtPoint,
-  toggleExcludedAlignGridCells,
+  collectAlignGridStrokeTogglePatterns,
+  findAlignGridPatternAtPoint,
+  toggleExcludedAlignGridPatterns,
   type AlignGridFrameBounds,
 } from "@lisca/utils";
 import { createSignal, type Accessor } from "solid-js";
@@ -12,7 +12,7 @@ import type { AlignCanvasPointerEvent } from "./align-canvas-handlers";
 type StrokeSession = {
   pointerId: number;
   startPoint: { x: number; y: number };
-  toggledCells: AlignGridCellCoord[];
+  toggledPatterns: AlignGridPatternCoord[];
 };
 
 export type UseAlignCanvasSelectionHandlersOptions = {
@@ -20,33 +20,33 @@ export type UseAlignCanvasSelectionHandlersOptions = {
   enabled?: boolean;
   frame: AlignGridFrameBounds | null;
   grid: AlignGridState;
-  excludedCells: AlignGridCellCoord[];
-  onExcludedCellsChange: (cells: AlignGridCellCoord[]) => void;
+  excludedPatterns: AlignGridPatternCoord[];
+  onExcludedPatternsChange: (patterns: AlignGridPatternCoord[]) => void;
 };
 
 export function useAlignCanvasSelectionHandlers(
   options: () => UseAlignCanvasSelectionHandlersOptions,
 ) {
   const strokeRef = { current: null as StrokeSession | null };
-  const excludedRef = { current: options().excludedCells };
+  const excludedRef = { current: options().excludedPatterns };
   const [selecting, setSelecting] = createSignal(false);
 
   const applyStroke = (point: { x: number; y: number }) => {
     const session = strokeRef.current;
-    const { frame, grid, onExcludedCellsChange } = options();
+    const { frame, grid, onExcludedPatternsChange } = options();
     if (!session || !frame) return;
-    const hitCells = collectAlignGridStrokeToggleCells(
+    const hitPatterns = collectAlignGridStrokeTogglePatterns(
       frame,
       grid,
       session.startPoint,
       point,
-      session.toggledCells,
+      session.toggledPatterns,
     );
-    if (hitCells.length === 0) return;
-    const next = toggleExcludedAlignGridCells(excludedRef.current, hitCells);
+    if (hitPatterns.length === 0) return;
+    const next = toggleExcludedAlignGridPatterns(excludedRef.current, hitPatterns);
     excludedRef.current = next;
-    onExcludedCellsChange(next);
-    session.toggledCells.push(...hitCells);
+    onExcludedPatternsChange(next);
+    session.toggledPatterns.push(...hitPatterns);
   };
 
   const handlePointerDown = (event: AlignCanvasPointerEvent): boolean => {
@@ -54,16 +54,21 @@ export function useAlignCanvasSelectionHandlers(
     if (!enabled || disabled || !frame || !grid.enabled) return false;
     if (event.pointerType === "mouse" && event.button !== 0) return false;
     if (strokeRef.current) return false;
-    excludedRef.current = options().excludedCells;
+    excludedRef.current = options().excludedPatterns;
     event.preventDefault();
     if (!event.framePoint) return true;
-    const cell = findAlignGridCellAtPoint(frame, grid, event.framePoint.x, event.framePoint.y);
-    if (!cell) return true;
+    const pattern = findAlignGridPatternAtPoint(
+      frame,
+      grid,
+      event.framePoint.x,
+      event.framePoint.y,
+    );
+    if (!pattern) return true;
     event.capturePointer();
     strokeRef.current = {
       pointerId: event.pointerId,
       startPoint: event.framePoint,
-      toggledCells: [],
+      toggledPatterns: [],
     };
     setSelecting(true);
     applyStroke(event.framePoint);

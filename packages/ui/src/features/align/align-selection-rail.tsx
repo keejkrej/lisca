@@ -1,8 +1,8 @@
-import type { AlignGridCellCoord, AlignGridState } from "@lisca/contracts";
+import type { AlignGridPatternCoord, AlignGridState } from "@lisca/contracts";
 import {
-  collectAlignGridEdgeCells,
-  enumerateVisibleAlignGridCells,
-  mergeExcludedAlignGridCells,
+  collectAlignGridEdgePatterns,
+  enumerateVisibleAlignGridPatterns,
+  mergeExcludedAlignGridPatterns,
   type AlignGridFrameBounds,
 } from "@lisca/utils";
 
@@ -23,14 +23,14 @@ export type AlignSelectionRailProps = {
   disabled?: boolean;
   frame: AlignGridFrameBounds | null;
   grid: AlignGridState;
-  excludedCells: AlignGridCellCoord[];
+  excludedPatterns: AlignGridPatternCoord[];
   visibleCounts: {
     included: number;
     excluded: number;
   };
   manualExclusionEnabled: boolean;
   onManualExclusionEnabledChange: (enabled: boolean) => void;
-  onExcludedCellsChange: (cells: AlignGridCellCoord[]) => void;
+  onExcludedPatternsChange: (patterns: AlignGridPatternCoord[]) => void;
   variationExcludePreview: VariationExcludePreviewState;
   variationExcludeLoading?: boolean;
   onVariationExclude: () => void | Promise<void>;
@@ -52,15 +52,15 @@ export function AlignSelectionRail(props: AlignSelectionRailProps) {
   const smartExcludeLoading = () => props.smartExcludeLoading ?? false;
   const showVariationExcludeDialog = () => props.showVariationExcludeDialog ?? true;
 
-  const visibleCells = () =>
+  const visiblePatterns = () =>
     props.frame
-      ? enumerateVisibleAlignGridCells(props.frame, props.grid).map(({ i, j }) => ({
+      ? enumerateVisibleAlignGridPatterns(props.frame, props.grid).map(({ i, j }) => ({
           i,
           j,
         }))
       : [];
-  const hasVisibleCells = () => visibleCells().length > 0;
-  const hasExcludedCells = () => props.excludedCells.length > 0;
+  const hasVisiblePatterns = () => visiblePatterns().length > 0;
+  const hasExcludedPatterns = () => props.excludedPatterns.length > 0;
 
   const EditControl = () => (
     <AlignEditToggle
@@ -72,11 +72,11 @@ export function AlignSelectionRail(props: AlignSelectionRailProps) {
   const ResetControl = () => (
     <Button
       class="w-full justify-center text-xs"
-      disabled={disabled() || !hasExcludedCells()}
+      disabled={disabled() || !hasExcludedPatterns()}
       size="sm"
       type="button"
       variant="outline"
-      onClick={() => props.onExcludedCellsChange([])}
+      onClick={() => props.onExcludedPatternsChange([])}
     >
       Reset
     </Button>
@@ -84,11 +84,11 @@ export function AlignSelectionRail(props: AlignSelectionRailProps) {
   const ExcludeAllControl = () => (
     <Button
       class="w-full justify-center text-xs"
-      disabled={disabled() || !hasVisibleCells()}
+      disabled={disabled() || !hasVisiblePatterns()}
       size="sm"
       type="button"
       variant="outline"
-      onClick={() => props.onExcludedCellsChange(visibleCells())}
+      onClick={() => props.onExcludedPatternsChange(visiblePatterns())}
     >
       Exclude all
     </Button>
@@ -96,16 +96,16 @@ export function AlignSelectionRail(props: AlignSelectionRailProps) {
   const EdgeExcludeControl = () => (
     <Button
       class="w-full justify-center text-xs"
-      disabled={disabled() || !hasVisibleCells()}
+      disabled={disabled() || !hasVisiblePatterns()}
       size="sm"
       type="button"
       variant="outline"
       onClick={() => {
         if (!props.frame) return;
-        props.onExcludedCellsChange(
-          mergeExcludedAlignGridCells(
-            props.excludedCells,
-            collectAlignGridEdgeCells(props.frame, props.grid),
+        props.onExcludedPatternsChange(
+          mergeExcludedAlignGridPatterns(
+            props.excludedPatterns,
+            collectAlignGridEdgePatterns(props.frame, props.grid),
           ),
         );
       }}
@@ -116,7 +116,7 @@ export function AlignSelectionRail(props: AlignSelectionRailProps) {
   const VariationExcludeControl = () => (
     <Button
       class="w-full justify-center text-xs"
-      disabled={disabled() || !hasVisibleCells() || variationExcludeLoading()}
+      disabled={disabled() || !hasVisiblePatterns() || variationExcludeLoading()}
       size="sm"
       type="button"
       variant="outline"
@@ -129,7 +129,7 @@ export function AlignSelectionRail(props: AlignSelectionRailProps) {
     <Button
       class="w-full justify-center text-xs"
       disabled={
-        disabled() || !hasVisibleCells() || variationExcludeLoading() || smartExcludeLoading()
+        disabled() || !hasVisiblePatterns() || variationExcludeLoading() || smartExcludeLoading()
       }
       size="sm"
       type="button"

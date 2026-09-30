@@ -32,10 +32,10 @@ export function createRequestSmartExcludeProvider(
         source,
         request: context.selection(),
         contrast: context.contrast(),
-        cells: [...input.cells],
+        patterns: [...input.patterns],
         threshold: options?.threshold,
       });
-      return response.excludedCells;
+      return response.excludedPatterns;
     },
   };
 }

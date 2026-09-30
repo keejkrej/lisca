@@ -38,7 +38,11 @@ Live header is exactly **`roi, x, y, w, h`** (integers, top-left origin,
 `w`/`h` > 0; column names, order may vary).
 
 The bbox CSV is an **export artifact**. Grid `i,j` lives in
-`align/Pos{n}.json` (`excludedCells` / grid state), not in this file.
+`align/Pos{n}.json` (`excludedPatterns` / grid state), not in this file.
+Older align files named these `excludedCells` and `grid.cellWidth` /
+`grid.cellHeight`; `migrate_workspace` rewrites them to `excludedPatterns` and
+`grid.patternWidth` / `grid.patternHeight` on open (a file with both names is an
+error).
 
 - Parser: `lisca.core.bbox.parse_bbox_csv` (Python) /
   `lisca_workspace::parse_bbox_csv` (Rust). Crop and `load_bbox_rows` call this

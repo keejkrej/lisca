@@ -15,54 +15,54 @@ export const AlignGridStateSchema = Schema.Struct({
   rotation: F64,
   spacingA: F64,
   spacingB: F64,
-  cellWidth: F64,
-  cellHeight: F64,
+  patternWidth: F64,
+  patternHeight: F64,
   opacity: F64,
 }).annotate({ identifier: "AlignGridState" });
 
-export const AlignGridCellCoordSchema = Schema.Struct({
+export const AlignGridPatternCoordSchema = Schema.Struct({
   i: I32,
   j: I32,
-}).annotate({ identifier: "AlignGridCellCoord" });
+}).annotate({ identifier: "AlignGridPatternCoord" });
 
 export const SavedAlignStateSchema = Schema.Struct({
   grid: AlignGridStateSchema,
-  excludedCells: Schema.mutable(Schema.Array(AlignGridCellCoordSchema)),
+  excludedPatterns: Schema.mutable(Schema.Array(AlignGridPatternCoordSchema)),
 }).annotate({ identifier: "SavedAlignState" });
 
 export const NullableSavedAlignStateSchema = Schema.NullOr(SavedAlignStateSchema);
 
 export const UIntArraySchema = NumArray;
 
-export const AutoExcludePreviewCellSchema = Schema.Struct({
+export const AlignGridPatternBoxSchema = Schema.Struct({
   i: I32,
   j: I32,
   x: U32,
   y: U32,
   w: U32,
   h: U32,
-}).annotate({ identifier: "AutoExcludePreviewCell" });
+}).annotate({ identifier: "AlignGridPatternBox" });
 
-export const AutoExcludePreviewCellScoreSchema = Schema.Struct({
+export const VariationExcludePatternScoreSchema = Schema.Struct({
   i: I32,
   j: I32,
   score: F64,
-}).annotate({ identifier: "AutoExcludePreviewCellScore" });
+}).annotate({ identifier: "VariationExcludePatternScore" });
 
-export const AutoExcludeHistogramBinSchema = Schema.Struct({
+export const VariationExcludeHistogramBinSchema = Schema.Struct({
   start: F64,
   end: F64,
   count: U32,
-}).annotate({ identifier: "AutoExcludeHistogramBin" });
+}).annotate({ identifier: "VariationExcludeHistogramBin" });
 
-export const AutoExcludePreviewResponseSchema = Schema.Struct({
-  eligibleCellCount: U32,
-  cellScores: Schema.mutable(Schema.Array(AutoExcludePreviewCellScoreSchema)),
-  histogramBins: Schema.mutable(Schema.Array(AutoExcludeHistogramBinSchema)),
+export const VariationExcludePreviewResponseSchema = Schema.Struct({
+  eligiblePatternCount: U32,
+  patternScores: Schema.mutable(Schema.Array(VariationExcludePatternScoreSchema)),
+  histogramBins: Schema.mutable(Schema.Array(VariationExcludeHistogramBinSchema)),
   scoreMin: F64,
   scoreMax: F64,
   threshold: F64,
-}).annotate({ identifier: "AutoExcludePreviewResponse" });
+}).annotate({ identifier: "VariationExcludePreviewResponse" });
 
 export const SaveBboxResponseSchema = Schema.Struct({
   ok: Schema.Boolean,
@@ -179,12 +179,12 @@ export const LatestCropQuerySchema = Schema.Struct({
 
 export type AlignGridShape = typeof AlignGridShapeSchema.Type;
 export type AlignGridState = typeof AlignGridStateSchema.Type;
-export type AlignGridCellCoord = typeof AlignGridCellCoordSchema.Type;
+export type AlignGridPatternCoord = typeof AlignGridPatternCoordSchema.Type;
 export type SavedAlignState = typeof SavedAlignStateSchema.Type;
-export type AutoExcludePreviewCell = typeof AutoExcludePreviewCellSchema.Type;
-export type AutoExcludePreviewCellScore = typeof AutoExcludePreviewCellScoreSchema.Type;
-export type AutoExcludeHistogramBin = typeof AutoExcludeHistogramBinSchema.Type;
-export type AutoExcludePreviewResponse = typeof AutoExcludePreviewResponseSchema.Type;
+export type AlignGridPatternBox = typeof AlignGridPatternBoxSchema.Type;
+export type VariationExcludePatternScore = typeof VariationExcludePatternScoreSchema.Type;
+export type VariationExcludeHistogramBin = typeof VariationExcludeHistogramBinSchema.Type;
+export type VariationExcludePreviewResponse = typeof VariationExcludePreviewResponseSchema.Type;
 export type SaveBboxResponse = typeof SaveBboxResponseSchema.Type;
 export type AlignOutputPaths = typeof AlignOutputPathsSchema.Type;
 export type CropOutputFormat = typeof CropOutputFormatSchema.Type;

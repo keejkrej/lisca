@@ -34,7 +34,7 @@ export function SmartExcludeModelDialog(props: SmartExcludeModelDialogProps) {
           <div class="font-medium text-foreground">Smart exclude model</div>
           <p class="mt-2 text-muted-foreground text-sm">
             {consent()
-              ? "Smart exclude needs a one-time download of the ResNet classifier (~45 MB) before it can score cells."
+              ? "Smart exclude needs a one-time download of the ResNet classifier (~45 MB) before it can score patterns."
               : loading()
                 ? props.state.requiresDownload
                   ? "Downloading the smart exclusion model to your browser."

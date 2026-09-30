@@ -1,4 +1,4 @@
-import type { AlignGridCellCoord, AlignGridState } from "@lisca/contracts";
+import type { AlignGridPatternCoord, AlignGridState } from "@lisca/contracts";
 import type { AlignGridFrameBounds } from "@lisca/utils";
 import { normalizeAlignGridState } from "@lisca/utils";
 import { render } from "@solidjs/testing-library";
@@ -13,13 +13,13 @@ const grid: AlignGridState = normalizeAlignGridState({
   enabled: true,
   spacingA: 50,
   spacingB: 50,
-  cellWidth: 50,
-  cellHeight: 50,
+  patternWidth: 50,
+  patternHeight: 50,
   tx: 0,
   ty: 0,
 });
 
-const cellKey = (cell: AlignGridCellCoord): string => `${cell.i}:${cell.j}`;
+const patternKey = (pattern: AlignGridPatternCoord): string => `${pattern.i}:${pattern.j}`;
 
 function makePointer(
   pointerId: number,
@@ -43,9 +43,9 @@ function makePointer(
 type SelectionHandlers = ReturnType<typeof useAlignCanvasSelectionHandlers>;
 
 function setupBrushHandlers() {
-  let latest: AlignGridCellCoord[] = [];
-  const onExcludedCellsChange = vi.fn((cells: AlignGridCellCoord[]) => {
-    latest = cells;
+  let latest: AlignGridPatternCoord[] = [];
+  const onExcludedPatternsChange = vi.fn((patterns: AlignGridPatternCoord[]) => {
+    latest = patterns;
   });
   let captured!: SelectionHandlers;
   render(() => {
@@ -54,8 +54,8 @@ function setupBrushHandlers() {
       disabled: false,
       frame,
       grid,
-      excludedCells: latest,
-      onExcludedCellsChange,
+      excludedPatterns: latest,
+      onExcludedPatternsChange,
     }));
     return null;
   });
@@ -69,10 +69,10 @@ describe("useAlignCanvasSelectionHandlers", () => {
     // Pointer 1 starts the stroke and toggles (-1,0) on down, then (0,0) on move.
     expect(captured.handlePointerDown(makePointer(1, { x: 1, y: 30 }))).toBe(true);
     expect(captured.handlePointerMove(makePointer(1, { x: 60, y: 30 }))).toBe(true);
-    expect(getLatest().map(cellKey).toSorted()).toEqual(["-1:0", "0:0"]);
+    expect(getLatest().map(patternKey).toSorted()).toEqual(["-1:0", "0:0"]);
     expect(captured.selecting()).toBe(true);
 
-    // Pointer 2 goes down on a visible cell mid-stroke: must be rejected, not clobber.
+    // Pointer 2 goes down on a visible pattern mid-stroke: must be rejected, not clobber.
     const before = [...getLatest()];
     const down2 = makePointer(2, { x: 1, y: 80 });
     expect(captured.handlePointerDown(down2)).toBe(false);
@@ -83,7 +83,7 @@ describe("useAlignCanvasSelectionHandlers", () => {
 
     // Pointer 1 continues dragging and toggles (0,1) — its session survived the second down.
     expect(captured.handlePointerMove(makePointer(1, { x: 60, y: 80 }))).toBe(true);
-    expect(getLatest().map(cellKey).toSorted()).toEqual(["-1:0", "0:0", "0:1"]);
+    expect(getLatest().map(patternKey).toSorted()).toEqual(["-1:0", "0:0", "0:1"]);
 
     // Pointer 2's move is a no-op (it never captured the session).
     const before2 = [...getLatest()];
@@ -111,9 +111,9 @@ describe("useAlignCanvasSelectionHandlers", () => {
 
 describe("useAlignCanvasSelectionHandlers via useAlignCanvasPointerHandlers", () => {
   it("rejects a second touch while a manual-exclusion brush stroke is in flight", () => {
-    let latest: AlignGridCellCoord[] = [];
-    const onExcludedCellsChange = vi.fn((cells: AlignGridCellCoord[]) => {
-      latest = cells;
+    let latest: AlignGridPatternCoord[] = [];
+    const onExcludedPatternsChange = vi.fn((patterns: AlignGridPatternCoord[]) => {
+      latest = patterns;
     });
     let handlers!: ReturnType<typeof useAlignCanvasPointerHandlers>;
     render(() => {
@@ -122,28 +122,28 @@ describe("useAlignCanvasSelectionHandlers via useAlignCanvasPointerHandlers", ()
         setGrid: vi.fn(),
         toolMode: "pan",
         manualExclusionEnabled: true,
-        excludedCells: latest,
+        excludedPatterns: latest,
         frame,
-        onExcludedCellsChange,
+        onExcludedPatternsChange,
       }));
       return null;
     });
 
-    // Pointer 1 starts the brush and drags across two cells.
+    // Pointer 1 starts the brush and drags across two patterns.
     handlers.handlePointerDown(makePointer(1, { x: 1, y: 30 }));
     handlers.handlePointerMove(makePointer(1, { x: 60, y: 30 }));
     expect(handlers.selecting()).toBe(true);
     expect(handlers.dragging()).toBe(false);
     expect(handlers.cursor()).toBe("crosshair");
-    expect(latest.map(cellKey).toSorted()).toEqual(["-1:0", "0:0"]);
+    expect(latest.map(patternKey).toSorted()).toEqual(["-1:0", "0:0"]);
 
-    // A second touch lands on a visible cell mid-stroke; the wrapper must not let it clobber.
+    // A second touch lands on a visible pattern mid-stroke; the wrapper must not let it clobber.
     handlers.handlePointerDown(makePointer(2, { x: 1, y: 80 }));
     expect(handlers.selecting()).toBe(true);
 
-    // Pointer 1 keeps dragging and the (0,1) cell is toggled — no silent drop.
+    // Pointer 1 keeps dragging and the (0,1) pattern is toggled — no silent drop.
     handlers.handlePointerMove(makePointer(1, { x: 60, y: 80 }));
-    expect(latest.map(cellKey).toSorted()).toEqual(["-1:0", "0:0", "0:1"]);
+    expect(latest.map(patternKey).toSorted()).toEqual(["-1:0", "0:0", "0:1"]);
 
     // Pointer 1 ends; the session clears. Pointer 2's release is a no-op.
     handlers.handlePointerEnd(makePointer(1, { x: 60, y: 80 }));

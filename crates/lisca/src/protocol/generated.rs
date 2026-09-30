@@ -29,7 +29,69 @@ pub mod error {
         }
     }
 }
-#[doc = "`AlignGridCellCoord`"]
+#[doc = "`AlignGridPatternBox`"]
+#[doc = r""]
+#[doc = r" <details><summary>JSON schema</summary>"]
+#[doc = r""]
+#[doc = r" ```json"]
+#[doc = "{"]
+#[doc = "  \"type\": \"object\","]
+#[doc = "  \"required\": ["]
+#[doc = "    \"h\","]
+#[doc = "    \"i\","]
+#[doc = "    \"j\","]
+#[doc = "    \"w\","]
+#[doc = "    \"x\","]
+#[doc = "    \"y\""]
+#[doc = "  ],"]
+#[doc = "  \"properties\": {"]
+#[doc = "    \"h\": {"]
+#[doc = "      \"type\": \"integer\","]
+#[doc = "      \"format\": \"uint32\","]
+#[doc = "      \"minimum\": 0.0"]
+#[doc = "    },"]
+#[doc = "    \"i\": {"]
+#[doc = "      \"type\": \"integer\","]
+#[doc = "      \"format\": \"int32\""]
+#[doc = "    },"]
+#[doc = "    \"j\": {"]
+#[doc = "      \"type\": \"integer\","]
+#[doc = "      \"format\": \"int32\""]
+#[doc = "    },"]
+#[doc = "    \"w\": {"]
+#[doc = "      \"type\": \"integer\","]
+#[doc = "      \"format\": \"uint32\","]
+#[doc = "      \"minimum\": 0.0"]
+#[doc = "    },"]
+#[doc = "    \"x\": {"]
+#[doc = "      \"type\": \"integer\","]
+#[doc = "      \"format\": \"uint32\","]
+#[doc = "      \"minimum\": 0.0"]
+#[doc = "    },"]
+#[doc = "    \"y\": {"]
+#[doc = "      \"type\": \"integer\","]
+#[doc = "      \"format\": \"uint32\","]
+#[doc = "      \"minimum\": 0.0"]
+#[doc = "    }"]
+#[doc = "  }"]
+#[doc = "}"]
+#[doc = r" ```"]
+#[doc = r" </details>"]
+#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
+pub struct AlignGridPatternBox {
+    pub h: u32,
+    pub i: i32,
+    pub j: i32,
+    pub w: u32,
+    pub x: u32,
+    pub y: u32,
+}
+impl AlignGridPatternBox {
+    pub fn builder() -> builder::AlignGridPatternBox {
+        Default::default()
+    }
+}
+#[doc = "`AlignGridPatternCoord`"]
 #[doc = r""]
 #[doc = r" <details><summary>JSON schema</summary>"]
 #[doc = r""]
@@ -54,12 +116,12 @@ pub mod error {
 #[doc = r" ```"]
 #[doc = r" </details>"]
 #[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
-pub struct AlignGridCellCoord {
+pub struct AlignGridPatternCoord {
     pub i: i32,
     pub j: i32,
 }
-impl AlignGridCellCoord {
-    pub fn builder() -> builder::AlignGridCellCoord {
+impl AlignGridPatternCoord {
+    pub fn builder() -> builder::AlignGridPatternCoord {
         Default::default()
     }
 }
@@ -148,10 +210,10 @@ impl ::std::convert::TryFrom<::std::string::String> for AlignGridShape {
 #[doc = "{"]
 #[doc = "  \"type\": \"object\","]
 #[doc = "  \"required\": ["]
-#[doc = "    \"cellHeight\","]
-#[doc = "    \"cellWidth\","]
 #[doc = "    \"enabled\","]
 #[doc = "    \"opacity\","]
+#[doc = "    \"patternHeight\","]
+#[doc = "    \"patternWidth\","]
 #[doc = "    \"rotation\","]
 #[doc = "    \"shape\","]
 #[doc = "    \"spacingA\","]
@@ -160,18 +222,18 @@ impl ::std::convert::TryFrom<::std::string::String> for AlignGridShape {
 #[doc = "    \"ty\""]
 #[doc = "  ],"]
 #[doc = "  \"properties\": {"]
-#[doc = "    \"cellHeight\": {"]
-#[doc = "      \"type\": \"number\","]
-#[doc = "      \"format\": \"double\""]
-#[doc = "    },"]
-#[doc = "    \"cellWidth\": {"]
-#[doc = "      \"type\": \"number\","]
-#[doc = "      \"format\": \"double\""]
-#[doc = "    },"]
 #[doc = "    \"enabled\": {"]
 #[doc = "      \"type\": \"boolean\""]
 #[doc = "    },"]
 #[doc = "    \"opacity\": {"]
+#[doc = "      \"type\": \"number\","]
+#[doc = "      \"format\": \"double\""]
+#[doc = "    },"]
+#[doc = "    \"patternHeight\": {"]
+#[doc = "      \"type\": \"number\","]
+#[doc = "      \"format\": \"double\""]
+#[doc = "    },"]
+#[doc = "    \"patternWidth\": {"]
 #[doc = "      \"type\": \"number\","]
 #[doc = "      \"format\": \"double\""]
 #[doc = "    },"]
@@ -204,12 +266,12 @@ impl ::std::convert::TryFrom<::std::string::String> for AlignGridShape {
 #[doc = r" </details>"]
 #[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
 pub struct AlignGridState {
-    #[serde(rename = "cellHeight")]
-    pub cell_height: f64,
-    #[serde(rename = "cellWidth")]
-    pub cell_width: f64,
     pub enabled: bool,
     pub opacity: f64,
+    #[serde(rename = "patternHeight")]
+    pub pattern_height: f64,
+    #[serde(rename = "patternWidth")]
+    pub pattern_width: f64,
     pub rotation: f64,
     pub shape: AlignGridShape,
     #[serde(rename = "spacingA")]
@@ -1788,68 +1850,6 @@ pub struct AssayWorkspace {
 }
 impl AssayWorkspace {
     pub fn builder() -> builder::AssayWorkspace {
-        Default::default()
-    }
-}
-#[doc = "`AutoExcludePreviewCell`"]
-#[doc = r""]
-#[doc = r" <details><summary>JSON schema</summary>"]
-#[doc = r""]
-#[doc = r" ```json"]
-#[doc = "{"]
-#[doc = "  \"type\": \"object\","]
-#[doc = "  \"required\": ["]
-#[doc = "    \"h\","]
-#[doc = "    \"i\","]
-#[doc = "    \"j\","]
-#[doc = "    \"w\","]
-#[doc = "    \"x\","]
-#[doc = "    \"y\""]
-#[doc = "  ],"]
-#[doc = "  \"properties\": {"]
-#[doc = "    \"h\": {"]
-#[doc = "      \"type\": \"integer\","]
-#[doc = "      \"format\": \"uint32\","]
-#[doc = "      \"minimum\": 0.0"]
-#[doc = "    },"]
-#[doc = "    \"i\": {"]
-#[doc = "      \"type\": \"integer\","]
-#[doc = "      \"format\": \"int32\""]
-#[doc = "    },"]
-#[doc = "    \"j\": {"]
-#[doc = "      \"type\": \"integer\","]
-#[doc = "      \"format\": \"int32\""]
-#[doc = "    },"]
-#[doc = "    \"w\": {"]
-#[doc = "      \"type\": \"integer\","]
-#[doc = "      \"format\": \"uint32\","]
-#[doc = "      \"minimum\": 0.0"]
-#[doc = "    },"]
-#[doc = "    \"x\": {"]
-#[doc = "      \"type\": \"integer\","]
-#[doc = "      \"format\": \"uint32\","]
-#[doc = "      \"minimum\": 0.0"]
-#[doc = "    },"]
-#[doc = "    \"y\": {"]
-#[doc = "      \"type\": \"integer\","]
-#[doc = "      \"format\": \"uint32\","]
-#[doc = "      \"minimum\": 0.0"]
-#[doc = "    }"]
-#[doc = "  }"]
-#[doc = "}"]
-#[doc = r" ```"]
-#[doc = r" </details>"]
-#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
-pub struct AutoExcludePreviewCell {
-    pub h: u32,
-    pub i: i32,
-    pub j: i32,
-    pub w: u32,
-    pub x: u32,
-    pub y: u32,
-}
-impl AutoExcludePreviewCell {
-    pub fn builder() -> builder::AutoExcludePreviewCell {
         Default::default()
     }
 }
@@ -4863,14 +4863,14 @@ impl SaveRoiFrameAnnotationRequest {
 #[doc = "{"]
 #[doc = "  \"type\": \"object\","]
 #[doc = "  \"required\": ["]
-#[doc = "    \"excludedCells\","]
+#[doc = "    \"excludedPatterns\","]
 #[doc = "    \"grid\""]
 #[doc = "  ],"]
 #[doc = "  \"properties\": {"]
-#[doc = "    \"excludedCells\": {"]
+#[doc = "    \"excludedPatterns\": {"]
 #[doc = "      \"type\": \"array\","]
 #[doc = "      \"items\": {"]
-#[doc = "        \"$ref\": \"#/definitions/AlignGridCellCoord\""]
+#[doc = "        \"$ref\": \"#/definitions/AlignGridPatternCoord\""]
 #[doc = "      }"]
 #[doc = "    },"]
 #[doc = "    \"grid\": {"]
@@ -4882,8 +4882,8 @@ impl SaveRoiFrameAnnotationRequest {
 #[doc = r" </details>"]
 #[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
 pub struct SavedAlignState {
-    #[serde(rename = "excludedCells")]
-    pub excluded_cells: ::std::vec::Vec<AlignGridCellCoord>,
+    #[serde(rename = "excludedPatterns")]
+    pub excluded_patterns: ::std::vec::Vec<AlignGridPatternCoord>,
     pub grid: AlignGridState,
 }
 impl SavedAlignState {
@@ -4982,18 +4982,12 @@ impl ScanSourceRequest {
 #[doc = "{"]
 #[doc = "  \"type\": \"object\","]
 #[doc = "  \"required\": ["]
-#[doc = "    \"cells\","]
 #[doc = "    \"contrast\","]
+#[doc = "    \"patterns\","]
 #[doc = "    \"request\","]
 #[doc = "    \"source\""]
 #[doc = "  ],"]
 #[doc = "  \"properties\": {"]
-#[doc = "    \"cells\": {"]
-#[doc = "      \"type\": \"array\","]
-#[doc = "      \"items\": {"]
-#[doc = "        \"$ref\": \"#/definitions/AutoExcludePreviewCell\""]
-#[doc = "      }"]
-#[doc = "    },"]
 #[doc = "    \"contrast\": {"]
 #[doc = "      \"anyOf\": ["]
 #[doc = "        {"]
@@ -5003,6 +4997,12 @@ impl ScanSourceRequest {
 #[doc = "          \"type\": \"null\""]
 #[doc = "        }"]
 #[doc = "      ]"]
+#[doc = "    },"]
+#[doc = "    \"patterns\": {"]
+#[doc = "      \"type\": \"array\","]
+#[doc = "      \"items\": {"]
+#[doc = "        \"$ref\": \"#/definitions/AlignGridPatternBox\""]
+#[doc = "      }"]
 #[doc = "    },"]
 #[doc = "    \"request\": {"]
 #[doc = "      \"$ref\": \"#/definitions/FrameRequest\""]
@@ -5020,8 +5020,8 @@ impl ScanSourceRequest {
 #[doc = r" </details>"]
 #[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
 pub struct SmartExcludeRequest {
-    pub cells: ::std::vec::Vec<AutoExcludePreviewCell>,
     pub contrast: ::std::option::Option<ContrastWindow>,
+    pub patterns: ::std::vec::Vec<AlignGridPatternBox>,
     pub request: FrameRequest,
     pub source: AlignerSource,
     #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
@@ -5040,13 +5040,13 @@ impl SmartExcludeRequest {
 #[doc = "{"]
 #[doc = "  \"type\": \"object\","]
 #[doc = "  \"required\": ["]
-#[doc = "    \"excludedCells\""]
+#[doc = "    \"excludedPatterns\""]
 #[doc = "  ],"]
 #[doc = "  \"properties\": {"]
-#[doc = "    \"excludedCells\": {"]
+#[doc = "    \"excludedPatterns\": {"]
 #[doc = "      \"type\": \"array\","]
 #[doc = "      \"items\": {"]
-#[doc = "        \"$ref\": \"#/definitions/AlignGridCellCoord\""]
+#[doc = "        \"$ref\": \"#/definitions/AlignGridPatternCoord\""]
 #[doc = "      }"]
 #[doc = "    }"]
 #[doc = "  }"]
@@ -5055,8 +5055,8 @@ impl SmartExcludeRequest {
 #[doc = r" </details>"]
 #[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
 pub struct SmartExcludeResponse {
-    #[serde(rename = "excludedCells")]
-    pub excluded_cells: ::std::vec::Vec<AlignGridCellCoord>,
+    #[serde(rename = "excludedPatterns")]
+    pub excluded_patterns: ::std::vec::Vec<AlignGridPatternCoord>,
 }
 impl SmartExcludeResponse {
     pub fn builder() -> builder::SmartExcludeResponse {
@@ -6755,11 +6755,121 @@ impl WorkspaceScan {
 #[doc = r" Types for composing complex structures."]
 pub mod builder {
     #[derive(Clone, Debug)]
-    pub struct AlignGridCellCoord {
+    pub struct AlignGridPatternBox {
+        h: ::std::result::Result<u32, ::std::string::String>,
+        i: ::std::result::Result<i32, ::std::string::String>,
+        j: ::std::result::Result<i32, ::std::string::String>,
+        w: ::std::result::Result<u32, ::std::string::String>,
+        x: ::std::result::Result<u32, ::std::string::String>,
+        y: ::std::result::Result<u32, ::std::string::String>,
+    }
+    impl ::std::default::Default for AlignGridPatternBox {
+        fn default() -> Self {
+            Self {
+                h: Err("no value supplied for h".to_string()),
+                i: Err("no value supplied for i".to_string()),
+                j: Err("no value supplied for j".to_string()),
+                w: Err("no value supplied for w".to_string()),
+                x: Err("no value supplied for x".to_string()),
+                y: Err("no value supplied for y".to_string()),
+            }
+        }
+    }
+    impl AlignGridPatternBox {
+        pub fn h<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<u32>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.h = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for h: {e}"));
+            self
+        }
+        pub fn i<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<i32>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.i = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for i: {e}"));
+            self
+        }
+        pub fn j<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<i32>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.j = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for j: {e}"));
+            self
+        }
+        pub fn w<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<u32>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.w = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for w: {e}"));
+            self
+        }
+        pub fn x<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<u32>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.x = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for x: {e}"));
+            self
+        }
+        pub fn y<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<u32>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.y = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for y: {e}"));
+            self
+        }
+    }
+    impl ::std::convert::TryFrom<AlignGridPatternBox> for super::AlignGridPatternBox {
+        type Error = super::error::ConversionError;
+        fn try_from(
+            value: AlignGridPatternBox,
+        ) -> ::std::result::Result<Self, super::error::ConversionError> {
+            Ok(Self {
+                h: value.h?,
+                i: value.i?,
+                j: value.j?,
+                w: value.w?,
+                x: value.x?,
+                y: value.y?,
+            })
+        }
+    }
+    impl ::std::convert::From<super::AlignGridPatternBox> for AlignGridPatternBox {
+        fn from(value: super::AlignGridPatternBox) -> Self {
+            Self {
+                h: Ok(value.h),
+                i: Ok(value.i),
+                j: Ok(value.j),
+                w: Ok(value.w),
+                x: Ok(value.x),
+                y: Ok(value.y),
+            }
+        }
+    }
+    #[derive(Clone, Debug)]
+    pub struct AlignGridPatternCoord {
         i: ::std::result::Result<i32, ::std::string::String>,
         j: ::std::result::Result<i32, ::std::string::String>,
     }
-    impl ::std::default::Default for AlignGridCellCoord {
+    impl ::std::default::Default for AlignGridPatternCoord {
         fn default() -> Self {
             Self {
                 i: Err("no value supplied for i".to_string()),
@@ -6767,7 +6877,7 @@ pub mod builder {
             }
         }
     }
-    impl AlignGridCellCoord {
+    impl AlignGridPatternCoord {
         pub fn i<T>(mut self, value: T) -> Self
         where
             T: ::std::convert::TryInto<i32>,
@@ -6789,10 +6899,10 @@ pub mod builder {
             self
         }
     }
-    impl ::std::convert::TryFrom<AlignGridCellCoord> for super::AlignGridCellCoord {
+    impl ::std::convert::TryFrom<AlignGridPatternCoord> for super::AlignGridPatternCoord {
         type Error = super::error::ConversionError;
         fn try_from(
-            value: AlignGridCellCoord,
+            value: AlignGridPatternCoord,
         ) -> ::std::result::Result<Self, super::error::ConversionError> {
             Ok(Self {
                 i: value.i?,
@@ -6800,8 +6910,8 @@ pub mod builder {
             })
         }
     }
-    impl ::std::convert::From<super::AlignGridCellCoord> for AlignGridCellCoord {
-        fn from(value: super::AlignGridCellCoord) -> Self {
+    impl ::std::convert::From<super::AlignGridPatternCoord> for AlignGridPatternCoord {
+        fn from(value: super::AlignGridPatternCoord) -> Self {
             Self {
                 i: Ok(value.i),
                 j: Ok(value.j),
@@ -6810,10 +6920,10 @@ pub mod builder {
     }
     #[derive(Clone, Debug)]
     pub struct AlignGridState {
-        cell_height: ::std::result::Result<f64, ::std::string::String>,
-        cell_width: ::std::result::Result<f64, ::std::string::String>,
         enabled: ::std::result::Result<bool, ::std::string::String>,
         opacity: ::std::result::Result<f64, ::std::string::String>,
+        pattern_height: ::std::result::Result<f64, ::std::string::String>,
+        pattern_width: ::std::result::Result<f64, ::std::string::String>,
         rotation: ::std::result::Result<f64, ::std::string::String>,
         shape: ::std::result::Result<super::AlignGridShape, ::std::string::String>,
         spacing_a: ::std::result::Result<f64, ::std::string::String>,
@@ -6824,10 +6934,10 @@ pub mod builder {
     impl ::std::default::Default for AlignGridState {
         fn default() -> Self {
             Self {
-                cell_height: Err("no value supplied for cell_height".to_string()),
-                cell_width: Err("no value supplied for cell_width".to_string()),
                 enabled: Err("no value supplied for enabled".to_string()),
                 opacity: Err("no value supplied for opacity".to_string()),
+                pattern_height: Err("no value supplied for pattern_height".to_string()),
+                pattern_width: Err("no value supplied for pattern_width".to_string()),
                 rotation: Err("no value supplied for rotation".to_string()),
                 shape: Err("no value supplied for shape".to_string()),
                 spacing_a: Err("no value supplied for spacing_a".to_string()),
@@ -6838,26 +6948,6 @@ pub mod builder {
         }
     }
     impl AlignGridState {
-        pub fn cell_height<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<f64>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.cell_height = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for cell_height: {e}"));
-            self
-        }
-        pub fn cell_width<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<f64>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.cell_width = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for cell_width: {e}"));
-            self
-        }
         pub fn enabled<T>(mut self, value: T) -> Self
         where
             T: ::std::convert::TryInto<bool>,
@@ -6876,6 +6966,26 @@ pub mod builder {
             self.opacity = value
                 .try_into()
                 .map_err(|e| format!("error converting supplied value for opacity: {e}"));
+            self
+        }
+        pub fn pattern_height<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<f64>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.pattern_height = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for pattern_height: {e}"));
+            self
+        }
+        pub fn pattern_width<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<f64>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.pattern_width = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for pattern_width: {e}"));
             self
         }
         pub fn rotation<T>(mut self, value: T) -> Self
@@ -6945,10 +7055,10 @@ pub mod builder {
             value: AlignGridState,
         ) -> ::std::result::Result<Self, super::error::ConversionError> {
             Ok(Self {
-                cell_height: value.cell_height?,
-                cell_width: value.cell_width?,
                 enabled: value.enabled?,
                 opacity: value.opacity?,
+                pattern_height: value.pattern_height?,
+                pattern_width: value.pattern_width?,
                 rotation: value.rotation?,
                 shape: value.shape?,
                 spacing_a: value.spacing_a?,
@@ -6961,10 +7071,10 @@ pub mod builder {
     impl ::std::convert::From<super::AlignGridState> for AlignGridState {
         fn from(value: super::AlignGridState) -> Self {
             Self {
-                cell_height: Ok(value.cell_height),
-                cell_width: Ok(value.cell_width),
                 enabled: Ok(value.enabled),
                 opacity: Ok(value.opacity),
+                pattern_height: Ok(value.pattern_height),
+                pattern_width: Ok(value.pattern_width),
                 rotation: Ok(value.rotation),
                 shape: Ok(value.shape),
                 spacing_a: Ok(value.spacing_a),
@@ -8141,116 +8251,6 @@ pub mod builder {
         fn from(value: super::AssayWorkspace) -> Self {
             Self {
                 path: Ok(value.path),
-            }
-        }
-    }
-    #[derive(Clone, Debug)]
-    pub struct AutoExcludePreviewCell {
-        h: ::std::result::Result<u32, ::std::string::String>,
-        i: ::std::result::Result<i32, ::std::string::String>,
-        j: ::std::result::Result<i32, ::std::string::String>,
-        w: ::std::result::Result<u32, ::std::string::String>,
-        x: ::std::result::Result<u32, ::std::string::String>,
-        y: ::std::result::Result<u32, ::std::string::String>,
-    }
-    impl ::std::default::Default for AutoExcludePreviewCell {
-        fn default() -> Self {
-            Self {
-                h: Err("no value supplied for h".to_string()),
-                i: Err("no value supplied for i".to_string()),
-                j: Err("no value supplied for j".to_string()),
-                w: Err("no value supplied for w".to_string()),
-                x: Err("no value supplied for x".to_string()),
-                y: Err("no value supplied for y".to_string()),
-            }
-        }
-    }
-    impl AutoExcludePreviewCell {
-        pub fn h<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<u32>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.h = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for h: {e}"));
-            self
-        }
-        pub fn i<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<i32>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.i = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for i: {e}"));
-            self
-        }
-        pub fn j<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<i32>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.j = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for j: {e}"));
-            self
-        }
-        pub fn w<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<u32>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.w = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for w: {e}"));
-            self
-        }
-        pub fn x<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<u32>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.x = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for x: {e}"));
-            self
-        }
-        pub fn y<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<u32>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.y = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for y: {e}"));
-            self
-        }
-    }
-    impl ::std::convert::TryFrom<AutoExcludePreviewCell> for super::AutoExcludePreviewCell {
-        type Error = super::error::ConversionError;
-        fn try_from(
-            value: AutoExcludePreviewCell,
-        ) -> ::std::result::Result<Self, super::error::ConversionError> {
-            Ok(Self {
-                h: value.h?,
-                i: value.i?,
-                j: value.j?,
-                w: value.w?,
-                x: value.x?,
-                y: value.y?,
-            })
-        }
-    }
-    impl ::std::convert::From<super::AutoExcludePreviewCell> for AutoExcludePreviewCell {
-        fn from(value: super::AutoExcludePreviewCell) -> Self {
-            Self {
-                h: Ok(value.h),
-                i: Ok(value.i),
-                j: Ok(value.j),
-                w: Ok(value.w),
-                x: Ok(value.x),
-                y: Ok(value.y),
             }
         }
     }
@@ -11739,8 +11739,8 @@ pub mod builder {
     }
     #[derive(Clone, Debug)]
     pub struct SavedAlignState {
-        excluded_cells: ::std::result::Result<
-            ::std::vec::Vec<super::AlignGridCellCoord>,
+        excluded_patterns: ::std::result::Result<
+            ::std::vec::Vec<super::AlignGridPatternCoord>,
             ::std::string::String,
         >,
         grid: ::std::result::Result<super::AlignGridState, ::std::string::String>,
@@ -11748,20 +11748,20 @@ pub mod builder {
     impl ::std::default::Default for SavedAlignState {
         fn default() -> Self {
             Self {
-                excluded_cells: Err("no value supplied for excluded_cells".to_string()),
+                excluded_patterns: Err("no value supplied for excluded_patterns".to_string()),
                 grid: Err("no value supplied for grid".to_string()),
             }
         }
     }
     impl SavedAlignState {
-        pub fn excluded_cells<T>(mut self, value: T) -> Self
+        pub fn excluded_patterns<T>(mut self, value: T) -> Self
         where
-            T: ::std::convert::TryInto<::std::vec::Vec<super::AlignGridCellCoord>>,
+            T: ::std::convert::TryInto<::std::vec::Vec<super::AlignGridPatternCoord>>,
             T::Error: ::std::fmt::Display,
         {
-            self.excluded_cells = value
+            self.excluded_patterns = value
                 .try_into()
-                .map_err(|e| format!("error converting supplied value for excluded_cells: {e}"));
+                .map_err(|e| format!("error converting supplied value for excluded_patterns: {e}"));
             self
         }
         pub fn grid<T>(mut self, value: T) -> Self
@@ -11781,7 +11781,7 @@ pub mod builder {
             value: SavedAlignState,
         ) -> ::std::result::Result<Self, super::error::ConversionError> {
             Ok(Self {
-                excluded_cells: value.excluded_cells?,
+                excluded_patterns: value.excluded_patterns?,
                 grid: value.grid?,
             })
         }
@@ -11789,7 +11789,7 @@ pub mod builder {
     impl ::std::convert::From<super::SavedAlignState> for SavedAlignState {
         fn from(value: super::SavedAlignState) -> Self {
             Self {
-                excluded_cells: Ok(value.excluded_cells),
+                excluded_patterns: Ok(value.excluded_patterns),
                 grid: Ok(value.grid),
             }
         }
@@ -11916,12 +11916,12 @@ pub mod builder {
     }
     #[derive(Clone, Debug)]
     pub struct SmartExcludeRequest {
-        cells: ::std::result::Result<
-            ::std::vec::Vec<super::AutoExcludePreviewCell>,
-            ::std::string::String,
-        >,
         contrast: ::std::result::Result<
             ::std::option::Option<super::ContrastWindow>,
+            ::std::string::String,
+        >,
+        patterns: ::std::result::Result<
+            ::std::vec::Vec<super::AlignGridPatternBox>,
             ::std::string::String,
         >,
         request: ::std::result::Result<super::FrameRequest, ::std::string::String>,
@@ -11931,8 +11931,8 @@ pub mod builder {
     impl ::std::default::Default for SmartExcludeRequest {
         fn default() -> Self {
             Self {
-                cells: Err("no value supplied for cells".to_string()),
                 contrast: Err("no value supplied for contrast".to_string()),
+                patterns: Err("no value supplied for patterns".to_string()),
                 request: Err("no value supplied for request".to_string()),
                 source: Err("no value supplied for source".to_string()),
                 threshold: Ok(Default::default()),
@@ -11940,16 +11940,6 @@ pub mod builder {
         }
     }
     impl SmartExcludeRequest {
-        pub fn cells<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<::std::vec::Vec<super::AutoExcludePreviewCell>>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.cells = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for cells: {e}"));
-            self
-        }
         pub fn contrast<T>(mut self, value: T) -> Self
         where
             T: ::std::convert::TryInto<::std::option::Option<super::ContrastWindow>>,
@@ -11958,6 +11948,16 @@ pub mod builder {
             self.contrast = value
                 .try_into()
                 .map_err(|e| format!("error converting supplied value for contrast: {e}"));
+            self
+        }
+        pub fn patterns<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::vec::Vec<super::AlignGridPatternBox>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.patterns = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for patterns: {e}"));
             self
         }
         pub fn request<T>(mut self, value: T) -> Self
@@ -11997,8 +11997,8 @@ pub mod builder {
             value: SmartExcludeRequest,
         ) -> ::std::result::Result<Self, super::error::ConversionError> {
             Ok(Self {
-                cells: value.cells?,
                 contrast: value.contrast?,
+                patterns: value.patterns?,
                 request: value.request?,
                 source: value.source?,
                 threshold: value.threshold?,
@@ -12008,8 +12008,8 @@ pub mod builder {
     impl ::std::convert::From<super::SmartExcludeRequest> for SmartExcludeRequest {
         fn from(value: super::SmartExcludeRequest) -> Self {
             Self {
-                cells: Ok(value.cells),
                 contrast: Ok(value.contrast),
+                patterns: Ok(value.patterns),
                 request: Ok(value.request),
                 source: Ok(value.source),
                 threshold: Ok(value.threshold),
@@ -12018,27 +12018,27 @@ pub mod builder {
     }
     #[derive(Clone, Debug)]
     pub struct SmartExcludeResponse {
-        excluded_cells: ::std::result::Result<
-            ::std::vec::Vec<super::AlignGridCellCoord>,
+        excluded_patterns: ::std::result::Result<
+            ::std::vec::Vec<super::AlignGridPatternCoord>,
             ::std::string::String,
         >,
     }
     impl ::std::default::Default for SmartExcludeResponse {
         fn default() -> Self {
             Self {
-                excluded_cells: Err("no value supplied for excluded_cells".to_string()),
+                excluded_patterns: Err("no value supplied for excluded_patterns".to_string()),
             }
         }
     }
     impl SmartExcludeResponse {
-        pub fn excluded_cells<T>(mut self, value: T) -> Self
+        pub fn excluded_patterns<T>(mut self, value: T) -> Self
         where
-            T: ::std::convert::TryInto<::std::vec::Vec<super::AlignGridCellCoord>>,
+            T: ::std::convert::TryInto<::std::vec::Vec<super::AlignGridPatternCoord>>,
             T::Error: ::std::fmt::Display,
         {
-            self.excluded_cells = value
+            self.excluded_patterns = value
                 .try_into()
-                .map_err(|e| format!("error converting supplied value for excluded_cells: {e}"));
+                .map_err(|e| format!("error converting supplied value for excluded_patterns: {e}"));
             self
         }
     }
@@ -12048,14 +12048,14 @@ pub mod builder {
             value: SmartExcludeResponse,
         ) -> ::std::result::Result<Self, super::error::ConversionError> {
             Ok(Self {
-                excluded_cells: value.excluded_cells?,
+                excluded_patterns: value.excluded_patterns?,
             })
         }
     }
     impl ::std::convert::From<super::SmartExcludeResponse> for SmartExcludeResponse {
         fn from(value: super::SmartExcludeResponse) -> Self {
             Self {
-                excluded_cells: Ok(value.excluded_cells),
+                excluded_patterns: Ok(value.excluded_patterns),
             }
         }
     }

@@ -147,7 +147,7 @@ fn build_transfection_task(
     let interval = lisca::analysis::assays::transfection::interval_minutes(&assay)
         .unwrap_or(lisca::analysis::assays::transfection::DEFAULT_INTERVAL_MINUTES);
     let max_onset = lisca::analysis::assays::transfection::max_onset_minutes(&assay);
-    // `analysis.skipSegment` measures every pixel of the site. That area is the
+    // `analysis.skipSegment` measures every pixel of the ROI. That area is the
     // crop size, so it stays constant across time. The masked path segments first.
     let full_frame = transfection::skip_segment(&assay);
     let mut steps = Vec::new();
@@ -752,7 +752,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn transfection_skip_segment_measures_the_full_site_without_masks() {
+    async fn transfection_skip_segment_measures_the_full_roi_without_masks() {
         let state = TestState::new();
         let workspace = graph_workspace(AssayType::Transfection);
         let assay_path = workspace.join("assay.json");

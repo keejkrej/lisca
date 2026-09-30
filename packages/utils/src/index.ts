@@ -1,4 +1,4 @@
-export * from "./auto-exclude";
+export * from "./variation-exclude";
 export * from "./crop-status";
 export * from "./app-id";
 export * from "./frame";

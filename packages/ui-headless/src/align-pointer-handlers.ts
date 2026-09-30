@@ -1,4 +1,4 @@
-import type { AlignGridCellCoord, AlignGridState } from "@lisca/contracts";
+import type { AlignGridPatternCoord, AlignGridState } from "@lisca/contracts";
 import type { AlignGridFrameBounds, AlignGridToolMode } from "@lisca/utils";
 import { createMemo, type Accessor } from "solid-js";
 
@@ -18,9 +18,9 @@ export type UseAlignCanvasPointerHandlersOptions = {
   disabled?: boolean;
   onPreviewGridChange?: () => void;
   manualExclusionEnabled: boolean;
-  excludedCells: AlignGridCellCoord[];
+  excludedPatterns: AlignGridPatternCoord[];
   frame: AlignGridFrameBounds | null;
-  onExcludedCellsChange: (cells: AlignGridCellCoord[]) => void;
+  onExcludedPatternsChange: (patterns: AlignGridPatternCoord[]) => void;
 };
 
 export function useAlignCanvasPointerHandlers(options: () => UseAlignCanvasPointerHandlersOptions) {
@@ -49,15 +49,21 @@ export function useAlignCanvasPointerHandlers(options: () => UseAlignCanvasPoint
     };
   });
   const selectionHandlers = useAlignCanvasSelectionHandlers(() => {
-    const { disabled, manualExclusionEnabled, excludedCells, frame, grid, onExcludedCellsChange } =
-      options();
+    const {
+      disabled,
+      manualExclusionEnabled,
+      excludedPatterns,
+      frame,
+      grid,
+      onExcludedPatternsChange,
+    } = options();
     return {
       disabled,
       enabled: manualExclusionEnabled,
-      excludedCells,
+      excludedPatterns,
       frame,
       grid,
-      onExcludedCellsChange,
+      onExcludedPatternsChange,
     };
   });
 

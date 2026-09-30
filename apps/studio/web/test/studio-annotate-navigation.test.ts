@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vite-plus/test";
 
 import {
-  nextStudioAnnotateSite,
-  previousStudioAnnotateSite,
+  nextStudioAnnotateRoi,
+  previousStudioAnnotateRoi,
 } from "../src/state/studio-annotate-navigation";
 
 const scan = {
@@ -21,32 +21,32 @@ function roi(value: number) {
   };
 }
 
-describe("nextStudioAnnotateSite", () => {
+describe("nextStudioAnnotateRoi", () => {
   it("advances within the current position", () => {
-    expect(nextStudioAnnotateSite(scan, { pos: 2, roi: 4 })).toEqual({ pos: 2, roi: 8 });
+    expect(nextStudioAnnotateRoi(scan, { pos: 2, roi: 4 })).toEqual({ pos: 2, roi: 8 });
   });
 
   it("advances to the next non-empty position", () => {
-    expect(nextStudioAnnotateSite(scan, { pos: 2, roi: 8 })).toEqual({ pos: 7, roi: 1 });
+    expect(nextStudioAnnotateRoi(scan, { pos: 2, roi: 8 })).toEqual({ pos: 7, roi: 1 });
   });
 
-  it("does not wrap after the final site", () => {
-    expect(nextStudioAnnotateSite(scan, { pos: 7, roi: 1 })).toBeNull();
+  it("does not wrap after the final ROI", () => {
+    expect(nextStudioAnnotateRoi(scan, { pos: 7, roi: 1 })).toBeNull();
   });
 
-  it("recovers an unknown selection at the first available site", () => {
-    expect(nextStudioAnnotateSite(scan, { pos: 99, roi: 99 })).toEqual({ pos: 2, roi: 4 });
+  it("recovers an unknown selection at the first available ROI", () => {
+    expect(nextStudioAnnotateRoi(scan, { pos: 99, roi: 99 })).toEqual({ pos: 2, roi: 4 });
   });
 });
 
-describe("previousStudioAnnotateSite", () => {
+describe("previousStudioAnnotateRoi", () => {
   it("steps back within a position and across empty positions", () => {
-    expect(previousStudioAnnotateSite(scan, { pos: 2, roi: 8 })).toEqual({ pos: 2, roi: 4 });
-    expect(previousStudioAnnotateSite(scan, { pos: 7, roi: 1 })).toEqual({ pos: 2, roi: 8 });
+    expect(previousStudioAnnotateRoi(scan, { pos: 2, roi: 8 })).toEqual({ pos: 2, roi: 4 });
+    expect(previousStudioAnnotateRoi(scan, { pos: 7, roi: 1 })).toEqual({ pos: 2, roi: 8 });
   });
 
-  it("does not wrap before the first site or guess for unknown selections", () => {
-    expect(previousStudioAnnotateSite(scan, { pos: 2, roi: 4 })).toBeNull();
-    expect(previousStudioAnnotateSite(scan, { pos: null, roi: null })).toBeNull();
+  it("does not wrap before the first ROI or guess for unknown selections", () => {
+    expect(previousStudioAnnotateRoi(scan, { pos: 2, roi: 4 })).toBeNull();
+    expect(previousStudioAnnotateRoi(scan, { pos: null, roi: null })).toBeNull();
   });
 });

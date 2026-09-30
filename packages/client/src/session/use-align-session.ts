@@ -1,8 +1,8 @@
 import type {
-  AlignGridCellCoord,
+  AlignGridPatternCoord,
   AlignGridState,
   AlignerSource,
-  AutoExcludePreviewResponse,
+  VariationExcludePreviewResponse,
   ContrastWindow,
   CropRoiProgress,
   FrameRequest,
@@ -13,11 +13,11 @@ import type { FrameResult } from "@lisca/utils";
 import {
   alignStateFromCurrent,
   buildBboxCsv,
-  collectAlignGridEdgeCells,
-  computeAutoExcludePreview,
-  countVisibleAlignGridCells,
-  enumerateVisibleAlignGridCells,
-  mergeExcludedAlignGridCells,
+  collectAlignGridEdgePatterns,
+  computeVariationExcludePreview,
+  countVisibleAlignGridPatterns,
+  enumerateVisibleAlignGridPatterns,
+  mergeExcludedAlignGridPatterns,
   type AlignGridToolMode,
 } from "@lisca/utils";
 import type { AsyncResult, Atom } from "effect/unstable/reactivity";
@@ -36,11 +36,11 @@ import {
   applyVariationExcludeWithEdge,
   cropPositionsAfterSkip,
   cropRequestIdForCancellation,
-  deriveCurrentExcludedCells,
-  deriveDisplayedExcludedCells,
+  deriveCurrentExcludedPatterns,
+  deriveDisplayedExcludedPatterns,
   deriveVisibleCounts,
   isCropping,
-  mergeAutoExcludedAlignCells,
+  mergeEdgeAndVariationExcludedPatterns,
   runCropRoi,
   shouldApplySourceScan,
   updateVariationExcludeThreshold,
@@ -77,7 +77,7 @@ export type AlignSessionActions = {
   setSpacingZoomLocked: (locked: boolean) => void;
   setPatternZoomLocked: (locked: boolean) => void;
   setManualExclusionEnabled: (enabled: boolean) => void;
-  setExcludedCellsForCurrentPosition: (cells: Iterable<AlignGridCellCoord>) => void;
+  setExcludedPatternsForCurrentPosition: (patterns: Iterable<AlignGridPatternCoord>) => void;
   reportError: (message: string | null) => void;
   reportStatus: (message: string | null) => void;
 };
@@ -184,8 +184,8 @@ export function useAlignSessionCore(options: UseAlignSessionCoreOptions) {
     setSpacingZoomLocked: (locked) => actions.setSpacingZoomLocked(setUi, locked),
     setPatternZoomLocked: (locked) => actions.setPatternZoomLocked(setUi, locked),
     setManualExclusionEnabled: (enabled) => actions.setManualExclusionEnabled(setUi, enabled),
-    setExcludedCellsForCurrentPosition: (cells) =>
-      actions.setExcludedCellsForPosition(setUi, navSelection().pos, cells),
+    setExcludedPatternsForCurrentPosition: (patterns) =>
+      actions.setExcludedPatternsForPosition(setUi, navSelection().pos, patterns),
     reportError: (message) => actions.setError(setUi, message),
     reportStatus: (message) => actions.setStatus(setUi, message),
   };
@@ -338,19 +338,19 @@ export function useAlignSessionCore(options: UseAlignSessionCoreOptions) {
     const currentUi = ui();
     const selection = navSelection();
     const scanLoading = currentUi.source != null && resultLoading(scanResult());
-    const currentExcludedCells = deriveCurrentExcludedCells(
-      currentUi.excludedCellsByPosition,
+    const currentExcludedPatterns = deriveCurrentExcludedPatterns(
+      currentUi.excludedPatternsByPosition,
       selection.pos,
     );
-    const displayedExcludedCells = deriveDisplayedExcludedCells(
-      currentUi.excludedCellsByPosition,
+    const displayedExcludedPatterns = deriveDisplayedExcludedPatterns(
+      currentUi.excludedPatternsByPosition,
       currentUi.loadedFrameSelection?.pos,
       selection.pos,
     );
     const visibleCounts = deriveVisibleCounts(
       currentUi.frame,
       currentUi.grid,
-      displayedExcludedCells,
+      displayedExcludedPatterns,
     );
     const cropping = isCropping(currentUi.cropProgress);
     const meta: AlignSessionMeta = {
@@ -360,37 +360,37 @@ export function useAlignSessionCore(options: UseAlignSessionCoreOptions) {
       cropping,
     };
     return {
-      currentExcludedCells,
-      displayedExcludedCells,
+      currentExcludedPatterns,
+      displayedExcludedPatterns,
       visibleCounts,
       selection,
       meta,
     };
   });
 
-  const saveCurrent = async (excludedCells?: Iterable<AlignGridCellCoord>) => {
+  const saveCurrent = async (excludedPatterns?: Iterable<AlignGridPatternCoord>) => {
     const currentUi = ui();
     const selection = navSelection();
     const { workspacePath, frame, grid } = currentUi;
     if (!workspacePath || !frame) return false;
-    const cells = excludedCells
-      ? Array.from(excludedCells)
-      : deriveCurrentExcludedCells(currentUi.excludedCellsByPosition, selection.pos);
-    const { included } = countVisibleAlignGridCells(frame, grid, cells);
+    const patterns = excludedPatterns
+      ? Array.from(excludedPatterns)
+      : deriveCurrentExcludedPatterns(currentUi.excludedPatternsByPosition, selection.pos);
+    const { included } = countVisibleAlignGridPatterns(frame, grid, patterns);
     if (included === 0) {
-      actions.setError(setUi, "All grid cells are excluded — adjust exclusions before saving.");
+      actions.setError(setUi, "All grid patterns are excluded — adjust exclusions before saving.");
       return false;
     }
     actions.setSaving(setUi, true);
     actions.setError(setUi, null);
     try {
-      if (excludedCells) actions.setExcludedCellsForPosition(setUi, selection.pos, cells);
+      if (excludedPatterns) actions.setExcludedPatternsForPosition(setUi, selection.pos, patterns);
       const result = await runClientEffect(
         backend.client.saveBbox(
           workspacePath,
           selection.pos,
-          buildBboxCsv(frame, grid, cells),
-          alignStateFromCurrent(grid, cells),
+          buildBboxCsv(frame, grid, patterns),
+          alignStateFromCurrent(grid, patterns),
         ),
       );
       if (!result.ok) throw new Error(result.error ?? "Save failed");
@@ -404,41 +404,41 @@ export function useAlignSessionCore(options: UseAlignSessionCoreOptions) {
     }
   };
 
-  const smartExcludedCells = (modelCells: AlignGridCellCoord[]) => {
+  const smartExcludedPatterns = (modelPatterns: AlignGridPatternCoord[]) => {
     const currentUi = ui();
     if (!currentUi.frame) return null;
-    const current = deriveCurrentExcludedCells(
-      currentUi.excludedCellsByPosition,
+    const current = deriveCurrentExcludedPatterns(
+      currentUi.excludedPatternsByPosition,
       navSelection().pos,
     );
-    return mergeExcludedAlignGridCells(current, [
-      ...collectAlignGridEdgeCells(currentUi.frame, currentUi.grid),
-      ...modelCells,
+    return mergeExcludedAlignGridPatterns(current, [
+      ...collectAlignGridEdgePatterns(currentUi.frame, currentUi.grid),
+      ...modelPatterns,
     ]);
   };
 
-  const applySmartExclusion = (modelCells: AlignGridCellCoord[]) => {
-    const current = derived().currentExcludedCells;
-    const cells = smartExcludedCells(modelCells);
-    if (!cells) return;
-    sessionActions.setExcludedCellsForCurrentPosition(cells);
-    actions.setStatus(setUi, `Smart excluded ${cells.length - current.length} cells`);
+  const applySmartExclusion = (modelPatterns: AlignGridPatternCoord[]) => {
+    const current = derived().currentExcludedPatterns;
+    const patterns = smartExcludedPatterns(modelPatterns);
+    if (!patterns) return;
+    sessionActions.setExcludedPatternsForCurrentPosition(patterns);
+    actions.setStatus(setUi, `Smart excluded ${patterns.length - current.length} patterns`);
   };
 
-  const saveWithSmartExclusion = async (modelCells: AlignGridCellCoord[]) => {
-    const cells = smartExcludedCells(modelCells);
-    return cells ? saveCurrent(cells) : false;
+  const saveWithSmartExclusion = async (modelPatterns: AlignGridPatternCoord[]) => {
+    const patterns = smartExcludedPatterns(modelPatterns);
+    return patterns ? saveCurrent(patterns) : false;
   };
 
   const previewVariationExclude = async () => {
     const currentUi = ui();
     const { frame, grid } = currentUi;
     if (!frame) return null;
-    const cells = enumerateVisibleAlignGridCells(frame, grid);
-    if (cells.length === 0) return null;
+    const patterns = enumerateVisibleAlignGridPatterns(frame, grid);
+    if (patterns.length === 0) return null;
     setVariationExcludeLoading(true);
     try {
-      return computeAutoExcludePreview(frame, cells);
+      return computeVariationExcludePreview(frame, patterns);
     } finally {
       setVariationExcludeLoading(false);
     }
@@ -452,7 +452,7 @@ export function useAlignSessionCore(options: UseAlignSessionCoreOptions) {
     try {
       const preview = await previewVariationExclude();
       if (!preview) {
-        sessionActions.reportStatus("No visible cells for var exclude");
+        sessionActions.reportStatus("No visible patterns for var exclude");
         return;
       }
       setVariationExcludePreview({
@@ -483,36 +483,36 @@ export function useAlignSessionCore(options: UseAlignSessionCoreOptions) {
     const currentUi = ui();
     const { frame, grid } = currentUi;
     if (!preview || !frame) return;
-    const currentExcludedCells = derived().currentExcludedCells;
-    const applied = applyVariationExcludeWithEdge(currentExcludedCells, frame, grid, preview);
-    sessionActions.setExcludedCellsForCurrentPosition(applied.cells);
+    const currentExcludedPatterns = derived().currentExcludedPatterns;
+    const applied = applyVariationExcludeWithEdge(currentExcludedPatterns, frame, grid, preview);
+    sessionActions.setExcludedPatternsForCurrentPosition(applied.patterns);
     setVariationExcludePreview(null);
     sessionActions.reportStatus(
-      `Var excluded ${applied.variationCells.length} of ${applied.eligibleCellCount} cells`,
+      `Var excluded ${applied.variationPatterns.length} of ${applied.eligiblePatternCount} patterns`,
     );
   };
 
-  const autoExclude = async () => {
+  const excludeEdgeAndVariation = async () => {
     const currentUi = ui();
     const { source, frame, grid } = currentUi;
-    const currentExcludedCells = derived().currentExcludedCells;
+    const currentExcludedPatterns = derived().currentExcludedPatterns;
     if (!source || !frame) return;
-    sessionActions.reportStatus("Auto exclude");
+    sessionActions.reportStatus("Edge and var exclude");
     try {
       const preview = await previewVariationExclude();
-      const finalExcludedCells = mergeAutoExcludedAlignCells(
-        currentExcludedCells,
+      const finalExcludedPatterns = mergeEdgeAndVariationExcludedPatterns(
+        currentExcludedPatterns,
         frame,
         grid,
         preview,
         preview?.threshold,
       );
-      sessionActions.setExcludedCellsForCurrentPosition(finalExcludedCells);
+      sessionActions.setExcludedPatternsForCurrentPosition(finalExcludedPatterns);
       sessionActions.reportStatus(
-        `Auto excluded ${finalExcludedCells.length - currentExcludedCells.length} cells`,
+        `Edge and var excluded ${finalExcludedPatterns.length - currentExcludedPatterns.length} patterns`,
       );
     } catch (cause) {
-      sessionActions.reportError(backend.toErrorMessage(cause, "Auto exclude failed"));
+      sessionActions.reportError(backend.toErrorMessage(cause, "Edge and var exclude failed"));
     }
   };
 
@@ -670,7 +670,7 @@ export function useAlignSessionCore(options: UseAlignSessionCoreOptions) {
       preview: variationExcludePreview,
       loading: variationExcludeLoading,
       exclude: variationExclude,
-      showPreview: (preview: AutoExcludePreviewResponse) => {
+      showPreview: (preview: VariationExcludePreviewResponse) => {
         setVariationExcludePreview({
           preview,
           threshold: preview.threshold,
@@ -680,7 +680,7 @@ export function useAlignSessionCore(options: UseAlignSessionCoreOptions) {
       dismiss: dismissVariationExcludePreview,
       cancel: cancelVariationExclude,
       apply: applyVariationExclude,
-      autoExclude,
+      excludeEdgeAndVariation,
     },
   };
 }

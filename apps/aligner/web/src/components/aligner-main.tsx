@@ -1,4 +1,4 @@
-import type { AlignGridCellCoord } from "@lisca/contracts";
+import type { AlignGridPatternCoord } from "@lisca/contracts";
 import {
   AlignCanvas,
   CanvasToastStack,
@@ -20,10 +20,10 @@ export function AlignerMain() {
     spacingZoomLocked: canvas.spacingZoomLocked,
     patternZoomLocked: canvas.patternZoomLocked,
     manualExclusionEnabled: canvas.manualExclusionEnabled,
-    excludedCells: canvas.currentExcludedCells,
+    excludedPatterns: canvas.currentExcludedPatterns,
     frame: canvas.frame,
-    onExcludedCellsChange: (cells: AlignGridCellCoord[]) =>
-      canvas.setExcludedCellsForCurrentPosition(cells),
+    onExcludedPatternsChange: (patterns: AlignGridPatternCoord[]) =>
+      canvas.setExcludedPatternsForCurrentPosition(patterns),
   }));
   const visibleStatus = useCanvasTransientStatus(() => canvas.status);
   const activeToastStatus = createMemo(() =>
@@ -80,7 +80,7 @@ export function AlignerMain() {
             class="h-full w-full"
             cursor={pointer.cursor()}
             emptyText={emptyText()}
-            excludedCells={canvas.displayedExcludedCells}
+            excludedPatterns={canvas.displayedExcludedPatterns}
             frame={canvas.frame}
             grid={canvas.grid}
             toolMode={canvas.toolMode}

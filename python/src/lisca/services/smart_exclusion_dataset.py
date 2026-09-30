@@ -10,7 +10,7 @@ import numpy as np
 
 from lisca.core.align_grid import (
     FrameBounds,
-    enumerate_visible_align_grid_cells,
+    enumerate_visible_align_grid_patterns,
     filter_user_preference_excluded,
 )
 from lisca.core.frame_normalize import (
@@ -130,16 +130,18 @@ def create_smart_exclusion_dataset(options: CreateSmartExclusionDatasetOptions) 
         frame_height, frame_width = source_frame.shape[:2]
         frame = FrameBounds(width=frame_width, height=frame_height)
 
-        cell_boxes = {
-            (cell.i, cell.j): cell
-            for cell in enumerate_visible_align_grid_cells(frame, align_state.grid)
+        pattern_boxes = {
+            (pattern.i, pattern.j): pattern
+            for pattern in enumerate_visible_align_grid_patterns(
+                frame, align_state.grid
+            )
         }
-        full_width = max(1, round(align_state.grid.cell_width))
-        full_height = max(1, round(align_state.grid.cell_height))
+        full_width = max(1, round(align_state.grid.pattern_width))
+        full_height = max(1, round(align_state.grid.pattern_height))
 
         user_pref, ratio_filtered, missing = filter_user_preference_excluded(
-            align_state.excluded_cells,
-            cell_boxes,
+            align_state.excluded_patterns,
+            pattern_boxes,
             full_width=full_width,
             full_height=full_height,
             min_area_ratio=options.min_area_ratio,
@@ -204,7 +206,7 @@ def create_smart_exclusion_dataset(options: CreateSmartExclusionDatasetOptions) 
             )
 
         position_stats[f"Pos{position}"] = PositionStats(
-            saved_excluded=len(align_state.excluded_cells),
+            saved_excluded=len(align_state.excluded_patterns),
             ratio_filtered=ratio_filtered,
             missing_grid=missing,
             user_pref_excluded=len(user_pref),

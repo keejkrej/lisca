@@ -2,8 +2,9 @@
 //!
 //! Ordered, idempotent rewrites of on-disk workspace files so live parsers can
 //! stay strict. Call [`migrate_workspace`] once when a tool opens a workspace,
-//! before any bbox read or write.
+//! before any bbox or align state read or write.
 
+mod align_excluded_patterns;
 mod bbox_crop_to_roi;
 
 use std::path::Path;
@@ -12,7 +13,9 @@ use std::path::Path;
 ///
 /// Returns paths that were rewritten. A second call is a no-op.
 pub fn migrate_workspace(workspace: &Path) -> Result<Vec<String>, String> {
-    bbox_crop_to_roi::apply(workspace)
+    let mut rewritten = bbox_crop_to_roi::apply(workspace)?;
+    rewritten.extend(align_excluded_patterns::apply(workspace)?);
+    Ok(rewritten)
 }
 
 #[cfg(test)]
@@ -79,6 +82,33 @@ mod tests {
 
         let error = migrate_workspace(workspace).expect_err("neither column");
         assert!(error.contains("missing required columns (roi, x, y, w, h)"));
+    }
+
+    #[test]
+    fn migrate_workspace_rewrites_align_excluded_cells_to_patterns() {
+        let root = tempfile::tempdir().expect("tempdir");
+        let workspace = root.path();
+        let align_dir = workspace.join(lisca_workspace::ALIGN_DIR);
+        fs::create_dir_all(&align_dir).expect("align dir");
+        fs::write(
+            align_dir.join("Pos0.json"),
+            r#"{"grid":{"cellWidth":4,"cellHeight":4},"excludedCells":[{"i":0,"j":1}]}"#,
+        )
+        .expect("write align");
+
+        let rewritten = migrate_workspace(workspace).expect("migrate");
+        assert_eq!(rewritten.len(), 1);
+        assert!(rewritten[0].ends_with("Pos0.json"));
+        let value: serde_json::Value = serde_json::from_str(
+            &fs::read_to_string(lisca_workspace::align_json_path(workspace, 0)).expect("read"),
+        )
+        .expect("json");
+        assert_eq!(
+            value["excludedPatterns"],
+            serde_json::json!([{ "i": 0, "j": 1 }])
+        );
+        assert_eq!(value["grid"]["patternWidth"], serde_json::json!(4));
+        assert!(migrate_workspace(workspace).expect("second").is_empty());
     }
 
     #[test]

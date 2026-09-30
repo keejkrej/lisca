@@ -1,8 +1,8 @@
 import type {
-  AlignGridCellCoord,
+  AlignGridPatternCoord,
   AlignGridState,
   AlignerSource,
-  AutoExcludePreviewResponse,
+  VariationExcludePreviewResponse,
   ContrastWindow,
   CropRoiProgress,
   FrameRequest,
@@ -59,9 +59,9 @@ export type StudioAlignState = {
   setPatternZoomLocked: (locked: boolean) => void;
   manualExclusionEnabled: boolean;
   setManualExclusionEnabled: (enabled: boolean) => void;
-  setExcludedCellsForCurrentPosition: (cells: Iterable<AlignGridCellCoord>) => void;
-  currentExcludedCells: AlignGridCellCoord[];
-  displayedExcludedCells: AlignGridCellCoord[];
+  setExcludedPatternsForCurrentPosition: (patterns: Iterable<AlignGridPatternCoord>) => void;
+  currentExcludedPatterns: AlignGridPatternCoord[];
+  displayedExcludedPatterns: AlignGridPatternCoord[];
   visibleCounts: {
     included: number;
     excluded: number;
@@ -98,8 +98,8 @@ export type StudioAlignState = {
   cancelVariationExclude: () => void;
   dismissVariationExcludePreview: () => void;
   applyVariationExclude: () => void;
-  applySmartExclusion: (modelCells: AlignGridCellCoord[]) => void;
-  showVariationExcludePreview: (preview: AutoExcludePreviewResponse) => void;
+  applySmartExclusion: (modelPatterns: AlignGridPatternCoord[]) => void;
+  showVariationExcludePreview: (preview: VariationExcludePreviewResponse) => void;
   reportStatus: (message: string | null) => void;
   reportError: (message: string | null) => void;
 };
@@ -107,7 +107,7 @@ export type AlignPositionSaveState = "saved" | "unsaved" | "changed";
 type AlignBaseline = {
   pos: number;
   grid: AlignGridState;
-  cells: AlignGridCellCoord[];
+  patterns: AlignGridPatternCoord[];
   key: string;
 };
 export type CropStartConfirmState = {
@@ -177,7 +177,7 @@ export function useStudioAlignState(): StudioAlignState {
   const lockedSelection = () => session.derived().selection;
   const {
     setContrast,
-    setExcludedCellsForCurrentPosition,
+    setExcludedPatternsForCurrentPosition,
     setGrid,
     setManualExclusionEnabled,
     setSpacingZoomLocked,
@@ -189,11 +189,12 @@ export function useStudioAlignState(): StudioAlignState {
   const setStatus = session.actions.reportStatus;
   const applySmartExclusion = session.applySmartExclusion;
   const positionIndex = () => alignPositions().indexOf(lockedSelection().pos);
-  const currentSnapshot = () => alignSnapshotKey(ui().grid, session.derived().currentExcludedCells);
+  const currentSnapshot = () =>
+    alignSnapshotKey(ui().grid, session.derived().currentExcludedPatterns);
   const captureBaseline = (pos: number) => {
-    const cells = session.derived().currentExcludedCells;
+    const patterns = session.derived().currentExcludedPatterns;
     const grid = ui().grid;
-    setBaseline({ pos, grid, cells, key: alignSnapshotKey(grid, cells) });
+    setBaseline({ pos, grid, patterns, key: alignSnapshotKey(grid, patterns) });
   };
   // Snapshot each position once its frame (and any saved grid/exclusions) has loaded.
   createEffect(() => {
@@ -260,13 +261,13 @@ export function useStudioAlignState(): StudioAlignState {
     if (ui().saving) return;
     session.variation.cancel();
     setManualExclusionEnabled(false);
-    setExcludedCellsForCurrentPosition([]);
+    setExcludedPatternsForCurrentPosition([]);
     setStatus(`Reset Pos${lockedSelection().pos}`);
   };
   const saveCurrentPosition = async () => {
     if (ui().saving) return false;
     const pos = lockedSelection().pos;
-    if (!(await session.saveCurrent(session.derived().currentExcludedCells))) return false;
+    if (!(await session.saveCurrent(session.derived().currentExcludedPatterns))) return false;
     captureBaseline(pos);
     setSavedPositions((saved) => new Set([...saved, pos]));
     setStatus(`Saved Pos${pos}`);
@@ -312,7 +313,7 @@ export function useStudioAlignState(): StudioAlignState {
         session.variation.cancel();
         setManualExclusionEnabled(false);
         setGrid(base.grid);
-        setExcludedCellsForCurrentPosition(base.cells);
+        setExcludedPatternsForCurrentPosition(base.patterns);
       }
     }
     setPendingNavigation(null);
@@ -395,12 +396,12 @@ export function useStudioAlignState(): StudioAlignState {
       return ui().manualExclusionEnabled;
     },
     setManualExclusionEnabled,
-    setExcludedCellsForCurrentPosition,
-    get currentExcludedCells() {
-      return session.derived().currentExcludedCells;
+    setExcludedPatternsForCurrentPosition,
+    get currentExcludedPatterns() {
+      return session.derived().currentExcludedPatterns;
     },
-    get displayedExcludedCells() {
-      return session.derived().displayedExcludedCells;
+    get displayedExcludedPatterns() {
+      return session.derived().displayedExcludedPatterns;
     },
     get visibleCounts() {
       return session.derived().visibleCounts;

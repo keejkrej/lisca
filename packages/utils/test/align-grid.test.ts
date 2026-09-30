@@ -7,22 +7,22 @@ import {
   beginAlignGridPointerGesture,
   classifyAlignGridPointerGesture,
   classifyAlignGridWheelGesture,
-  collectAlignGridEdgeCells,
-  collectAlignGridStrokeToggleCells,
-  countVisibleAlignGridCells,
+  collectAlignGridEdgePatterns,
+  collectAlignGridStrokeTogglePatterns,
+  countVisibleAlignGridPatterns,
   createDefaultAlignGrid,
   degreesToRadians,
-  enumerateVisibleAlignGridCells,
-  findAlignGridCellAtPoint,
-  mergeExcludedAlignGridCells,
+  enumerateVisibleAlignGridPatterns,
+  findAlignGridPatternAtPoint,
+  mergeExcludedAlignGridPatterns,
   normalizeAlignGridState,
   normalizeRadians,
-  setExcludedAlignGridCellsForPosition,
-  toggleExcludedAlignGridCells,
+  setExcludedAlignGridPatternsForPosition,
+  toggleExcludedAlignGridPatterns,
 } from "../src";
 
-function cellKey(cell: { i: number; j: number }): string {
-  return `${cell.i}:${cell.j}`;
+function patternKey(pattern: { i: number; j: number }): string {
+  return `${pattern.i}:${pattern.j}`;
 }
 
 describe("align grid utils", () => {
@@ -30,8 +30,8 @@ describe("align grid utils", () => {
     const grid = normalizeAlignGridState({
       spacingA: -1,
       spacingB: 10,
-      cellWidth: 12,
-      cellHeight: 20,
+      patternWidth: 12,
+      patternHeight: 20,
       opacity: 10,
       enabled: true,
     });
@@ -60,8 +60,8 @@ describe("align grid utils", () => {
     expect(basis.b.y).toBeCloseTo(20, 6);
   });
 
-  test("keeps translated lattice cells visible", () => {
-    const cells = enumerateVisibleAlignGridCells(
+  test("keeps translated lattice patterns visible", () => {
+    const patterns = enumerateVisibleAlignGridPatterns(
       { width: 100, height: 100 },
       normalizeAlignGridState({
         enabled: true,
@@ -69,55 +69,55 @@ describe("align grid utils", () => {
         ty: 0,
         spacingA: 50,
         spacingB: 50,
-        cellWidth: 40,
-        cellHeight: 40,
+        patternWidth: 40,
+        patternHeight: 40,
       }),
     );
 
-    const ids = new Set(cells.map(cellKey));
-    expect(cells).toHaveLength(9);
+    const ids = new Set(patterns.map(patternKey));
+    expect(patterns).toHaveLength(9);
     expect(ids.has("-21:-1")).toBe(true);
     expect(ids.has("-20:0")).toBe(true);
     expect(ids.has("-19:1")).toBe(true);
   });
 
-  test("finds and stroke-collects visible cells once", () => {
+  test("finds and stroke-collects visible patterns once", () => {
     const frame = { width: 100, height: 100 };
     const grid = normalizeAlignGridState({
       enabled: true,
       spacingA: 50,
       spacingB: 50,
-      cellWidth: 50,
-      cellHeight: 50,
+      patternWidth: 50,
+      patternHeight: 50,
     });
 
-    expect(findAlignGridCellAtPoint(frame, grid, 1, 30)).toMatchObject({ i: -1, j: 0 });
-    expect(findAlignGridCellAtPoint(frame, grid, 150, 150)).toBeNull();
+    expect(findAlignGridPatternAtPoint(frame, grid, 1, 30)).toMatchObject({ i: -1, j: 0 });
+    expect(findAlignGridPatternAtPoint(frame, grid, 150, 150)).toBeNull();
 
-    const hitCells: { i: number; j: number }[] = [];
-    for (const cell of collectAlignGridStrokeToggleCells(
+    const hitPatterns: { i: number; j: number }[] = [];
+    for (const pattern of collectAlignGridStrokeTogglePatterns(
       frame,
       grid,
       { x: 1, y: 30 },
       { x: 60, y: 30 },
-      hitCells,
+      hitPatterns,
     )) {
-      hitCells.push(cell);
+      hitPatterns.push(pattern);
     }
-    for (const cell of collectAlignGridStrokeToggleCells(
+    for (const pattern of collectAlignGridStrokeTogglePatterns(
       frame,
       grid,
       { x: 60, y: 30 },
       { x: 1, y: 30 },
-      hitCells,
+      hitPatterns,
     )) {
-      hitCells.push(cell);
+      hitPatterns.push(pattern);
     }
 
-    expect(hitCells.map(cellKey)).toEqual(["-1:0", "0:0"]);
+    expect(hitPatterns.map(patternKey)).toEqual(["-1:0", "0:0"]);
   });
 
-  test("counts visible excluded cells and collects clipped edge cells", () => {
+  test("counts visible excluded patterns and collects clipped edge patterns", () => {
     const frame = { width: 100, height: 100 };
     const grid = normalizeAlignGridState({
       enabled: true,
@@ -125,15 +125,15 @@ describe("align grid utils", () => {
       ty: -10,
       spacingA: 50,
       spacingB: 50,
-      cellWidth: 50,
-      cellHeight: 50,
+      patternWidth: 50,
+      patternHeight: 50,
     });
 
-    const counts = countVisibleAlignGridCells(frame, grid, [{ i: 0, j: 0 }]);
+    const counts = countVisibleAlignGridPatterns(frame, grid, [{ i: 0, j: 0 }]);
     expect(counts.included).toBeGreaterThan(0);
     expect(counts.excluded).toBe(1);
 
-    const edgeKeys = collectAlignGridEdgeCells(frame, grid).map(cellKey);
+    const edgeKeys = collectAlignGridEdgePatterns(frame, grid).map(patternKey);
     expect(edgeKeys).toContain("-1:0");
     expect(edgeKeys).toContain("0:-1");
     expect(edgeKeys).not.toContain("0:0");
@@ -190,7 +190,7 @@ describe("align grid utils", () => {
       { deltaMode: 1, deltaX: 0, deltaY: -1, ctrlKey: false, shiftKey: false },
       { displayWidth: 400, displayHeight: 400, modelWidth: 200, modelHeight: 200 },
     );
-    expect(resized.cellWidth).toBeGreaterThan(grid.cellWidth);
+    expect(resized.patternWidth).toBeGreaterThan(grid.patternWidth);
   });
 
   test("maps active tools to primary-button grid gestures", () => {
@@ -233,16 +233,16 @@ describe("align grid utils", () => {
     );
     expect(spacingZoomed.spacingA).toBeGreaterThan(grid.spacingA);
     expect(spacingZoomed.spacingB).toBeGreaterThan(grid.spacingB);
-    expect(spacingZoomed.cellWidth).toBe(grid.cellWidth);
-    expect(spacingZoomed.cellHeight).toBe(grid.cellHeight);
+    expect(spacingZoomed.patternWidth).toBe(grid.patternWidth);
+    expect(spacingZoomed.patternHeight).toBe(grid.patternHeight);
 
     const patternZoomed = applyAlignGridPointerGesture(
       patternSession!,
       { ...input, clientX: 140, clientY: 100 },
       viewport,
     );
-    expect(patternZoomed.cellWidth).toBeGreaterThan(grid.cellWidth);
-    expect(patternZoomed.cellHeight).toBeGreaterThan(grid.cellHeight);
+    expect(patternZoomed.patternWidth).toBeGreaterThan(grid.patternWidth);
+    expect(patternZoomed.patternHeight).toBeGreaterThan(grid.patternHeight);
     expect(patternZoomed.spacingA).toBe(grid.spacingA);
     expect(patternZoomed.spacingB).toBe(grid.spacingB);
 
@@ -251,8 +251,8 @@ describe("align grid utils", () => {
       { ...input, clientX: 100, clientY: 140 },
       viewport,
     );
-    expect(verticalOnlyPattern.cellWidth).toBe(grid.cellWidth);
-    expect(verticalOnlyPattern.cellHeight).toBe(grid.cellHeight);
+    expect(verticalOnlyPattern.patternWidth).toBe(grid.patternWidth);
+    expect(verticalOnlyPattern.patternHeight).toBe(grid.patternHeight);
   });
 
   test("classifies pointer and wheel gestures", () => {
@@ -281,9 +281,9 @@ describe("align grid utils", () => {
     ).toBe("ignore");
   });
 
-  test("merges, toggles, and stores excluded cells by position", () => {
+  test("merges, toggles, and stores excluded patterns by position", () => {
     expect(
-      mergeExcludedAlignGridCells(
+      mergeExcludedAlignGridPatterns(
         [
           { i: 1, j: 0 },
           { i: 0, j: 1 },
@@ -300,7 +300,7 @@ describe("align grid utils", () => {
     ]);
 
     expect(
-      toggleExcludedAlignGridCells(
+      toggleExcludedAlignGridPatterns(
         [
           { i: 0, j: 0 },
           { i: 1, j: 0 },
@@ -315,8 +315,8 @@ describe("align grid utils", () => {
       { i: 2, j: 0 },
     ]);
 
-    const withCells = setExcludedAlignGridCellsForPosition({}, 4, [{ i: 0, j: 0 }]);
-    expect(withCells).toEqual({ 4: [{ i: 0, j: 0 }] });
-    expect(setExcludedAlignGridCellsForPosition(withCells, 4, [])).toEqual({});
+    const withPatterns = setExcludedAlignGridPatternsForPosition({}, 4, [{ i: 0, j: 0 }]);
+    expect(withPatterns).toEqual({ 4: [{ i: 0, j: 0 }] });
+    expect(setExcludedAlignGridPatternsForPosition(withPatterns, 4, [])).toEqual({});
   });
 });

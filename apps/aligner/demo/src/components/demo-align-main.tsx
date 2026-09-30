@@ -19,9 +19,9 @@ export function DemoAlignMain(props: { state: Accessor<DemoAlignState>; embedded
       spacingZoomLocked: state.spacingZoomLocked,
       patternZoomLocked: state.patternZoomLocked,
       manualExclusionEnabled: state.manualExclusionEnabled,
-      excludedCells: state.excludedCells,
+      excludedPatterns: state.excludedPatterns,
       frame: state.frame,
-      onExcludedCellsChange: state.setExcludedCells,
+      onExcludedPatternsChange: state.setExcludedPatterns,
     };
   });
   const displayFrame = () => {
@@ -53,7 +53,7 @@ export function DemoAlignMain(props: { state: Accessor<DemoAlignState>; embedded
     <AlignCanvas
       class={props.embedded ? "min-h-0 flex-1" : "h-full w-full"}
       cursor={pointer.cursor()}
-      excludedCells={props.state().excludedCells}
+      excludedPatterns={props.state().excludedPatterns}
       frame={displayFrame()}
       grid={props.state().grid}
       toolMode={props.state().toolMode}

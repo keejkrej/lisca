@@ -366,11 +366,11 @@
           "type": "number",
           "format": "double"
         },
-        "cellWidth": {
+        "patternWidth": {
           "type": "number",
           "format": "double"
         },
-        "cellHeight": {
+        "patternHeight": {
           "type": "number",
           "format": "double"
         },
@@ -387,12 +387,12 @@
         "rotation",
         "spacingA",
         "spacingB",
-        "cellWidth",
-        "cellHeight",
+        "patternWidth",
+        "patternHeight",
         "opacity"
       ]
     },
-    "AlignGridCellCoord": {
+    "AlignGridPatternCoord": {
       "type": "object",
       "properties": {
         "i": {
@@ -412,14 +412,14 @@
         "grid": {
           "$ref": "#/definitions/AlignGridState"
         },
-        "excludedCells": {
+        "excludedPatterns": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/AlignGridCellCoord"
+            "$ref": "#/definitions/AlignGridPatternCoord"
           }
         }
       },
-      "required": ["grid", "excludedCells"]
+      "required": ["grid", "excludedPatterns"]
     },
     "SaveBboxRequest": {
       "type": "object",
@@ -640,7 +640,7 @@
         }
       ]
     },
-    "AutoExcludePreviewCell": {
+    "AlignGridPatternBox": {
       "type": "object",
       "properties": {
         "i": {
@@ -693,10 +693,10 @@
             }
           ]
         },
-        "cells": {
+        "patterns": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/AutoExcludePreviewCell"
+            "$ref": "#/definitions/AlignGridPatternBox"
           }
         },
         "threshold": {
@@ -704,19 +704,19 @@
           "format": "double"
         }
       },
-      "required": ["source", "request", "contrast", "cells"]
+      "required": ["source", "request", "contrast", "patterns"]
     },
     "SmartExcludeResponse": {
       "type": "object",
       "properties": {
-        "excludedCells": {
+        "excludedPatterns": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/AlignGridCellCoord"
+            "$ref": "#/definitions/AlignGridPatternCoord"
           }
         }
       },
-      "required": ["excludedCells"]
+      "required": ["excludedPatterns"]
     },
     "ScanRoiWorkspaceRequest": {
       "type": "object",

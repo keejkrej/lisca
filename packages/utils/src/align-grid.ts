@@ -1,5 +1,6 @@
 import type {
-  AlignGridCellCoord,
+  AlignGridPatternBox,
+  AlignGridPatternCoord,
   AlignGridShape,
   AlignGridState,
   SavedAlignState,
@@ -51,14 +52,7 @@ export type AlignGridPointerGestureSession = {
   startGrid: AlignGridState;
 };
 
-export type AlignGridCellBox = AlignGridCellCoord & {
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-};
-
-export type ExcludedAlignGridCellsByPosition = Record<number, AlignGridCellCoord[]>;
+export type ExcludedAlignGridPatternsByPosition = Record<number, AlignGridPatternCoord[]>;
 
 export const MAX_ALIGN_GRID_RECTS = 8000;
 const LINE_DELTA_PX = 16;
@@ -68,11 +62,11 @@ const GRID_BOUNDS_EPSILON = 1e-6;
 
 export function alignStateFromCurrent(
   grid: AlignGridState,
-  currentExcludedCells: AlignGridCellCoord[],
+  currentExcludedPatterns: AlignGridPatternCoord[],
 ): SavedAlignState {
   return {
     grid,
-    excludedCells: currentExcludedCells,
+    excludedPatterns: currentExcludedPatterns,
   };
 }
 
@@ -99,14 +93,14 @@ export function createDefaultAlignGrid(): AlignGridState {
     rotation: 0,
     spacingA: 160,
     spacingB: 160,
-    cellWidth: 128,
-    cellHeight: 128,
+    patternWidth: 128,
+    patternHeight: 128,
     opacity: 0.35,
   };
 }
 
-export function minimumAlignGridSpacing(cellWidth: number, cellHeight: number): number {
-  return Math.max(1, Math.min(cellWidth, cellHeight));
+export function minimumAlignGridSpacing(patternWidth: number, patternHeight: number): number {
+  return Math.max(1, Math.min(patternWidth, patternHeight));
 }
 
 function normalizeAlignGridShape(shape: AlignGridShape | undefined): AlignGridShape {
@@ -118,9 +112,9 @@ function normalizeAlignGridShape(shape: AlignGridShape | undefined): AlignGridSh
 export function normalizeAlignGridState(input?: Partial<AlignGridState>): AlignGridState {
   const base = createDefaultAlignGrid();
   if (!input) return base;
-  const cellWidth = Math.max(1, input.cellWidth ?? base.cellWidth);
-  const cellHeight = Math.max(1, input.cellHeight ?? base.cellHeight);
-  const minSpacing = minimumAlignGridSpacing(cellWidth, cellHeight);
+  const patternWidth = Math.max(1, input.patternWidth ?? base.patternWidth);
+  const patternHeight = Math.max(1, input.patternHeight ?? base.patternHeight);
+  const minSpacing = minimumAlignGridSpacing(patternWidth, patternHeight);
 
   return {
     enabled: input.enabled ?? base.enabled,
@@ -130,8 +124,8 @@ export function normalizeAlignGridState(input?: Partial<AlignGridState>): AlignG
     rotation: normalizeRadians(input.rotation ?? base.rotation),
     spacingA: Math.max(minSpacing, input.spacingA ?? base.spacingA),
     spacingB: Math.max(minSpacing, input.spacingB ?? base.spacingB),
-    cellWidth,
-    cellHeight,
+    patternWidth,
+    patternHeight,
     opacity: clamp(input.opacity ?? base.opacity, 0, 1),
   };
 }
@@ -181,8 +175,8 @@ function resolveVisibleAlignGridIndexBounds(frame: AlignGridFrameBounds, grid: A
   const basis = alignGridBasis(grid.shape, grid.rotation, grid.spacingA, grid.spacingB);
   const originX = frame.width / 2 + grid.tx;
   const originY = frame.height / 2 + grid.ty;
-  const halfWidth = grid.cellWidth / 2;
-  const halfHeight = grid.cellHeight / 2;
+  const halfWidth = grid.patternWidth / 2;
+  const halfHeight = grid.patternHeight / 2;
   const determinant = basis.a.x * basis.b.y - basis.a.y * basis.b.x;
 
   if (Math.abs(determinant) <= GRID_BOUNDS_EPSILON) {
@@ -240,32 +234,37 @@ function resolveVisibleAlignGridIndexBounds(frame: AlignGridFrameBounds, grid: A
   };
 }
 
-export function alignGridCellCoordKey(cell: AlignGridCellCoord): string {
-  return `${cell.i}:${cell.j}`;
+export function alignGridPatternCoordKey(pattern: AlignGridPatternCoord): string {
+  return `${pattern.i}:${pattern.j}`;
 }
 
-function compareAlignGridCellCoords(left: AlignGridCellCoord, right: AlignGridCellCoord): number {
+function compareAlignGridPatternCoords(
+  left: AlignGridPatternCoord,
+  right: AlignGridPatternCoord,
+): number {
   if (left.i !== right.i) return left.i - right.i;
   return left.j - right.j;
 }
 
-function toSortedUniqueAlignGridCells(cells: Iterable<AlignGridCellCoord>): AlignGridCellCoord[] {
-  const unique = new Map<string, AlignGridCellCoord>();
-  for (const cell of cells) {
-    unique.set(alignGridCellCoordKey(cell), { i: cell.i, j: cell.j });
+function toSortedUniqueAlignGridPatterns(
+  patterns: Iterable<AlignGridPatternCoord>,
+): AlignGridPatternCoord[] {
+  const unique = new Map<string, AlignGridPatternCoord>();
+  for (const pattern of patterns) {
+    unique.set(alignGridPatternCoordKey(pattern), { i: pattern.i, j: pattern.j });
   }
-  return Array.from(unique.values()).toSorted(compareAlignGridCellCoords);
+  return Array.from(unique.values()).toSorted(compareAlignGridPatternCoords);
 }
 
-export function enumerateVisibleAlignGridCells(
+export function enumerateVisibleAlignGridPatterns(
   frame: AlignGridFrameBounds,
   grid: AlignGridState,
-): AlignGridCellBox[] {
+): AlignGridPatternBox[] {
   const { basis, originX, originY, halfWidth, halfHeight, iMin, iMax, jMin, jMax } =
     resolveVisibleAlignGridIndexBounds(frame, grid);
-  const cells: AlignGridCellBox[] = [];
-  const rawWidth = Math.max(1, Math.round(grid.cellWidth));
-  const rawHeight = Math.max(1, Math.round(grid.cellHeight));
+  const patterns: AlignGridPatternBox[] = [];
+  const rawWidth = Math.max(1, Math.round(grid.patternWidth));
+  const rawHeight = Math.max(1, Math.round(grid.patternHeight));
 
   for (let i = iMin; i <= iMax; i += 1) {
     for (let j = jMin; j <= jMax; j += 1) {
@@ -282,7 +281,7 @@ export function enumerateVisibleAlignGridCells(
 
       if (w <= 0 || h <= 0) continue;
 
-      cells.push({
+      patterns.push({
         i,
         j,
         x: clippedX,
@@ -293,90 +292,100 @@ export function enumerateVisibleAlignGridCells(
     }
   }
 
-  return cells;
+  return patterns;
 }
 
-export function findAlignGridCellAtPoint(
+export function findAlignGridPatternAtPoint(
   frame: AlignGridFrameBounds,
   grid: AlignGridState,
   x: number,
   y: number,
-): AlignGridCellBox | null {
+): AlignGridPatternBox | null {
   if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
 
-  const cells = enumerateVisibleAlignGridCells(frame, grid);
-  for (let index = cells.length - 1; index >= 0; index -= 1) {
-    const cell = cells[index];
-    if (cell && x >= cell.x && x <= cell.x + cell.w && y >= cell.y && y <= cell.y + cell.h) {
-      return cell;
+  const patterns = enumerateVisibleAlignGridPatterns(frame, grid);
+  for (let index = patterns.length - 1; index >= 0; index -= 1) {
+    const pattern = patterns[index];
+    if (
+      pattern &&
+      x >= pattern.x &&
+      x <= pattern.x + pattern.w &&
+      y >= pattern.y &&
+      y <= pattern.y + pattern.h
+    ) {
+      return pattern;
     }
   }
 
   return null;
 }
 
-export function collectAlignGridStrokeToggleCells(
+export function collectAlignGridStrokeTogglePatterns(
   frame: AlignGridFrameBounds,
   grid: AlignGridState,
   startPoint: { x: number; y: number },
   endPoint: { x: number; y: number },
-  alreadyToggledCells?: Iterable<AlignGridCellCoord>,
-): AlignGridCellCoord[] {
-  const sampleDistance = Math.max(4, Math.min(grid.cellWidth, grid.cellHeight) / 4);
+  alreadyToggledPatterns?: Iterable<AlignGridPatternCoord>,
+): AlignGridPatternCoord[] {
+  const sampleDistance = Math.max(4, Math.min(grid.patternWidth, grid.patternHeight) / 4);
   const distance = Math.hypot(endPoint.x - startPoint.x, endPoint.y - startPoint.y);
   const steps = Math.max(1, Math.ceil(distance / sampleDistance));
-  const skippedCells = new Set(Array.from(alreadyToggledCells ?? [], alignGridCellCoordKey));
-  const hitCells = new Map<string, AlignGridCellCoord>();
+  const skippedPatterns = new Set(
+    Array.from(alreadyToggledPatterns ?? [], alignGridPatternCoordKey),
+  );
+  const hitPatterns = new Map<string, AlignGridPatternCoord>();
 
   for (let step = 0; step <= steps; step += 1) {
     const t = step / steps;
     const x = startPoint.x + (endPoint.x - startPoint.x) * t;
     const y = startPoint.y + (endPoint.y - startPoint.y) * t;
-    const cell = findAlignGridCellAtPoint(frame, grid, x, y);
-    if (!cell) continue;
-    const key = alignGridCellCoordKey(cell);
-    if (!skippedCells.has(key)) {
-      hitCells.set(key, { i: cell.i, j: cell.j });
+    const pattern = findAlignGridPatternAtPoint(frame, grid, x, y);
+    if (!pattern) continue;
+    const key = alignGridPatternCoordKey(pattern);
+    if (!skippedPatterns.has(key)) {
+      hitPatterns.set(key, { i: pattern.i, j: pattern.j });
     }
   }
 
-  return Array.from(hitCells.values()).toSorted(compareAlignGridCellCoords);
+  return Array.from(hitPatterns.values()).toSorted(compareAlignGridPatternCoords);
 }
 
-export function countVisibleAlignGridCells(
+export function countVisibleAlignGridPatterns(
   frame: AlignGridFrameBounds,
   grid: AlignGridState,
-  excludedCells?: Iterable<AlignGridCellCoord>,
+  excludedPatterns?: Iterable<AlignGridPatternCoord>,
 ): { included: number; excluded: number } {
-  const excluded = excludedCells
-    ? new Set(Array.from(excludedCells, alignGridCellCoordKey))
+  const excluded = excludedPatterns
+    ? new Set(Array.from(excludedPatterns, alignGridPatternCoordKey))
     : new Set<string>();
-  const cells = enumerateVisibleAlignGridCells(frame, grid);
-  const excludedCount = cells.filter((cell) => excluded.has(alignGridCellCoordKey(cell))).length;
+  const patterns = enumerateVisibleAlignGridPatterns(frame, grid);
+  const excludedCount = patterns.filter((pattern) =>
+    excluded.has(alignGridPatternCoordKey(pattern)),
+  ).length;
   return {
-    included: cells.length - excludedCount,
+    included: patterns.length - excludedCount,
     excluded: excludedCount,
   };
 }
 
-export function collectAlignGridEdgeCells(
+export function collectAlignGridEdgePatterns(
   frame: AlignGridFrameBounds,
   grid: AlignGridState,
-): AlignGridCellCoord[] {
+): AlignGridPatternCoord[] {
   const targetArea =
-    Math.max(1, Math.round(grid.cellWidth)) * Math.max(1, Math.round(grid.cellHeight));
+    Math.max(1, Math.round(grid.patternWidth)) * Math.max(1, Math.round(grid.patternHeight));
   const edgeAreaThreshold = targetArea * 0.8;
-  return enumerateVisibleAlignGridCells(frame, grid)
+  return enumerateVisibleAlignGridPatterns(frame, grid)
     .filter(
-      (cell) =>
-        (cell.x <= 0 ||
-          cell.y <= 0 ||
-          cell.x + cell.w >= frame.width ||
-          cell.y + cell.h >= frame.height) &&
-        cell.w * cell.h < edgeAreaThreshold,
+      (pattern) =>
+        (pattern.x <= 0 ||
+          pattern.y <= 0 ||
+          pattern.x + pattern.w >= frame.width ||
+          pattern.y + pattern.h >= frame.height) &&
+        pattern.w * pattern.h < edgeAreaThreshold,
     )
-    .map((cell) => ({ i: cell.i, j: cell.j }))
-    .toSorted(compareAlignGridCellCoords);
+    .map((pattern) => ({ i: pattern.i, j: pattern.j }))
+    .toSorted(compareAlignGridPatternCoords);
 }
 
 export function isAlignGridMousePointerInput(input: AlignGridMousePointerInput): boolean {
@@ -485,8 +494,8 @@ export function applyAlignGridPointerGesture(
       ...session.startGrid,
       spacingA: session.startGrid.spacingA * spacingFactor,
       spacingB: session.startGrid.spacingB * spacingFactor,
-      cellWidth: session.startGrid.cellWidth * sizeFactor,
-      cellHeight: session.startGrid.cellHeight * sizeFactor,
+      patternWidth: session.startGrid.patternWidth * sizeFactor,
+      patternHeight: session.startGrid.patternHeight * sizeFactor,
     });
   }
 
@@ -494,8 +503,8 @@ export function applyAlignGridPointerGesture(
     const factor = Math.max(0.01, 1 + (deltaX / Math.max(1, viewport.displayWidth)) * 2.5);
     return normalizeAlignGridState({
       ...session.startGrid,
-      cellWidth: session.startGrid.cellWidth * factor,
-      cellHeight: session.startGrid.cellHeight * factor,
+      patternWidth: session.startGrid.patternWidth * factor,
+      patternHeight: session.startGrid.patternHeight * factor,
     });
   }
 
@@ -553,45 +562,45 @@ export function applyAlignGridWheelGesture(
   const factor = scaleFactorFromDelta(deltaY);
   return normalizeAlignGridState({
     ...grid,
-    cellWidth: grid.cellWidth * factor,
-    cellHeight: grid.cellHeight * factor,
+    patternWidth: grid.patternWidth * factor,
+    patternHeight: grid.patternHeight * factor,
   });
 }
 
-export function toggleExcludedAlignGridCells(
-  current: Iterable<AlignGridCellCoord>,
-  toggled: Iterable<AlignGridCellCoord>,
-): AlignGridCellCoord[] {
-  const next = new Map<string, AlignGridCellCoord>();
-  for (const cell of current) {
-    next.set(alignGridCellCoordKey(cell), { i: cell.i, j: cell.j });
+export function toggleExcludedAlignGridPatterns(
+  current: Iterable<AlignGridPatternCoord>,
+  toggled: Iterable<AlignGridPatternCoord>,
+): AlignGridPatternCoord[] {
+  const next = new Map<string, AlignGridPatternCoord>();
+  for (const pattern of current) {
+    next.set(alignGridPatternCoordKey(pattern), { i: pattern.i, j: pattern.j });
   }
 
-  for (const cell of toSortedUniqueAlignGridCells(toggled)) {
-    const key = alignGridCellCoordKey(cell);
+  for (const pattern of toSortedUniqueAlignGridPatterns(toggled)) {
+    const key = alignGridPatternCoordKey(pattern);
     if (next.has(key)) {
       next.delete(key);
     } else {
-      next.set(key, cell);
+      next.set(key, pattern);
     }
   }
 
-  return Array.from(next.values()).toSorted(compareAlignGridCellCoords);
+  return Array.from(next.values()).toSorted(compareAlignGridPatternCoords);
 }
 
-export function mergeExcludedAlignGridCells(
-  current: Iterable<AlignGridCellCoord>,
-  additions: Iterable<AlignGridCellCoord>,
-): AlignGridCellCoord[] {
-  return toSortedUniqueAlignGridCells([...current, ...additions]);
+export function mergeExcludedAlignGridPatterns(
+  current: Iterable<AlignGridPatternCoord>,
+  additions: Iterable<AlignGridPatternCoord>,
+): AlignGridPatternCoord[] {
+  return toSortedUniqueAlignGridPatterns([...current, ...additions]);
 }
 
-export function setExcludedAlignGridCellsForPosition(
-  map: ExcludedAlignGridCellsByPosition,
+export function setExcludedAlignGridPatternsForPosition(
+  map: ExcludedAlignGridPatternsByPosition,
   position: number,
-  nextCells: Iterable<AlignGridCellCoord>,
-): ExcludedAlignGridCellsByPosition {
-  const normalized = toSortedUniqueAlignGridCells(nextCells);
+  nextPatterns: Iterable<AlignGridPatternCoord>,
+): ExcludedAlignGridPatternsByPosition {
+  const normalized = toSortedUniqueAlignGridPatterns(nextPatterns);
   if (normalized.length === 0) {
     const { [position]: _removed, ...rest } = map;
     return rest;
@@ -599,6 +608,6 @@ export function setExcludedAlignGridCellsForPosition(
   return { ...map, [position]: normalized };
 }
 
-export function clearExcludedAlignGridCells(): ExcludedAlignGridCellsByPosition {
+export function clearExcludedAlignGridPatterns(): ExcludedAlignGridPatternsByPosition {
   return {};
 }

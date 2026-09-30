@@ -2,7 +2,7 @@ export {
   classifyExclusionCandidates,
   runSmartExclude,
   SMART_EXCLUDE_DEFAULT_THRESHOLD,
-} from "./classify-cells";
+} from "./classify-patterns";
 export {
   getSmartExcludeClassifier,
   isSmartExcludeClassifierLoaded,
@@ -13,5 +13,5 @@ export {
 export { createBrowserSmartExcludeProvider } from "./provider";
 export { createBrowserSmartExcludeSetup, type BrowserSmartExcludeSetup } from "./setup";
 export { isSmartExcludeModelCached, listCachedSmartExcludeModelFiles } from "./exclude-model-cache";
-export { cropCellToCanvas, resizeCanvasToSquare } from "./preprocess";
+export { cropPatternToCanvas, resizeCanvasToSquare } from "./preprocess";
 export { useSmartExclude, type SmartExcludeDownloadState } from "../use-smart-exclude";

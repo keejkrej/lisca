@@ -354,7 +354,7 @@ describe("StageCanvas caption status", () => {
         captionCenter={
           <CanvasToastStack
             layout="inline"
-            messages={[{ text: "Var excluded 114 of 182 cells" }]}
+            messages={[{ text: "Var excluded 114 of 182 patterns" }]}
           />
         }
         captionLeft="Position 90"
@@ -364,7 +364,7 @@ describe("StageCanvas caption status", () => {
       </StageCanvas>
     ));
     const toast = screen.getByRole("status");
-    expect(toast.textContent).toBe("Var excluded 114 of 182 cells");
+    expect(toast.textContent).toBe("Var excluded 114 of 182 patterns");
     const stack = toast.parentElement!;
     expect(stack.className).not.toMatch(/\babsolute\b/);
     const well = screen.getByTestId("stage-child").parentElement!;
