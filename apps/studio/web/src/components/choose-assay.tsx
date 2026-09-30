@@ -1,7 +1,7 @@
 import { ENABLED_STUDIO_ASSAY_IDS } from "@lisca/contracts/assay";
 import { Button } from "@lisca/ui/components";
 import { useAtomSet, useAtomValue } from "@effect/atom-solid";
-import { For } from "solid-js";
+import { For, type JSX, Show } from "solid-js";
 
 import {
   ASSAY_CHOICE_LABEL,
@@ -27,7 +27,7 @@ const ASSAY_CHOICE_DETAIL: Record<AssayId, { description: string; readout: strin
   },
 };
 
-export function ChooseAssay() {
+export function ChooseAssay(props: { current?: JSX.Element }) {
   const wizard = useAtomValue(() => studioWizardAtom);
   const setWizard = useAtomSet(() => studioWizardAtom);
   const setAssayId = (id: AssayId) => studioWizardActions.setAssayId(setWizard, id);
@@ -39,6 +39,7 @@ export function ChooseAssay() {
         <p class="text-sm leading-5 text-muted-foreground">
           Set up a new assay, or open one you already saved.
         </p>
+        <Show when={props.current}>{props.current}</Show>
       </div>
       <div aria-label="Assay type" class="flex w-full flex-col gap-2.5" role="group">
         <For each={ASSAY_ORDER}>
