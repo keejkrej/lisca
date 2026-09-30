@@ -17,25 +17,11 @@ import {
 } from "./studio-store";
 
 /**
- * True when the last saved (or opened) assay lives in `workspacePath`, so writing there
- * updates this assay rather than replacing a different one.
+ * Save the Metadata wizard to `<workspace>/assay.json`.
+ *
+ * Two guards use this: the overwrite guard (`overwriteOpen`) whenever an assay.json already
+ * exists there, and the route-leave guard for unsaved changes (`dirty`).
  */
-export function savedSnapshotOwnsWorkspace(
-  snapshot: string | null,
-  workspacePath: string,
-): boolean {
-  if (!snapshot || !workspacePath) return false;
-  try {
-    const saved = JSON.parse(snapshot) as { workspace?: { path?: unknown } };
-    return (
-      typeof saved.workspace?.path === "string" && saved.workspace.path.trim() === workspacePath
-    );
-  } catch {
-    return false;
-  }
-}
-
-/** Save the Metadata wizard to `<workspace>/assay.json`, asking before replacing another assay. */
 export function useStudioAssaySave() {
   const wizard = useAtomValue(() => studioWizardAtom);
   const setWizard = useAtomSet(() => studioWizardAtom);
@@ -58,11 +44,7 @@ export function useStudioAssaySave() {
     setSaving(true);
     setSaveError(null);
     try {
-      const ownsWorkspace = savedSnapshotOwnsWorkspace(
-        current.basicInfoSavedSnapshot,
-        workspacePath(),
-      );
-      if (!overwrite && !ownsWorkspace && (await assayJsonExists(workspacePath()))) {
+      if (!overwrite && (await assayJsonExists(workspacePath()))) {
         setOverwriteOpen(true);
         return false;
       }

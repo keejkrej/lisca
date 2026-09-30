@@ -27,7 +27,6 @@ vi.mock("@lisca/client/session/work-session", async (importOriginal) => {
 });
 
 import { StudioMetadataActions } from "../src/components/studio-metadata-actions";
-import { savedSnapshotOwnsWorkspace } from "../src/state/use-studio-assay-save";
 
 type WizardState = ReturnType<typeof createInitialStudioWizardState>;
 
@@ -70,16 +69,7 @@ describe("StudioMetadataActions", () => {
     expect(screen.getByRole("button", { name: "Save" })).toBe(button);
   });
 
-  it("asks before replacing an assay.json it did not write", async () => {
-    save.assayJsonExists.mockResolvedValue(true);
-    renderActions(wizard());
-
-    fireEvent.click(screen.getByRole("button", { name: "Save" }));
-    expect(await screen.findByText("Assay already saved here")).not.toBeNull();
-    expect(save.writeStudioAssayJson).not.toHaveBeenCalled();
-  });
-
-  it("updates its own assay.json without asking", async () => {
+  it("asks before overwriting an existing assay.json, including a loaded one", async () => {
     save.assayJsonExists.mockResolvedValue(true);
     const base = wizard();
     renderActions({
@@ -89,17 +79,11 @@ describe("StudioMetadataActions", () => {
     });
 
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
-    await waitFor(() => expect(save.writeStudioAssayJson).toHaveBeenCalledOnce());
-    expect(screen.queryByText("Assay already saved here")).toBeNull();
-  });
-});
+    expect(await screen.findByText("Assay already saved here")).not.toBeNull();
+    expect(save.writeStudioAssayJson).not.toHaveBeenCalled();
 
-describe("savedSnapshotOwnsWorkspace", () => {
-  it("matches the workspace recorded in the saved snapshot", () => {
-    const snapshot = serializeBasicInfoSnapshot(wizard());
-    expect(savedSnapshotOwnsWorkspace(snapshot, "/data/ws")).toBe(true);
-    expect(savedSnapshotOwnsWorkspace(snapshot, "/data/other")).toBe(false);
-    expect(savedSnapshotOwnsWorkspace(null, "/data/ws")).toBe(false);
-    expect(savedSnapshotOwnsWorkspace("not json", "/data/ws")).toBe(false);
+    fireEvent.click(screen.getByRole("button", { name: "Overwrite" }));
+    await waitFor(() => expect(save.writeStudioAssayJson).toHaveBeenCalledOnce());
+    expect(save.writeStudioAssayJson.mock.calls[0]![1]).toMatchObject({ name: "TF84 renamed" });
   });
 });
