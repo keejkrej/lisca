@@ -12,16 +12,6 @@ export function StudioAssayActions(props: {
       <RailControlStack>
         <Button
           class="w-full justify-center"
-          disabled={props.openingAssay}
-          size="sm"
-          type="button"
-          variant="outline"
-          onClick={props.onNewAssay}
-        >
-          New
-        </Button>
-        <Button
-          class="w-full justify-center"
           disabled={props.openingAssay || props.assayPickerOpen}
           size="sm"
           type="button"
@@ -29,6 +19,15 @@ export function StudioAssayActions(props: {
           onClick={props.onOpenAssay}
         >
           Open
+        </Button>
+        <Button
+          class="w-full justify-center"
+          disabled={props.openingAssay}
+          size="sm"
+          type="button"
+          onClick={props.onNewAssay}
+        >
+          New
         </Button>
       </RailControlStack>
     </PanelSection>

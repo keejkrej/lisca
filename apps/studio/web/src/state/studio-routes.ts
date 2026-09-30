@@ -10,7 +10,7 @@ export { isValidSamplePositionRange } from "@lisca/client/studio/assay-validatio
 
 export function instructionForStep(step: StudioStep): string {
   if (step === "chooseAssay") {
-    return "Pick an assay type, then New starts a blank one, or Open a saved assay.";
+    return "Open a saved assay, or pick an assay type and press New to start a blank one.";
   }
   if (step === "metadata") {
     return "Choose the image source, workspace folder, and time between frames. Name each sample and the positions it covers.";
