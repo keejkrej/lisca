@@ -4,11 +4,19 @@ import { useStudioAssaySave } from "../state/use-studio-assay-save";
 import { AssayOverwriteConfirmModal } from "./assay-overwrite-confirm-modal";
 import { AssaySaveConfirmModal } from "./assay-save-confirm-modal";
 
+const METADATA_PATH = "/metadata";
+
+/** Unsaved Metadata only matters when leaving Metadata, not when arriving there. */
+export function shouldGuardMetadataLeave(from: string, to: string, dirty: boolean): boolean {
+  return dirty && from === METADATA_PATH && to !== METADATA_PATH;
+}
+
 export function StudioMetadataLeaveGuard() {
   const save = useStudioAssaySave();
 
   const blocker = useBlocker({
-    shouldBlockFn: () => save.dirty(),
+    shouldBlockFn: ({ current, next }) =>
+      shouldGuardMetadataLeave(current.pathname, next.pathname, save.dirty()),
     withResolver: true,
     enableBeforeUnload: false,
   });
