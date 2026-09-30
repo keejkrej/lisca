@@ -38,13 +38,12 @@ function AssayPage() {
   const assayRecent = createMemo(() => useStudioMemoryRecent("assay", assayPickerOpen()));
   const wizard = useAtomValue(() => studioWizardAtom);
   const setWizard = useAtomSet(() => studioWizardAtom);
-  const { save, replaceDocument, prompts } = useReplaceDocumentGuard();
+  const { replaceDocument, prompts } = useReplaceDocumentGuard();
   const newAssay = () =>
     replaceDocument(() => {
       studioWizardActions.newAssay(setWizard, wizard().assayId);
       navigateTo("/metadata");
     });
-  const hasDocument = () => wizard().basicInfoSavedSnapshot != null || save.dirty();
 
   const openAssayJson = async (path: string) => {
     setAssayPickerOpen(false);
@@ -91,27 +90,7 @@ function AssayPage() {
                   </p>
                 )}
               </Show>
-              <ChooseAssay
-                current={
-                  <Show when={hasDocument()}>
-                    <p class="text-xs leading-4 text-muted-foreground" data-testid="current-assay">
-                      <span class="font-medium text-foreground">
-                        {wizard().name.trim() || "Untitled assay"}
-                      </span>
-                      <Show when={save.workspacePath()}>
-                        {(path) => <span class="font-mono"> · {path()}</span>}
-                      </Show>
-                      <Show when={save.dirty()}>
-                        <span>
-                          {wizard().basicInfoSavedSnapshot != null
-                            ? " · unsaved changes"
-                            : " · not saved yet"}
-                        </span>
-                      </Show>
-                    </p>
-                  </Show>
-                }
-              />
+              <ChooseAssay />
             </AppShell.MainScroll>
           </AppShell.Main>
         </AppShell.MainColumn>
