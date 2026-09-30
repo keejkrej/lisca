@@ -1,4 +1,4 @@
-import { cn } from "@lisca/ui/components";
+import { cn, ScrollArea } from "@lisca/ui/components";
 import type { JSX } from "solid-js";
 
 /**
@@ -20,7 +20,9 @@ function DemoShellHeader(props: { children?: JSX.Element }) {
       aria-label="Application header"
       class="flex h-16 shrink-0 flex-col overflow-hidden border-b border-border bg-background"
     >
-      <div class="min-h-0 flex-1 overflow-auto">{props.children}</div>
+      <ScrollArea class="min-h-0 flex-1" contentClass="h-full">
+        {props.children}
+      </ScrollArea>
     </header>
   );
 }
@@ -47,11 +49,13 @@ function DemoShellLeft(props: { children?: JSX.Element; widthClass?: string }) {
     <aside
       aria-label="Left panel"
       class={cn(
-        "flex min-h-0 shrink-0 flex-col overflow-y-auto border-r border-border bg-background",
+        "flex min-h-0 shrink-0 flex-col overflow-hidden border-r border-border bg-background",
         props.widthClass ?? "w-56",
       )}
     >
-      {props.children}
+      <ScrollArea class="min-h-0 flex-1" contentClass="flex h-full flex-col">
+        {props.children}
+      </ScrollArea>
     </aside>
   );
 }
@@ -62,11 +66,13 @@ function DemoShellRight(props: { children?: JSX.Element; widthClass?: string }) 
     <aside
       aria-label="Right panel"
       class={cn(
-        "flex min-h-0 shrink-0 flex-col overflow-y-auto border-l border-border bg-background",
+        "flex min-h-0 shrink-0 flex-col overflow-hidden border-l border-border bg-background",
         props.widthClass ?? "w-56",
       )}
     >
-      {props.children}
+      <ScrollArea class="min-h-0 flex-1" contentClass="flex h-full flex-col">
+        {props.children}
+      </ScrollArea>
     </aside>
   );
 }
@@ -74,8 +80,10 @@ DemoShellRight.displayName = "DemoShell.Right";
 
 function DemoShellMain(props: { children?: JSX.Element }) {
   return (
-    <main class="relative min-h-0 flex-1 overflow-auto bg-background" id="main-content">
-      {props.children}
+    <main class="relative min-h-0 flex-1 overflow-hidden bg-background" id="main-content">
+      <ScrollArea class="h-full" contentClass="flex flex-col">
+        {props.children}
+      </ScrollArea>
     </main>
   );
 }
@@ -101,7 +109,9 @@ function DemoShellDock(props: { children?: JSX.Element }) {
       class="flex h-[11rem] shrink-0 flex-col overflow-hidden border-t border-border bg-background"
       role="region"
     >
-      <div class="min-h-0 flex-1 overflow-auto">{props.children}</div>
+      <ScrollArea class="min-h-0 flex-1" contentClass="h-full">
+        {props.children}
+      </ScrollArea>
     </div>
   );
 }

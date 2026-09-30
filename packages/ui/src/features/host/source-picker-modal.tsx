@@ -3,6 +3,7 @@ import IconXRegular from "phosphor-icons-solid/IconXRegular";
 import { For, Show } from "solid-js";
 
 import { Button } from "../../components/ui/button";
+import { ScrollArea } from "../../components/ui/scroll-area";
 import { DialogSurface } from "../../shell/modal/dialog-surface";
 import { ModalScrim } from "../../shell/modal/modal-scrim";
 
@@ -72,39 +73,41 @@ export function SourcePickerModal(props: SourcePickerModalProps) {
             >
               <div class="space-y-2">
                 <p class="font-medium text-foreground text-sm">Recent sources</p>
-                <ul class="max-h-32 overflow-auto rounded-md border border-border divide-y divide-border/60">
-                  <For each={props.recentSources}>
-                    {(item) => (
-                      <li>
-                        <button
-                          class="flex w-full flex-col gap-0.5 px-3 py-2 text-left text-sm transition-colors hover:bg-muted/30"
-                          type="button"
-                          onClick={() => {
-                            props.onPickRecentSource!(item.source);
-                            props.onClose();
-                          }}
-                        >
-                          <Show
-                            when={item.label}
-                            fallback={
-                              <span class="font-medium text-foreground capitalize">
-                                {item.source.kind}
-                              </span>
-                            }
+                <ScrollArea class="rounded-md border border-border" viewportClass="max-h-32">
+                  <ul class="divide-y divide-border/60">
+                    <For each={props.recentSources}>
+                      {(item) => (
+                        <li>
+                          <button
+                            class="flex w-full flex-col gap-0.5 px-3 py-2 text-left text-sm transition-colors hover:bg-muted/30"
+                            type="button"
+                            onClick={() => {
+                              props.onPickRecentSource!(item.source);
+                              props.onClose();
+                            }}
                           >
-                            <span class="font-medium text-foreground">{item.label}</span>
-                          </Show>
-                          <span
-                            class="truncate text-muted-foreground"
-                            title={formatSourcePath(item.source)}
-                          >
-                            {formatSourcePath(item.source)}
-                          </span>
-                        </button>
-                      </li>
-                    )}
-                  </For>
-                </ul>
+                            <Show
+                              when={item.label}
+                              fallback={
+                                <span class="font-medium text-foreground capitalize">
+                                  {item.source.kind}
+                                </span>
+                              }
+                            >
+                              <span class="font-medium text-foreground">{item.label}</span>
+                            </Show>
+                            <span
+                              class="truncate text-muted-foreground"
+                              title={formatSourcePath(item.source)}
+                            >
+                              {formatSourcePath(item.source)}
+                            </span>
+                          </button>
+                        </li>
+                      )}
+                    </For>
+                  </ul>
+                </ScrollArea>
               </div>
             </Show>
 

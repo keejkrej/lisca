@@ -19,9 +19,9 @@ body {
   font-family: var(--font-sans);
 }
 
-/* Square hover thumb. Setting a webkit width opts into a classic bar, which
-   takes layout width only while the region overflows. Rails pin their measure
-   to the leading margin so that bar sits in the trailing margin. */
+/* Fallback only. App scrollers use the overlay `ScrollArea` (drawn over the
+   content, no reserved width); this square hover thumb styles any native bar
+   that remains, e.g. third-party widgets. */
 *::-webkit-scrollbar {
   width: 10px;
   height: 10px;

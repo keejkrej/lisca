@@ -16,7 +16,7 @@ import {
   FolderSourceParseModal,
   HostFilePickerDialog,
   PathPickerField,
-  SourcePickerModal,
+  SourcePickerField,
 } from "@lisca/ui/features";
 import type { HostFilePickerOperations } from "@lisca/ui/features";
 import {
@@ -73,17 +73,16 @@ export function MetadataFields(props: { hostPort: HostFilePickerOperations }) {
     const defaultMinutes = defaultIntervalMinutesForAssay(wizard().assayId);
     return defaultMinutes != null ? `e.g. ${defaultMinutes}…` : "Enter interval…";
   };
-  const [openDataModalOpen, setOpenDataModalOpen] = createSignal(false);
+  const [sourceMenuOpen, setSourceMenuOpen] = createSignal(false);
   const [pathPicker, setPathPicker] = createSignal<StudioPathPickerState>(null);
   const [folderSourcePath, setFolderSourcePath] = createSignal<string | null>(null);
 
-  const sourceRecent = createMemo(() => useStudioMemoryRecent("source", openDataModalOpen()));
+  const sourceRecent = createMemo(() => useStudioMemoryRecent("source", sourceMenuOpen()));
   const workspaceRecent = createMemo(() =>
     useStudioMemoryRecent("workspace", pathPicker()?.kind === "save"),
   );
 
   const openSourceBrowser = (mode: HostFilePickerMode) => {
-    setOpenDataModalOpen(false);
     setPathPicker({ kind: "source", mode });
   };
 
@@ -139,12 +138,17 @@ export function MetadataFields(props: { hostPort: HostFilePickerOperations }) {
             onChange={(event) => patch({ name: event.target.value })}
           />
         </Field>
-        <PathPickerField
+        <SourcePickerField
           id="studio-source"
           label="Source"
           placeholder="Click to choose source…"
+          recentSources={sourceRecent().sources}
           value={wizard().dataPath}
-          onOpen={() => setOpenDataModalOpen(true)}
+          onMenuOpenChange={setSourceMenuOpen}
+          onOpenCzi={() => openSourceBrowser("czi_file")}
+          onOpenFolder={() => openSourceBrowser("folder")}
+          onOpenNd2={() => openSourceBrowser("nd2_file")}
+          onPickRecentSource={applyRecentSource}
         />
         <PathPickerField
           id="studio-workspace"
@@ -257,15 +261,6 @@ export function MetadataFields(props: { hostPort: HostFilePickerOperations }) {
         </Show>
       </div>
 
-      <SourcePickerModal
-        open={openDataModalOpen()}
-        recentSources={sourceRecent().sources}
-        onClose={() => setOpenDataModalOpen(false)}
-        onOpenCzi={() => openSourceBrowser("czi_file")}
-        onOpenFolder={() => openSourceBrowser("folder")}
-        onOpenNd2={() => openSourceBrowser("nd2_file")}
-        onPickRecentSource={applyRecentSource}
-      />
       <HostFilePickerDialog
         hostPort={props.hostPort}
         mode={pickerMode(pathPicker())}

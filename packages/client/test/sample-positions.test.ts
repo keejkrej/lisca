@@ -10,6 +10,8 @@ import {
   isValidSamplePositionRange,
   parseSamplePositions,
   parseSignalChannels,
+  samplePositionFromDisplay,
+  samplePositionToDisplay,
   sampleRowFromDisk,
   sampleRowToDisk,
 } from "../src/studio/sample-positions";
@@ -138,5 +140,17 @@ describe("sample positions", () => {
     expect(filterScanPositionsForAssay([0, 1, 2, 3, 4], [1, 3])).toEqual([1, 3]);
     expect(filterScanPositionsForAssay([10, 11, 12], [0, 1, 2])).toEqual([]);
     expect(filterScanPositionsForAssay([0, 1, 2], [])).toEqual([]);
+  });
+
+  test("editor shows positions 1-based and stores them 0-based", () => {
+    expect(samplePositionToDisplay("0")).toBe("1");
+    expect(samplePositionToDisplay("66")).toBe("67");
+    expect(samplePositionToDisplay("")).toBe("");
+    expect(samplePositionFromDisplay("1")).toBe("0");
+    expect(samplePositionFromDisplay(" 67 ")).toBe("66");
+    expect(samplePositionFromDisplay("")).toBe("");
+    expect(samplePositionFromDisplay("0")).toBe(null);
+    expect(samplePositionFromDisplay("-1")).toBe(null);
+    expect(samplePositionFromDisplay("abc")).toBe(null);
   });
 });

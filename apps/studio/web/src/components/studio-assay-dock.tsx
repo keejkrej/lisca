@@ -21,7 +21,7 @@ export function StudioAssayActions(props: {
           variant="outline"
           onClick={props.onOpenAssay}
         >
-          Open existing
+          Open
         </Button>
         <Button
           class="w-full justify-center"

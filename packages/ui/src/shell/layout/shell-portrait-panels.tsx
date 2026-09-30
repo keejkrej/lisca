@@ -3,6 +3,7 @@ import IconCaretRightRegular from "phosphor-icons-solid/IconCaretRightRegular";
 import { For, Show } from "solid-js";
 
 import { Button } from "../../components/ui/button";
+import { ScrollArea } from "../../components/ui/scroll-area";
 import { cn } from "../../lib/utils";
 import { useShellLayout } from "./shell-layout-context";
 
@@ -91,17 +92,23 @@ export function ShellPortraitPanelOverlays() {
             aria-label="Left panel"
             inert={!layout.leftOpen}
             class={cn(
-              "absolute inset-y-0 left-0 z-50 flex max-w-[min(100%,20rem)] flex-col overflow-y-auto overscroll-none bg-muted shadow-xl transition-transform duration-200 ease-out",
+              "absolute inset-y-0 left-0 z-50 flex max-w-[min(100%,20rem)] flex-col bg-muted shadow-xl transition-transform duration-200 ease-out",
               layout.leftOpen ? "translate-x-0" : "-translate-x-full pointer-events-none",
             )}
           >
-            <For each={layout.leftPanels}>
-              {(panel) => (
-                <div class={cn("flex min-h-0 flex-1 flex-col", panel.widthClass ?? "w-64")}>
-                  {panel.content}
-                </div>
-              )}
-            </For>
+            <ScrollArea
+              class="min-h-0 flex-1"
+              contentClass="flex h-full flex-col"
+              viewportClass="overscroll-none"
+            >
+              <For each={layout.leftPanels}>
+                {(panel) => (
+                  <div class={cn("flex min-h-0 flex-1 flex-col", panel.widthClass ?? "w-64")}>
+                    {panel.content}
+                  </div>
+                )}
+              </For>
+            </ScrollArea>
           </aside>
         </Show>
         <Show when={layout.hasRightPanels}>
@@ -110,17 +117,23 @@ export function ShellPortraitPanelOverlays() {
             aria-label="Right panel"
             inert={!layout.rightOpen}
             class={cn(
-              "absolute inset-y-0 right-0 z-50 flex max-w-[min(100%,20rem)] flex-col overflow-y-auto overscroll-none bg-muted shadow-xl transition-transform duration-200 ease-out",
+              "absolute inset-y-0 right-0 z-50 flex max-w-[min(100%,20rem)] flex-col bg-muted shadow-xl transition-transform duration-200 ease-out",
               layout.rightOpen ? "translate-x-0" : "translate-x-full pointer-events-none",
             )}
           >
-            <For each={layout.rightPanels}>
-              {(panel) => (
-                <div class={cn("flex min-h-0 flex-1 flex-col", panel.widthClass ?? "w-64")}>
-                  {panel.content}
-                </div>
-              )}
-            </For>
+            <ScrollArea
+              class="min-h-0 flex-1"
+              contentClass="flex h-full flex-col"
+              viewportClass="overscroll-none"
+            >
+              <For each={layout.rightPanels}>
+                {(panel) => (
+                  <div class={cn("flex min-h-0 flex-1 flex-col", panel.widthClass ?? "w-64")}>
+                    {panel.content}
+                  </div>
+                )}
+              </For>
+            </ScrollArea>
           </aside>
         </Show>
       </>

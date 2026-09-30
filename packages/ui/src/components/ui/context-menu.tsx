@@ -5,6 +5,8 @@ import type { ComponentProps, JSX, ValidComponent } from "solid-js";
 import { splitProps } from "solid-js";
 import { cn } from "#lib/utils";
 
+import { ScrollArea } from "./scroll-area";
+
 type ContextMenuProps<T extends ValidComponent = "div"> = PolymorphicProps<
   T,
   ContextMenuPrimitive.ContextMenuRootProps
@@ -51,17 +53,21 @@ type ContextMenuContentProps<T extends ValidComponent = "div"> = PolymorphicProp
 const ContextMenuContent = <T extends ValidComponent = "div">(
   props: ContextMenuContentProps<T>,
 ) => {
-  const [local, others] = splitProps(props as ContextMenuContentProps, ["class"]);
+  const [local, others] = splitProps(props as ContextMenuContentProps, ["class", "children"]);
   return (
     <ContextMenuPrimitive.Portal>
       <ContextMenuPrimitive.Content
         class={cn(
-          "z-50 z-context-menu-content z-menu-target max-h-(--kb-popper-available-height) origin-(--kb-menu-content-transform-origin) overflow-y-auto overflow-x-hidden outline-none",
+          "z-50 z-context-menu-content z-menu-target origin-(--kb-menu-content-transform-origin) overflow-hidden outline-none",
           local.class,
         )}
         data-slot="context-menu-content"
         {...others}
-      />
+      >
+        <ScrollArea viewportClass="max-h-(--kb-popper-content-available-height)">
+          {local.children}
+        </ScrollArea>
+      </ContextMenuPrimitive.Content>
     </ContextMenuPrimitive.Portal>
   );
 };
@@ -174,17 +180,21 @@ type ContextMenuSubContentProps<T extends ValidComponent = "div"> = PolymorphicP
 const ContextMenuSubContent = <T extends ValidComponent = "div">(
   props: ContextMenuSubContentProps<T>,
 ) => {
-  const [local, others] = splitProps(props as ContextMenuSubContentProps, ["class"]);
+  const [local, others] = splitProps(props as ContextMenuSubContentProps, ["class", "children"]);
   return (
     <ContextMenuPrimitive.Portal>
       <ContextMenuPrimitive.SubContent
         class={cn(
-          "z-50 z-context-menu-content z-context-menu-subcontent z-menu-target max-h-(--kb-popper-available-height) origin-(--kb-menu-content-transform-origin) overflow-y-auto overflow-x-hidden outline-none",
+          "z-50 z-context-menu-content z-context-menu-subcontent z-menu-target origin-(--kb-menu-content-transform-origin) overflow-hidden outline-none",
           local.class,
         )}
         data-slot="context-menu-sub-content"
         {...others}
-      />
+      >
+        <ScrollArea viewportClass="max-h-(--kb-popper-content-available-height)">
+          {local.children}
+        </ScrollArea>
+      </ContextMenuPrimitive.SubContent>
     </ContextMenuPrimitive.Portal>
   );
 };

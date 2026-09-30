@@ -118,7 +118,7 @@ describe("AppShell paper pane", () => {
     hasClass(sidebar, "w-72");
   });
 
-  it("keeps a document scrollbar at the full main-sheet edge", () => {
+  it("keeps an overlay document scrollbar at the full main-sheet edge", () => {
     stubViewport(1440, 900);
     render(() => (
       <AppShell>
@@ -136,12 +136,16 @@ describe("AppShell paper pane", () => {
 
     const main = screen.getByRole("main");
     const scroll = main.querySelector('[data-slot="app-shell-main-scroll"]');
-    const content = scroll?.firstElementChild;
+    const viewport = scroll?.querySelector('[data-slot="scroll-area-viewport"]');
+    const content = viewport?.firstElementChild;
     expect(scroll).not.toBeNull();
     expect(scroll?.parentElement).toBe(main);
     hasClass(scroll!, "w-full");
-    hasClass(scroll!, "overflow-y-auto");
-    hasClass(scroll!, "overscroll-none");
+    // Overlay bar: the viewport hides the native scrollbar so it takes no width.
+    expect(scroll!.querySelector('[data-slot="scroll-area-scrollbar"]')).not.toBeNull();
+    hasClass(viewport!, "overflow-auto");
+    hasClass(viewport!, "no-scrollbar");
+    hasClass(viewport!, "overscroll-none");
     expect(content).not.toBeNull();
     hasClass(content!, "mx-auto");
     hasClass(content!, "min-h-full");
@@ -171,8 +175,10 @@ describe("AppShell paper pane", () => {
     const leftOverlay = screen.getByLabelText("Left panel");
     const rightOverlay = screen.getByLabelText("Right panel");
     const topBar = stageTopBar();
-    hasClass(leftOverlay.firstElementChild!, "w-64");
-    hasClass(rightOverlay.firstElementChild!, "w-64");
+    const panelOf = (overlay: HTMLElement) =>
+      overlay.querySelector('[data-slot="scroll-area-content"]')!.firstElementChild!;
+    hasClass(panelOf(leftOverlay), "w-64");
+    hasClass(panelOf(rightOverlay), "w-64");
     expect(leftOverlay.getAttribute("aria-hidden")).toBe("true");
     expect((leftOverlay as HTMLElement & { inert: boolean }).inert).toBe(true);
     hasClass(leftOverlay, "bg-muted");

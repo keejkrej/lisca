@@ -7,6 +7,7 @@ import {
 import type { LiscaAppId } from "@lisca/utils";
 import { For, Show } from "solid-js";
 import { Button } from "../../components/ui/button";
+import { ScrollArea } from "../../components/ui/scroll-area";
 import { DialogSurface } from "../modal/dialog-surface";
 import { ModalScrim } from "../modal/modal-scrim";
 
@@ -32,30 +33,32 @@ export function WorkSessionPickerDialog(props: WorkSessionPickerDialogProps) {
                 {workSessionPickerDescription(props.appId)}
               </p>
             </div>
-            <ul class="max-h-72 space-y-2 overflow-auto">
-              <For each={state().items}>
-                {(item) => (
-                  <li>
-                    <button
-                      class="w-full rounded-md border border-border px-3 py-2 text-left hover:bg-muted"
-                      type="button"
-                      onClick={() => props.onRestore(item.id)}
-                    >
-                      <div class="font-medium text-foreground text-sm">{item.label}</div>
-                      <div class="truncate text-muted-foreground text-xs">{item.path}</div>
-                      <Show when={item.sourcePath}>
-                        {(sourcePath) => (
-                          <div class="truncate text-muted-foreground text-xs">{sourcePath()}</div>
-                        )}
-                      </Show>
-                      <div class="text-muted-foreground text-xs">
-                        {formatWorkSessionWhen(item.lastOpenedAt)}
-                      </div>
-                    </button>
-                  </li>
-                )}
-              </For>
-            </ul>
+            <ScrollArea viewportClass="max-h-72">
+              <ul class="space-y-2">
+                <For each={state().items}>
+                  {(item) => (
+                    <li>
+                      <button
+                        class="w-full rounded-md border border-border px-3 py-2 text-left hover:bg-muted"
+                        type="button"
+                        onClick={() => props.onRestore(item.id)}
+                      >
+                        <div class="font-medium text-foreground text-sm">{item.label}</div>
+                        <div class="truncate text-muted-foreground text-xs">{item.path}</div>
+                        <Show when={item.sourcePath}>
+                          {(sourcePath) => (
+                            <div class="truncate text-muted-foreground text-xs">{sourcePath()}</div>
+                          )}
+                        </Show>
+                        <div class="text-muted-foreground text-xs">
+                          {formatWorkSessionWhen(item.lastOpenedAt)}
+                        </div>
+                      </button>
+                    </li>
+                  )}
+                </For>
+              </ul>
+            </ScrollArea>
             <Button
               class="w-full justify-center"
               size="sm"

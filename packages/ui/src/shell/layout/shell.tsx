@@ -7,6 +7,7 @@ import {
   type JSX,
 } from "solid-js";
 
+import { ScrollArea } from "../../components/ui/scroll-area";
 import { cn } from "../../lib/utils";
 import { ShellLayoutProvider, useShellLayout } from "./shell-layout-context";
 import { ShellPortraitPanelControls, ShellPortraitPanelOverlays } from "./shell-portrait-panels";
@@ -25,7 +26,9 @@ function ShellDockInner(props: { children?: JSX.Element; class?: string }) {
       aria-label="Dock"
       class={cn(shellDockFixed, "border-t", shellDivider, shellSurface, props.class)}
     >
-      <div class="min-h-0 flex-1 overflow-auto overscroll-none">{props.children}</div>
+      <ScrollArea class="min-h-0 flex-1" contentClass="h-full" viewportClass="overscroll-none">
+        {props.children}
+      </ScrollArea>
     </div>
   );
 }
@@ -103,7 +106,9 @@ function AppShellTopBar(props: { children?: JSX.Element; class?: string }) {
       )}
       data-slot="app-shell-top-bar"
     >
-      <div class="min-h-0 flex-1 overflow-auto overscroll-none">{props.children}</div>
+      <ScrollArea class="min-h-0 flex-1" contentClass="h-full" viewportClass="overscroll-none">
+        {props.children}
+      </ScrollArea>
     </div>
   );
 }
@@ -187,7 +192,8 @@ AppShellMain.displayName = "AppShell.Main";
  * Full-sheet document scrolling with a separately constrained content measure.
  *
  * `Main` stays clipped so portrait controls remain fixed; this direct child owns the
- * scrollbar at the sheet edge.
+ * scrollbar at the sheet edge. The bar overlays the sheet, so overflow never shifts the
+ * centered measure.
  */
 function AppShellMainScroll(props: {
   children?: JSX.Element;
@@ -195,20 +201,14 @@ function AppShellMainScroll(props: {
   contentClass?: string;
 }) {
   return (
-    <div
-      class={cn(
-        "flex h-full min-h-0 min-w-0 w-full flex-1 flex-col overflow-x-hidden overflow-y-auto overscroll-none",
-        props.class,
-      )}
+    <ScrollArea
+      class={cn("h-full min-h-0 min-w-0 w-full flex-1", props.class)}
+      contentClass={cn("mx-auto flex w-full min-w-0 shrink-0 flex-col", props.contentClass)}
       data-slot="app-shell-main-scroll"
+      viewportClass="overflow-x-hidden overscroll-none"
     >
-      <div
-        class={cn("mx-auto flex min-h-full w-full min-w-0 shrink-0 flex-col", props.contentClass)}
-        data-slot="app-shell-main-scroll-content"
-      >
-        {props.children}
-      </div>
-    </div>
+      {props.children}
+    </ScrollArea>
   );
 }
 AppShellMainScroll.displayName = "AppShell.MainScroll";

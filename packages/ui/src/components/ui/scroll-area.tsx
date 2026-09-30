@@ -31,25 +31,43 @@ const useScrollArea = () => {
 
 type ScrollAreaProps = ComponentProps<"div"> & {
   children?: JSX.Element;
+  /** Sizing for the scrolling viewport, e.g. `max-h-*` when the root has no fixed height. */
+  viewportClass?: string;
+  /** Classes for the content box; it is at least as tall as the viewport. */
+  contentClass?: string;
+  /** The scrolling element, for APIs that scroll items into view (e.g. listboxes). */
+  viewportRef?: (el: HTMLDivElement) => void;
+  /** Axis that gets the overlay bar. Defaults to vertical. */
+  orientation?: "vertical" | "horizontal";
 };
 
 const ScrollArea = (props: ScrollAreaProps) => {
-  const [local, others] = splitProps(props, ["class", "children", "onMouseEnter", "onMouseLeave"]);
+  const [local, others] = splitProps(props, [
+    "class",
+    "children",
+    "viewportClass",
+    "contentClass",
+    "viewportRef",
+    "orientation",
+    "onMouseEnter",
+    "onMouseLeave",
+  ]);
 
   let viewportRef: HTMLDivElement | undefined;
+  let contentRef: HTMLDivElement | undefined;
   const [hovered, setHovered] = createSignal(false);
 
   return (
     <ScrollAreaContext.Provider
       value={{
         viewportRef: () => viewportRef,
-        contentRef: () => viewportRef,
+        contentRef: () => contentRef,
         hovered,
       }}
     >
       {/* biome-ignore lint/a11y/noStaticElementInteractions: <hover tracking is a passive UI affordance — no keyboard equivalent needed since the inner viewport remains keyboard-scrollable> */}
       <div
-        class={cn("relative overflow-clip", local.class)}
+        class={cn("relative flex flex-col overflow-clip", local.class)}
         data-slot="scroll-area"
         onMouseEnter={(e) => {
           setHovered(true);
@@ -62,13 +80,25 @@ const ScrollArea = (props: ScrollAreaProps) => {
         {...others}
       >
         <div
-          class="no-scrollbar size-full overflow-auto rounded-[inherit] outline-none transition-[color,box-shadow] focus-visible:outline-1 focus-visible:ring-[3px] focus-visible:ring-ring/50"
+          class={cn(
+            "no-scrollbar min-h-0 w-full flex-1 overflow-auto rounded-[inherit] outline-none transition-[color,box-shadow] focus-visible:outline-1 focus-visible:ring-[3px] focus-visible:ring-ring/50",
+            local.viewportClass,
+          )}
           data-slot="scroll-area-viewport"
-          ref={viewportRef}
+          ref={(el) => {
+            viewportRef = el;
+            local.viewportRef?.(el);
+          }}
         >
-          {local.children}
+          <div
+            class={cn("min-h-full", local.contentClass)}
+            data-slot="scroll-area-content"
+            ref={contentRef}
+          >
+            {local.children}
+          </div>
         </div>
-        <ScrollBar />
+        <ScrollBar orientation={local.orientation ?? "vertical"} />
         <div data-slot="scroll-area-corner" />
       </div>
     </ScrollAreaContext.Provider>
@@ -243,22 +273,23 @@ const ScrollBar = (rawProps: ScrollBarProps) => {
 
     viewport.addEventListener("scroll", handleScroll);
 
-    const resizeObserver = new ResizeObserver(() => {
-      updateScrollbar();
-    });
+    // The content box grows or shrinks when children change; the viewport alone
+    // keeps its size once capped, so observe both.
+    const resizeObserver =
+      typeof ResizeObserver === "undefined" ? null : new ResizeObserver(() => updateScrollbar());
 
     const content = context.contentRef();
     if (content) {
-      resizeObserver.observe(content);
+      resizeObserver?.observe(content);
     }
-    resizeObserver.observe(viewport);
+    resizeObserver?.observe(viewport);
 
     document.addEventListener("mousemove", handleMouseMove);
     document.addEventListener("mouseup", handleMouseUp);
 
     onCleanup(() => {
       viewport.removeEventListener("scroll", handleScroll);
-      resizeObserver.disconnect();
+      resizeObserver?.disconnect();
       document.removeEventListener("mousemove", handleMouseMove);
       document.removeEventListener("mouseup", handleMouseUp);
     });
@@ -289,7 +320,7 @@ const ScrollBar = (rawProps: ScrollBarProps) => {
     >
       {/* biome-ignore lint/a11y/noStaticElementInteractions: <custom scrollbar thumb — keyboard scroll is handled via the native viewport> */}
       <div
-        class="relative z-scroll-area-thumb flex-1 cursor-grab bg-border active:cursor-grabbing"
+        class="relative z-scroll-area-thumb flex-1 cursor-grab bg-muted-foreground/40 hover:bg-muted-foreground/65 active:cursor-grabbing active:bg-muted-foreground/65"
         data-slot="scroll-area-thumb"
         onMouseDown={handleThumbMouseDown}
         ref={thumbRef}

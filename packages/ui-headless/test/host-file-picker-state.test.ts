@@ -2,10 +2,14 @@ import { describe, expect, it } from "vite-plus/test";
 
 import {
   canGoUpFromList,
+  favoriteLabel,
   fileMatchesMode,
   hostFilePickerLocationLabel,
   isDirectoryMode,
+  normalizeFavoritePaths,
   parentPathForGoUp,
+  toggleFavoritePath,
+  visibleEntries,
 } from "../src/host-file-picker-state";
 
 describe("host-file-picker-state", () => {
@@ -47,5 +51,29 @@ describe("host-file-picker-state", () => {
     expect(
       hostFilePickerLocationLabel({ path: "/Users/jack", parent: "/Users", entries: [] }),
     ).toBe("/Users/jack");
+  });
+
+  it("visibleEntries drops dot-prefixed entries unless hidden items are shown", () => {
+    const entries = [
+      { name: ".cache", path: "/a/.cache", isDirectory: true },
+      { name: "data", path: "/a/data", isDirectory: true },
+      { name: ".env", path: "/a/.env", isDirectory: false },
+    ];
+    expect(visibleEntries(entries, false).map((entry) => entry.name)).toEqual(["data"]);
+    expect(visibleEntries(entries, true)).toHaveLength(3);
+  });
+
+  it("favoriteLabel uses the last path segment", () => {
+    expect(favoriteLabel("/Users/jack/data")).toBe("data");
+    expect(favoriteLabel("/Users/jack/data/")).toBe("data");
+    expect(favoriteLabel("C:\\Users\\jack\\data")).toBe("data");
+    expect(favoriteLabel("/")).toBe("/");
+  });
+
+  it("favorite paths toggle and normalize stored values", () => {
+    expect(toggleFavoritePath([], "/a")).toEqual(["/a"]);
+    expect(toggleFavoritePath(["/a", "/b"], "/a")).toEqual(["/b"]);
+    expect(normalizeFavoritePaths(null)).toEqual([]);
+    expect(normalizeFavoritePaths(["/a", 3, "", "/a", "/b"])).toEqual(["/a", "/b"]);
   });
 });

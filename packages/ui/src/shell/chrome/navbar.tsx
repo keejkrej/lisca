@@ -111,7 +111,7 @@ function ShellNavbarAnnotator(props: ShellNavbarAnnotatorProps) {
       appearance={props.appearance}
       endLeading={props.endLeading}
       showSourceButton={false}
-      title="LiSCA Annotator"
+      title="Annotator"
       onPickWorkspace={props.onPickWorkspace}
     />
   );
@@ -130,7 +130,7 @@ function ShellNavbarAligner(props: ShellNavbarAlignerProps) {
       appearance={props.appearance}
       endLeading={props.endLeading}
       showToolsMenu={props.endLeading !== undefined}
-      title="LiSCA Aligner"
+      title="Aligner"
       onPickSource={props.onPickSource}
       onPickWorkspace={props.onPickWorkspace}
     />
