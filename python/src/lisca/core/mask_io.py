@@ -9,7 +9,7 @@ import tifffile
 
 
 def write_mask_tif(mask_stack: np.ndarray, output_path: Path) -> None:
-    """Write a (T, H, W) mask stack as one Gray8 TIFF page per timepoint.
+    """Write a (T, H, W) mask stack as one Gray8 TIFF page per frame.
 
     Do not pass the full array to ``tifffile.imwrite``: when W==1 or H==1 it
     squeezes the singleton spatial axis and stores a single 2D plane.
@@ -20,12 +20,12 @@ def write_mask_tif(mask_stack: np.ndarray, output_path: Path) -> None:
         msg = f"mask_stack must have shape (T, H, W), got {arr.shape}"
         raise ValueError(msg)
     if arr.shape[0] == 0:
-        raise ValueError("mask_stack has no timepoints")
+        raise ValueError("mask_stack has no frames")
 
     with tifffile.TiffWriter(output_path) as writer:
-        for frame in arr:
+        for page in arr:
             writer.write(
-                np.ascontiguousarray(frame),
+                np.ascontiguousarray(page),
                 photometric="minisblack",
                 contiguous=False,
             )

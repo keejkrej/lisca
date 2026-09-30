@@ -82,7 +82,7 @@ export function AlignFrameNavigation() {
           if (next != null) nav.setSelection({ channel: next });
         },
       }}
-      timepoint={{
+      frame={{
         get value() {
           return clamp(timeIndex(), 0, Math.max(0, (nav.scan?.times?.length ?? 1) - 1));
         },

@@ -41,7 +41,7 @@ describe("frame-navigation steppers", () => {
           value={4}
         />
         <SliderStepperField
-          label="Timepoint"
+          label="Frame"
           max={5}
           min={0}
           onNext={() => undefined}
@@ -67,8 +67,8 @@ describe("frame-navigation steppers", () => {
     expect(onPositionNext).toHaveBeenCalledOnce();
     expect(onPositionPrevious).not.toHaveBeenCalled();
 
-    expect(screen.getByRole("button", { name: "Previous Timepoint" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Next Timepoint" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Previous Frame" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Next Frame" })).toBeTruthy();
   });
 });
 

@@ -59,7 +59,7 @@ function buildSelectStepperControl<T extends NavigationValue>(args: {
   };
 }
 
-/** Shared ROI workspace navigation: position, ROI, channel, timepoint, and Z plane. */
+/** Shared ROI workspace navigation: position, ROI, channel, frame, and Z plane. */
 export function RoiFrameNavigation(props: RoiFrameNavigationProps) {
   const positionOptions = () =>
     toAxisNavigationOptions(props.scan?.positions.map((entry) => entry.pos) ?? []);
@@ -99,7 +99,7 @@ export function RoiFrameNavigation(props: RoiFrameNavigationProps) {
         changeSelection: props.changeSelection,
         onChange: (roi) => props.setSelection({ roi }),
       })}
-      timepoint={createAxisIndexSliderControl({
+      frame={createAxisIndexSliderControl({
         axisValues: props.position?.times,
         index: props.selection.timeIndex,
         onIndexChange: (timeIndex) =>

@@ -13,7 +13,9 @@ class RoiStack:
     shape: tuple[int, int, int, int, int]
 
 
-def load_roi_stack(path: Path, expected_shape: tuple[int, int, int, int, int]) -> RoiStack:
+def load_roi_stack(
+    path: Path, expected_shape: tuple[int, int, int, int, int]
+) -> RoiStack:
     pages = tifffile.imread(path, key=slice(None))
     if pages.ndim == 2:
         pages = pages[np.newaxis, ...]
@@ -37,7 +39,7 @@ def load_roi_stack(path: Path, expected_shape: tuple[int, int, int, int, int]) -
 def roi_frame_2d(
     stack: RoiStack,
     axis_order: str,
-    timepoint: int,
+    frame: int,
     channel: int,
     z_index: int,
 ) -> np.ndarray:
@@ -56,9 +58,9 @@ def roi_frame_2d(
     for axis_index, axis in enumerate(order):
         size = stack.shape[axis_index]
         if axis == "T":
-            if timepoint >= size:
-                raise ValueError(f"Time index {timepoint} out of range for axis size {size}")
-            indices[axis_index] = timepoint
+            if frame >= size:
+                raise ValueError(f"Frame {frame} out of range for axis size {size}")
+            indices[axis_index] = frame
         elif axis == "C":
             if channel >= size:
                 raise ValueError(
@@ -86,5 +88,5 @@ def roi_frame_2d(
             fixed = indices[axis_index]
             slicer.append(int(fixed if fixed is not None else 0))
 
-    frame = stack.data[tuple(slicer)]
-    return np.asarray(frame, dtype=np.float64)
+    plane = stack.data[tuple(slicer)]
+    return np.asarray(plane, dtype=np.float64)
