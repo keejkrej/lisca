@@ -97,7 +97,10 @@ function StagePathButton(props: {
       </TooltipTrigger>
       <TooltipContent class="max-w-[min(90vw,32rem)]">
         <div class="flex items-center gap-2">
-          <Show when={props.value} fallback={<span>Pick a {props.label.toLowerCase()} folder</span>}>
+          <Show
+            when={props.value}
+            fallback={<span>Pick a {props.label.toLowerCase()} folder</span>}
+          >
             {(path) => (
               <>
                 <code class="min-w-0 flex-1 truncate text-left font-mono text-[11px]">
