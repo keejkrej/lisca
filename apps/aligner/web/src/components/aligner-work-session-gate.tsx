@@ -10,7 +10,6 @@ import { alignerUiActions, alignerUiAtom, readAlignerSession } from "../atoms/al
 export function AlignerWorkSessionGate(props: { children?: JSX.Element }) {
   const workspace = useShellWorkspace();
   const [, setUi] = useAtom(() => alignerUiAtom);
-  const persistedSession = readAlignerSession();
 
   onMount(() => {
     const session = readAlignerSession();
@@ -21,10 +20,11 @@ export function AlignerWorkSessionGate(props: { children?: JSX.Element }) {
   return (
     <WorkSessionAppGate
       appId="aligner"
-      gateOptions={{ skipResumePicker: persistedSession != null }}
+      // No resume dialog: the workspace picker lists recent sessions as chips instead.
+      gateOptions={{ skipResumePicker: true }}
       PickerDialog={WorkSessionPickerDialog}
-      onRestore={async (session) => {
-        await restoreAlignerWorkSession({
+      onRestore={(session) =>
+        restoreAlignerWorkSession({
           session,
           setShellWorkspacePath: workspace.setWorkspacePath,
           setWorkspacePath: alignerUiActions.setWorkspacePath,
@@ -33,8 +33,8 @@ export function AlignerWorkSessionGate(props: { children?: JSX.Element }) {
           resumePendingRuns: async () => {
             // Crop jobs are not owned by Aligner.
           },
-        });
-      }}
+        })
+      }
     >
       {props.children}
     </WorkSessionAppGate>

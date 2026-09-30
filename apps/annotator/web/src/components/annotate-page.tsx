@@ -1,3 +1,4 @@
+import { useWorkSessionRecents } from "@lisca/client/session/work-session-app-gate";
 import { HostFilePickerDialog, LabelCreationDialog } from "@lisca/ui/features";
 import { AppShell } from "@lisca/ui/shell";
 
@@ -10,6 +11,7 @@ import { AnnotatorRight } from "./annotator-right";
 
 export function AnnotatePage() {
   const shell = useAnnotateShell();
+  const recents = useWorkSessionRecents();
 
   return (
     <AppShell>
@@ -37,6 +39,13 @@ export function AnnotatePage() {
         onOpenChange={shell.setFilePickerOpen}
         onPickDirectory={shell.pickWorkspace}
         onPickFile={() => undefined}
+        recentItems={shell.filePickerOpen ? recents.items() : undefined}
+        onPickRecent={(path) => {
+          shell.setFilePickerOpen(false);
+          void recents.restore(path).then((restored) => {
+            if (!restored) shell.pickWorkspace(path);
+          });
+        }}
       />
       <LabelCreationDialog
         error={shell.labelError}

@@ -3,6 +3,7 @@ import {
   HostFilePickerDialog,
   SourcePickerModal,
 } from "@lisca/ui/features";
+import { useWorkSessionRecents } from "@lisca/client/session/work-session-app-gate";
 import { ShellNavbar, useShellWorkspace } from "@lisca/ui/shell";
 import type { HostFilePickerMode } from "@lisca/ui/features";
 import { createSignal } from "solid-js";
@@ -22,6 +23,7 @@ function filePickerTitle(mode: HostFilePickerMode): string {
 export function AlignerHeader() {
   const alignSource = useAlignSource();
   const workspace = useShellWorkspace();
+  const recents = useWorkSessionRecents();
   let pickerMode: HostFilePickerMode | null = null;
   const [sourcePickerOpen, setSourcePickerOpen] = createSignal(false);
   const [folderSourcePath, setFolderSourcePath] = createSignal<string | null>(null);
@@ -98,6 +100,19 @@ export function AlignerHeader() {
         }}
         onPickDirectory={applyPickDirectory}
         onPickFile={applyPickFile}
+        recentItems={
+          filePicker().open && filePicker().mode === "workspace" ? recents.items() : undefined
+        }
+        onPickRecent={(path) => {
+          setFilePicker((current) => ({ ...current, open: false }));
+          pickerMode = null;
+          // Restores workspace + source together; a session without a source is just a workspace.
+          void recents.restore(path).then((restored) => {
+            if (restored) return;
+            workspace.setWorkspacePath(path);
+            alignSource.setSource(null);
+          });
+        }}
       />
     </>
   );
