@@ -11,9 +11,9 @@ sidecars import the folder names and bbox/ROI readers; they do not redefine them
 
 A follow-up in the transfection sidecar switches that package onto these imports.
 
-Kinetic ids match [`CONTEXT.md`](../../CONTEXT.md) (`onset_time`,
+Kinetic ids (glossary terms in [`CONTEXT.md`](../../CONTEXT.md)): `onset_time`,
 `expression_rate`, `mrna_lifetime`, `protein_lifetime`, `baseline_intensity`,
-`auc`). Times and lifetimes are **minutes**. Lifetimes are half-lives ln(2)/δ
+`auc`. Times and lifetimes are **minutes**. Lifetimes are half-lives ln(2)/δ
 and ln(2)/β. Writers use the names below.
 
 ## Folder tree
