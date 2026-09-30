@@ -29,7 +29,6 @@ export function StudioWorkSessionGate(props: { children?: JSX.Element }) {
   const [, setAlignUi] = useAtom(() => studioAlignUiAtom);
   const [, setAnnotateUi] = useAtom(() => studioAnnotateUiAtom);
   const [, setWizard] = useAtom(() => studioWizardAtom);
-  const persistedSession = readStudioAlignSession();
   const pendingRunSubscription = createSubscriptionOwner();
 
   const attachPendingRuns = async (workspacePath: string) => {
@@ -67,7 +66,8 @@ export function StudioWorkSessionGate(props: { children?: JSX.Element }) {
   return (
     <WorkSessionAppGate
       appId="studio"
-      gateOptions={{ skipResumePicker: persistedSession != null }}
+      // No welcome picker: Studio starts on the Assay page, where Open lists recent assays.
+      gateOptions={{ skipResumePicker: true }}
       PickerDialog={WorkSessionPickerDialog}
       onRestore={(session) =>
         restoreStudioSession(
