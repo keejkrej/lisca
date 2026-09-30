@@ -1,20 +1,21 @@
-import { runClientEffect } from "@lisca/client/runtime";
-import { touchStudioWorkSessionFromAssayPath } from "@lisca/client/session/work-session";
 import { HostFilePickerDialog } from "@lisca/ui/features";
 import { AppShell } from "@lisca/ui/shell";
 import { createFileRoute } from "@tanstack/solid-router";
+import { useAtomSet, useAtomValue } from "@effect/atom-solid";
 import { createMemo, createSignal, Show } from "solid-js";
 
-import { studioClient, studioHostOperations } from "../api/studio-port";
+import { studioHostOperations } from "../api/studio-port";
 import { ChooseAssay } from "../components/choose-assay";
 import { StudioAssayActions } from "../components/studio-assay-dock";
 import { StudioLeft } from "../components/studio-left";
+import { useReplaceDocumentGuard } from "../components/studio-replace-document-guard";
 import { StudioRightPanel } from "../components/studio-right-panel";
 import { StudioTopBar } from "../components/studio-top-bar";
 import { instructionForStep } from "../state/studio-routes";
 import { useStudioMemoryRecent } from "../hooks/use-studio-memory-recent";
 import { useStudioNavigate } from "../navigation/use-studio-navigate";
-import { assayDisplayLabel, parseStudioAssayJson, useStudioStore } from "../state/studio-store";
+import { useStudioSession } from "../state/studio-session-context";
+import { studioWizardActions, studioWizardAtom } from "../state/studio-store";
 import { recordStudioAssayMemory } from "../utils/studio-memory";
 
 export const Route = createFileRoute("/assay")({
@@ -23,23 +24,27 @@ export const Route = createFileRoute("/assay")({
 
 function AssayPage() {
   const { navigateTo } = useStudioNavigate();
-  const loadAssayJson = useStudioStore((state) => state.loadAssayJson);
+  const { openAssay } = useStudioSession();
   const [openingAssay, setOpeningAssay] = createSignal(false);
   const [assayPickerOpen, setAssayPickerOpen] = createSignal(false);
   const [openAssayError, setOpenAssayError] = createSignal<string | null>(null);
   const assayRecent = createMemo(() => useStudioMemoryRecent("assay", assayPickerOpen()));
+  const wizard = useAtomValue(() => studioWizardAtom);
+  const setWizard = useAtomSet(() => studioWizardAtom);
+  const { replaceDocument, prompts } = useReplaceDocumentGuard();
+  const newAssay = () =>
+    replaceDocument(() => {
+      studioWizardActions.newAssay(setWizard, wizard().assayId);
+      navigateTo("/metadata");
+    });
 
   const openAssayJson = async (path: string) => {
     setAssayPickerOpen(false);
     setOpeningAssay(true);
     setOpenAssayError(null);
     try {
-      const contents = await runClientEffect(studioClient.readTextFile(path));
-      const assayJson = parseStudioAssayJson(contents);
-      loadAssayJson()(assayJson);
-      const label = assayDisplayLabel(assayJson);
-      touchStudioWorkSessionFromAssayPath(path, label);
-      recordStudioAssayMemory(path, label, assayJson.workspace.path.trim() || undefined);
+      const assayJson = await openAssay(path);
+      recordStudioAssayMemory(path, assayJson);
       navigateTo("/metadata");
     } catch (cause) {
       setOpenAssayError(
@@ -83,6 +88,7 @@ function AssayPage() {
             <StudioAssayActions
               assayPickerOpen={assayPickerOpen()}
               openingAssay={openingAssay()}
+              onNewAssay={newAssay}
               onOpenAssay={() => setAssayPickerOpen(true)}
             />
           </StudioRightPanel>
@@ -100,9 +106,10 @@ function AssayPage() {
         title="Open existing assay"
         onOpenChange={setAssayPickerOpen}
         onPickDirectory={() => {}}
-        onPickFile={(path) => void openAssayJson(path)}
-        onPickRecent={(path) => void openAssayJson(path)}
+        onPickFile={(path) => replaceDocument(() => void openAssayJson(path))}
+        onPickRecent={(path) => replaceDocument(() => void openAssayJson(path))}
       />
+      {prompts()}
     </AppShell>
   );
 }

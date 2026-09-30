@@ -1,7 +1,8 @@
 import type { HostFilePickerMode, HostFilePickerOperations } from "@lisca/utils";
 import { useHostFilePickerState } from "@lisca/ui-headless/host-file-picker-state";
-import { favoriteLabel } from "@lisca/ui-headless/host-file-picker-state";
+import { favoriteLabel, recentLabel } from "@lisca/ui-headless/host-file-picker-state";
 import IconArrowUpRegular from "phosphor-icons-solid/IconArrowUpRegular";
+import IconClockCounterClockwiseRegular from "phosphor-icons-solid/IconClockCounterClockwiseRegular";
 import IconEyeRegular from "phosphor-icons-solid/IconEyeRegular";
 import IconEyeSlashRegular from "phosphor-icons-solid/IconEyeSlashRegular";
 import IconHouseRegular from "phosphor-icons-solid/IconHouseRegular";
@@ -54,6 +55,9 @@ export function HostFilePickerDialog(props: HostFilePickerDialogProps) {
     window.addEventListener("keydown", onKeyDown);
     onCleanup(() => window.removeEventListener("keydown", onKeyDown));
   });
+
+  /** Recent picks share the favorites chip row; newest first, a handful at most. */
+  const recent = () => (props.onPickRecent ? (props.recentItems ?? []).slice(0, 5) : []);
 
   const [showNewFolder, setShowNewFolder] = createSignal(false);
   const [folderName, setFolderName] = createSignal("");
@@ -131,34 +135,6 @@ export function HostFilePickerDialog(props: HostFilePickerDialogProps) {
           </div>
 
           <div class="flex flex-col gap-3 px-5 py-4">
-            <Show when={props.recentItems && props.recentItems.length > 0 && props.onPickRecent}>
-              <div class="space-y-2">
-                <p class="font-medium text-foreground text-sm">Recent</p>
-                <ScrollArea class="rounded-md border border-border" viewportClass="max-h-32">
-                  <ul class="divide-y divide-border/60">
-                    <For each={props.recentItems}>
-                      {(item) => (
-                        <li>
-                          <button
-                            class="flex w-full flex-col gap-0.5 px-3 py-2 text-left text-sm transition-colors hover:bg-muted/30"
-                            type="button"
-                            onClick={() => props.onPickRecent!(item.path)}
-                          >
-                            <Show when={item.label}>
-                              <span class="font-medium text-foreground">{item.label}</span>
-                            </Show>
-                            <span class="truncate text-muted-foreground" title={item.path}>
-                              {item.path}
-                            </span>
-                          </button>
-                        </li>
-                      )}
-                    </For>
-                  </ul>
-                </ScrollArea>
-              </div>
-            </Show>
-
             <div class="flex flex-wrap items-center gap-2">
               <Button
                 aria-label="Go up one directory"
@@ -208,40 +184,63 @@ export function HostFilePickerDialog(props: HostFilePickerDialogProps) {
               </Button>
             </div>
 
-            <Show when={picker.favorites().length > 0}>
-              <ul aria-label="Favorite folders" class="flex flex-wrap gap-1.5">
-                <For each={picker.favorites()}>
-                  {(path) => (
-                    <li
-                      class={cn(
-                        "flex max-w-56 items-center rounded-md border text-sm transition-colors",
-                        picker.list()?.path === path
-                          ? "border-primary/60 bg-primary/10 text-foreground"
-                          : "border-border text-muted-foreground hover:text-foreground",
+            <Show when={recent().length > 0 || picker.favorites().length > 0}>
+              <div class="flex flex-wrap gap-1.5">
+                <Show when={recent().length > 0}>
+                  <ul aria-label="Recent" class="contents">
+                    <For each={recent()}>
+                      {(item) => (
+                        <li class="flex max-w-56 items-center rounded-md border border-border text-muted-foreground text-sm transition-colors hover:text-foreground">
+                          <button
+                            class="flex min-w-0 items-center gap-1.5 px-2 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                            title={`Open ${item.path}`}
+                            type="button"
+                            onClick={() => props.onPickRecent!(item.path)}
+                          >
+                            <IconClockCounterClockwiseRegular class="size-3.5 shrink-0" />
+                            <span class="truncate">{item.label ?? recentLabel(item.path)}</span>
+                          </button>
+                        </li>
                       )}
-                    >
-                      <button
-                        class="flex min-w-0 items-center gap-1.5 py-1 pr-1 pl-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                        disabled={picker.loading()}
-                        title={path}
-                        type="button"
-                        onClick={() => picker.openFavorite(path)}
-                      >
-                        <IconStarFill class="size-3.5 shrink-0 text-primary" />
-                        <span class="truncate">{favoriteLabel(path)}</span>
-                      </button>
-                      <button
-                        aria-label={`Remove ${favoriteLabel(path)} from favorites`}
-                        class="inline-flex shrink-0 items-center py-1 pr-1.5 pl-1 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                        type="button"
-                        onClick={() => picker.toggleFavorite(path)}
-                      >
-                        <IconXRegular class="size-3" />
-                      </button>
-                    </li>
-                  )}
-                </For>
-              </ul>
+                    </For>
+                  </ul>
+                </Show>
+                <Show when={picker.favorites().length > 0}>
+                  <ul aria-label="Favorite folders" class="contents">
+                    <For each={picker.favorites()}>
+                      {(path) => (
+                        <li
+                          class={cn(
+                            "flex max-w-56 items-center rounded-md border text-sm transition-colors",
+                            picker.list()?.path === path
+                              ? "border-primary/60 bg-primary/10 text-foreground"
+                              : "border-border text-muted-foreground hover:text-foreground",
+                          )}
+                        >
+                          <button
+                            class="flex min-w-0 items-center gap-1.5 py-1 pr-1 pl-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                            disabled={picker.loading()}
+                            title={`Go to ${path}`}
+                            type="button"
+                            onClick={() => picker.openFavorite(path)}
+                          >
+                            <IconStarFill class="size-3.5 shrink-0 text-primary" />
+                            <span class="truncate">{favoriteLabel(path)}</span>
+                          </button>
+                          <button
+                            aria-label={`Remove ${favoriteLabel(path)} from favorites`}
+                            class="inline-flex shrink-0 items-center py-1 pr-1.5 pl-1 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                            type="button"
+                            onClick={() => picker.toggleFavorite(path)}
+                          >
+                            <IconXRegular class="size-3" />
+                          </button>
+                        </li>
+                      )}
+                    </For>
+                  </ul>
+                </Show>
+              </div>
             </Show>
 
             <ScrollArea

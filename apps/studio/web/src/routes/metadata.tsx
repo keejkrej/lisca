@@ -8,7 +8,6 @@ import { StudioMetadataActions } from "../components/studio-metadata-actions";
 import { StudioLeft } from "../components/studio-left";
 import { StudioRightPanel } from "../components/studio-right-panel";
 import { StudioTopBar } from "../components/studio-top-bar";
-import { useStudioNavigate } from "../navigation/use-studio-navigate";
 import { instructionForStep } from "../state/studio-routes";
 
 export const Route = createFileRoute("/metadata")({
@@ -16,8 +15,6 @@ export const Route = createFileRoute("/metadata")({
 });
 
 function MetadataPage() {
-  const { navigateTo } = useStudioNavigate();
-
   return (
     <AppShell>
       <AppShell.Body>
@@ -37,7 +34,7 @@ function MetadataPage() {
         </AppShell.MainColumn>
         <AppShell.Right widthClass="w-64">
           <StudioRightPanel instruction={() => instructionForStep("metadata")}>
-            <StudioMetadataActions onNext={() => navigateTo("/align")} />
+            <StudioMetadataActions />
           </StudioRightPanel>
         </AppShell.Right>
       </AppShell.Body>

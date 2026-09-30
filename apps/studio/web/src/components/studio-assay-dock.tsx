@@ -1,15 +1,12 @@
 import { Button } from "@lisca/ui/components";
 import { PanelSection, RailControlStack } from "@lisca/ui/shell";
 
-import { useStudioNavigate } from "../navigation/use-studio-navigate";
-
 export function StudioAssayActions(props: {
   openingAssay: boolean;
   assayPickerOpen: boolean;
+  onNewAssay: () => void;
   onOpenAssay: () => void;
 }) {
-  const { navigateTo } = useStudioNavigate();
-
   return (
     <PanelSection appearance="rail" title="Action">
       <RailControlStack>
@@ -25,11 +22,12 @@ export function StudioAssayActions(props: {
         </Button>
         <Button
           class="w-full justify-center"
+          disabled={props.openingAssay}
           size="sm"
           type="button"
-          onClick={() => navigateTo("/metadata")}
+          onClick={props.onNewAssay}
         >
-          Continue
+          New
         </Button>
       </RailControlStack>
     </PanelSection>

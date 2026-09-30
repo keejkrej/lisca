@@ -90,3 +90,10 @@ describe("Studio workflow route composition", () => {
     expect(stackSource).toMatch(/shortcutsEnabled=\{dock\.shortcutsEnabled\}/);
   });
 });
+
+describe("Studio startup", () => {
+  it("starts on the Assay page without the resume-session picker", () => {
+    const gateSource = readSource("../src/components/studio-work-session-gate.tsx");
+    expect(gateSource).toMatch(/skipResumePicker:\s*true/);
+  });
+});

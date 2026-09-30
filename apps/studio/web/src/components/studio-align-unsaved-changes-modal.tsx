@@ -4,7 +4,7 @@ import { Show } from "solid-js";
 
 import { useStudioAlignPage } from "../state/studio-align-page-context";
 
-/** Asks before Back / Next / Continue / Navigation leave a position with unsaved grid or exclusions. */
+/** Asks before Back / Next / Crop / Navigation leave a position with unsaved grid or exclusions. */
 export function StudioAlignUnsavedChangesModal() {
   const { state } = useStudioAlignPage();
 

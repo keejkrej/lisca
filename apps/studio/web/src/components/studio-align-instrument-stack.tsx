@@ -17,7 +17,7 @@ const RAIL_CLASS =
  * Shared Studio Align instrument stack for basic and expert modes.
  * Flattened order (after Instruction): Navigation → Contrast → Tool → Grid → Geometry → Selection → Action.
  * Navigation, Contrast, Grid, and Geometry are expert-only; basic keeps Tool, Selection, and Action.
- * Action follows the rail vocabulary: Save → Back → Next → Continue (primary, last).
+ * Action follows the rail vocabulary: Save → Back → Next → Crop (primary, last).
  */
 export function StudioAlignInstrumentStack(props: { expert?: boolean }) {
   const {
@@ -29,7 +29,7 @@ export function StudioAlignInstrumentStack(props: { expert?: boolean }) {
     cancelExcludePreview,
   } = useStudioAlignPage();
   const disabled = () => !state.frame;
-  const busy = createMemo(() => state.saving || state.continuing);
+  const busy = createMemo(() => state.saving || state.preparingCrop || state.cropping);
   const frameReady = createMemo(() => Boolean(state.frame));
 
   return (
@@ -116,9 +116,9 @@ export function StudioAlignInstrumentStack(props: { expert?: boolean }) {
             disabled={busy() || !frameReady()}
             size="sm"
             type="button"
-            onClick={() => void state.continueAlign()}
+            onClick={() => void state.requestCrop()}
           >
-            Continue
+            Crop
           </Button>
         </RailControlStack>
       </PanelSection>

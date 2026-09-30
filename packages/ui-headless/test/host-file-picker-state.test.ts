@@ -7,6 +7,7 @@ import {
   hostFilePickerLocationLabel,
   isDirectoryMode,
   normalizeFavoritePaths,
+  recentLabel,
   parentPathForGoUp,
   toggleFavoritePath,
   visibleEntries,
@@ -75,5 +76,12 @@ describe("host-file-picker-state", () => {
     expect(toggleFavoritePath(["/a", "/b"], "/a")).toEqual(["/b"]);
     expect(normalizeFavoritePaths(null)).toEqual([]);
     expect(normalizeFavoritePaths(["/a", 3, "", "/a", "/b"])).toEqual(["/a", "/b"]);
+  });
+
+  it("recentLabel names an assay.json after its folder", () => {
+    expect(recentLabel("/Users/jack/data/TF84_portable/assay.json")).toBe("TF84_portable");
+    expect(recentLabel("C:\\data\\TF85\\assay.json")).toBe("TF85");
+    expect(recentLabel("/Users/jack/data/run.nd2")).toBe("run.nd2");
+    expect(recentLabel("/Users/jack/workspace")).toBe("workspace");
   });
 });

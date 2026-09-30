@@ -169,8 +169,7 @@ describe("StudioMetadataLeaveGuard save guard", () => {
     );
     expect(memory.recordStudioAssayMemory).toHaveBeenCalledWith(
       "/assays/run-1/assay.json",
-      "A",
-      "/assays/run-1",
+      expect.objectContaining({ name: "A", workspace: { path: "/assays/run-1" } }),
     );
     expect(wizardSignal[0]().basicInfoSavedSnapshot).not.toBeNull();
   });
