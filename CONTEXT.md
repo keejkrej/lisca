@@ -1,79 +1,152 @@
-# LiSCA domain language
+# LiSCA
 
-## Workflow
+Live-cell single-cell analysis: turning time-lapse microscopy of cells on
+micropattern arrays into per-cell measurements for an assay.
 
-- **Image source** — an ND2 file, CZI file, or templated image folder that supplies
-  position, channel, time, and Z frames.
-- **Workspace** — the on-disk experiment directory containing alignment, ROI,
-  annotation, assay, and result artifacts. BBox CSVs use `roi,x,y,w,h`; a
-  one-shot in-place `crop`→`roi` header migration runs when a tool opens the
-  workspace (`crop` is not a live alias).
-- **Align session** — the interactive workflow that registers a frame to the
-  micropattern grid, excludes unusable sites, saves site boxes, and starts ROI crop.
-- **ROI crop** — creation of per-site TIFF stacks and an index from saved alignment boxes,
-  while preserving position and site identity. Runs in Studio, CLI (`lisca-crop`),
-  or the notebooks zip (`lisca.services.crop` in `python/`); not in the light Aligner shell.
-- **Annotation session** — the interactive workflow that loads an ROI frame, edits
-  its classification or segmentation mask, tracks history, and saves the annotation.
-- **Assay** — the typed experiment description in `assay.json`, including the assay
-  kind, source, positions, channels, timing, and analysis configuration.
-- **Analysis run** — an Operation that executes the assay pipeline and writes
-  result tables and plots.
+## Language
 
-## Background work
+### Imaging
 
-- **Operation** — one user-requested unit of background work, presented and tracked
-  as a single aggregate even when it fans out internally.
-- **Task** — the smallest independently scheduled part of an Operation; it is kept
-  bounded enough to run, retry, or fail without treating the whole Operation as one
-  indivisible computation.
-- **Queue** — the scheduler-owned ordered set of runnable Tasks. Users create
-  Operations, not Queues.
+**Image source**:
+The acquisition LiSCA reads images from: an ND2 file, a CZI file, or a templated
+image folder.
 
-## Product composition
+**Frame**:
+An integer index along the time axis (0, 1, 2, …). "The image at a Frame" means
+one 2D image for a given Position, Channel, and Z plane.
+_Avoid_: time index
 
-- **Aligner** hosts an Align session.
-- **Annotator** hosts an Annotation session.
-- **Studio** composes assay setup, Align and Annotation sessions, an Analysis run,
-  and result review in one workflow.
+**Timepoint**:
+The real time of a Frame, in time units: its Frame times the Interval.
+_Avoid_: using "timepoint" for the integer index
 
-## Transfection kinetic parameters
+**Interval**:
+The real time between consecutive Frames.
+_Avoid_: frame rate
 
-On-disk workspace table columns: [`docs/analysis/schema.md`](docs/analysis/schema.md).
+**Position**:
+One microscope stage position in the Image source; a single field of view imaged
+over time.
+_Avoid_: FOV, field, tile
 
-Gene-expression fits (in `lisca-transfection`, imported by this repo) use the **basic translation–degradation model** (Müller et al.
-2024 Eq. 3; **no protein maturation**). Public names are the same in Rust, Python,
-`fit.csv` / `fit.xlsx`, and Studio labels. One name only — no CSV aliases.
+**Channel**:
+One imaging channel of the Image source, such as brightfield or a fluorescence
+channel. Bare "channel" always means this.
 
-| Code / CSV / id      | Display label           | Paper symbol                           |
-| -------------------- | ----------------------- | -------------------------------------- |
-| `onset_time`         | onset time t0           | t0                                     |
-| `expression_rate`    | expression rate m0 k_TL | m0 k_TL                                |
-| `mrna_lifetime`      | mRNA lifetime τ_mRNA    | τ_mRNA = ln(2)/δ                       |
-| `protein_lifetime`   | protein lifetime τ_EGFP | τ_EGFP = ln(2)/β                       |
-| `baseline_intensity` | baseline intensity      | additive baseline (not a kinetic rate) |
-| `auc`                | AUC                     | integrated protein output              |
+**Slide channel**:
+A physical lane of the microscope slide. By convention one Slide channel holds
+one Sample, but analysis never uses Slide channels. Always qualified as "slide
+channel".
+_Avoid_: bare "channel", lane
 
-Internal solver fields — **not** written to `fit.csv` / `fit.xlsx`:
+**Sample**:
+A named group of Positions that analysis reports on together, typically one
+experimental condition.
+_Avoid_: condition, group
 
-| Code (internal only)       | Meaning                  | Paper symbol      |
-| -------------------------- | ------------------------ | ----------------- |
-| `mrna_degradation_rate`    | mRNA degradation rate    | δ                 |
-| `protein_degradation_rate` | protein degradation rate | β                 |
-| `expression_amplitude`     | (internal fit coeff.)    | m0 k_TL / (δ − β) |
+**Segmentation channel**:
+The Channel an analysis segments cells from.
+_Avoid_: Mask channel
 
-Lifetimes are **half-lives** ln(2)/δ and ln(2)/β, not 1/rate.
-Stored times (`onset_time`, lifetimes) are in **minutes**; plots may show hours.
+**Signal channel**:
+The Channel an analysis measures intensity in.
 
-Use **onset time** for t0 — never “transfection efficiency”, “translation onset”, or
-“transfection onset” as the product name. Use **expression rate** for m0 k_TL;
-reserve “efficiency” for delivery/escape fractions.
+### Micropatterns
 
-## Models
+**Pattern**:
+One micropattern on the slide, and the matching slot in the alignment grid. A
+Pattern holds at most a few biological cells.
+_Avoid_: cell, grid cell, site, well
 
-Product / any-assay tools stay in this repo (`models/smart-exclusion-resnet18`,
-`models/smart-segment-slimsam`; `mupattern-resnet18` is legacy reference).
-Assay-specific brains do not: transfection pattern U-Net is
-`keejkrej/single-cell-pattern-unet` (`LISCA_PATTERN_SEG_MODEL`); killing ResNet
-is `keejkrej/killing-assay-resnet18` (curl at Studio package time). See
-[`models/README.md`](models/README.md).
+**ROI**:
+A Pattern kept after alignment, identified within its Position, with a saved
+box and, once cropped, its own image stack.
+_Avoid_: Site, crop
+
+**Cell**:
+A biological cell. Never a grid slot.
+
+### Workflow
+
+**Workspace**:
+The on-disk directory holding everything for one experiment: the Assay,
+alignment, ROIs, annotations, and results.
+_Avoid_: project, experiment folder, dataset
+
+**Align session**:
+The interactive workflow that fits the Pattern grid to a frame of a Position,
+excludes unusable Patterns, and saves the ROI boxes.
+_Avoid_: registration
+
+**Exclusion**:
+Marking a Pattern as unusable so it does not become an ROI. **Smart exclude** is
+the model-assisted form.
+_Avoid_: Auto exclude
+
+**ROI crop**:
+A Task producing per-ROI image stacks from the saved ROI boxes, preserving
+Position and ROI identity.
+
+**Annotation session**:
+The interactive workflow that loads an ROI frame, edits its classification or
+Mask, and saves the annotation.
+
+**Mask**:
+A per-pixel label image for an ROI frame, drawn by hand or with **Smart segment**
+(click-prompted segmentation).
+
+**Assay**:
+The typed description of one experiment: its assay kind, Image source,
+Positions, Channels, timing, and analysis configuration.
+
+**Analysis run**:
+A Task that executes the Assay's analysis over its Samples and writes Traces,
+result tables, and plots.
+
+**Trace**:
+The measured intensity of one ROI across Frames.
+_Avoid_: timeseries
+
+### Background work
+
+**Task**:
+One unit of background work a user starts and follows to completion. ROI crop
+and Analysis run are the two kinds.
+_Avoid_: Operation, job
+
+### Products
+
+**Aligner**:
+The product that hosts an Align session.
+
+**Annotator**:
+The product that hosts an Annotation session.
+
+**Studio**:
+The product that composes Assay setup, Align and Annotation sessions, an Analysis
+run, and result review in one workflow.
+
+### Transfection kinetics
+
+Fits use the basic translation–degradation model (Müller et al. 2024, Eq. 3; no
+protein maturation).
+
+**Onset time** (t0):
+When expression of the transfected gene begins.
+_Avoid_: transfection efficiency, translation onset, transfection onset
+
+**Expression rate** (m0 k_TL):
+The initial mRNA amount times the translation rate.
+_Avoid_: efficiency (reserved for delivery and escape fractions)
+
+**mRNA lifetime** (τ_mRNA):
+The mRNA half-life, ln(2)/δ. Not 1/δ.
+
+**Protein lifetime** (τ_EGFP):
+The reporter protein half-life, ln(2)/β. Not 1/β.
+
+**Baseline intensity**:
+The additive background level of a Trace; not a kinetic rate.
+
+**AUC**:
+The integrated protein output of a Trace.
