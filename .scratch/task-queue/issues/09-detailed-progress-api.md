@@ -1,12 +1,12 @@
-# 09 — Detailed within-task progress API
+# 09 — Detailed within-step progress API
 
-**What to build:** Extend the canonical tasks API (and Task Center projections) so long-running Tasks expose **fine-grained progress** beyond the coarse Operation counters (`completed` / `running` / `total` of child Tasks). A single-position crop of a multi-hour time-lapse must report meaningful sub-progress (e.g. ROIs written, frames processed) while the Task stays `running`, not only flip `completed` when the entire position finishes.
+**What to build:** Extend the canonical steps API (and Task Center projections) so long-running Steps expose **fine-grained progress** beyond the coarse Task counters (`completed` / `running` / `total` of child Steps). A single-position crop of a multi-hour time-lapse must report meaningful sub-progress (e.g. ROIs written, frames processed) while the Step stays `running`, not only flip `completed` when the entire position finishes.
 
-**Blocked by:** 03 — Cancel and retry Task attempts; 06 — Run cropping as one Task per position (compatibility projection path must remain the source of truth).
+**Blocked by:** 03 — Cancel and retry Step attempts; 06 — Run cropping as one Step per position (compatibility projection path must remain the source of truth).
 
 **Status:** resolved
 
-**Context (why now):** During fig5 LNP binding crop of `~/data/lisca_review/fig5/20260730_1` (Pos0, **48 ROIs**, **1801** timepoints × 2 channels, full 4 s stacks), Task Center / `GET /tasks/operations` correctly reported:
+**Context (why now):** During fig5 LNP binding crop of `~/data/lisca_review/fig5/20260730_1` (Pos0, **48 ROIs**, **1801** timepoints × 2 channels, full 4 s stacks), Task Center / `GET /tasks` correctly reported:
 
 ```json
 { "status": "running", "progress": { "completed": 0, "running": 1, "total": 1 } }
@@ -16,10 +16,10 @@ for the entire duration of the Pos0 crop. Disk showed real work (temp `roi/.Pos0
 
 ## Goals
 
-1. **Typed progress payload** on Task (and optionally Operation aggregates) for “work units inside one Task.”
+1. **Typed progress payload** on Step (and optionally Task aggregates) for “work units inside one Step.”
 2. **Crop as first consumer:** report ROI index / total ROIs, optional frame/time index when that is the natural loop.
 3. **Task Center UI** surfaces the detail without exploding the default list (summary line + detail panel).
-4. **Backward compatible:** existing clients that only read Operation-level counts keep working; new fields are additive.
+4. **Backward compatible:** existing clients that only read Task-level counts keep working; new fields are additive.
 
 ## Non-goals
 
@@ -29,16 +29,16 @@ for the entire duration of the Pos0 crop. Disk showed real work (temp `roi/.Pos0
 
 ## Proposed shape (sketch — refine in contracts)
 
-Additive fields on task attempt / task detail (names illustrative):
+Additive fields on step attempt / step detail (names illustrative):
 
 ```ts
 // Conceptual; implement via Effect Schema + regenerate OpenAPI/Rust types
-type TaskWorkProgress = {
+type StepWorkProgress = {
   /** Stable unit label for UI, e.g. "roi", "frame", "position" */
   unit: string;
   completed: number;
   total: number;
-  /** Optional free-form phase for multi-stage tasks */
+  /** Optional free-form phase for multi-stage steps */
   phase?: string | null;
   /** Optional human message, e.g. "Writing Roi17" */
   message?: string | null;
@@ -46,24 +46,24 @@ type TaskWorkProgress = {
 };
 ```
 
-- Operation summary may expose `workProgress` as a **rollup** when a single Task is running (or sum of running Tasks’ units when homogeneous).
+- Task summary may expose `workProgress` as a **rollup** when a single Step is running (or sum of running Steps’ units when homogeneous).
 - Crop handler updates progress at safe checkpoints (after each ROI stack commit to **staging**, or after each N frames if ROI-open-for-all-times pattern).
 - Compatibility crop-progress endpoints (`getLatestCropProgress`, etc.) should project the same numbers so Aligner crop recovery and Task Center do not diverge.
 
 ## Acceptance criteria
 
-- [x] Contracts (`@lisca/contracts` / OpenAPI) define optional structured within-task work progress; Rust `typify` types regenerate cleanly; no hand-written wire types.
-- [x] `GET /tasks/task` and `GET /tasks/operation` return current work progress for in-flight crop Tasks (at least `unit`, `completed`, `total`, `updatedAtMs`).
-- [x] `GET /tasks/operations` list summary includes enough for Task Center to show a secondary progress line (e.g. `17/48 rois`) without a second round-trip for the active item, or document why detail-only is preferred and implement that consistently.
-- [x] Crop Task updates progress as ROIs (or frames) complete in **staging**; progress never implies final `roi/Pos{N}/` publication before atomic commit.
-- [x] Task Center Aligner UI shows within-task progress for running crop operations (list and/or detail); no blocking overlay; polling/reconcile path reused.
+- [x] Contracts (`@lisca/contracts` / OpenAPI) define optional structured within-step work progress; Rust `typify` types regenerate cleanly; no hand-written wire types.
+- [x] `GET /tasks/step` and `GET /tasks/task` return current work progress for in-flight crop Steps (at least `unit`, `completed`, `total`, `updatedAtMs`).
+- [x] `GET /tasks` list summary includes enough for Task Center to show a secondary progress line (e.g. `17/48 rois`) without a second round-trip for the active item, or document why detail-only is preferred and implement that consistently.
+- [x] Crop Step updates progress as ROIs (or frames) complete in **staging**; progress never implies final `roi/Pos{N}/` publication before atomic commit.
+- [x] Task Center Aligner UI shows within-step progress for running crop tasks (list and/or detail); no blocking overlay; polling/reconcile path reused.
 - [x] Stall detection is possible: `updatedAtMs` advances while work proceeds; documented behavior if a long single write holds the counter still (prefer updating message or phase).
-- [x] Unit/integration tests: synthetic crop or handler fixture advances progress mid-flight; Operation stays `running` with `tasks.completed=0` until Task completes; final state clears or freezes progress sensibly.
+- [x] Unit/integration tests: synthetic crop or handler fixture advances progress mid-flight; Task stays `running` with `steps.completed=0` until Step completes; final state clears or freezes progress sensibly.
 - [x] Implementation preserves unrelated dirty-tree changes; starts from current task-scheduler / crop code.
 
 ## Implementation notes
 
-- Today progress is only Operation-level task counts (`deriveOperationProgress` / scheduler progress buckets). Within-task counters likely live on `TaskAttempt` or task runtime state, updated by handlers via a small scheduler API (`report_work_progress(task_id, …)`).
+- Today progress is only Task-level step counts (`deriveTaskProgress` / scheduler progress buckets). Within-step counters likely live on `StepAttempt` or step runtime state, updated by handlers via a small scheduler API (`report_work_progress(step_id, …)`).
 - Crop currently stages under `roi/.Pos{N}.crop-<id>/`; file-count on disk is a workable interim signal but **must not** be the client’s only source of truth once this lands.
 - Related: Vite dev proxy must keep `/tasks` in `LISCA_API_PROXY_PREFIXES` (fixed separately) so LAN Task Center can poll at all.
 
@@ -73,14 +73,14 @@ type TaskWorkProgress = {
 
 ## Answer
 
-The generated task contracts now expose optional `TaskWorkProgress`, task handlers report
-progress through their scheduler context, and both task detail and the active operation
+The generated step contracts now expose optional `StepWorkProgress`, step handlers report
+progress through their scheduler context, and both step detail and the active task
 summary project the canonical value. Crop reports staged `roiframe` writes with a position
 label and monotonic `updatedAtMs`; the legacy crop projection consumes the same counter.
-Terminal summaries hide the active counter while retained task detail freezes the last value.
+Terminal summaries hide the active counter while retained step detail freezes the last value.
 
 Focused verification:
 
-- `cargo test -p lisca-server running_tasks_publish_fine_grained_progress_to_detail_and_summary`
+- `cargo test -p lisca-server running_steps_publish_fine_grained_progress_to_detail_and_summary`
 - `cargo test -p aligner-server crop::tests`
 - contract generation and Rust `typify` generation
