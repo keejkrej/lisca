@@ -22,11 +22,11 @@ fn collect_outputs(
 ) -> Result<Vec<AnalysisCsvFile>, String> {
     let mut files = Vec::new();
     collect_position_csvs(
-        &workspace.join("timeseries"),
-        "timeseries",
+        &workspace.join("traces"),
+        "traces",
         &mut files,
         include_csv_contents,
-        CsvFilter::TimeseriesOnly,
+        CsvFilter::TracesOnly,
     )?;
     collect_position_csvs(
         &workspace.join("analysis"),
@@ -59,7 +59,7 @@ fn read_optional_dir(directory: &Path) -> Result<Option<fs::ReadDir>, String> {
 }
 
 enum CsvFilter {
-    TimeseriesOnly,
+    TracesOnly,
     AllCsvs,
 }
 
@@ -106,14 +106,10 @@ fn collect_position_csvs(
             };
             let is_channel =
                 stem.starts_with("ch") && stem[2..].chars().all(|c| c.is_ascii_digit());
-            if matches!(filter, CsvFilter::TimeseriesOnly) && !is_channel {
+            if matches!(filter, CsvFilter::TracesOnly) && !is_channel {
                 continue;
             }
-            let kind = if is_channel {
-                "timeseries"
-            } else {
-                default_kind
-            };
+            let kind = if is_channel { "traces" } else { default_kind };
             let file_name = format!("{pos_name}/{stem}.csv");
             let csv = if include_csv_contents {
                 fs::read_to_string(&path)
@@ -267,7 +263,7 @@ mod tests {
             .iter()
             .map(|file| (file.kind.as_str(), file.file_name.as_str()))
             .collect();
-        assert!(names.contains(&("timeseries", "Pos1/ch1.csv")));
+        assert!(names.contains(&("traces", "Pos1/ch1.csv")));
         assert!(names.contains(&("analysis", "Pos1/auc.csv")));
         assert!(names.contains(&("plot", "auc.png")));
         assert!(names.contains(&("plot", "traces.png")));

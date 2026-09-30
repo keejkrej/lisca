@@ -4772,7 +4772,7 @@
           "queued",
           "preparing",
           "segment",
-          "timeseries",
+          "traces",
           "auc",
           "fit",
           "completed"

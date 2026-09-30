@@ -31,7 +31,8 @@ export function MetadataSamples() {
           Samples
         </h2>
         <p class="text-[13px] leading-[18px] text-muted-foreground">
-          Each row is one condition: name, position range, and mask vs signal channels.
+          Each row is one sample: a unique name, position range, and segmentation vs signal
+          channels.
         </p>
       </div>
       <div class="flex w-full min-w-0 flex-col gap-5">
@@ -56,41 +57,24 @@ export function MetadataSamples() {
 function SampleCard(props: {
   index: number;
   row: {
-    slideChannel: string;
     name: string;
     positionStart: string;
     positionFinish: string;
-    mask: string;
+    segmentation: string;
     signal: string;
   };
   onChange: (patch: {
-    slideChannel?: string;
     name?: string;
     positionStart?: string;
     positionFinish?: string;
-    mask?: string;
+    segmentation?: string;
     signal?: string;
   }) => void;
   onRemove: () => void;
 }) {
   return (
     <article aria-label={`Sample ${props.index + 1}`} class="flex min-w-0 flex-col gap-4">
-      <div class="grid min-w-0 grid-cols-[4.5rem_minmax(0,1fr)_2rem] items-end gap-2.5">
-        <label class="flex min-w-0 flex-col gap-1.5">
-          <span class="text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
-            Slide
-          </span>
-          <Input
-            autocomplete="off"
-            aria-label="Slide channel"
-            class="h-8 w-full px-2 text-center font-mono text-[13px]"
-            inputMode="numeric"
-            name={`samples.${props.index}.slide-channel`}
-            placeholder="e.g. 0…"
-            value={props.row.slideChannel}
-            onChange={(event) => props.onChange({ slideChannel: event.currentTarget.value })}
-          />
-        </label>
+      <div class="grid min-w-0 grid-cols-[minmax(0,1fr)_2rem] items-end gap-2.5">
         <label class="flex min-w-0 flex-col gap-1.5">
           <span class="text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
             Name
@@ -116,7 +100,7 @@ function SampleCard(props: {
           <IconTrashRegular />
         </Button>
       </div>
-      <div class="grid min-w-0 grid-cols-2 gap-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_5rem_minmax(0,1fr)]">
+      <div class="grid min-w-0 grid-cols-2 gap-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_7rem_minmax(0,1fr)]">
         <SampleField label="Position start">
           <SamplePositionInput
             aria-label="Position start"
@@ -135,16 +119,16 @@ function SampleCard(props: {
             onChange={(positionFinish) => props.onChange({ positionFinish })}
           />
         </SampleField>
-        <SampleField label="Mask">
+        <SampleField label="Segmentation">
           <Input
             autocomplete="off"
-            aria-label="Mask channel"
+            aria-label="Segmentation channel"
             class="h-8 w-full px-2 text-center font-mono text-[13px]"
             inputMode="numeric"
-            name={`samples.${props.index}.mask-channel`}
+            name={`samples.${props.index}.segmentation-channel`}
             placeholder="e.g. 0…"
-            value={props.row.mask}
-            onChange={(event) => props.onChange({ mask: event.currentTarget.value })}
+            value={props.row.segmentation}
+            onChange={(event) => props.onChange({ segmentation: event.currentTarget.value })}
           />
         </SampleField>
         <SampleField label="Signal">

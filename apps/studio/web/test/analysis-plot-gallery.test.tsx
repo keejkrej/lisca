@@ -11,7 +11,7 @@ describe("AnalysisPlotGallery reactivity", () => {
   it("switches between empty and populated states when plots change", () => {
     const [plots, setPlots] = createSignal<ResultPlot[]>([]);
     render(() => (
-      <AnalysisPlotGallery emptyMessage="Run analysis first" plots={plots()} section="timeseries" />
+      <AnalysisPlotGallery emptyMessage="Run analysis first" plots={plots()} section="traces" />
     ));
 
     expect(screen.getByText("Run analysis first")).toBeTruthy();
@@ -22,7 +22,7 @@ describe("AnalysisPlotGallery reactivity", () => {
         path: "/plot.png",
         title: "Cell count",
         src: "/plot.png",
-        section: "timeseries",
+        section: "traces",
       },
     ]);
     expect(screen.queryByText("Run analysis first")).toBeNull();
@@ -41,14 +41,14 @@ describe("AnalysisPlotGallery reactivity", () => {
             path: "/results/A431_aiLNP/traces.png",
             title: "Intensity traces (A431_aiLNP)",
             src: "/results/A431_aiLNP/traces.png",
-            section: "timeseries",
+            section: "traces",
           },
           {
             fileName: "traces.png",
             path: "/results/Mock_(fixture)/traces.png",
             title: "Intensity traces (Mock_(fixture))",
             src: "/results/Mock_(fixture)/traces.png",
-            section: "timeseries",
+            section: "traces",
           },
         ]}
       />

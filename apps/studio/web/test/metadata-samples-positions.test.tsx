@@ -56,3 +56,22 @@ describe("MetadataSamples positions", () => {
     expect(stored().positionStart).toBe("");
   });
 });
+
+describe("MetadataSamples columns", () => {
+  it("identifies samples by name with no Slide column", () => {
+    renderSamples("", "");
+    expect(screen.queryByRole("textbox", { name: "Slide channel" })).toBeNull();
+    expect(screen.queryByText("Slide")).toBeNull();
+    expect(screen.getAllByRole("textbox", { name: "Name" })).toHaveLength(2);
+  });
+
+  it("edits the segmentation channel", () => {
+    const { stored } = renderSamples("", "");
+    const segmentation = screen.getAllByRole("textbox", {
+      name: "Segmentation channel",
+    })[0] as HTMLInputElement;
+    expect(screen.getAllByText("Segmentation").length).toBeGreaterThan(0);
+    fireEvent.change(segmentation, { target: { value: "2" } });
+    expect(stored().segmentation).toBe("2");
+  });
+});

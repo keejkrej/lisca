@@ -27,16 +27,13 @@ function parseChannel(value: string): number | null {
   return Number.isInteger(channel) && channel >= 0 ? channel : null;
 }
 
-export function studioMaskChannel(samples: StudioAssaySampleRow[]): number {
+export function studioSegmentationChannel(samples: StudioAssaySampleRow[]): number {
   for (const row of samples) {
-    const channel = parseChannel(row.mask);
+    const channel = parseChannel(row.segmentation);
     if (channel != null) return channel;
   }
   return 0;
 }
-
-/** @deprecated Use studioMaskChannel */
-export const studioBrightfieldChannel = studioMaskChannel;
 
 function lastOrZero(values: number[] | undefined): number {
   return values?.[Math.max(0, values.length - 1)] ?? 0;

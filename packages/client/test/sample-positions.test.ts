@@ -55,13 +55,11 @@ describe("sample positions", () => {
   test("serializes sample identity only; channels go to analysis", () => {
     expect(
       sampleRowToDisk({
-        slideChannel: "0",
-        name: "sample",
+        name: "  sample ",
         positionStart: "2",
         positionFinish: "4",
       }),
     ).toEqual({
-      slideChannel: 0,
       name: "sample",
       positions: "2:4",
     });
@@ -71,34 +69,53 @@ describe("sample positions", () => {
     expect(
       sampleRowFromDisk(
         {
-          slideChannel: 0,
           name: "sample",
           positions: "9:20",
         },
         {
-          channels: { mask: 0, signal: [1] },
-          sampleChannels: [{ slideChannel: 0, mask: 2, signal: [3, 4] }],
+          channels: { segmentation: 0, signal: [1] },
+          sampleChannels: [
+            { sample: "other", segmentation: 5, signal: [6] },
+            { sample: "sample", segmentation: 2, signal: [3, 4] },
+          ],
         },
       ),
     ).toEqual({
-      slideChannel: "0",
       name: "sample",
       positionStart: "9",
       positionFinish: "20",
-      mask: "2",
+      segmentation: "2",
       signal: "3,4",
     });
   });
 
-  test("derives analysis channel defaults and per-slide overrides", () => {
+  test("loads UI rows without an override from the analysis defaults", () => {
+    expect(
+      sampleRowFromDisk(
+        { name: "plain", positions: "1" },
+        {
+          channels: { segmentation: 0, signal: [1] },
+          sampleChannels: [{ sample: "other", segmentation: 2, signal: [3] }],
+        },
+      ),
+    ).toMatchObject({ name: "plain", segmentation: "0", signal: "1" });
+  });
+
+  test("derives analysis channel defaults and per-sample overrides keyed by name", () => {
     expect(
       analysisChannelsFromSamples([
-        { slideChannel: "1", name: "a", mask: "0", signal: "1" },
-        { slideChannel: "2", name: "b", mask: "0", signal: "1,2" },
+        { name: "a", segmentation: "0", signal: "1" },
+        { name: " b ", segmentation: "0", signal: "1,2" },
+        { name: "c", segmentation: "3", signal: "1" },
+        { name: "d", segmentation: "0", signal: "1" },
+        { name: "  ", segmentation: "4", signal: "5" },
       ]),
     ).toEqual({
-      channels: { mask: 0, signal: [1] },
-      sampleChannels: [{ slideChannel: 2, mask: 0, signal: [1, 2] }],
+      channels: { segmentation: 0, signal: [1] },
+      sampleChannels: [
+        { sample: "b", segmentation: 0, signal: [1, 2] },
+        { sample: "c", segmentation: 3, signal: [1] },
+      ],
     });
   });
 
@@ -115,20 +132,18 @@ describe("sample positions", () => {
       samples: [
         {
           id: "sample:0",
-          slideChannel: "0",
           name: "a",
           positionStart: "0",
           positionFinish: "3",
-          mask: "0",
+          segmentation: "0",
           signal: "1",
         },
         {
           id: "sample:1",
-          slideChannel: "1",
           name: "b",
           positionStart: "2",
           positionFinish: "5",
-          mask: "0",
+          segmentation: "0",
           signal: "1",
         },
       ],

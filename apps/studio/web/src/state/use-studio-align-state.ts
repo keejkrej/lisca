@@ -26,7 +26,7 @@ import { effectErrorMessage, loadFrameEffect } from "../effects/frame-loader";
 import { runClientEffect } from "@lisca/client/runtime";
 import {
   lockedStudioSelection,
-  studioBrightfieldChannel,
+  studioSegmentationChannel,
   toStudioSource,
 } from "@lisca/client/studio/source";
 import {
@@ -133,7 +133,7 @@ export function useStudioAlignState(): StudioAlignState {
     }),
   );
   const activeWorkspacePath = createMemo(() => workspacePath().trim() || null);
-  const brightfieldChannel = createMemo(() => studioBrightfieldChannel(samples()));
+  const brightfieldChannel = createMemo(() => studioSegmentationChannel(samples()));
   const assayPositions = createMemo(() => collectAssayPositions({ samples: samples() }));
   const alignPositionsForScan = (scan: WorkspaceScan | null) =>
     scan ? filterScanPositionsForAssay(scan.positions, assayPositions()) : [];

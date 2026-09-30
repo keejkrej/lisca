@@ -173,7 +173,7 @@ function AnnotateBody(props: { screen: MockScreen; onScreen: (screen: MockScreen
 
 function ResultBody(props: { screen: MockScreen; onScreen: (screen: MockScreen) => void }) {
   const fixture = buildTransfectionFixture();
-  const plots = fixture.plots.filter((plot) => plot.section === "timeseries");
+  const plots = fixture.plots.filter((plot) => plot.section === "traces");
 
   return (
     <>
@@ -197,7 +197,7 @@ function ResultBody(props: { screen: MockScreen; onScreen: (screen: MockScreen) 
         <AppShell.Main>
           <AppShell.MainScroll contentClass="relative max-w-[840px] px-6 py-8">
             <p class="mb-4 text-xs text-muted-foreground">{fixtureBanner()}</p>
-            <h2 class="mb-6 text-2xl font-semibold leading-8 tracking-[-0.02em]">Timeseries</h2>
+            <h2 class="mb-6 text-2xl font-semibold leading-8 tracking-[-0.02em]">Traces</h2>
             <div class="flex flex-col gap-8 pb-8">
               <For each={plots}>
                 {(plot) => (
@@ -217,12 +217,12 @@ function ResultBody(props: { screen: MockScreen; onScreen: (screen: MockScreen) 
         <RailSidebar>
           <PanelSection appearance="rail" title="Instruction">
             <p class="text-sm leading-snug text-muted-foreground">
-              Timeseries plots from the transfection fixture. Rail controls are inert.
+              Trace plots from the transfection fixture. Rail controls are inert.
             </p>
           </PanelSection>
           <PanelSection appearance="rail" title="View">
             <RailControlStack>
-              <InertAction active>Timeseries</InertAction>
+              <InertAction active>Traces</InertAction>
               <InertAction>Parameters</InertAction>
             </RailControlStack>
           </PanelSection>

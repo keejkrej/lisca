@@ -25,7 +25,7 @@ export const TRANSFECTION_FIT_CSV_COLUMNS = [
   "success",
 ] as const;
 
-/** Identity column prefixed on per-sample XLSX packs. Folder is the sample; no `slide_channel` / `sample` columns. */
+/** Identity column prefixed on per-sample XLSX packs. Folder is the sample; no `sample` column. */
 export const TRANSFECTION_XLSX_POS_COLUMN = "pos";
 
 /** `results/<sample>/traces.xlsx`. Optional `channel` when a sample has multiple signal channels. */
@@ -59,44 +59,44 @@ export type TransfectionPlotScope = "workspace" | "sample";
 export type TransfectionPlotSpec = {
   fileName: string;
   title: string;
-  section: "timeseries" | "parameters";
+  section: "traces" | "parameters";
   /** Workspace boxplots live at `results/`; sample packs at `results/<sample>/`. */
   scope: TransfectionPlotScope;
 };
 
 /** PNG artifacts written by the sidecar plot stages, in display order. */
 export const TRANSFECTION_PLOTS: readonly TransfectionPlotSpec[] = [
-  { fileName: "traces.png", title: "Intensity traces", section: "timeseries", scope: "sample" },
+  { fileName: "traces.png", title: "Intensity traces", section: "traces", scope: "sample" },
   {
     fileName: "traces_shared_y.png",
     title: "Intensity traces (shared y)",
-    section: "timeseries",
+    section: "traces",
     scope: "sample",
   },
   {
     fileName: "traces_summary.png",
     title: "Intensity summary",
-    section: "timeseries",
+    section: "traces",
     scope: "sample",
   },
   {
     fileName: "traces_summary_shared_y.png",
     title: "Intensity summary (shared y)",
-    section: "timeseries",
+    section: "traces",
     scope: "sample",
   },
-  { fileName: "area.png", title: "Mask area", section: "timeseries", scope: "sample" },
+  { fileName: "area.png", title: "Mask area", section: "traces", scope: "sample" },
   {
     fileName: "area_shared_y.png",
     title: "Mask area (shared y)",
-    section: "timeseries",
+    section: "traces",
     scope: "sample",
   },
-  { fileName: "traces_fit.png", title: "Fitted traces", section: "timeseries", scope: "sample" },
+  { fileName: "traces_fit.png", title: "Fitted traces", section: "traces", scope: "sample" },
   {
     fileName: "traces_fit_shared_y.png",
     title: "Fitted traces (shared y)",
-    section: "timeseries",
+    section: "traces",
     scope: "sample",
   },
   {

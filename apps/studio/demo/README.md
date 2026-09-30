@@ -25,7 +25,7 @@ pnpm run --filter @lisca/studio-demo dev
 The app listens on [http://localhost:5177](http://localhost:5177).
 
 Use the navbar to switch `transfection.fixture` and `killing.fixture`. Dock
-buttons switch Timeseries vs Parameters (transfection) or Survival (killing).
+buttons switch Traces vs Parameters (transfection) or Survival (killing).
 
 ## What you should see
 

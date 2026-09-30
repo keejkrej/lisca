@@ -44,9 +44,9 @@ mod progress;
 #[cfg(feature = "studio")]
 mod roi_stack;
 #[cfg(feature = "studio")]
-pub mod slide;
+pub mod sample;
 #[cfg(feature = "studio")]
-mod timeseries;
+mod traces;
 
 #[cfg(feature = "studio")]
 pub use output::{workspace_analysis_manifest, workspace_analysis_outputs};

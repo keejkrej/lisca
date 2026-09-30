@@ -92,16 +92,15 @@ export type StudioIntervalUnit = AssayIntervalUnit;
 export type StudioAssaySampleRow = {
   /** Stable UI row identity; not persisted to assay.json. */
   id: string;
-  /** Slide-channel key; edited as text, written as int on disk. */
-  slideChannel: string;
+  /** Sample name; identifies the sample (non-empty after trim, unique). */
   name: string;
   positionStart: string;
   positionFinish: string;
   /**
-   * Mask channel and comma-separated signal channels for this sample (UI).
+   * Segmentation channel and comma-separated signal channels for this sample (UI).
    * Persisted under `analysis.channels` / `analysis.sampleChannels`, not on the sample row.
    */
-  mask: string;
+  segmentation: string;
   /** e.g. `"1"` or `"1,2"`. */
   signal: string;
 };

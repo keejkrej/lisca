@@ -67,6 +67,10 @@ fn load_assay_json(workspace: &Path) -> Result<AssayJsonFile, FsError> {
     if !workspace.is_dir() {
         return Err(FsError::new("workspace path does not exist"));
     }
+    // Rewrite old on-disk names (samples by slide channel, killing
+    // `timeseries/`) before the strict parse.
+    lisca::migrations::migrate_workspace(workspace)
+        .map_err(|error| FsError::new(format!("workspace migration failed: {error}")))?;
     let path = workspace.join("assay.json");
     let contents = fs::read_to_string(&path)
         .map_err(|error| FsError::new(format!("failed to read {}: {error}", path.display())))?;
@@ -125,12 +129,9 @@ fn build_transfection_operation(
     workspace: PathBuf,
     assay: AssayJsonFile,
 ) -> Result<lisca::protocol::OperationDetail, lisca_server::SchedulerError> {
-    use lisca::analysis::{
-        assays::transfection,
-        slide::{build_slide_mapping, SlideMapping},
-    };
+    use lisca::analysis::{assays::transfection, sample::build_sample_mapping};
 
-    let mapping = match build_slide_mapping(&assay) {
+    let mapping = match build_sample_mapping(&assay) {
         Ok(mapping) => Arc::new(mapping),
         Err(message) => {
             let task = analysis_task(
@@ -154,7 +155,7 @@ fn build_transfection_operation(
     let full_frame = transfection::skip_segment(&assay);
     let mut tasks = Vec::new();
 
-    // Prepare validates assay mapping only (no slide.json side file).
+    // Prepare validates the sample mapping only (no side files).
     let prepare = analysis_task(
         "analysis/transfection/prepare",
         Vec::new(),
@@ -163,84 +164,67 @@ fn build_transfection_operation(
     let prepare_id = prepare.task_id().to_string();
     tasks.push(prepare);
 
-    let mut segment_ids_by_channel = std::collections::BTreeMap::<u32, Vec<String>>::new();
-    if !full_frame {
-        for (slide_channel, entry) in mapping.iter() {
-            for position in &entry.positions {
-                let mut shard = SlideMapping::new();
-                let mut shard_entry = entry.clone();
-                shard_entry.positions = vec![*position];
-                shard.insert(*slide_channel, shard_entry);
-                let shard = Arc::new(shard);
-                let task_workspace = workspace.clone();
-                let task = analysis_task(
-                    format!("analysis/transfection/segment/Pos{position}"),
-                    vec![prepare_id.clone()],
-                    Arc::new(move || {
-                        transfection::run_segment(
-                            &task_workspace,
-                            &shard,
-                            &transfection::SegmentOptions {
-                                jobs: 1,
-                                ..transfection::SegmentOptions::default()
-                            },
-                        )
-                    }),
-                );
-                segment_ids_by_channel
-                    .entry(*slide_channel)
-                    .or_default()
-                    .push(task.task_id().to_string());
-                tasks.push(task);
-            }
-        }
-    }
-
-    let mut timeseries_ids = Vec::new();
-    for (slide_channel, entry) in mapping.iter() {
-        let mut shard = SlideMapping::new();
-        shard.insert(*slide_channel, entry.clone());
-        let shard = Arc::new(shard);
-        let task_workspace = workspace.clone();
+    // One segment Step and one traces Step per Position; traces for a
+    // Position waits only on that Position's masks.
+    let mut trace_ids = Vec::new();
+    for position in mapping.positions() {
+        let shard = Arc::new(mapping.for_position(position));
         let dependencies = if full_frame {
             vec![prepare_id.clone()]
         } else {
-            segment_ids_by_channel
-                .remove(slide_channel)
-                .unwrap_or_default()
+            let segment_workspace = workspace.clone();
+            let segment_shard = shard.clone();
+            let segment = analysis_task(
+                format!("analysis/transfection/segment/Pos{position}"),
+                vec![prepare_id.clone()],
+                Arc::new(move || {
+                    transfection::run_segment(
+                        &segment_workspace,
+                        &segment_shard,
+                        &transfection::SegmentOptions {
+                            jobs: 1,
+                            ..transfection::SegmentOptions::default()
+                        },
+                    )
+                }),
+            );
+            let segment_id = segment.task_id().to_string();
+            tasks.push(segment);
+            vec![segment_id]
         };
-        let task = analysis_task(
-            format!("analysis/transfection/timeseries/sc{slide_channel}"),
+        let traces_workspace = workspace.clone();
+        let traces = analysis_task(
+            format!("analysis/transfection/traces/Pos{position}"),
             dependencies,
             Arc::new(move || {
-                transfection::run_timeseries_with_mode(&task_workspace, &shard, 1, full_frame)
+                transfection::run_position_traces(&traces_workspace, &shard, position, full_frame)
             }),
         );
-        timeseries_ids.push(task.task_id().to_string());
-        tasks.push(task);
+        trace_ids.push(traces.task_id().to_string());
+        tasks.push(traces);
     }
 
-    let plot_ts_workspace = workspace.clone();
-    let plot_ts_mapping = mapping.clone();
-    let plot_ts = analysis_task(
-        "analysis/transfection/plot-timeseries",
-        timeseries_ids.clone(),
+    let plot_traces_workspace = workspace.clone();
+    let plot_traces_mapping = mapping.clone();
+    let plot_traces = analysis_task(
+        "analysis/transfection/plot-traces",
+        trace_ids.clone(),
         Arc::new(move || {
-            transfection::run_plot_timeseries(
-                &plot_ts_workspace,
-                &plot_ts_mapping,
+            transfection::run_plot_traces(
+                &plot_traces_workspace,
+                &plot_traces_mapping,
                 interval,
                 Some(transfection::DEFAULT_PLOT_COLUMNS),
             )
         }),
     );
-    let plot_ts_id = plot_ts.task_id().to_string();
-    tasks.push(plot_ts);
+    let plot_traces_id = plot_traces.task_id().to_string();
+    tasks.push(plot_traces);
 
     let auc_workspace = workspace.clone();
     let auc = analysis_task(
         "analysis/transfection/auc",
-        timeseries_ids,
+        trace_ids,
         Arc::new(move || transfection::run_auc(&auc_workspace, interval).map(|_| ())),
     );
     let auc_id = auc.task_id().to_string();
@@ -293,7 +277,7 @@ fn build_transfection_operation(
     let finalize_workspace = workspace.clone();
     tasks.push(analysis_task(
         "analysis/transfection/finalize",
-        vec![plot_ts_id, plot_auc_id, plot_fit_id],
+        vec![plot_traces_id, plot_auc_id, plot_fit_id],
         Arc::new(move || analysis::workspace_analysis_manifest(&finalize_workspace).map(|_| ())),
     ));
 
@@ -313,10 +297,10 @@ fn build_killing_operation(
 ) -> Result<lisca::protocol::OperationDetail, lisca_server::SchedulerError> {
     use lisca::analysis::{
         assays::killing,
-        slide::{build_slide_mapping, parse_interval_minutes, SlideMapping},
+        sample::{build_sample_mapping, parse_interval_minutes},
     };
 
-    let mapping = match build_slide_mapping(&assay) {
+    let mapping = match build_sample_mapping(&assay) {
         Ok(mapping) => Arc::new(mapping),
         Err(message) => {
             let task = analysis_task(
@@ -359,28 +343,22 @@ fn build_killing_operation(
 
     let mut predict_ids = Vec::new();
     let mut shard_paths = Vec::new();
-    for (slide_channel, entry) in mapping.iter() {
-        for position in &entry.positions {
-            let mut shard_mapping = SlideMapping::new();
-            let mut shard_entry = entry.clone();
-            shard_entry.positions = vec![*position];
-            shard_mapping.insert(*slide_channel, shard_entry);
-            let shard_mapping = Arc::new(shard_mapping);
-            let shard_path = staging_root.join(format!("sc{slide_channel}-Pos{position}"));
-            shard_paths.push(shard_path.clone());
-            let task_workspace = workspace.clone();
-            let task_shard = shard_path;
-            let task = analysis_task(
-                format!("analysis/killing/predict/Pos{position}"),
-                vec![prepare_id.clone()],
-                Arc::new(move || {
-                    let model = killing::resolve_model_path(&task_workspace)?;
-                    killing::run_predict_shard(&task_workspace, &task_shard, &shard_mapping, &model)
-                }),
-            );
-            predict_ids.push(task.task_id().to_string());
-            tasks.push(task);
-        }
+    for position in mapping.positions() {
+        let shard_mapping = Arc::new(mapping.for_position(position));
+        let shard_path = staging_root.join(format!("Pos{position}"));
+        shard_paths.push(shard_path.clone());
+        let task_workspace = workspace.clone();
+        let task_shard = shard_path;
+        let task = analysis_task(
+            format!("analysis/killing/predict/Pos{position}"),
+            vec![prepare_id.clone()],
+            Arc::new(move || {
+                let model = killing::resolve_model_path(&task_workspace)?;
+                killing::run_predict_shard(&task_workspace, &task_shard, &shard_mapping, &model)
+            }),
+        );
+        predict_ids.push(task.task_id().to_string());
+        tasks.push(task);
     }
 
     let merge_workspace = workspace.clone();
@@ -393,17 +371,17 @@ fn build_killing_operation(
     let merge_id = merge.task_id().to_string();
     tasks.push(merge);
 
-    let plot_ts_workspace = workspace.clone();
-    let plot_ts_mapping = mapping.clone();
-    let plot_ts = analysis_task(
-        "analysis/killing/plot-timeseries",
+    let plot_traces_workspace = workspace.clone();
+    let plot_traces_mapping = mapping.clone();
+    let plot_traces = analysis_task(
+        "analysis/killing/plot-traces",
         vec![merge_id.clone()],
         Arc::new(move || {
-            killing::run_plot_timeseries_stage(&plot_ts_workspace, &plot_ts_mapping, interval)
+            killing::run_plot_traces_stage(&plot_traces_workspace, &plot_traces_mapping, interval)
         }),
     );
-    let plot_ts_id = plot_ts.task_id().to_string();
-    tasks.push(plot_ts);
+    let plot_traces_id = plot_traces.task_id().to_string();
+    tasks.push(plot_traces);
 
     let clean_workspace = workspace.clone();
     let clean_mapping = mapping.clone();
@@ -441,7 +419,7 @@ fn build_killing_operation(
     let finalize_staging = staging_root;
     tasks.push(analysis_task(
         "analysis/killing/finalize",
-        vec![plot_ts_id, plot_kill_id, plot_death_id],
+        vec![plot_traces_id, plot_kill_id, plot_death_id],
         Arc::new(move || {
             analysis::workspace_analysis_manifest(&finalize_workspace)?;
             if finalize_staging.exists() {
@@ -699,12 +677,11 @@ mod tests {
                 "data": {{ "type": "folder", "path": "", "template": {{ "subfolder": "", "filename": "" }} }},
                 "interval": {{ "value": 1.0, "unit": "minute" }},
                 "samples": [{{
-                    "slideChannel": 0,
                     "name": "sample",
                     "positions": "0,1"
                 }}],
                 "analysis": {{
-                    "channels": {{ "mask": 0, "signal": [1] }}
+                    "channels": {{ "segmentation": 0, "signal": [1] }}
                 }}
             }}"#
         );
@@ -739,11 +716,27 @@ mod tests {
                 .tasks
                 .iter()
                 .find(|task| {
-                    task.task_kind.ends_with("/timeseries/sc0")
+                    task.task_kind == "analysis/transfection/auc"
                         || task.task_kind.ends_with("/merge-predictions")
                 })
                 .unwrap();
             assert_eq!(fan_in.dependencies.len(), 2);
+            if assay_id == AssayType::Transfection {
+                // Traces fan out per Position, each waiting on its own segment Step.
+                for position in [0, 1] {
+                    let segment = detail
+                        .tasks
+                        .iter()
+                        .find(|task| task.task_kind == format!("{prefix}/segment/Pos{position}"))
+                        .unwrap();
+                    let traces = detail
+                        .tasks
+                        .iter()
+                        .find(|task| task.task_kind == format!("{prefix}/traces/Pos{position}"))
+                        .unwrap();
+                    assert_eq!(traces.dependencies, vec![segment.task_id.clone()]);
+                }
+            }
             assert!(detail
                 .tasks
                 .iter()
@@ -751,6 +744,35 @@ mod tests {
             let _ = state.tasks.cancel_operation(&detail.operation.operation_id);
             fs::remove_dir_all(workspace).unwrap();
         }
+    }
+
+    #[test]
+    fn load_assay_json_migrates_samples_keyed_by_slide_channel() {
+        let workspace = test_workspace(AssayType::Transfection);
+        fs::write(
+            workspace.join("assay.json"),
+            r#"{
+                "type": "transfection",
+                "name": "Old fixture",
+                "workspace": { "path": "" },
+                "data": { "type": "nd2", "path": "" },
+                "interval": { "value": 1.0, "unit": "minute" },
+                "samples": [{ "slideChannel": 2, "name": "", "positions": "0" }],
+                "analysis": {
+                    "channels": { "mask": 0, "signal": [1] },
+                    "sampleChannels": [{ "slideChannel": 2, "mask": 1, "signal": [1] }]
+                }
+            }"#,
+        )
+        .unwrap();
+
+        let assay = load_assay_json(&workspace).unwrap();
+        assert_eq!(assay.samples[0].name, "Sample 2");
+        let analysis = assay.analysis.unwrap();
+        assert_eq!(analysis.channels.unwrap().segmentation, 0);
+        assert_eq!(analysis.sample_channels[0].sample, "Sample 2");
+        assert_eq!(analysis.sample_channels[0].segmentation, 1);
+        fs::remove_dir_all(workspace).unwrap();
     }
 
     #[tokio::test]
@@ -777,12 +799,15 @@ mod tests {
             .iter()
             .find(|task| task.task_kind.ends_with("/prepare"))
             .unwrap();
-        let timeseries = detail
+        let traces: Vec<_> = detail
             .tasks
             .iter()
-            .find(|task| task.task_kind.ends_with("/timeseries/sc0"))
-            .unwrap();
-        assert_eq!(timeseries.dependencies, vec![prepare.task_id.clone()]);
+            .filter(|task| task.task_kind.contains("/traces/Pos"))
+            .collect();
+        assert_eq!(traces.len(), 2);
+        for task in traces {
+            assert_eq!(task.dependencies, vec![prepare.task_id.clone()]);
+        }
 
         let _ = state.tasks.cancel_operation(&detail.operation.operation_id);
         fs::remove_dir_all(workspace).unwrap();

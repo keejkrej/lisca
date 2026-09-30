@@ -512,7 +512,7 @@ impl AnalysisProgressQuery {
 #[doc = "    \"queued\","]
 #[doc = "    \"preparing\","]
 #[doc = "    \"segment\","]
-#[doc = "    \"timeseries\","]
+#[doc = "    \"traces\","]
 #[doc = "    \"auc\","]
 #[doc = "    \"fit\","]
 #[doc = "    \"completed\""]
@@ -539,8 +539,8 @@ pub enum AnalysisStage {
     Preparing,
     #[serde(rename = "segment")]
     Segment,
-    #[serde(rename = "timeseries")]
-    Timeseries,
+    #[serde(rename = "traces")]
+    Traces,
     #[serde(rename = "auc")]
     Auc,
     #[serde(rename = "fit")]
@@ -554,7 +554,7 @@ impl ::std::fmt::Display for AnalysisStage {
             Self::Queued => f.write_str("queued"),
             Self::Preparing => f.write_str("preparing"),
             Self::Segment => f.write_str("segment"),
-            Self::Timeseries => f.write_str("timeseries"),
+            Self::Traces => f.write_str("traces"),
             Self::Auc => f.write_str("auc"),
             Self::Fit => f.write_str("fit"),
             Self::Completed => f.write_str("completed"),
@@ -568,7 +568,7 @@ impl ::std::str::FromStr for AnalysisStage {
             "queued" => Ok(Self::Queued),
             "preparing" => Ok(Self::Preparing),
             "segment" => Ok(Self::Segment),
-            "timeseries" => Ok(Self::Timeseries),
+            "traces" => Ok(Self::Traces),
             "auc" => Ok(Self::Auc),
             "fit" => Ok(Self::Fit),
             "completed" => Ok(Self::Completed),
@@ -902,11 +902,11 @@ impl AssayAnalysisConfig {
 #[doc = "{"]
 #[doc = "  \"type\": \"object\","]
 #[doc = "  \"required\": ["]
-#[doc = "    \"mask\","]
+#[doc = "    \"segmentation\","]
 #[doc = "    \"signal\""]
 #[doc = "  ],"]
 #[doc = "  \"properties\": {"]
-#[doc = "    \"mask\": {"]
+#[doc = "    \"segmentation\": {"]
 #[doc = "      \"type\": \"integer\","]
 #[doc = "      \"format\": \"uint32\","]
 #[doc = "      \"minimum\": 0.0"]
@@ -920,7 +920,7 @@ impl AssayAnalysisConfig {
 #[doc = r" </details>"]
 #[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
 pub struct AssayChannels {
-    pub mask: u32,
+    pub segmentation: u32,
     pub signal: AssaySignalChannels,
 }
 impl AssayChannels {
@@ -1539,23 +1539,21 @@ impl AssayJsonFile {
 #[doc = "{"]
 #[doc = "  \"type\": \"object\","]
 #[doc = "  \"required\": ["]
-#[doc = "    \"mask\","]
-#[doc = "    \"signal\","]
-#[doc = "    \"slideChannel\""]
+#[doc = "    \"sample\","]
+#[doc = "    \"segmentation\","]
+#[doc = "    \"signal\""]
 #[doc = "  ],"]
 #[doc = "  \"properties\": {"]
-#[doc = "    \"mask\": {"]
+#[doc = "    \"sample\": {"]
+#[doc = "      \"type\": \"string\""]
+#[doc = "    },"]
+#[doc = "    \"segmentation\": {"]
 #[doc = "      \"type\": \"integer\","]
 #[doc = "      \"format\": \"uint32\","]
 #[doc = "      \"minimum\": 0.0"]
 #[doc = "    },"]
 #[doc = "    \"signal\": {"]
 #[doc = "      \"$ref\": \"#/definitions/AssaySignalChannels\""]
-#[doc = "    },"]
-#[doc = "    \"slideChannel\": {"]
-#[doc = "      \"type\": \"integer\","]
-#[doc = "      \"format\": \"uint32\","]
-#[doc = "      \"minimum\": 0.0"]
 #[doc = "    }"]
 #[doc = "  }"]
 #[doc = "}"]
@@ -1563,10 +1561,9 @@ impl AssayJsonFile {
 #[doc = r" </details>"]
 #[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
 pub struct AssaySampleChannels {
-    pub mask: u32,
+    pub sample: ::std::string::String,
+    pub segmentation: u32,
     pub signal: AssaySignalChannels,
-    #[serde(rename = "slideChannel")]
-    pub slide_channel: u32,
 }
 impl AssaySampleChannels {
     pub fn builder() -> builder::AssaySampleChannels {
@@ -1582,8 +1579,7 @@ impl AssaySampleChannels {
 #[doc = "  \"type\": \"object\","]
 #[doc = "  \"required\": ["]
 #[doc = "    \"name\","]
-#[doc = "    \"positions\","]
-#[doc = "    \"slideChannel\""]
+#[doc = "    \"positions\""]
 #[doc = "  ],"]
 #[doc = "  \"properties\": {"]
 #[doc = "    \"name\": {"]
@@ -1591,11 +1587,6 @@ impl AssaySampleChannels {
 #[doc = "    },"]
 #[doc = "    \"positions\": {"]
 #[doc = "      \"type\": \"string\""]
-#[doc = "    },"]
-#[doc = "    \"slideChannel\": {"]
-#[doc = "      \"type\": \"integer\","]
-#[doc = "      \"format\": \"uint32\","]
-#[doc = "      \"minimum\": 0.0"]
 #[doc = "    }"]
 #[doc = "  }"]
 #[doc = "}"]
@@ -1605,8 +1596,6 @@ impl AssaySampleChannels {
 pub struct AssaySampleRow {
     pub name: ::std::string::String,
     pub positions: ::std::string::String,
-    #[serde(rename = "slideChannel")]
-    pub slide_channel: u32,
 }
 impl AssaySampleRow {
     pub fn builder() -> builder::AssaySampleRow {
@@ -7507,26 +7496,26 @@ pub mod builder {
     }
     #[derive(Clone, Debug)]
     pub struct AssayChannels {
-        mask: ::std::result::Result<u32, ::std::string::String>,
+        segmentation: ::std::result::Result<u32, ::std::string::String>,
         signal: ::std::result::Result<super::AssaySignalChannels, ::std::string::String>,
     }
     impl ::std::default::Default for AssayChannels {
         fn default() -> Self {
             Self {
-                mask: Err("no value supplied for mask".to_string()),
+                segmentation: Err("no value supplied for segmentation".to_string()),
                 signal: Err("no value supplied for signal".to_string()),
             }
         }
     }
     impl AssayChannels {
-        pub fn mask<T>(mut self, value: T) -> Self
+        pub fn segmentation<T>(mut self, value: T) -> Self
         where
             T: ::std::convert::TryInto<u32>,
             T::Error: ::std::fmt::Display,
         {
-            self.mask = value
+            self.segmentation = value
                 .try_into()
-                .map_err(|e| format!("error converting supplied value for mask: {e}"));
+                .map_err(|e| format!("error converting supplied value for segmentation: {e}"));
             self
         }
         pub fn signal<T>(mut self, value: T) -> Self
@@ -7546,7 +7535,7 @@ pub mod builder {
             value: AssayChannels,
         ) -> ::std::result::Result<Self, super::error::ConversionError> {
             Ok(Self {
-                mask: value.mask?,
+                segmentation: value.segmentation?,
                 signal: value.signal?,
             })
         }
@@ -7554,7 +7543,7 @@ pub mod builder {
     impl ::std::convert::From<super::AssayChannels> for AssayChannels {
         fn from(value: super::AssayChannels) -> Self {
             Self {
-                mask: Ok(value.mask),
+                segmentation: Ok(value.segmentation),
                 signal: Ok(value.signal),
             }
         }
@@ -7972,28 +7961,38 @@ pub mod builder {
     }
     #[derive(Clone, Debug)]
     pub struct AssaySampleChannels {
-        mask: ::std::result::Result<u32, ::std::string::String>,
+        sample: ::std::result::Result<::std::string::String, ::std::string::String>,
+        segmentation: ::std::result::Result<u32, ::std::string::String>,
         signal: ::std::result::Result<super::AssaySignalChannels, ::std::string::String>,
-        slide_channel: ::std::result::Result<u32, ::std::string::String>,
     }
     impl ::std::default::Default for AssaySampleChannels {
         fn default() -> Self {
             Self {
-                mask: Err("no value supplied for mask".to_string()),
+                sample: Err("no value supplied for sample".to_string()),
+                segmentation: Err("no value supplied for segmentation".to_string()),
                 signal: Err("no value supplied for signal".to_string()),
-                slide_channel: Err("no value supplied for slide_channel".to_string()),
             }
         }
     }
     impl AssaySampleChannels {
-        pub fn mask<T>(mut self, value: T) -> Self
+        pub fn sample<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::string::String>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.sample = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for sample: {e}"));
+            self
+        }
+        pub fn segmentation<T>(mut self, value: T) -> Self
         where
             T: ::std::convert::TryInto<u32>,
             T::Error: ::std::fmt::Display,
         {
-            self.mask = value
+            self.segmentation = value
                 .try_into()
-                .map_err(|e| format!("error converting supplied value for mask: {e}"));
+                .map_err(|e| format!("error converting supplied value for segmentation: {e}"));
             self
         }
         pub fn signal<T>(mut self, value: T) -> Self
@@ -8006,16 +8005,6 @@ pub mod builder {
                 .map_err(|e| format!("error converting supplied value for signal: {e}"));
             self
         }
-        pub fn slide_channel<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<u32>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.slide_channel = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for slide_channel: {e}"));
-            self
-        }
     }
     impl ::std::convert::TryFrom<AssaySampleChannels> for super::AssaySampleChannels {
         type Error = super::error::ConversionError;
@@ -8023,18 +8012,18 @@ pub mod builder {
             value: AssaySampleChannels,
         ) -> ::std::result::Result<Self, super::error::ConversionError> {
             Ok(Self {
-                mask: value.mask?,
+                sample: value.sample?,
+                segmentation: value.segmentation?,
                 signal: value.signal?,
-                slide_channel: value.slide_channel?,
             })
         }
     }
     impl ::std::convert::From<super::AssaySampleChannels> for AssaySampleChannels {
         fn from(value: super::AssaySampleChannels) -> Self {
             Self {
-                mask: Ok(value.mask),
+                sample: Ok(value.sample),
+                segmentation: Ok(value.segmentation),
                 signal: Ok(value.signal),
-                slide_channel: Ok(value.slide_channel),
             }
         }
     }
@@ -8042,14 +8031,12 @@ pub mod builder {
     pub struct AssaySampleRow {
         name: ::std::result::Result<::std::string::String, ::std::string::String>,
         positions: ::std::result::Result<::std::string::String, ::std::string::String>,
-        slide_channel: ::std::result::Result<u32, ::std::string::String>,
     }
     impl ::std::default::Default for AssaySampleRow {
         fn default() -> Self {
             Self {
                 name: Err("no value supplied for name".to_string()),
                 positions: Err("no value supplied for positions".to_string()),
-                slide_channel: Err("no value supplied for slide_channel".to_string()),
             }
         }
     }
@@ -8074,16 +8061,6 @@ pub mod builder {
                 .map_err(|e| format!("error converting supplied value for positions: {e}"));
             self
         }
-        pub fn slide_channel<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<u32>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.slide_channel = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for slide_channel: {e}"));
-            self
-        }
     }
     impl ::std::convert::TryFrom<AssaySampleRow> for super::AssaySampleRow {
         type Error = super::error::ConversionError;
@@ -8093,7 +8070,6 @@ pub mod builder {
             Ok(Self {
                 name: value.name?,
                 positions: value.positions?,
-                slide_channel: value.slide_channel?,
             })
         }
     }
@@ -8102,7 +8078,6 @@ pub mod builder {
             Self {
                 name: Ok(value.name),
                 positions: Ok(value.positions),
-                slide_channel: Ok(value.slide_channel),
             }
         }
     }

@@ -31,7 +31,7 @@ import { useStudioAnalysisPage } from "../state/use-studio-analysis-page";
 export default function AnalysisPage() {
   const { navigateTo } = useStudioNavigate();
   const analysisPage = useStudioAnalysisPage();
-  const [selectedSection, setSelectedSection] = createSignal<ResultPlotSection>("timeseries");
+  const [selectedSection, setSelectedSection] = createSignal<ResultPlotSection>("traces");
   const [isSaving, setIsSaving] = createSignal(false);
   const [saveMessage, setSaveMessage] = createSignal<string | null>(null);
   const analysisResultFiles = () => analysisPage.analysisResultFiles;
@@ -59,7 +59,7 @@ export default function AnalysisPage() {
       : defaultResultPlotSection(plots);
   });
   const sectionPlots = createMemo(() => filterResultPlotsBySection(allPlots(), activeSection()));
-  const timeseriesPlots = createMemo(() => filterResultPlotsBySection(allPlots(), "timeseries"));
+  const tracePlots = createMemo(() => filterResultPlotsBySection(allPlots(), "traces"));
   const parameterPlots = createMemo(() => filterResultPlotsBySection(allPlots(), "parameters"));
   const hasAnyPlots = createMemo(() => allPlots().length > 0);
   const savePdf = async () => {
@@ -92,7 +92,7 @@ export default function AnalysisPage() {
           ),
         ),
       });
-      const sections = [await loadSection("timeseries"), await loadSection("parameters")];
+      const sections = [await loadSection("traces"), await loadSection("parameters")];
       const savedTo = await saveLiscaFile({
         fileName: RESULT_PDF_FILE_NAME,
         directory: `${workspacePath.replace(/[\\/]+$/, "")}/results`,
@@ -121,11 +121,11 @@ export default function AnalysisPage() {
   const dockInstruction = () => saveMessage() ?? defaultInstruction();
   const sectionToolActions = createMemo(() => [
     {
-      id: "timeseries",
-      label: resultSectionLabel("timeseries", assayKind()),
-      disabled: timeseriesPlots().length === 0 || isSaving(),
-      active: activeSection() === "timeseries",
-      onSelect: () => switchSection("timeseries"),
+      id: "traces",
+      label: resultSectionLabel("traces", assayKind()),
+      disabled: tracePlots().length === 0 || isSaving(),
+      active: activeSection() === "traces",
+      onSelect: () => switchSection("traces"),
     },
     {
       id: "parameters",

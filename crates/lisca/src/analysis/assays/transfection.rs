@@ -1,6 +1,6 @@
 //! Thin dispatch into the `lisca-transfection` git crate.
 //!
-//! Transfection **analysis** (Otsu segment, timeseries, AUC, kinetic fit, plots)
+//! Transfection **analysis** (Otsu segment, traces, AUC, kinetic fit, plots)
 //! lives in [`lisca_transfection`]. Crop (`lisca-crop`) stays in this repo.
 //! Studio ONNX segment may stay as a local adapter until the sidecar un-stubs
 //! it; pattern-U-Net weights come from HF / `LISCA_PATTERN_SEG_MODEL`, not as
@@ -19,7 +19,7 @@ use std::path::{Path, PathBuf};
 
 use crate::analysis::output::collect_csv_outputs;
 use crate::analysis::progress::{analysis_progress, run_blocking};
-use crate::analysis::slide::{build_slide_mapping, parse_interval_minutes, SlideMapping};
+use crate::analysis::sample::{build_sample_mapping, parse_interval_minutes, SampleMapping};
 use crate::protocol::{AnalysisCsvFile, AnalysisProgress, AnalysisStage, AssayJsonFile};
 
 use mapping::to_sidecar_mapping;
@@ -74,28 +74,43 @@ pub fn interval_minutes(assay_json: &AssayJsonFile) -> Result<f64, String> {
     }
 }
 
-pub fn default_timeseries_jobs() -> usize {
-    lisca_transfection::default_timeseries_jobs()
+pub fn default_traces_jobs() -> usize {
+    lisca_transfection::default_traces_jobs()
 }
 
 pub fn default_fit_jobs() -> usize {
     lisca_transfection::default_fit_jobs()
 }
 
-pub fn run_timeseries(workspace: &Path, mapping: &SlideMapping, jobs: usize) -> Result<(), String> {
-    run_timeseries_with_mode(workspace, mapping, jobs, false)
+pub fn run_traces(workspace: &Path, mapping: &SampleMapping, jobs: usize) -> Result<(), String> {
+    run_traces_with_mode(workspace, mapping, jobs, false)
 }
 
-pub fn run_timeseries_with_mode(
+pub fn run_traces_with_mode(
     workspace: &Path,
-    mapping: &SlideMapping,
+    mapping: &SampleMapping,
     jobs: usize,
     full_frame: bool,
 ) -> Result<(), String> {
-    lisca_transfection::run_timeseries_with_mode(
+    lisca_transfection::run_traces_with_mode(
         workspace,
         &to_sidecar_mapping(mapping),
         jobs,
+        full_frame,
+    )
+}
+
+/// Traces for one Position (the Studio `analysis/transfection/traces/Pos{n}` Step).
+pub fn run_position_traces(
+    workspace: &Path,
+    mapping: &SampleMapping,
+    position: u32,
+    full_frame: bool,
+) -> Result<(), String> {
+    lisca_transfection::run_position_traces(
+        workspace,
+        &to_sidecar_mapping(mapping),
+        position,
         full_frame,
     )
 }
@@ -113,27 +128,22 @@ pub fn run_fit(
     lisca_transfection::run_fit(workspace, interval, max_onset_minutes, jobs)
 }
 
-pub fn run_plot_timeseries(
+pub fn run_plot_traces(
     workspace: &Path,
-    mapping: &SlideMapping,
+    mapping: &SampleMapping,
     interval: f64,
     columns: Option<usize>,
 ) -> Result<(), String> {
-    lisca_transfection::run_plot_timeseries(
-        workspace,
-        &to_sidecar_mapping(mapping),
-        interval,
-        columns,
-    )
+    lisca_transfection::run_plot_traces(workspace, &to_sidecar_mapping(mapping), interval, columns)
 }
 
-pub fn run_plot_auc(workspace: &Path, mapping: &SlideMapping) -> Result<(), String> {
+pub fn run_plot_auc(workspace: &Path, mapping: &SampleMapping) -> Result<(), String> {
     lisca_transfection::run_plot_auc(workspace, &to_sidecar_mapping(mapping))
 }
 
 pub fn run_plot_fit(
     workspace: &Path,
-    mapping: &SlideMapping,
+    mapping: &SampleMapping,
     interval: f64,
     columns: Option<usize>,
 ) -> Result<(), String> {
@@ -143,7 +153,7 @@ pub fn run_plot_fit(
 /// Per-sample `results/<sample>/traces.xlsx`. Plot stages write PNG only.
 pub fn publish_sample_traces_xlsx(
     workspace: &Path,
-    mapping: &SlideMapping,
+    mapping: &SampleMapping,
 ) -> Result<Vec<PathBuf>, String> {
     lisca_transfection::publish_sample_traces_xlsx(workspace, &to_sidecar_mapping(mapping))
 }
@@ -151,7 +161,7 @@ pub fn publish_sample_traces_xlsx(
 /// Per-sample `results/<sample>/{auc,fit}.xlsx`. Plot stages write PNG only.
 pub fn publish_sample_tables_xlsx(
     workspace: &Path,
-    mapping: &SlideMapping,
+    mapping: &SampleMapping,
     kind: &str,
 ) -> Result<Vec<PathBuf>, String> {
     lisca_transfection::publish_sample_tables_xlsx(workspace, &to_sidecar_mapping(mapping), kind)
@@ -167,8 +177,8 @@ where
     F: Fn(AnalysisProgress) + Send + Sync + 'static,
 {
     let interval = interval_minutes(&assay_json)?;
-    let mapping = build_slide_mapping(&assay_json)?;
-    let jobs = default_timeseries_jobs();
+    let mapping = build_sample_mapping(&assay_json)?;
+    let jobs = default_traces_jobs();
     let skip_segment_stage = skip_segment(&assay_json);
 
     update_progress(analysis_progress(
@@ -201,33 +211,28 @@ where
         "Completed segmentation",
     ));
 
-    let timeseries_workspace = workspace_path.clone();
-    let timeseries_mapping = mapping.clone();
+    let traces_workspace = workspace_path.clone();
+    let traces_mapping = mapping.clone();
     run_blocking(move || {
-        run_timeseries_with_mode(
-            &timeseries_workspace,
-            &timeseries_mapping,
-            jobs,
-            skip_segment_stage,
-        )
+        run_traces_with_mode(&traces_workspace, &traces_mapping, jobs, skip_segment_stage)
     })
     .await
-    .map_err(|error| format!("timeseries step failed: {error}"))?;
+    .map_err(|error| format!("traces step failed: {error}"))?;
     update_progress(analysis_progress(
         &request_id,
-        AnalysisStage::Timeseries,
+        AnalysisStage::Traces,
         60.0,
-        "Computed timeseries metrics",
+        "Computed traces",
     ));
 
-    let plot_ts_workspace = workspace_path.clone();
-    let plot_ts_mapping = mapping.clone();
+    let plot_traces_workspace = workspace_path.clone();
+    let plot_traces_mapping = mapping.clone();
     run_blocking(move || {
-        publish_sample_traces_xlsx(&plot_ts_workspace, &plot_ts_mapping)?;
-        run_plot_timeseries(&plot_ts_workspace, &plot_ts_mapping, interval, None)
+        publish_sample_traces_xlsx(&plot_traces_workspace, &plot_traces_mapping)?;
+        run_plot_traces(&plot_traces_workspace, &plot_traces_mapping, interval, None)
     })
     .await
-    .map_err(|error| format!("plot-timeseries step failed: {error}"))?;
+    .map_err(|error| format!("plot-traces step failed: {error}"))?;
 
     run_blocking({
         let workspace = workspace_path.clone();
@@ -286,7 +291,7 @@ where
 
 /// Synchronous full transfection pipeline (parity CLI / tests).
 ///
-/// Same stage order as Studio: segment → timeseries → plot-timeseries → auc →
+/// Same stage order as Studio: segment → traces → plot-traces → auc →
 /// plot-auc → fit → plot-fit. Sample mapping is read from `assay.json` only.
 /// Science stages run in `lisca-transfection` (Otsu default).
 pub fn run_sync(workspace: &Path, assay_json: &AssayJsonFile) -> Result<(), String> {

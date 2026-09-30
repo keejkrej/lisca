@@ -12,7 +12,7 @@ use std::path::Path;
 use crate::analysis::roi_stack::{
     position_dir, read_position_index, roi_frame_2d, validate_channel_index, RoiStack,
 };
-use crate::analysis::slide::SlideMapping;
+use crate::analysis::sample::SampleMapping;
 
 use super::mapping::to_sidecar_mapping;
 #[cfg(feature = "smart")]
@@ -20,7 +20,7 @@ use super::segment_onnx::{resolve_ge_seg_model_dir, OnnxSegmentConfig, OnnxSegme
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct PositionSegmentResult {
-    slide_channel: u32,
+    sample: String,
     position: u32,
     mask_count: usize,
     skipped: bool,
@@ -80,7 +80,7 @@ impl Default for SegmentOptions {
 
 pub fn run_segment(
     workspace: &Path,
-    mapping: &SlideMapping,
+    mapping: &SampleMapping,
     options: &SegmentOptions,
 ) -> Result<(), String> {
     match options.backend {
@@ -91,7 +91,7 @@ pub fn run_segment(
 
 fn run_segment_otsu(
     workspace: &Path,
-    mapping: &SlideMapping,
+    mapping: &SampleMapping,
     options: &SegmentOptions,
 ) -> Result<(), String> {
     let sidecar_options = lisca_transfection::SegmentOptions {
@@ -111,7 +111,7 @@ fn run_segment_otsu(
 #[cfg(feature = "smart")]
 fn run_segment_onnx(
     workspace: &Path,
-    mapping: &SlideMapping,
+    mapping: &SampleMapping,
     options: &SegmentOptions,
 ) -> Result<(), String> {
     let tasks = collect_tasks(mapping)?;
@@ -126,11 +126,11 @@ fn run_segment_onnx(
     let mut segmenter = OnnxSegmenter::open(&config)?;
 
     let mut results = Vec::with_capacity(tasks.len());
-    for (slide_channel, mask_channel, position) in tasks {
+    for (sample, segmentation_channel, position) in tasks {
         results.push(run_position_segmentation_onnx(
             workspace,
-            slide_channel,
-            mask_channel,
+            sample,
+            segmentation_channel,
             position,
             options,
             &mut segmenter,
@@ -142,36 +142,39 @@ fn run_segment_onnx(
 #[cfg(not(feature = "smart"))]
 fn run_segment_onnx(
     _workspace: &Path,
-    _mapping: &SlideMapping,
+    _mapping: &SampleMapping,
     _options: &SegmentOptions,
 ) -> Result<(), String> {
     Err("ONNX segment backend requires the `smart` feature (ort)".to_string())
 }
 
-fn collect_tasks(mapping: &SlideMapping) -> Result<Vec<(u32, u32, u32)>, String> {
+fn collect_tasks(mapping: &SampleMapping) -> Result<Vec<(String, u32, u32)>, String> {
+    let mut seen = std::collections::HashSet::new();
     let tasks = mapping
         .iter()
-        .flat_map(|(slide_channel, entry)| {
-            entry
+        .flat_map(|sample| {
+            sample
                 .positions
                 .iter()
                 .copied()
-                .map(|position| (*slide_channel, entry.mask, position))
+                .map(|position| (sample.name.clone(), sample.segmentation, position))
         })
+        // One mask stack per Position, even when Samples share a Position.
+        .filter(|(_, _, position)| seen.insert(*position))
         .collect::<Vec<_>>();
     if tasks.is_empty() {
-        return Err("slide mapping defines no valid positions".to_string());
+        return Err("sample mapping defines no valid positions".to_string());
     }
     Ok(tasks)
 }
 
 fn summarize_results(results: Vec<PositionSegmentResult>) -> Result<(), String> {
-    let mut skipped_positions: BTreeMap<u32, Vec<u32>> = BTreeMap::new();
+    let mut skipped_positions: BTreeMap<String, Vec<u32>> = BTreeMap::new();
     let mut masks_written = 0usize;
     for result in results {
         if result.skipped {
             skipped_positions
-                .entry(result.slide_channel)
+                .entry(result.sample)
                 .or_default()
                 .push(result.position);
         } else {
@@ -186,7 +189,7 @@ fn summarize_results(results: Vec<PositionSegmentResult>) -> Result<(), String> 
                 "No ROI masks written. Skipped positions: {skipped_summary}"
             ));
         }
-        return Err("slide mapping defines no valid positions".to_string());
+        return Err("sample mapping defines no valid positions".to_string());
     }
 
     Ok(())
@@ -195,8 +198,8 @@ fn summarize_results(results: Vec<PositionSegmentResult>) -> Result<(), String> 
 #[cfg(feature = "smart")]
 fn run_position_segmentation_onnx(
     workspace: &Path,
-    slide_channel: u32,
-    mask_channel: u32,
+    sample: String,
+    segmentation_channel: u32,
     position: u32,
     options: &SegmentOptions,
     segmenter: &mut OnnxSegmenter,
@@ -205,7 +208,7 @@ fn run_position_segmentation_onnx(
         Ok(path) => path,
         Err(_) => {
             return Ok(PositionSegmentResult {
-                slide_channel,
+                sample,
                 position,
                 mask_count: 0,
                 skipped: true,
@@ -213,7 +216,7 @@ fn run_position_segmentation_onnx(
         }
     };
     let index = read_position_index(&pos_dir)?;
-    validate_channel_index(&index, mask_channel)?;
+    validate_channel_index(&index, segmentation_channel)?;
     let mut mask_count = 0usize;
 
     for roi in &index.rois {
@@ -237,12 +240,12 @@ fn run_position_segmentation_onnx(
         let width = roi.shape[4] as usize;
         let height = roi.shape[3] as usize;
         let mut frames = Vec::with_capacity(index.time_count as usize);
-        for timepoint in 0..index.time_count {
+        for frame_index in 0..index.time_count {
             frames.push(roi_frame_2d(
                 &stack,
                 &index.axis_order,
-                timepoint,
-                mask_channel,
+                frame_index,
+                segmentation_channel,
                 0,
             )?);
         }
@@ -251,23 +254,23 @@ fn run_position_segmentation_onnx(
         mask_count += 1;
     }
     Ok(PositionSegmentResult {
-        slide_channel,
+        sample,
         position,
         mask_count,
         skipped: false,
     })
 }
 
-fn format_skipped_positions(skipped_positions: &BTreeMap<u32, Vec<u32>>) -> String {
+fn format_skipped_positions(skipped_positions: &BTreeMap<String, Vec<u32>>) -> String {
     skipped_positions
         .iter()
-        .map(|(slide_channel, positions)| {
+        .map(|(sample, positions)| {
             let listed = positions
                 .iter()
                 .map(|position| position.to_string())
                 .collect::<Vec<_>>()
                 .join(", ");
-            format!("slide channel {slide_channel} -> {listed}")
+            format!("sample {sample:?} -> {listed}")
         })
         .collect::<Vec<_>>()
         .join("; ")
@@ -279,7 +282,7 @@ fn write_mask_tif(
     width: usize,
     height: usize,
 ) -> Result<(), String> {
-    // Always write one Gray8 IFD per timepoint with explicit (width, height).
+    // Always write one Gray8 IFD per frame with explicit (width, height).
     // Do not collapse singleton spatial dims (W=1 or H=1): loaders match mask
     // page size to the ROI crop size from index.json.
     if width == 0 || height == 0 {
@@ -322,23 +325,16 @@ pub fn default_jobs() -> usize {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::BTreeMap;
-
     use super::*;
-    use crate::analysis::slide::{SlideChannelMapping, SlideMapping};
+    use crate::analysis::sample::{SampleAnalysis, SampleMapping};
 
-    fn test_mapping(positions: Vec<u32>) -> SlideMapping {
-        let mut mapping = BTreeMap::new();
-        mapping.insert(
-            0,
-            SlideChannelMapping {
-                positions,
-                signal: vec![1],
-                mask: 0,
-                sample_name: "test".to_string(),
-            },
-        );
-        mapping
+    fn test_mapping(positions: Vec<u32>) -> SampleMapping {
+        SampleMapping(vec![SampleAnalysis {
+            name: "test".to_string(),
+            positions,
+            signal: vec![1],
+            segmentation: 0,
+        }])
     }
 
     fn test_workspace(label: &str) -> std::path::PathBuf {
@@ -350,7 +346,7 @@ mod tests {
         let workspace = test_workspace("empty");
         let _ = std::fs::remove_dir_all(&workspace);
         std::fs::create_dir_all(&workspace).unwrap();
-        let mapping = SlideMapping::new();
+        let mapping = SampleMapping::new();
         let err = run_segment(&workspace, &mapping, &SegmentOptions::default()).unwrap_err();
         assert!(err.contains("no valid positions"));
         let _ = std::fs::remove_dir_all(&workspace);
@@ -365,7 +361,7 @@ mod tests {
         let err = run_segment(&workspace, &mapping, &SegmentOptions::default()).unwrap_err();
         assert!(err.contains("No ROI masks written"));
         assert!(err.contains("Skipped positions"));
-        assert!(err.contains("slide channel 0 -> 1, 2"));
+        assert!(err.contains("sample \"test\" -> 1, 2"), "{err}");
         let _ = std::fs::remove_dir_all(&workspace);
     }
 

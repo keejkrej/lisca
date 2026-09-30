@@ -23,7 +23,7 @@ export const AnalysisStageSchema = Schema.Literals([
   "queued",
   "preparing",
   "segment",
-  "timeseries",
+  "traces",
   "auc",
   "fit",
   "completed",
