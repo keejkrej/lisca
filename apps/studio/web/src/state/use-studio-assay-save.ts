@@ -53,7 +53,7 @@ export function useStudioAssaySave() {
       await writeStudioAssayJson(workspacePath(), assayJson);
       const assayJsonPath = studioAssayJsonPathForSaveTo(workspacePath());
       touchStudioWorkSessionFromAssayPath(assayJsonPath, label);
-      recordStudioAssayMemory(assayJsonPath, label, workspacePath());
+      recordStudioAssayMemory(assayJsonPath, assayJson);
       studioWizardActions.setBasicInfoSavedSnapshot(setWizard, serializeBasicInfoSnapshot(current));
       return true;
     } catch (cause) {

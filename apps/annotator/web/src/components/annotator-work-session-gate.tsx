@@ -13,7 +13,6 @@ import {
 export function AnnotatorWorkSessionGate(props: { children?: JSX.Element }) {
   const workspace = useShellWorkspace();
   const [, setUi] = useAtom(() => annotatorUiAtom);
-  const persistedSession = readAnnotatorSession();
 
   onMount(() => {
     const session = readAnnotatorSession();
@@ -24,7 +23,8 @@ export function AnnotatorWorkSessionGate(props: { children?: JSX.Element }) {
   return (
     <WorkSessionAppGate
       appId="annotator"
-      gateOptions={{ skipResumePicker: persistedSession != null }}
+      // No resume dialog: the workspace and source pickers list recent picks instead.
+      gateOptions={{ skipResumePicker: true }}
       PickerDialog={WorkSessionPickerDialog}
       onRestore={(session) => {
         void restoreAnnotatorWorkSession({

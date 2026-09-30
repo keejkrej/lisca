@@ -15,7 +15,7 @@ import { instructionForStep } from "../state/studio-routes";
 import { useStudioMemoryRecent } from "../hooks/use-studio-memory-recent";
 import { useStudioNavigate } from "../navigation/use-studio-navigate";
 import { useStudioSession } from "../state/studio-session-context";
-import { assayDisplayLabel, studioWizardActions, studioWizardAtom } from "../state/studio-store";
+import { studioWizardActions, studioWizardAtom } from "../state/studio-store";
 import { recordStudioAssayMemory } from "../utils/studio-memory";
 
 export const Route = createFileRoute("/assay")({
@@ -44,8 +44,7 @@ function AssayPage() {
     setOpenAssayError(null);
     try {
       const assayJson = await openAssay(path);
-      const label = assayDisplayLabel(assayJson);
-      recordStudioAssayMemory(path, label, assayJson.workspace.path.trim() || undefined);
+      recordStudioAssayMemory(path, assayJson);
       navigateTo("/metadata");
     } catch (cause) {
       setOpenAssayError(
