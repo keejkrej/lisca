@@ -86,7 +86,7 @@ import { AnnotatePageProvider } from "../src/state/annotate-page-context";
 
 function AnnotatorShellFixture() {
   const [workspace] = createSignal("/experiments/annotator-demo");
-  const [selection] = createSignal("position 7, site 12");
+  const [selection] = createSignal("position 7, ROI 12");
   const [edit, setEdit] = createSignal("unsaved cell outline");
 
   return (
@@ -186,6 +186,6 @@ function expectAnnotatorState(
   selectionState: HTMLElement,
 ) {
   expect(workspaceState.textContent).toBe("/experiments/annotator-demo");
-  expect(selectionState.textContent).toBe("position 7, site 12");
+  expect(selectionState.textContent).toBe("position 7, ROI 12");
   expect(edit.value).toBe("expanded unsaved outline");
 }

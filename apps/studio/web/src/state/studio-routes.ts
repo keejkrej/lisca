@@ -22,5 +22,5 @@ export function instructionForStep(step: StudioStep): string {
 }
 
 export function instructionForAnnotate(): string {
-  return "Pick a label, paint the site, then continue.";
+  return "Pick a label, paint the ROI, then continue.";
 }

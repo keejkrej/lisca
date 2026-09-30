@@ -1,15 +1,15 @@
 import type { RoiWorkspaceScan } from "@lisca/contracts";
 
-export type StudioAnnotateSite = {
+export type StudioAnnotateRoi = {
   pos: number;
   roi: number;
 };
 
 /** Returns the next ROI in scan order without wrapping at the end. */
-export function nextStudioAnnotateSite(
+export function nextStudioAnnotateRoi(
   scan: RoiWorkspaceScan | null | undefined,
   selection: { pos: number | null; roi: number | null },
-): StudioAnnotateSite | null {
+): StudioAnnotateRoi | null {
   const positions = scan?.positions ?? [];
   const currentPositionIndex = positions.findIndex((position) => position.pos === selection.pos);
 
@@ -38,13 +38,13 @@ export function nextStudioAnnotateSite(
 }
 
 /** Returns the previous ROI in scan order without wrapping at the start. */
-export function previousStudioAnnotateSite(
+export function previousStudioAnnotateRoi(
   scan: RoiWorkspaceScan | null | undefined,
   selection: { pos: number | null; roi: number | null },
-): StudioAnnotateSite | null {
-  const sites = (scan?.positions ?? []).flatMap((position) =>
+): StudioAnnotateRoi | null {
+  const rois = (scan?.positions ?? []).flatMap((position) =>
     position.rois.map((entry) => ({ pos: position.pos, roi: entry.roi })),
   );
-  const index = sites.findIndex((site) => site.pos === selection.pos && site.roi === selection.roi);
-  return index > 0 ? sites[index - 1]! : null;
+  const index = rois.findIndex((item) => item.pos === selection.pos && item.roi === selection.roi);
+  return index > 0 ? rois[index - 1]! : null;
 }

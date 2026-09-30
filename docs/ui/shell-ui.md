@@ -74,14 +74,14 @@ same order:
 
 | Name       | Meaning                                                                         |
 | ---------- | ------------------------------------------------------------------------------- |
-| `Save`     | Persist the current item (position, site). Never navigates.                     |
+| `Save`     | Persist the current item (position, ROI). Never navigates.                      |
 | `Back`     | Previous item in this step (or sub-step on Info); disabled on the first item.   |
 | `Next`     | Next item in this step. Never saves; unsaved edits prompt Save/Discard/Cancel.  |
 | `Continue` | Primary, always last: advance the workflow (next pending item, then next step). |
 
 Order: `Save` → `Back` → `Next` → step-specific extras (`Open existing`, `Shuffle`) → `Continue`. Only
 `Continue` uses the primary fill. Name exports by artifact (`Save PDF`). Avoid synonyms such as
-“Jump”, “Next site”, or “Continue to analysis”.
+“Jump”, “Next ROI”, or “Continue to analysis”.
 
 `Back` never leaves the step; only `Continue` crosses into the next step. Returning to an earlier step
 is the left step navigation's job.

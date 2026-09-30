@@ -146,7 +146,7 @@ function AnnotateBody(props: { screen: MockScreen; onScreen: (screen: MockScreen
           <MockTopBar screen={props.screen} onScreen={props.onScreen} />
         </AppShell.TopBar>
         <AppShell.Main>
-          <IbidiSheet captionLeft="Site 1 · GFP" />
+          <IbidiSheet captionLeft="ROI 1 · GFP" />
         </AppShell.Main>
       </AppShell.MainColumn>
       <AppShell.Right>

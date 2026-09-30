@@ -96,7 +96,7 @@ export function VariationExcludeDialog(props: {
                     onValueChange={setThreshold}
                   />
                   <p class="text-muted-foreground text-sm">
-                    Exclude {selectedCount()} of {preview().eligiblePatternCount} sites
+                    Exclude {selectedCount()} of {preview().eligiblePatternCount} patterns
                   </p>
                 </div>
               </div>

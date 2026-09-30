@@ -77,7 +77,7 @@ describe("instrument rail state toggles", () => {
 
     render(() => <Harness />);
 
-    const edit = screen.getByRole("button", { name: "Edit site exclusions" });
+    const edit = screen.getByRole("button", { name: "Edit pattern exclusions" });
     const indicator = edit.querySelector('[data-slot="instrument-toggle-indicator"]');
 
     expect(edit.getAttribute("aria-pressed")).toBe("false");

@@ -9,7 +9,7 @@ export const landingProducts = [
     id: "aligner",
     title: "Aligner",
     description:
-      "Register each microscopy field to the micropattern grid, mark occupied micropatterns, and export aligned ROI images. A single-purpose tool for patterned arrays — no built-in analysis. Use it on its own and feed exports into your in-house pipeline.",
+      "Align each microscopy field to the micropattern grid, mark occupied micropatterns, and export aligned ROI images. A single-purpose tool for patterned arrays — no built-in analysis. Use it on its own and feed exports into your in-house pipeline.",
   },
   {
     id: "annotator",
@@ -84,7 +84,7 @@ export const workflowSteps = [
     step: "02",
     title: "Grid aligned",
     description:
-      "Register the field to the micropattern grid and mark unoccupied micropatterns so they stay out of quantification.",
+      "Align the field to the micropattern grid and mark unoccupied micropatterns so they stay out of quantification.",
     visual: "aligned" as const,
   },
   {

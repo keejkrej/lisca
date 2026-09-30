@@ -42,7 +42,7 @@ describe("MetadataFields misc", () => {
     renderWizard();
     expect(screen.getByText("Misc")).toBeTruthy();
     expect(screen.getByRole("checkbox", { name: "Skip segmentation" })).toBeTruthy();
-    expect(screen.queryByText("Use the full site (skip mask)")).toBeNull();
+    expect(screen.queryByText("Use the full ROI (skip mask)")).toBeNull();
 
     fireEvent.click(screen.getByRole("button", { name: /Killing/ }));
 

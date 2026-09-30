@@ -158,7 +158,7 @@ alias — `migrate_workspace` rewrites it on open.
 | Path                     | Role                                                                                                                                |
 | ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- |
 | `assay.json`             | Nested domain contract (`type`, `data`, `workspace`, `interval`, `samples`, optional `analysis` with `channels` / `sampleChannels`) |
-| `bbox/PosN.csv`          | Site boxes (`roi,x,y,w,h`). See [`schema.md`](./schema.md).                                                                         |
+| `bbox/PosN.csv`          | ROI boxes (`roi,x,y,w,h`). See [`schema.md`](./schema.md).                                                                          |
 | `roi/PosN/`              | Cropped ROI stacks + slim `index.json` — see [`schema.md`](./schema.md)                                                             |
 | `mask/PosN/`             | Per-frame segmentation masks (`uint8` TIFF stacks)                                                                                  |
 | `analysis/` / `results/` | Shared folder names. Table columns: [`schema.md`](./schema.md). Killing tables stay in-tree until that sidecar exists.              |
