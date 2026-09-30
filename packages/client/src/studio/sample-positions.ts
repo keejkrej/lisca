@@ -179,6 +179,25 @@ export function isValidSamplePositionRange(positionStart: string, positionFinish
   return start != null && finish != null && finish >= start;
 }
 
+/**
+ * The Metadata editor shows positions 1-based; state and assay.json stay 0-based.
+ * Stored `""` or non-integer text shows as empty.
+ */
+export function samplePositionToDisplay(stored: string): string {
+  const value = parseNonNegativeInteger(stored);
+  return value == null ? "" : String(value + 1);
+}
+
+/**
+ * Convert typed 1-based text to the stored 0-based string. Returns `""` for empty input
+ * and `null` when the text is not an integer >= 1.
+ */
+export function samplePositionFromDisplay(raw: string): string | null {
+  if (raw.trim() === "") return "";
+  const value = parseNonNegativeInteger(raw);
+  return value == null || value < 1 ? null : String(value - 1);
+}
+
 /** Expand an inclusive 0-based position range into individual position indices. */
 export function expandPositionRange(positionStart: string, positionFinish: string): number[] {
   const start = parseNonNegativeInteger(positionStart);

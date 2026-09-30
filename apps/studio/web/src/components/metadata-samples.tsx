@@ -1,6 +1,10 @@
 import { Button, Input } from "@lisca/ui/components";
 import { useAtomSet, useAtomValue } from "@effect/atom-solid";
-import { For } from "solid-js";
+import {
+  samplePositionFromDisplay,
+  samplePositionToDisplay,
+} from "@lisca/client/studio/sample-positions";
+import { createSignal, For } from "solid-js";
 import IconTrashRegular from "phosphor-icons-solid/IconTrashRegular";
 
 import { studioWizardActions, studioWizardAtom } from "../state/studio-store";
@@ -114,27 +118,21 @@ function SampleCard(props: {
       </div>
       <div class="grid min-w-0 grid-cols-2 gap-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_5rem_minmax(0,1fr)]">
         <SampleField label="Position start">
-          <Input
-            autocomplete="off"
+          <SamplePositionInput
             aria-label="Position start"
-            class="h-8 w-full px-3 text-center font-mono text-[13px]"
-            inputMode="numeric"
             name={`samples.${props.index}.position-start`}
-            placeholder="e.g. 0…"
+            placeholder="e.g. 1…"
             value={props.row.positionStart}
-            onChange={(event) => props.onChange({ positionStart: event.currentTarget.value })}
+            onChange={(positionStart) => props.onChange({ positionStart })}
           />
         </SampleField>
         <SampleField label="Position end">
-          <Input
-            autocomplete="off"
+          <SamplePositionInput
             aria-label="Position finish"
-            class="h-8 w-full px-3 text-center font-mono text-[13px]"
-            inputMode="numeric"
             name={`samples.${props.index}.position-finish`}
             placeholder="e.g. 10…"
             value={props.row.positionFinish}
-            onChange={(event) => props.onChange({ positionFinish: event.currentTarget.value })}
+            onChange={(positionFinish) => props.onChange({ positionFinish })}
           />
         </SampleField>
         <SampleField label="Mask">
@@ -173,5 +171,37 @@ function SampleField(props: { label: string; children: import("solid-js").JSX.El
       </span>
       {props.children}
     </label>
+  );
+}
+
+/**
+ * Edits a stored 0-based position as a 1-based number. Text that is not an integer >= 1
+ * stays visible as typed and stores `""`, so validation flags the row.
+ */
+function SamplePositionInput(props: {
+  "aria-label": string;
+  name: string;
+  placeholder: string;
+  value: string;
+  onChange: (stored: string) => void;
+}) {
+  const [draft, setDraft] = createSignal<string | null>(null);
+
+  return (
+    <Input
+      autocomplete="off"
+      aria-label={props["aria-label"]}
+      class="h-8 w-full px-3 text-center font-mono text-[13px]"
+      inputMode="numeric"
+      name={props.name}
+      placeholder={props.placeholder}
+      value={draft() ?? samplePositionToDisplay(props.value)}
+      onChange={(event) => {
+        const raw = event.currentTarget.value;
+        const stored = samplePositionFromDisplay(raw);
+        setDraft(stored == null ? raw : null);
+        props.onChange(stored ?? "");
+      }}
+    />
   );
 }

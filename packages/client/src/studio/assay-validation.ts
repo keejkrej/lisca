@@ -83,7 +83,7 @@ export function validateAssayForAnalysis(input: {
     }
     if (!isValidSamplePositionRange(row.positionStart, row.positionFinish)) {
       errors.push(
-        `${rowLabel}: position start and finish must be non-negative integers with finish >= start.`,
+        `${rowLabel}: position start and end must be whole numbers from 1, with end >= start.`,
       );
     }
     if (parseNonNegativeInteger(row.mask) == null) {
