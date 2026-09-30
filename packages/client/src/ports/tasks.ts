@@ -25,23 +25,23 @@ export function createTaskPort(
   client: LiscaApiClient = createApiClient(deps),
 ): TaskDataPort {
   return {
-    listOperations() {
-      return toClientEffect(client.tasks.listOperations());
-    },
-    getOperation(operationId) {
-      return toClientEffect(client.tasks.getOperation({ query: { operationId } }));
+    listTasks() {
+      return toClientEffect(client.tasks.listTasks());
     },
     getTask(taskId) {
       return toClientEffect(client.tasks.getTask({ query: { taskId } }));
     },
-    cancelOperation(operationId) {
-      return toTaskCommandEffect(client.tasks.cancelOperation({ payload: { operationId } }));
+    getStep(stepId) {
+      return toClientEffect(client.tasks.getStep({ query: { stepId } }));
     },
     cancelTask(taskId) {
       return toTaskCommandEffect(client.tasks.cancelTask({ payload: { taskId } }));
     },
-    retryTask(taskId) {
-      return toTaskCommandEffect(client.tasks.retryTask({ payload: { taskId } }));
+    cancelStep(stepId) {
+      return toTaskCommandEffect(client.tasks.cancelStep({ payload: { stepId } }));
+    },
+    retryStep(stepId) {
+      return toTaskCommandEffect(client.tasks.retryStep({ payload: { stepId } }));
     },
   };
 }

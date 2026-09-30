@@ -4,8 +4,8 @@ import { createSignal } from "solid-js";
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
 const mocks = vi.hoisted(() => {
-  const operation = (status: "running" | "cancelled", updatedAtMs: number) => ({
-    operationId: "crop-operation",
+  const task = (status: "running" | "cancelled", updatedAtMs: number) => ({
+    taskId: "crop-task",
     kind: "crop-roi",
     workspaceId: "workspace-1",
     workspacePath: "/experiments/annotator-demo",
@@ -25,10 +25,10 @@ const mocks = vi.hoisted(() => {
     createdAtMs: 1,
     updatedAtMs,
   });
-  const task = (status: "running" | "cancelled") => ({
-    taskId: "crop-position-7",
-    operationId: "crop-operation",
-    taskKind: "crop-position-7",
+  const step = (status: "running" | "cancelled") => ({
+    stepId: "crop-position-7",
+    taskId: "crop-task",
+    stepKind: "crop-position-7",
     workspaceId: "workspace-1",
     status,
     weight: 1,
@@ -38,8 +38,8 @@ const mocks = vi.hoisted(() => {
     attempts: [
       {
         attemptId: "attempt-1",
-        operationId: "crop-operation",
-        taskId: "crop-position-7",
+        taskId: "crop-task",
+        stepId: "crop-position-7",
         status,
         startedAtMs: 10,
         finishedAtMs: status === "running" ? null : 20,
@@ -48,28 +48,28 @@ const mocks = vi.hoisted(() => {
     ],
   });
   const detail = (status: "running" | "cancelled", updatedAtMs: number) => ({
-    operation: operation(status, updatedAtMs),
-    tasks: [task(status)],
+    task: task(status, updatedAtMs),
+    steps: [step(status)],
   });
-  const getOperation = vi.fn(async () => detail("running", 1));
-  const cancelTask = vi.fn(async () => detail("cancelled", 2));
-  const retryTask = vi.fn(async () => detail("running", 3));
+  const getTask = vi.fn(async () => detail("running", 1));
+  const cancelStep = vi.fn(async () => detail("cancelled", 2));
+  const retryStep = vi.fn(async () => detail("running", 3));
 
   return {
-    operation,
-    getOperation,
-    cancelTask,
-    retryTask,
+    task,
+    getTask,
+    cancelStep,
+    retryStep,
     gateway: {
-      listOperations: async () => [operation("running", 1)],
-      getOperation,
-      getTask: vi.fn(async () => task("running")),
-      cancelOperation: vi.fn(async () => detail("cancelled", 2)),
-      cancelTask,
-      retryTask,
+      listTasks: async () => [task("running", 1)],
+      getTask,
+      getStep: vi.fn(async () => step("running")),
+      cancelTask: vi.fn(async () => detail("cancelled", 2)),
+      cancelStep,
+      retryStep,
     },
     subscribe: vi.fn(({ onSnapshot }: { onSnapshot: (snapshot: readonly unknown[]) => void }) => {
-      onSnapshot([operation("running", 1)]);
+      onSnapshot([task("running", 1)]);
       return () => undefined;
     }),
   };
@@ -77,7 +77,7 @@ const mocks = vi.hoisted(() => {
 
 vi.mock("@lisca/client/session/task-center", () => ({
   createTaskCenterGateway: () => mocks.gateway,
-  subscribeTaskCenterOperations: mocks.subscribe,
+  subscribeTaskCenterTasks: mocks.subscribe,
 }));
 
 import { AnnotatorAtomsProvider } from "../src/components/annotator-atoms-provider";
@@ -153,23 +153,20 @@ describe("AnnotatorHeader Task Center", () => {
     await screen.findByRole("dialog", { name: "Task Center" });
 
     fireEvent.click(screen.getByRole("button", { name: /Expand Crop ROI/ }));
-    await screen.findByText("Current task");
-    expect(mocks.getOperation).toHaveBeenCalledWith("crop-operation", expect.any(AbortSignal));
+    await screen.findByText("Current step");
+    expect(mocks.getTask).toHaveBeenCalledWith("crop-task", expect.any(AbortSignal));
     expectAnnotatorState(edit, workspaceState, selectionState);
 
     fireEvent.click(screen.getByRole("button", { name: "Stop" }));
     await waitFor(() =>
-      expect(mocks.gateway.cancelOperation).toHaveBeenCalledWith(
-        "crop-operation",
-        expect.any(AbortSignal),
-      ),
+      expect(mocks.gateway.cancelTask).toHaveBeenCalledWith("crop-task", expect.any(AbortSignal)),
     );
     const retry = await screen.findByRole("button", { name: "Retry" });
     expectAnnotatorState(edit, workspaceState, selectionState);
 
     fireEvent.click(retry);
     await waitFor(() =>
-      expect(mocks.retryTask).toHaveBeenCalledWith("crop-position-7", expect.any(AbortSignal)),
+      expect(mocks.retryStep).toHaveBeenCalledWith("crop-position-7", expect.any(AbortSignal)),
     );
     await waitFor(() => expect(screen.queryByRole("button", { name: "Retry" })).toBeNull());
     expectAnnotatorState(edit, workspaceState, selectionState);

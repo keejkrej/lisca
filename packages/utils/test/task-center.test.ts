@@ -1,11 +1,11 @@
-import type { OperationDetail, OperationSummary, TaskDetail } from "@lisca/contracts";
+import type { TaskDetail, TaskSummary, StepDetail } from "@lisca/contracts";
 import { describe, expect, it } from "vite-plus/test";
 
 import {
-  canCancelOperation,
   canCancelTask,
-  canRetryTask,
-  deriveOperationProgress,
+  canCancelStep,
+  canRetryStep,
+  deriveTaskProgress,
   deriveTaskCenterIndicator,
   initialTaskCenterState,
   reconcileTaskCenterDetail,
@@ -13,13 +13,13 @@ import {
 } from "../src/task-center";
 
 function summary(
-  operationId: string,
-  status: OperationSummary["status"],
+  taskId: string,
+  status: TaskSummary["status"],
   updatedAtMs: number,
-  progress: Partial<OperationSummary["progress"]> = {},
-): OperationSummary {
+  progress: Partial<TaskSummary["progress"]> = {},
+): TaskSummary {
   return {
-    operationId,
+    taskId,
     kind: "crop-roi",
     workspaceId: "workspace-1",
     workspacePath: "/data/experiment-one",
@@ -42,18 +42,18 @@ function summary(
   };
 }
 
-function task(status: TaskDetail["status"], blocked = false): TaskDetail {
+function step(status: StepDetail["status"], blocked = false): StepDetail {
   return {
+    stepId: "step-1",
     taskId: "task-1",
-    operationId: "operation-1",
-    taskKind: "crop-position-1",
+    stepKind: "crop-position-1",
     workspaceId: "workspace-1",
     status,
     weight: 1,
     enqueueOrder: 0,
-    dependencies: blocked ? ["task-0"] : [],
+    dependencies: blocked ? ["step-0"] : [],
     blockedBy: blocked
-      ? [{ taskId: "task-0", taskKind: "crop-position-0", status: "failed", error: null }]
+      ? [{ stepId: "step-0", stepKind: "crop-position-0", status: "failed", error: null }]
       : [],
     attempts: [],
   };
@@ -68,13 +68,13 @@ describe("Task Center headless state", () => {
       summary("queued-new", "queued", 30, { queued: 4 }),
     ]);
 
-    expect(state.operations.map((operation) => operation.operationId)).toEqual([
+    expect(state.tasks.map((task) => task.taskId)).toEqual([
       "queued-new",
       "running-old",
       "failed-newest",
       "completed-new",
     ]);
-    expect(deriveTaskCenterIndicator(state.operations)).toEqual({
+    expect(deriveTaskCenterIndicator(state.tasks)).toEqual({
       activeCount: 2,
       attentionCount: 1,
       tone: "attention",
@@ -89,26 +89,26 @@ describe("Task Center headless state", () => {
     ["completed", false],
     ["failed", false],
     ["cancelled", false],
-  ] as const)("derives operation cancel for %s", (status, expected) => {
-    expect(canCancelOperation(summary("operation-1", status, 1))).toBe(expected);
+  ] as const)("derives task cancel for %s", (status, expected) => {
+    expect(canCancelTask(summary("task-1", status, 1))).toBe(expected);
   });
 
-  it("derives task cancel and dependency-safe retry actions", () => {
-    expect(canCancelTask(task("running"))).toBe(true);
-    expect(canCancelTask(task("blocked"))).toBe(true);
-    expect(canCancelTask(task("completed"))).toBe(false);
-    expect(canRetryTask(task("failed"))).toBe(true);
-    expect(canRetryTask(task("cancelled"))).toBe(true);
-    expect(canRetryTask(task("failed", true))).toBe(false);
+  it("derives step cancel and dependency-safe retry actions", () => {
+    expect(canCancelStep(step("running"))).toBe(true);
+    expect(canCancelStep(step("blocked"))).toBe(true);
+    expect(canCancelStep(step("completed"))).toBe(false);
+    expect(canRetryStep(step("failed"))).toBe(true);
+    expect(canRetryStep(step("cancelled"))).toBe(true);
+    expect(canRetryStep(step("failed", true))).toBe(false);
   });
 
-  it("derives bounded progress without counting attempts as logical tasks", () => {
-    const operation = summary("operation-1", "partially-complete", 1, {
+  it("derives bounded progress without counting attempts as logical steps", () => {
+    const task = summary("task-1", "partially-complete", 1, {
       completed: 2,
       running: 1,
       failed: 1,
     });
-    expect(deriveOperationProgress(operation)).toEqual({
+    expect(deriveTaskProgress(task)).toEqual({
       completed: 2,
       settled: 3,
       total: 4,
@@ -121,84 +121,84 @@ describe("Task Center headless state", () => {
 
   it("reconciles command/detail updates immediately and later snapshots canonically", () => {
     const before = reconcileTaskCenterSnapshot(initialTaskCenterState, [
-      summary("operation-1", "running", 1, { running: 1, queued: 3 }),
+      summary("task-1", "running", 1, { running: 1, queued: 3 }),
     ]);
-    const detail: OperationDetail = {
-      operation: summary("operation-1", "cancellation-requested", 2, {
+    const detail: TaskDetail = {
+      task: summary("task-1", "cancellation-requested", 2, {
         cancellationRequested: 1,
         cancelled: 3,
       }),
-      tasks: [task("cancellation-requested")],
+      steps: [step("cancellation-requested")],
     };
     const commanded = reconcileTaskCenterDetail(before, detail);
-    expect(commanded.operations[0]?.status).toBe("cancellation-requested");
-    expect(commanded.details["operation-1"]).toEqual(detail);
+    expect(commanded.tasks[0]?.status).toBe("cancellation-requested");
+    expect(commanded.details["task-1"]).toEqual(detail);
 
     const settled = reconcileTaskCenterSnapshot(commanded, [
-      summary("operation-1", "cancelled", 3, { cancelled: 4 }),
+      summary("task-1", "cancelled", 3, { cancelled: 4 }),
     ]);
-    expect(settled.operations[0]?.status).toBe("cancelled");
-    expect(settled.details["operation-1"]?.operation.status).toBe("cancellation-requested");
-    expect(settled.details["operation-1"]?.operation.updatedAtMs).toBe(2);
+    expect(settled.tasks[0]?.status).toBe("cancelled");
+    expect(settled.details["task-1"]?.task.status).toBe("cancellation-requested");
+    expect(settled.details["task-1"]?.task.updatedAtMs).toBe(2);
   });
 
-  it("keeps a newer list summary separate from cached task detail until detail refreshes", () => {
+  it("keeps a newer list summary separate from cached step detail until detail refreshes", () => {
     const loaded = reconcileTaskCenterDetail(initialTaskCenterState, {
-      operation: summary("operation-1", "running", 1, { running: 1, queued: 3 }),
-      tasks: [task("running")],
+      task: summary("task-1", "running", 1, { running: 1, queued: 3 }),
+      steps: [step("running")],
     });
 
     const snapshotUpdated = reconcileTaskCenterSnapshot(loaded, [
-      summary("operation-1", "failed", 2, { failed: 1, blocked: 3 }),
+      summary("task-1", "failed", 2, { failed: 1, blocked: 3 }),
     ]);
 
-    expect(snapshotUpdated.operations[0]?.status).toBe("failed");
-    expect(snapshotUpdated.operations[0]?.updatedAtMs).toBe(2);
-    expect(snapshotUpdated.details["operation-1"]?.operation.status).toBe("running");
-    expect(snapshotUpdated.details["operation-1"]?.operation.updatedAtMs).toBe(1);
-    expect(snapshotUpdated.details["operation-1"]?.tasks[0]?.status).toBe("running");
+    expect(snapshotUpdated.tasks[0]?.status).toBe("failed");
+    expect(snapshotUpdated.tasks[0]?.updatedAtMs).toBe(2);
+    expect(snapshotUpdated.details["task-1"]?.task.status).toBe("running");
+    expect(snapshotUpdated.details["task-1"]?.task.updatedAtMs).toBe(1);
+    expect(snapshotUpdated.details["task-1"]?.steps[0]?.status).toBe("running");
 
     const refreshed = reconcileTaskCenterDetail(snapshotUpdated, {
-      operation: summary("operation-1", "failed", 2, { failed: 1, blocked: 3 }),
-      tasks: [task("failed")],
+      task: summary("task-1", "failed", 2, { failed: 1, blocked: 3 }),
+      steps: [step("failed")],
     });
-    expect(refreshed.details["operation-1"]?.operation.updatedAtMs).toBe(2);
-    expect(refreshed.details["operation-1"]?.tasks[0]?.status).toBe("failed");
+    expect(refreshed.details["task-1"]?.task.updatedAtMs).toBe(2);
+    expect(refreshed.details["task-1"]?.steps[0]?.status).toBe("failed");
   });
 
   it("does not let an in-flight stale snapshot undo a newer command response", () => {
-    const stale = summary("operation-1", "running", 1, { running: 1, queued: 3 });
+    const stale = summary("task-1", "running", 1, { running: 1, queued: 3 });
     const commanded = reconcileTaskCenterDetail(initialTaskCenterState, {
-      operation: summary("operation-1", "cancellation-requested", 2, {
+      task: summary("task-1", "cancellation-requested", 2, {
         cancellationRequested: 1,
         cancelled: 3,
       }),
-      tasks: [task("cancellation-requested")],
+      steps: [step("cancellation-requested")],
     });
 
     const reconciled = reconcileTaskCenterSnapshot(commanded, [stale]);
-    expect(reconciled.operations[0]?.status).toBe("cancellation-requested");
-    expect(reconciled.details["operation-1"]?.operation.updatedAtMs).toBe(2);
+    expect(reconciled.tasks[0]?.status).toBe("cancellation-requested");
+    expect(reconciled.details["task-1"]?.task.updatedAtMs).toBe(2);
   });
 
   it("rejects a stale GET or command detail after a newer canonical update", () => {
     const current = reconcileTaskCenterDetail(initialTaskCenterState, {
-      operation: summary("operation-1", "completed", 3, { completed: 4 }),
-      tasks: [task("completed")],
+      task: summary("task-1", "completed", 3, { completed: 4 }),
+      steps: [step("completed")],
     });
     const stale = reconcileTaskCenterDetail(current, {
-      operation: summary("operation-1", "running", 2, { running: 1, completed: 3 }),
-      tasks: [task("running")],
+      task: summary("task-1", "running", 2, { running: 1, completed: 3 }),
+      steps: [step("running")],
     });
 
-    expect(stale.operations[0]?.status).toBe("completed");
-    expect(stale.details["operation-1"]?.tasks[0]?.status).toBe("completed");
+    expect(stale.tasks[0]?.status).toBe("completed");
+    expect(stale.details["task-1"]?.steps[0]?.status).toBe("completed");
   });
 
-  it("drops cached detail when bounded backend history evicts an operation", () => {
+  it("drops cached detail when bounded backend history evicts a task", () => {
     const withDetail = reconcileTaskCenterDetail(initialTaskCenterState, {
-      operation: summary("old", "completed", 1, { completed: 4 }),
-      tasks: [],
+      task: summary("old", "completed", 1, { completed: 4 }),
+      steps: [],
     });
     const evicted = reconcileTaskCenterSnapshot(withDetail, []);
     expect(evicted).toEqual(initialTaskCenterState);

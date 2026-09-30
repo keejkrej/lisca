@@ -118,11 +118,11 @@ mod contract_tests {
     }
 
     #[test]
-    fn task_detail_preserves_operation_task_and_attempt_ids() {
+    fn step_detail_preserves_task_step_and_attempt_ids() {
         let value = json!({
-            "operation": {
-                "operationId": "op-1",
-                "kind": "test-operation",
+            "task": {
+                "taskId": "task-1",
+                "kind": "test-task",
                 "workspaceId": "workspace-1",
                 "workspacePath": "/workspace",
                 "mutating": true,
@@ -141,10 +141,10 @@ mod contract_tests {
                 "createdAtMs": 1,
                 "updatedAtMs": 2
             },
-            "tasks": [{
+            "steps": [{
+                "stepId": "step-1",
                 "taskId": "task-1",
-                "operationId": "op-1",
-                "taskKind": "test-task",
+                "stepKind": "test-step",
                 "workspaceId": "workspace-1",
                 "status": "running",
                 "weight": 1,
@@ -153,8 +153,8 @@ mod contract_tests {
                 "blockedBy": [],
                 "attempts": [{
                     "attemptId": "attempt-1",
-                    "operationId": "op-1",
                     "taskId": "task-1",
+                    "stepId": "step-1",
                     "status": "running",
                     "startedAtMs": 2,
                     "finishedAtMs": null,
@@ -162,9 +162,9 @@ mod contract_tests {
                 }]
             }]
         });
-        let detail: OperationDetail = serde_json::from_value(value).unwrap();
-        assert_eq!(detail.operation.operation_id, "op-1");
-        assert_eq!(detail.tasks[0].task_id, "task-1");
-        assert_eq!(detail.tasks[0].attempts[0].attempt_id, "attempt-1");
+        let detail: TaskDetail = serde_json::from_value(value).unwrap();
+        assert_eq!(detail.task.task_id, "task-1");
+        assert_eq!(detail.steps[0].step_id, "step-1");
+        assert_eq!(detail.steps[0].attempts[0].attempt_id, "attempt-1");
     }
 }

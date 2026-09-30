@@ -1,17 +1,17 @@
 mod analysis;
 mod routes;
 
-use aligner_server::{CropJobState, HasCropJobs};
+use aligner_server::{CropTaskState, HasCropTasks};
 use axum::Router;
 use lisca_server::{task_router, HasTaskScheduler, SchedulerConfig, TaskScheduler};
 
-pub use analysis::{AnalysisJobState, HasAnalysisJobs};
+pub use analysis::{AnalysisTaskState, HasAnalysisTasks};
 pub use routes::router;
 
 #[derive(Clone)]
 struct StudioState {
-    crop: CropJobState,
-    analysis: AnalysisJobState,
+    crop: CropTaskState,
+    analysis: AnalysisTaskState,
     tasks: TaskScheduler,
 }
 
@@ -21,14 +21,14 @@ impl HasTaskScheduler for StudioState {
     }
 }
 
-impl HasCropJobs for StudioState {
-    fn crop_jobs(&self) -> &CropJobState {
+impl HasCropTasks for StudioState {
+    fn crop_tasks(&self) -> &CropTaskState {
         &self.crop
     }
 }
 
-impl HasAnalysisJobs for StudioState {
-    fn analysis_jobs(&self) -> &AnalysisJobState {
+impl HasAnalysisTasks for StudioState {
+    fn analysis_tasks(&self) -> &AnalysisTaskState {
         &self.analysis
     }
 }
@@ -36,8 +36,8 @@ impl HasAnalysisJobs for StudioState {
 /// Build the transport-neutral Studio application.
 pub fn app() -> Router {
     let state = StudioState {
-        crop: CropJobState::new(),
-        analysis: AnalysisJobState::new(),
+        crop: CropTaskState::new(),
+        analysis: AnalysisTaskState::new(),
         tasks: TaskScheduler::new(SchedulerConfig::default())
             .expect("task scheduler requires a Tokio runtime"),
     };

@@ -18,13 +18,13 @@ import {
   LoadAlignStateQuerySchema,
   MemoryRecentQuerySchema,
   MemoryTouchRequestSchema,
-  OperationDetailQuerySchema,
+  TaskDetailQuerySchema,
   OutputPathsQuerySchema,
   ReadTextFileQuerySchema,
   RoiIndexFileSchema,
   RoiPosExistsQuerySchema,
   SavedBboxPositionsQuerySchema,
-  TaskDetailQuerySchema,
+  StepDetailQuerySchema,
 } from "../src/schema/index.ts";
 
 /**
@@ -89,12 +89,12 @@ foldDefs(Schema.toType(LatestAnalysisQuerySchema), "LatestAnalysisQuery");
 foldDefs(Schema.toType(LatestCropQuerySchema), "LatestCropQuery");
 foldDefs(Schema.toType(LoadAlignStateQuerySchema), "LoadAlignStateQuery");
 foldDefs(Schema.toType(MemoryRecentQuerySchema), "MemoryRecentQuery");
-foldDefs(Schema.toType(OperationDetailQuerySchema), "OperationDetailQuery");
+foldDefs(Schema.toType(TaskDetailQuerySchema), "TaskDetailQuery");
 foldDefs(Schema.toType(OutputPathsQuerySchema), "OutputPathsQuery");
 foldDefs(Schema.toType(ReadTextFileQuerySchema), "ReadTextFileQuery");
 foldDefs(Schema.toType(RoiPosExistsQuerySchema), "RoiPosExistsQuery");
 foldDefs(Schema.toType(SavedBboxPositionsQuerySchema), "SavedBboxPositionsQuery");
-foldDefs(Schema.toType(TaskDetailQuerySchema), "TaskDetailQuery");
+foldDefs(Schema.toType(StepDetailQuerySchema), "StepDetailQuery");
 
 // Normalize every `$ref` so they resolve within a single `definitions` map
 // (OpenAPI uses `#/components/schemas/...`, SchemaRepresentation uses `#/$defs/...`).

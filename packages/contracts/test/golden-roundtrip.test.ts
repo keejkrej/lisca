@@ -10,7 +10,7 @@ import {
   AlignerSourceSchema,
   FramePayloadSchema,
   LoadFrameRequestSchema,
-  OperationDetailSchema,
+  TaskDetailSchema,
   RoiIndexEntrySchema,
   SaveBboxRequestSchema,
   ScanSourceRequestSchema,
@@ -81,11 +81,11 @@ describe("golden wire roundtrip", () => {
     expect(decoded.bbox.h).toBe(4);
   });
 
-  it("decodes operation, task, and attempt observability identities", () => {
-    const decoded = decodeJsonEither(OperationDetailSchema, {
-      operation: {
-        operationId: "op-1",
-        kind: "test-operation",
+  it("decodes task, step, and attempt observability identities", () => {
+    const decoded = decodeJsonEither(TaskDetailSchema, {
+      task: {
+        taskId: "task-1",
+        kind: "test-task",
         workspaceId: "ws-1",
         workspacePath: "/workspace",
         mutating: true,
@@ -104,11 +104,11 @@ describe("golden wire roundtrip", () => {
         createdAtMs: 1,
         updatedAtMs: 2,
       },
-      tasks: [
+      steps: [
         {
+          stepId: "step-1",
           taskId: "task-1",
-          operationId: "op-1",
-          taskKind: "test-task",
+          stepKind: "test-step",
           workspaceId: "ws-1",
           status: "running",
           weight: 1,
@@ -118,8 +118,8 @@ describe("golden wire roundtrip", () => {
           attempts: [
             {
               attemptId: "attempt-1",
-              operationId: "op-1",
               taskId: "task-1",
+              stepId: "step-1",
               status: "running",
               startedAtMs: 2,
               finishedAtMs: null,
@@ -130,13 +130,13 @@ describe("golden wire roundtrip", () => {
       ],
     });
     if (Result.isFailure(decoded)) throw new Error(formatSchemaError(decoded.failure));
-    expect(decoded.success.tasks[0]?.attempts[0]?.attemptId).toBe("attempt-1");
+    expect(decoded.success.steps[0]?.attempts[0]?.attemptId).toBe("attempt-1");
   });
 
-  it("decodes partial operation progress and dependency failure context", () => {
-    const decoded = decodeJsonEither(OperationDetailSchema, {
-      operation: {
-        operationId: "op-partial",
+  it("decodes partial task progress and dependency failure context", () => {
+    const decoded = decodeJsonEither(TaskDetailSchema, {
+      task: {
+        taskId: "task-partial",
         kind: "analysis",
         workspaceId: "ws-1",
         workspacePath: "/workspace",
@@ -156,11 +156,11 @@ describe("golden wire roundtrip", () => {
         createdAtMs: 1,
         updatedAtMs: 3,
       },
-      tasks: [
+      steps: [
         {
-          taskId: "aggregate",
-          operationId: "op-partial",
-          taskKind: "aggregate",
+          stepId: "aggregate",
+          taskId: "task-partial",
+          stepKind: "aggregate",
           workspaceId: "ws-1",
           status: "blocked",
           weight: 1,
@@ -168,8 +168,8 @@ describe("golden wire roundtrip", () => {
           dependencies: ["failed-position"],
           blockedBy: [
             {
-              taskId: "failed-position",
-              taskKind: "position",
+              stepId: "failed-position",
+              stepKind: "position",
               status: "failed",
               error: { code: "bad_input", message: "position input is invalid" },
             },
@@ -179,8 +179,8 @@ describe("golden wire roundtrip", () => {
       ],
     });
     if (Result.isFailure(decoded)) throw new Error(formatSchemaError(decoded.failure));
-    expect(decoded.success.operation.progress.blocked).toBe(1);
-    expect(decoded.success.tasks[0]?.blockedBy[0]?.error?.code).toBe("bad_input");
+    expect(decoded.success.task.progress.blocked).toBe(1);
+    expect(decoded.success.steps[0]?.blockedBy[0]?.error?.code).toBe("bad_input");
   });
 
   it("rejects u64 wire numbers that JavaScript cannot represent exactly", () => {

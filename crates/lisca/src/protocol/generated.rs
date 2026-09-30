@@ -3577,492 +3577,6 @@ impl ::std::convert::From<::std::option::Option<CropRoiProgress>> for NullableCr
         Self(value)
     }
 }
-#[doc = "`OperationAttention`"]
-#[doc = r""]
-#[doc = r" <details><summary>JSON schema</summary>"]
-#[doc = r""]
-#[doc = r" ```json"]
-#[doc = "{"]
-#[doc = "  \"type\": \"string\","]
-#[doc = "  \"enum\": ["]
-#[doc = "    \"none\","]
-#[doc = "    \"error\""]
-#[doc = "  ]"]
-#[doc = "}"]
-#[doc = r" ```"]
-#[doc = r" </details>"]
-#[derive(
-    :: serde :: Deserialize,
-    :: serde :: Serialize,
-    Clone,
-    Copy,
-    Debug,
-    Eq,
-    Hash,
-    Ord,
-    PartialEq,
-    PartialOrd,
-)]
-pub enum OperationAttention {
-    #[serde(rename = "none")]
-    None,
-    #[serde(rename = "error")]
-    Error,
-}
-impl ::std::fmt::Display for OperationAttention {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        match *self {
-            Self::None => f.write_str("none"),
-            Self::Error => f.write_str("error"),
-        }
-    }
-}
-impl ::std::str::FromStr for OperationAttention {
-    type Err = self::error::ConversionError;
-    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        match value {
-            "none" => Ok(Self::None),
-            "error" => Ok(Self::Error),
-            _ => Err("invalid value".into()),
-        }
-    }
-}
-impl ::std::convert::TryFrom<&str> for OperationAttention {
-    type Error = self::error::ConversionError;
-    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<&::std::string::String> for OperationAttention {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: &::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<::std::string::String> for OperationAttention {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: ::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-#[doc = "`OperationCancelRequest`"]
-#[doc = r""]
-#[doc = r" <details><summary>JSON schema</summary>"]
-#[doc = r""]
-#[doc = r" ```json"]
-#[doc = "{"]
-#[doc = "  \"type\": \"object\","]
-#[doc = "  \"required\": ["]
-#[doc = "    \"operationId\""]
-#[doc = "  ],"]
-#[doc = "  \"properties\": {"]
-#[doc = "    \"operationId\": {"]
-#[doc = "      \"type\": \"string\""]
-#[doc = "    }"]
-#[doc = "  }"]
-#[doc = "}"]
-#[doc = r" ```"]
-#[doc = r" </details>"]
-#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
-pub struct OperationCancelRequest {
-    #[serde(rename = "operationId")]
-    pub operation_id: ::std::string::String,
-}
-impl OperationCancelRequest {
-    pub fn builder() -> builder::OperationCancelRequest {
-        Default::default()
-    }
-}
-#[doc = "`OperationDetail`"]
-#[doc = r""]
-#[doc = r" <details><summary>JSON schema</summary>"]
-#[doc = r""]
-#[doc = r" ```json"]
-#[doc = "{"]
-#[doc = "  \"type\": \"object\","]
-#[doc = "  \"required\": ["]
-#[doc = "    \"operation\","]
-#[doc = "    \"tasks\""]
-#[doc = "  ],"]
-#[doc = "  \"properties\": {"]
-#[doc = "    \"operation\": {"]
-#[doc = "      \"$ref\": \"#/definitions/OperationSummary\""]
-#[doc = "    },"]
-#[doc = "    \"tasks\": {"]
-#[doc = "      \"type\": \"array\","]
-#[doc = "      \"items\": {"]
-#[doc = "        \"$ref\": \"#/definitions/TaskDetail\""]
-#[doc = "      }"]
-#[doc = "    }"]
-#[doc = "  }"]
-#[doc = "}"]
-#[doc = r" ```"]
-#[doc = r" </details>"]
-#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
-pub struct OperationDetail {
-    pub operation: OperationSummary,
-    pub tasks: ::std::vec::Vec<TaskDetail>,
-}
-impl OperationDetail {
-    pub fn builder() -> builder::OperationDetail {
-        Default::default()
-    }
-}
-#[doc = "`OperationDetailQuery`"]
-#[doc = r""]
-#[doc = r" <details><summary>JSON schema</summary>"]
-#[doc = r""]
-#[doc = r" ```json"]
-#[doc = "{"]
-#[doc = "  \"type\": \"object\","]
-#[doc = "  \"required\": ["]
-#[doc = "    \"operationId\""]
-#[doc = "  ],"]
-#[doc = "  \"properties\": {"]
-#[doc = "    \"operationId\": {"]
-#[doc = "      \"type\": \"string\""]
-#[doc = "    }"]
-#[doc = "  }"]
-#[doc = "}"]
-#[doc = r" ```"]
-#[doc = r" </details>"]
-#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
-pub struct OperationDetailQuery {
-    #[serde(rename = "operationId")]
-    pub operation_id: ::std::string::String,
-}
-impl OperationDetailQuery {
-    pub fn builder() -> builder::OperationDetailQuery {
-        Default::default()
-    }
-}
-#[doc = "`OperationList`"]
-#[doc = r""]
-#[doc = r" <details><summary>JSON schema</summary>"]
-#[doc = r""]
-#[doc = r" ```json"]
-#[doc = "{"]
-#[doc = "  \"type\": \"array\","]
-#[doc = "  \"items\": {"]
-#[doc = "    \"$ref\": \"#/definitions/OperationSummary\""]
-#[doc = "  }"]
-#[doc = "}"]
-#[doc = r" ```"]
-#[doc = r" </details>"]
-#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
-#[serde(transparent)]
-pub struct OperationList(pub ::std::vec::Vec<OperationSummary>);
-impl ::std::ops::Deref for OperationList {
-    type Target = ::std::vec::Vec<OperationSummary>;
-    fn deref(&self) -> &::std::vec::Vec<OperationSummary> {
-        &self.0
-    }
-}
-impl ::std::convert::From<OperationList> for ::std::vec::Vec<OperationSummary> {
-    fn from(value: OperationList) -> Self {
-        value.0
-    }
-}
-impl ::std::convert::From<::std::vec::Vec<OperationSummary>> for OperationList {
-    fn from(value: ::std::vec::Vec<OperationSummary>) -> Self {
-        Self(value)
-    }
-}
-#[doc = "`OperationProgress`"]
-#[doc = r""]
-#[doc = r" <details><summary>JSON schema</summary>"]
-#[doc = r""]
-#[doc = r" ```json"]
-#[doc = "{"]
-#[doc = "  \"type\": \"object\","]
-#[doc = "  \"required\": ["]
-#[doc = "    \"blocked\","]
-#[doc = "    \"cancellationRequested\","]
-#[doc = "    \"cancelled\","]
-#[doc = "    \"completed\","]
-#[doc = "    \"failed\","]
-#[doc = "    \"queued\","]
-#[doc = "    \"running\","]
-#[doc = "    \"total\""]
-#[doc = "  ],"]
-#[doc = "  \"properties\": {"]
-#[doc = "    \"blocked\": {"]
-#[doc = "      \"type\": \"integer\","]
-#[doc = "      \"format\": \"uint32\","]
-#[doc = "      \"minimum\": 0.0"]
-#[doc = "    },"]
-#[doc = "    \"cancellationRequested\": {"]
-#[doc = "      \"type\": \"integer\","]
-#[doc = "      \"format\": \"uint32\","]
-#[doc = "      \"minimum\": 0.0"]
-#[doc = "    },"]
-#[doc = "    \"cancelled\": {"]
-#[doc = "      \"type\": \"integer\","]
-#[doc = "      \"format\": \"uint32\","]
-#[doc = "      \"minimum\": 0.0"]
-#[doc = "    },"]
-#[doc = "    \"completed\": {"]
-#[doc = "      \"type\": \"integer\","]
-#[doc = "      \"format\": \"uint32\","]
-#[doc = "      \"minimum\": 0.0"]
-#[doc = "    },"]
-#[doc = "    \"failed\": {"]
-#[doc = "      \"type\": \"integer\","]
-#[doc = "      \"format\": \"uint32\","]
-#[doc = "      \"minimum\": 0.0"]
-#[doc = "    },"]
-#[doc = "    \"queued\": {"]
-#[doc = "      \"type\": \"integer\","]
-#[doc = "      \"format\": \"uint32\","]
-#[doc = "      \"minimum\": 0.0"]
-#[doc = "    },"]
-#[doc = "    \"running\": {"]
-#[doc = "      \"type\": \"integer\","]
-#[doc = "      \"format\": \"uint32\","]
-#[doc = "      \"minimum\": 0.0"]
-#[doc = "    },"]
-#[doc = "    \"total\": {"]
-#[doc = "      \"type\": \"integer\","]
-#[doc = "      \"format\": \"uint32\","]
-#[doc = "      \"minimum\": 0.0"]
-#[doc = "    }"]
-#[doc = "  }"]
-#[doc = "}"]
-#[doc = r" ```"]
-#[doc = r" </details>"]
-#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
-pub struct OperationProgress {
-    pub blocked: u32,
-    #[serde(rename = "cancellationRequested")]
-    pub cancellation_requested: u32,
-    pub cancelled: u32,
-    pub completed: u32,
-    pub failed: u32,
-    pub queued: u32,
-    pub running: u32,
-    pub total: u32,
-}
-impl OperationProgress {
-    pub fn builder() -> builder::OperationProgress {
-        Default::default()
-    }
-}
-#[doc = "`OperationStatus`"]
-#[doc = r""]
-#[doc = r" <details><summary>JSON schema</summary>"]
-#[doc = r""]
-#[doc = r" ```json"]
-#[doc = "{"]
-#[doc = "  \"type\": \"string\","]
-#[doc = "  \"enum\": ["]
-#[doc = "    \"queued\","]
-#[doc = "    \"running\","]
-#[doc = "    \"partially-complete\","]
-#[doc = "    \"completed\","]
-#[doc = "    \"failed\","]
-#[doc = "    \"cancelled\","]
-#[doc = "    \"cancellation-requested\""]
-#[doc = "  ]"]
-#[doc = "}"]
-#[doc = r" ```"]
-#[doc = r" </details>"]
-#[derive(
-    :: serde :: Deserialize,
-    :: serde :: Serialize,
-    Clone,
-    Copy,
-    Debug,
-    Eq,
-    Hash,
-    Ord,
-    PartialEq,
-    PartialOrd,
-)]
-pub enum OperationStatus {
-    #[serde(rename = "queued")]
-    Queued,
-    #[serde(rename = "running")]
-    Running,
-    #[serde(rename = "partially-complete")]
-    PartiallyComplete,
-    #[serde(rename = "completed")]
-    Completed,
-    #[serde(rename = "failed")]
-    Failed,
-    #[serde(rename = "cancelled")]
-    Cancelled,
-    #[serde(rename = "cancellation-requested")]
-    CancellationRequested,
-}
-impl ::std::fmt::Display for OperationStatus {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        match *self {
-            Self::Queued => f.write_str("queued"),
-            Self::Running => f.write_str("running"),
-            Self::PartiallyComplete => f.write_str("partially-complete"),
-            Self::Completed => f.write_str("completed"),
-            Self::Failed => f.write_str("failed"),
-            Self::Cancelled => f.write_str("cancelled"),
-            Self::CancellationRequested => f.write_str("cancellation-requested"),
-        }
-    }
-}
-impl ::std::str::FromStr for OperationStatus {
-    type Err = self::error::ConversionError;
-    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        match value {
-            "queued" => Ok(Self::Queued),
-            "running" => Ok(Self::Running),
-            "partially-complete" => Ok(Self::PartiallyComplete),
-            "completed" => Ok(Self::Completed),
-            "failed" => Ok(Self::Failed),
-            "cancelled" => Ok(Self::Cancelled),
-            "cancellation-requested" => Ok(Self::CancellationRequested),
-            _ => Err("invalid value".into()),
-        }
-    }
-}
-impl ::std::convert::TryFrom<&str> for OperationStatus {
-    type Error = self::error::ConversionError;
-    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<&::std::string::String> for OperationStatus {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: &::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<::std::string::String> for OperationStatus {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: ::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-#[doc = "`OperationSummary`"]
-#[doc = r""]
-#[doc = r" <details><summary>JSON schema</summary>"]
-#[doc = r""]
-#[doc = r" ```json"]
-#[doc = "{"]
-#[doc = "  \"type\": \"object\","]
-#[doc = "  \"required\": ["]
-#[doc = "    \"attention\","]
-#[doc = "    \"createdAtMs\","]
-#[doc = "    \"kind\","]
-#[doc = "    \"mutating\","]
-#[doc = "    \"operationId\","]
-#[doc = "    \"progress\","]
-#[doc = "    \"status\","]
-#[doc = "    \"updatedAtMs\","]
-#[doc = "    \"workspaceId\","]
-#[doc = "    \"workspacePath\""]
-#[doc = "  ],"]
-#[doc = "  \"properties\": {"]
-#[doc = "    \"activeTaskKind\": {"]
-#[doc = "      \"anyOf\": ["]
-#[doc = "        {"]
-#[doc = "          \"type\": \"string\""]
-#[doc = "        },"]
-#[doc = "        {"]
-#[doc = "          \"type\": \"null\""]
-#[doc = "        }"]
-#[doc = "      ]"]
-#[doc = "    },"]
-#[doc = "    \"attention\": {"]
-#[doc = "      \"$ref\": \"#/definitions/OperationAttention\""]
-#[doc = "    },"]
-#[doc = "    \"createdAtMs\": {"]
-#[doc = "      \"type\": \"integer\","]
-#[doc = "      \"format\": \"uint64\","]
-#[doc = "      \"maximum\": 9007199254740991.0,"]
-#[doc = "      \"minimum\": 0.0"]
-#[doc = "    },"]
-#[doc = "    \"kind\": {"]
-#[doc = "      \"type\": \"string\""]
-#[doc = "    },"]
-#[doc = "    \"mutating\": {"]
-#[doc = "      \"type\": \"boolean\""]
-#[doc = "    },"]
-#[doc = "    \"operationId\": {"]
-#[doc = "      \"type\": \"string\""]
-#[doc = "    },"]
-#[doc = "    \"progress\": {"]
-#[doc = "      \"$ref\": \"#/definitions/OperationProgress\""]
-#[doc = "    },"]
-#[doc = "    \"status\": {"]
-#[doc = "      \"$ref\": \"#/definitions/OperationStatus\""]
-#[doc = "    },"]
-#[doc = "    \"updatedAtMs\": {"]
-#[doc = "      \"type\": \"integer\","]
-#[doc = "      \"format\": \"uint64\","]
-#[doc = "      \"maximum\": 9007199254740991.0,"]
-#[doc = "      \"minimum\": 0.0"]
-#[doc = "    },"]
-#[doc = "    \"workProgress\": {"]
-#[doc = "      \"anyOf\": ["]
-#[doc = "        {"]
-#[doc = "          \"$ref\": \"#/definitions/TaskWorkProgress\""]
-#[doc = "        },"]
-#[doc = "        {"]
-#[doc = "          \"type\": \"null\""]
-#[doc = "        }"]
-#[doc = "      ]"]
-#[doc = "    },"]
-#[doc = "    \"workspaceId\": {"]
-#[doc = "      \"type\": \"string\""]
-#[doc = "    },"]
-#[doc = "    \"workspacePath\": {"]
-#[doc = "      \"type\": \"string\""]
-#[doc = "    }"]
-#[doc = "  }"]
-#[doc = "}"]
-#[doc = r" ```"]
-#[doc = r" </details>"]
-#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
-pub struct OperationSummary {
-    #[serde(
-        rename = "activeTaskKind",
-        default,
-        skip_serializing_if = "::std::option::Option::is_none"
-    )]
-    pub active_task_kind: ::std::option::Option<::std::string::String>,
-    pub attention: OperationAttention,
-    #[serde(rename = "createdAtMs")]
-    pub created_at_ms: u64,
-    pub kind: ::std::string::String,
-    pub mutating: bool,
-    #[serde(rename = "operationId")]
-    pub operation_id: ::std::string::String,
-    pub progress: OperationProgress,
-    pub status: OperationStatus,
-    #[serde(rename = "updatedAtMs")]
-    pub updated_at_ms: u64,
-    #[serde(
-        rename = "workProgress",
-        default,
-        skip_serializing_if = "::std::option::Option::is_none"
-    )]
-    pub work_progress: ::std::option::Option<TaskWorkProgress>,
-    #[serde(rename = "workspaceId")]
-    pub workspace_id: ::std::string::String,
-    #[serde(rename = "workspacePath")]
-    pub workspace_path: ::std::string::String,
-}
-impl OperationSummary {
-    pub fn builder() -> builder::OperationSummary {
-        Default::default()
-    }
-}
 #[doc = "`OutputPathsQuery`"]
 #[doc = r""]
 #[doc = r" <details><summary>JSON schema</summary>"]
@@ -5722,7 +5236,7 @@ impl SmartSegmentResponse {
         Default::default()
     }
 }
-#[doc = "`TaskAttempt`"]
+#[doc = "`StepAttempt`"]
 #[doc = r""]
 #[doc = r" <details><summary>JSON schema</summary>"]
 #[doc = r""]
@@ -5733,9 +5247,9 @@ impl SmartSegmentResponse {
 #[doc = "    \"attemptId\","]
 #[doc = "    \"error\","]
 #[doc = "    \"finishedAtMs\","]
-#[doc = "    \"operationId\","]
 #[doc = "    \"startedAtMs\","]
 #[doc = "    \"status\","]
+#[doc = "    \"stepId\","]
 #[doc = "    \"taskId\""]
 #[doc = "  ],"]
 #[doc = "  \"properties\": {"]
@@ -5745,7 +5259,7 @@ impl SmartSegmentResponse {
 #[doc = "    \"error\": {"]
 #[doc = "      \"anyOf\": ["]
 #[doc = "        {"]
-#[doc = "          \"$ref\": \"#/definitions/TaskError\""]
+#[doc = "          \"$ref\": \"#/definitions/StepError\""]
 #[doc = "        },"]
 #[doc = "        {"]
 #[doc = "          \"type\": \"null\""]
@@ -5765,9 +5279,6 @@ impl SmartSegmentResponse {
 #[doc = "        }"]
 #[doc = "      ]"]
 #[doc = "    },"]
-#[doc = "    \"operationId\": {"]
-#[doc = "      \"type\": \"string\""]
-#[doc = "    },"]
 #[doc = "    \"startedAtMs\": {"]
 #[doc = "      \"anyOf\": ["]
 #[doc = "        {"]
@@ -5782,7 +5293,10 @@ impl SmartSegmentResponse {
 #[doc = "      ]"]
 #[doc = "    },"]
 #[doc = "    \"status\": {"]
-#[doc = "      \"$ref\": \"#/definitions/TaskStatus\""]
+#[doc = "      \"$ref\": \"#/definitions/StepStatus\""]
+#[doc = "    },"]
+#[doc = "    \"stepId\": {"]
+#[doc = "      \"type\": \"string\""]
 #[doc = "    },"]
 #[doc = "    \"taskId\": {"]
 #[doc = "      \"type\": \"string\""]
@@ -5792,23 +5306,541 @@ impl SmartSegmentResponse {
 #[doc = r" ```"]
 #[doc = r" </details>"]
 #[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
-pub struct TaskAttempt {
+pub struct StepAttempt {
     #[serde(rename = "attemptId")]
     pub attempt_id: ::std::string::String,
-    pub error: ::std::option::Option<TaskError>,
+    pub error: ::std::option::Option<StepError>,
     #[serde(rename = "finishedAtMs")]
     pub finished_at_ms: ::std::option::Option<u64>,
-    #[serde(rename = "operationId")]
-    pub operation_id: ::std::string::String,
     #[serde(rename = "startedAtMs")]
     pub started_at_ms: ::std::option::Option<u64>,
-    pub status: TaskStatus,
+    pub status: StepStatus,
+    #[serde(rename = "stepId")]
+    pub step_id: ::std::string::String,
     #[serde(rename = "taskId")]
     pub task_id: ::std::string::String,
 }
-impl TaskAttempt {
-    pub fn builder() -> builder::TaskAttempt {
+impl StepAttempt {
+    pub fn builder() -> builder::StepAttempt {
         Default::default()
+    }
+}
+#[doc = "`StepCancelRequest`"]
+#[doc = r""]
+#[doc = r" <details><summary>JSON schema</summary>"]
+#[doc = r""]
+#[doc = r" ```json"]
+#[doc = "{"]
+#[doc = "  \"type\": \"object\","]
+#[doc = "  \"required\": ["]
+#[doc = "    \"stepId\""]
+#[doc = "  ],"]
+#[doc = "  \"properties\": {"]
+#[doc = "    \"stepId\": {"]
+#[doc = "      \"type\": \"string\""]
+#[doc = "    }"]
+#[doc = "  }"]
+#[doc = "}"]
+#[doc = r" ```"]
+#[doc = r" </details>"]
+#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
+pub struct StepCancelRequest {
+    #[serde(rename = "stepId")]
+    pub step_id: ::std::string::String,
+}
+impl StepCancelRequest {
+    pub fn builder() -> builder::StepCancelRequest {
+        Default::default()
+    }
+}
+#[doc = "`StepDependencyBlock`"]
+#[doc = r""]
+#[doc = r" <details><summary>JSON schema</summary>"]
+#[doc = r""]
+#[doc = r" ```json"]
+#[doc = "{"]
+#[doc = "  \"type\": \"object\","]
+#[doc = "  \"required\": ["]
+#[doc = "    \"error\","]
+#[doc = "    \"status\","]
+#[doc = "    \"stepId\","]
+#[doc = "    \"stepKind\""]
+#[doc = "  ],"]
+#[doc = "  \"properties\": {"]
+#[doc = "    \"error\": {"]
+#[doc = "      \"anyOf\": ["]
+#[doc = "        {"]
+#[doc = "          \"$ref\": \"#/definitions/StepError\""]
+#[doc = "        },"]
+#[doc = "        {"]
+#[doc = "          \"type\": \"null\""]
+#[doc = "        }"]
+#[doc = "      ]"]
+#[doc = "    },"]
+#[doc = "    \"status\": {"]
+#[doc = "      \"$ref\": \"#/definitions/StepStatus\""]
+#[doc = "    },"]
+#[doc = "    \"stepId\": {"]
+#[doc = "      \"type\": \"string\""]
+#[doc = "    },"]
+#[doc = "    \"stepKind\": {"]
+#[doc = "      \"type\": \"string\""]
+#[doc = "    }"]
+#[doc = "  }"]
+#[doc = "}"]
+#[doc = r" ```"]
+#[doc = r" </details>"]
+#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
+pub struct StepDependencyBlock {
+    pub error: ::std::option::Option<StepError>,
+    pub status: StepStatus,
+    #[serde(rename = "stepId")]
+    pub step_id: ::std::string::String,
+    #[serde(rename = "stepKind")]
+    pub step_kind: ::std::string::String,
+}
+impl StepDependencyBlock {
+    pub fn builder() -> builder::StepDependencyBlock {
+        Default::default()
+    }
+}
+#[doc = "`StepDetail`"]
+#[doc = r""]
+#[doc = r" <details><summary>JSON schema</summary>"]
+#[doc = r""]
+#[doc = r" ```json"]
+#[doc = "{"]
+#[doc = "  \"type\": \"object\","]
+#[doc = "  \"required\": ["]
+#[doc = "    \"attempts\","]
+#[doc = "    \"blockedBy\","]
+#[doc = "    \"dependencies\","]
+#[doc = "    \"enqueueOrder\","]
+#[doc = "    \"status\","]
+#[doc = "    \"stepId\","]
+#[doc = "    \"stepKind\","]
+#[doc = "    \"taskId\","]
+#[doc = "    \"weight\","]
+#[doc = "    \"workspaceId\""]
+#[doc = "  ],"]
+#[doc = "  \"properties\": {"]
+#[doc = "    \"attempts\": {"]
+#[doc = "      \"type\": \"array\","]
+#[doc = "      \"items\": {"]
+#[doc = "        \"$ref\": \"#/definitions/StepAttempt\""]
+#[doc = "      }"]
+#[doc = "    },"]
+#[doc = "    \"blockedBy\": {"]
+#[doc = "      \"type\": \"array\","]
+#[doc = "      \"items\": {"]
+#[doc = "        \"$ref\": \"#/definitions/StepDependencyBlock\""]
+#[doc = "      }"]
+#[doc = "    },"]
+#[doc = "    \"dependencies\": {"]
+#[doc = "      \"type\": \"array\","]
+#[doc = "      \"items\": {"]
+#[doc = "        \"type\": \"string\""]
+#[doc = "      }"]
+#[doc = "    },"]
+#[doc = "    \"enqueueOrder\": {"]
+#[doc = "      \"type\": \"integer\","]
+#[doc = "      \"format\": \"uint64\","]
+#[doc = "      \"maximum\": 9007199254740991.0,"]
+#[doc = "      \"minimum\": 0.0"]
+#[doc = "    },"]
+#[doc = "    \"status\": {"]
+#[doc = "      \"$ref\": \"#/definitions/StepStatus\""]
+#[doc = "    },"]
+#[doc = "    \"stepId\": {"]
+#[doc = "      \"type\": \"string\""]
+#[doc = "    },"]
+#[doc = "    \"stepKind\": {"]
+#[doc = "      \"type\": \"string\""]
+#[doc = "    },"]
+#[doc = "    \"taskId\": {"]
+#[doc = "      \"type\": \"string\""]
+#[doc = "    },"]
+#[doc = "    \"weight\": {"]
+#[doc = "      \"type\": \"integer\","]
+#[doc = "      \"format\": \"uint32\","]
+#[doc = "      \"minimum\": 0.0"]
+#[doc = "    },"]
+#[doc = "    \"workProgress\": {"]
+#[doc = "      \"anyOf\": ["]
+#[doc = "        {"]
+#[doc = "          \"$ref\": \"#/definitions/StepWorkProgress\""]
+#[doc = "        },"]
+#[doc = "        {"]
+#[doc = "          \"type\": \"null\""]
+#[doc = "        }"]
+#[doc = "      ]"]
+#[doc = "    },"]
+#[doc = "    \"workspaceId\": {"]
+#[doc = "      \"type\": \"string\""]
+#[doc = "    }"]
+#[doc = "  }"]
+#[doc = "}"]
+#[doc = r" ```"]
+#[doc = r" </details>"]
+#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
+pub struct StepDetail {
+    pub attempts: ::std::vec::Vec<StepAttempt>,
+    #[serde(rename = "blockedBy")]
+    pub blocked_by: ::std::vec::Vec<StepDependencyBlock>,
+    pub dependencies: ::std::vec::Vec<::std::string::String>,
+    #[serde(rename = "enqueueOrder")]
+    pub enqueue_order: u64,
+    pub status: StepStatus,
+    #[serde(rename = "stepId")]
+    pub step_id: ::std::string::String,
+    #[serde(rename = "stepKind")]
+    pub step_kind: ::std::string::String,
+    #[serde(rename = "taskId")]
+    pub task_id: ::std::string::String,
+    pub weight: u32,
+    #[serde(
+        rename = "workProgress",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub work_progress: ::std::option::Option<StepWorkProgress>,
+    #[serde(rename = "workspaceId")]
+    pub workspace_id: ::std::string::String,
+}
+impl StepDetail {
+    pub fn builder() -> builder::StepDetail {
+        Default::default()
+    }
+}
+#[doc = "`StepDetailQuery`"]
+#[doc = r""]
+#[doc = r" <details><summary>JSON schema</summary>"]
+#[doc = r""]
+#[doc = r" ```json"]
+#[doc = "{"]
+#[doc = "  \"type\": \"object\","]
+#[doc = "  \"required\": ["]
+#[doc = "    \"stepId\""]
+#[doc = "  ],"]
+#[doc = "  \"properties\": {"]
+#[doc = "    \"stepId\": {"]
+#[doc = "      \"type\": \"string\""]
+#[doc = "    }"]
+#[doc = "  }"]
+#[doc = "}"]
+#[doc = r" ```"]
+#[doc = r" </details>"]
+#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
+pub struct StepDetailQuery {
+    #[serde(rename = "stepId")]
+    pub step_id: ::std::string::String,
+}
+impl StepDetailQuery {
+    pub fn builder() -> builder::StepDetailQuery {
+        Default::default()
+    }
+}
+#[doc = "`StepError`"]
+#[doc = r""]
+#[doc = r" <details><summary>JSON schema</summary>"]
+#[doc = r""]
+#[doc = r" ```json"]
+#[doc = "{"]
+#[doc = "  \"type\": \"object\","]
+#[doc = "  \"required\": ["]
+#[doc = "    \"code\","]
+#[doc = "    \"message\""]
+#[doc = "  ],"]
+#[doc = "  \"properties\": {"]
+#[doc = "    \"code\": {"]
+#[doc = "      \"type\": \"string\""]
+#[doc = "    },"]
+#[doc = "    \"message\": {"]
+#[doc = "      \"type\": \"string\""]
+#[doc = "    }"]
+#[doc = "  }"]
+#[doc = "}"]
+#[doc = r" ```"]
+#[doc = r" </details>"]
+#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
+pub struct StepError {
+    pub code: ::std::string::String,
+    pub message: ::std::string::String,
+}
+impl StepError {
+    pub fn builder() -> builder::StepError {
+        Default::default()
+    }
+}
+#[doc = "`StepRetryRequest`"]
+#[doc = r""]
+#[doc = r" <details><summary>JSON schema</summary>"]
+#[doc = r""]
+#[doc = r" ```json"]
+#[doc = "{"]
+#[doc = "  \"type\": \"object\","]
+#[doc = "  \"required\": ["]
+#[doc = "    \"stepId\""]
+#[doc = "  ],"]
+#[doc = "  \"properties\": {"]
+#[doc = "    \"stepId\": {"]
+#[doc = "      \"type\": \"string\""]
+#[doc = "    }"]
+#[doc = "  }"]
+#[doc = "}"]
+#[doc = r" ```"]
+#[doc = r" </details>"]
+#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
+pub struct StepRetryRequest {
+    #[serde(rename = "stepId")]
+    pub step_id: ::std::string::String,
+}
+impl StepRetryRequest {
+    pub fn builder() -> builder::StepRetryRequest {
+        Default::default()
+    }
+}
+#[doc = "`StepStatus`"]
+#[doc = r""]
+#[doc = r" <details><summary>JSON schema</summary>"]
+#[doc = r""]
+#[doc = r" ```json"]
+#[doc = "{"]
+#[doc = "  \"type\": \"string\","]
+#[doc = "  \"enum\": ["]
+#[doc = "    \"queued\","]
+#[doc = "    \"blocked\","]
+#[doc = "    \"running\","]
+#[doc = "    \"completed\","]
+#[doc = "    \"failed\","]
+#[doc = "    \"cancelled\","]
+#[doc = "    \"cancellation-requested\""]
+#[doc = "  ]"]
+#[doc = "}"]
+#[doc = r" ```"]
+#[doc = r" </details>"]
+#[derive(
+    :: serde :: Deserialize,
+    :: serde :: Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum StepStatus {
+    #[serde(rename = "queued")]
+    Queued,
+    #[serde(rename = "blocked")]
+    Blocked,
+    #[serde(rename = "running")]
+    Running,
+    #[serde(rename = "completed")]
+    Completed,
+    #[serde(rename = "failed")]
+    Failed,
+    #[serde(rename = "cancelled")]
+    Cancelled,
+    #[serde(rename = "cancellation-requested")]
+    CancellationRequested,
+}
+impl ::std::fmt::Display for StepStatus {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::Queued => f.write_str("queued"),
+            Self::Blocked => f.write_str("blocked"),
+            Self::Running => f.write_str("running"),
+            Self::Completed => f.write_str("completed"),
+            Self::Failed => f.write_str("failed"),
+            Self::Cancelled => f.write_str("cancelled"),
+            Self::CancellationRequested => f.write_str("cancellation-requested"),
+        }
+    }
+}
+impl ::std::str::FromStr for StepStatus {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "queued" => Ok(Self::Queued),
+            "blocked" => Ok(Self::Blocked),
+            "running" => Ok(Self::Running),
+            "completed" => Ok(Self::Completed),
+            "failed" => Ok(Self::Failed),
+            "cancelled" => Ok(Self::Cancelled),
+            "cancellation-requested" => Ok(Self::CancellationRequested),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for StepStatus {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for StepStatus {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for StepStatus {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+#[doc = "`StepWorkProgress`"]
+#[doc = r""]
+#[doc = r" <details><summary>JSON schema</summary>"]
+#[doc = r""]
+#[doc = r" ```json"]
+#[doc = "{"]
+#[doc = "  \"type\": \"object\","]
+#[doc = "  \"required\": ["]
+#[doc = "    \"completed\","]
+#[doc = "    \"message\","]
+#[doc = "    \"phase\","]
+#[doc = "    \"total\","]
+#[doc = "    \"unit\","]
+#[doc = "    \"updatedAtMs\""]
+#[doc = "  ],"]
+#[doc = "  \"properties\": {"]
+#[doc = "    \"completed\": {"]
+#[doc = "      \"type\": \"integer\","]
+#[doc = "      \"format\": \"uint32\","]
+#[doc = "      \"minimum\": 0.0"]
+#[doc = "    },"]
+#[doc = "    \"message\": {"]
+#[doc = "      \"anyOf\": ["]
+#[doc = "        {"]
+#[doc = "          \"type\": \"string\""]
+#[doc = "        },"]
+#[doc = "        {"]
+#[doc = "          \"type\": \"null\""]
+#[doc = "        }"]
+#[doc = "      ]"]
+#[doc = "    },"]
+#[doc = "    \"phase\": {"]
+#[doc = "      \"anyOf\": ["]
+#[doc = "        {"]
+#[doc = "          \"type\": \"string\""]
+#[doc = "        },"]
+#[doc = "        {"]
+#[doc = "          \"type\": \"null\""]
+#[doc = "        }"]
+#[doc = "      ]"]
+#[doc = "    },"]
+#[doc = "    \"total\": {"]
+#[doc = "      \"type\": \"integer\","]
+#[doc = "      \"format\": \"uint32\","]
+#[doc = "      \"minimum\": 0.0"]
+#[doc = "    },"]
+#[doc = "    \"unit\": {"]
+#[doc = "      \"type\": \"string\""]
+#[doc = "    },"]
+#[doc = "    \"updatedAtMs\": {"]
+#[doc = "      \"type\": \"integer\","]
+#[doc = "      \"format\": \"uint64\","]
+#[doc = "      \"maximum\": 9007199254740991.0,"]
+#[doc = "      \"minimum\": 0.0"]
+#[doc = "    }"]
+#[doc = "  }"]
+#[doc = "}"]
+#[doc = r" ```"]
+#[doc = r" </details>"]
+#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
+pub struct StepWorkProgress {
+    pub completed: u32,
+    pub message: ::std::option::Option<::std::string::String>,
+    pub phase: ::std::option::Option<::std::string::String>,
+    pub total: u32,
+    pub unit: ::std::string::String,
+    #[serde(rename = "updatedAtMs")]
+    pub updated_at_ms: u64,
+}
+impl StepWorkProgress {
+    pub fn builder() -> builder::StepWorkProgress {
+        Default::default()
+    }
+}
+#[doc = "`TaskAttention`"]
+#[doc = r""]
+#[doc = r" <details><summary>JSON schema</summary>"]
+#[doc = r""]
+#[doc = r" ```json"]
+#[doc = "{"]
+#[doc = "  \"type\": \"string\","]
+#[doc = "  \"enum\": ["]
+#[doc = "    \"none\","]
+#[doc = "    \"error\""]
+#[doc = "  ]"]
+#[doc = "}"]
+#[doc = r" ```"]
+#[doc = r" </details>"]
+#[derive(
+    :: serde :: Deserialize,
+    :: serde :: Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum TaskAttention {
+    #[serde(rename = "none")]
+    None,
+    #[serde(rename = "error")]
+    Error,
+}
+impl ::std::fmt::Display for TaskAttention {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::None => f.write_str("none"),
+            Self::Error => f.write_str("error"),
+        }
+    }
+}
+impl ::std::str::FromStr for TaskAttention {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "none" => Ok(Self::None),
+            "error" => Ok(Self::Error),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for TaskAttention {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for TaskAttention {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for TaskAttention {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
     }
 }
 #[doc = "`TaskCancelRequest`"]
@@ -5881,8 +5913,8 @@ impl TaskCancelRequest {
 #[doc = "    \"entity\": {"]
 #[doc = "      \"type\": \"string\","]
 #[doc = "      \"enum\": ["]
-#[doc = "        \"operation\","]
-#[doc = "        \"task\""]
+#[doc = "        \"task\","]
+#[doc = "        \"step\""]
 #[doc = "      ]"]
 #[doc = "    },"]
 #[doc = "    \"id\": {"]
@@ -5991,8 +6023,8 @@ impl ::std::convert::TryFrom<::std::string::String> for TaskCommandErrorCode {
 #[doc = "{"]
 #[doc = "  \"type\": \"string\","]
 #[doc = "  \"enum\": ["]
-#[doc = "    \"operation\","]
-#[doc = "    \"task\""]
+#[doc = "    \"task\","]
+#[doc = "    \"step\""]
 #[doc = "  ]"]
 #[doc = "}"]
 #[doc = r" ```"]
@@ -6010,16 +6042,16 @@ impl ::std::convert::TryFrom<::std::string::String> for TaskCommandErrorCode {
     PartialOrd,
 )]
 pub enum TaskCommandErrorEntity {
-    #[serde(rename = "operation")]
-    Operation,
     #[serde(rename = "task")]
     Task,
+    #[serde(rename = "step")]
+    Step,
 }
 impl ::std::fmt::Display for TaskCommandErrorEntity {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
-            Self::Operation => f.write_str("operation"),
             Self::Task => f.write_str("task"),
+            Self::Step => f.write_str("step"),
         }
     }
 }
@@ -6027,8 +6059,8 @@ impl ::std::str::FromStr for TaskCommandErrorEntity {
     type Err = self::error::ConversionError;
     fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
         match value {
-            "operation" => Ok(Self::Operation),
             "task" => Ok(Self::Task),
+            "step" => Ok(Self::Step),
             _ => Err("invalid value".into()),
         }
     }
@@ -6121,57 +6153,6 @@ impl ::std::convert::TryFrom<::std::string::String> for TaskCommandErrorTag {
         value.parse()
     }
 }
-#[doc = "`TaskDependencyBlock`"]
-#[doc = r""]
-#[doc = r" <details><summary>JSON schema</summary>"]
-#[doc = r""]
-#[doc = r" ```json"]
-#[doc = "{"]
-#[doc = "  \"type\": \"object\","]
-#[doc = "  \"required\": ["]
-#[doc = "    \"error\","]
-#[doc = "    \"status\","]
-#[doc = "    \"taskId\","]
-#[doc = "    \"taskKind\""]
-#[doc = "  ],"]
-#[doc = "  \"properties\": {"]
-#[doc = "    \"error\": {"]
-#[doc = "      \"anyOf\": ["]
-#[doc = "        {"]
-#[doc = "          \"$ref\": \"#/definitions/TaskError\""]
-#[doc = "        },"]
-#[doc = "        {"]
-#[doc = "          \"type\": \"null\""]
-#[doc = "        }"]
-#[doc = "      ]"]
-#[doc = "    },"]
-#[doc = "    \"status\": {"]
-#[doc = "      \"$ref\": \"#/definitions/TaskStatus\""]
-#[doc = "    },"]
-#[doc = "    \"taskId\": {"]
-#[doc = "      \"type\": \"string\""]
-#[doc = "    },"]
-#[doc = "    \"taskKind\": {"]
-#[doc = "      \"type\": \"string\""]
-#[doc = "    }"]
-#[doc = "  }"]
-#[doc = "}"]
-#[doc = r" ```"]
-#[doc = r" </details>"]
-#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
-pub struct TaskDependencyBlock {
-    pub error: ::std::option::Option<TaskError>,
-    pub status: TaskStatus,
-    #[serde(rename = "taskId")]
-    pub task_id: ::std::string::String,
-    #[serde(rename = "taskKind")]
-    pub task_kind: ::std::string::String,
-}
-impl TaskDependencyBlock {
-    pub fn builder() -> builder::TaskDependencyBlock {
-        Default::default()
-    }
-}
 #[doc = "`TaskDetail`"]
 #[doc = r""]
 #[doc = r" <details><summary>JSON schema</summary>"]
@@ -6180,71 +6161,18 @@ impl TaskDependencyBlock {
 #[doc = "{"]
 #[doc = "  \"type\": \"object\","]
 #[doc = "  \"required\": ["]
-#[doc = "    \"attempts\","]
-#[doc = "    \"blockedBy\","]
-#[doc = "    \"dependencies\","]
-#[doc = "    \"enqueueOrder\","]
-#[doc = "    \"operationId\","]
-#[doc = "    \"status\","]
-#[doc = "    \"taskId\","]
-#[doc = "    \"taskKind\","]
-#[doc = "    \"weight\","]
-#[doc = "    \"workspaceId\""]
+#[doc = "    \"steps\","]
+#[doc = "    \"task\""]
 #[doc = "  ],"]
 #[doc = "  \"properties\": {"]
-#[doc = "    \"attempts\": {"]
+#[doc = "    \"steps\": {"]
 #[doc = "      \"type\": \"array\","]
 #[doc = "      \"items\": {"]
-#[doc = "        \"$ref\": \"#/definitions/TaskAttempt\""]
+#[doc = "        \"$ref\": \"#/definitions/StepDetail\""]
 #[doc = "      }"]
 #[doc = "    },"]
-#[doc = "    \"blockedBy\": {"]
-#[doc = "      \"type\": \"array\","]
-#[doc = "      \"items\": {"]
-#[doc = "        \"$ref\": \"#/definitions/TaskDependencyBlock\""]
-#[doc = "      }"]
-#[doc = "    },"]
-#[doc = "    \"dependencies\": {"]
-#[doc = "      \"type\": \"array\","]
-#[doc = "      \"items\": {"]
-#[doc = "        \"type\": \"string\""]
-#[doc = "      }"]
-#[doc = "    },"]
-#[doc = "    \"enqueueOrder\": {"]
-#[doc = "      \"type\": \"integer\","]
-#[doc = "      \"format\": \"uint64\","]
-#[doc = "      \"maximum\": 9007199254740991.0,"]
-#[doc = "      \"minimum\": 0.0"]
-#[doc = "    },"]
-#[doc = "    \"operationId\": {"]
-#[doc = "      \"type\": \"string\""]
-#[doc = "    },"]
-#[doc = "    \"status\": {"]
-#[doc = "      \"$ref\": \"#/definitions/TaskStatus\""]
-#[doc = "    },"]
-#[doc = "    \"taskId\": {"]
-#[doc = "      \"type\": \"string\""]
-#[doc = "    },"]
-#[doc = "    \"taskKind\": {"]
-#[doc = "      \"type\": \"string\""]
-#[doc = "    },"]
-#[doc = "    \"weight\": {"]
-#[doc = "      \"type\": \"integer\","]
-#[doc = "      \"format\": \"uint32\","]
-#[doc = "      \"minimum\": 0.0"]
-#[doc = "    },"]
-#[doc = "    \"workProgress\": {"]
-#[doc = "      \"anyOf\": ["]
-#[doc = "        {"]
-#[doc = "          \"$ref\": \"#/definitions/TaskWorkProgress\""]
-#[doc = "        },"]
-#[doc = "        {"]
-#[doc = "          \"type\": \"null\""]
-#[doc = "        }"]
-#[doc = "      ]"]
-#[doc = "    },"]
-#[doc = "    \"workspaceId\": {"]
-#[doc = "      \"type\": \"string\""]
+#[doc = "    \"task\": {"]
+#[doc = "      \"$ref\": \"#/definitions/TaskSummary\""]
 #[doc = "    }"]
 #[doc = "  }"]
 #[doc = "}"]
@@ -6252,28 +6180,8 @@ impl TaskDependencyBlock {
 #[doc = r" </details>"]
 #[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
 pub struct TaskDetail {
-    pub attempts: ::std::vec::Vec<TaskAttempt>,
-    #[serde(rename = "blockedBy")]
-    pub blocked_by: ::std::vec::Vec<TaskDependencyBlock>,
-    pub dependencies: ::std::vec::Vec<::std::string::String>,
-    #[serde(rename = "enqueueOrder")]
-    pub enqueue_order: u64,
-    #[serde(rename = "operationId")]
-    pub operation_id: ::std::string::String,
-    pub status: TaskStatus,
-    #[serde(rename = "taskId")]
-    pub task_id: ::std::string::String,
-    #[serde(rename = "taskKind")]
-    pub task_kind: ::std::string::String,
-    pub weight: u32,
-    #[serde(
-        rename = "workProgress",
-        default,
-        skip_serializing_if = "::std::option::Option::is_none"
-    )]
-    pub work_progress: ::std::option::Option<TaskWorkProgress>,
-    #[serde(rename = "workspaceId")]
-    pub workspace_id: ::std::string::String,
+    pub steps: ::std::vec::Vec<StepDetail>,
+    pub task: TaskSummary,
 }
 impl TaskDetail {
     pub fn builder() -> builder::TaskDetail {
@@ -6308,39 +6216,39 @@ impl TaskDetailQuery {
         Default::default()
     }
 }
-#[doc = "`TaskError`"]
+#[doc = "`TaskList`"]
 #[doc = r""]
 #[doc = r" <details><summary>JSON schema</summary>"]
 #[doc = r""]
 #[doc = r" ```json"]
 #[doc = "{"]
-#[doc = "  \"type\": \"object\","]
-#[doc = "  \"required\": ["]
-#[doc = "    \"code\","]
-#[doc = "    \"message\""]
-#[doc = "  ],"]
-#[doc = "  \"properties\": {"]
-#[doc = "    \"code\": {"]
-#[doc = "      \"type\": \"string\""]
-#[doc = "    },"]
-#[doc = "    \"message\": {"]
-#[doc = "      \"type\": \"string\""]
-#[doc = "    }"]
+#[doc = "  \"type\": \"array\","]
+#[doc = "  \"items\": {"]
+#[doc = "    \"$ref\": \"#/definitions/TaskSummary\""]
 #[doc = "  }"]
 #[doc = "}"]
 #[doc = r" ```"]
 #[doc = r" </details>"]
 #[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
-pub struct TaskError {
-    pub code: ::std::string::String,
-    pub message: ::std::string::String,
-}
-impl TaskError {
-    pub fn builder() -> builder::TaskError {
-        Default::default()
+#[serde(transparent)]
+pub struct TaskList(pub ::std::vec::Vec<TaskSummary>);
+impl ::std::ops::Deref for TaskList {
+    type Target = ::std::vec::Vec<TaskSummary>;
+    fn deref(&self) -> &::std::vec::Vec<TaskSummary> {
+        &self.0
     }
 }
-#[doc = "`TaskRetryRequest`"]
+impl ::std::convert::From<TaskList> for ::std::vec::Vec<TaskSummary> {
+    fn from(value: TaskList) -> Self {
+        value.0
+    }
+}
+impl ::std::convert::From<::std::vec::Vec<TaskSummary>> for TaskList {
+    fn from(value: ::std::vec::Vec<TaskSummary>) -> Self {
+        Self(value)
+    }
+}
+#[doc = "`TaskProgress`"]
 #[doc = r""]
 #[doc = r" <details><summary>JSON schema</summary>"]
 #[doc = r""]
@@ -6348,23 +6256,74 @@ impl TaskError {
 #[doc = "{"]
 #[doc = "  \"type\": \"object\","]
 #[doc = "  \"required\": ["]
-#[doc = "    \"taskId\""]
+#[doc = "    \"blocked\","]
+#[doc = "    \"cancellationRequested\","]
+#[doc = "    \"cancelled\","]
+#[doc = "    \"completed\","]
+#[doc = "    \"failed\","]
+#[doc = "    \"queued\","]
+#[doc = "    \"running\","]
+#[doc = "    \"total\""]
 #[doc = "  ],"]
 #[doc = "  \"properties\": {"]
-#[doc = "    \"taskId\": {"]
-#[doc = "      \"type\": \"string\""]
+#[doc = "    \"blocked\": {"]
+#[doc = "      \"type\": \"integer\","]
+#[doc = "      \"format\": \"uint32\","]
+#[doc = "      \"minimum\": 0.0"]
+#[doc = "    },"]
+#[doc = "    \"cancellationRequested\": {"]
+#[doc = "      \"type\": \"integer\","]
+#[doc = "      \"format\": \"uint32\","]
+#[doc = "      \"minimum\": 0.0"]
+#[doc = "    },"]
+#[doc = "    \"cancelled\": {"]
+#[doc = "      \"type\": \"integer\","]
+#[doc = "      \"format\": \"uint32\","]
+#[doc = "      \"minimum\": 0.0"]
+#[doc = "    },"]
+#[doc = "    \"completed\": {"]
+#[doc = "      \"type\": \"integer\","]
+#[doc = "      \"format\": \"uint32\","]
+#[doc = "      \"minimum\": 0.0"]
+#[doc = "    },"]
+#[doc = "    \"failed\": {"]
+#[doc = "      \"type\": \"integer\","]
+#[doc = "      \"format\": \"uint32\","]
+#[doc = "      \"minimum\": 0.0"]
+#[doc = "    },"]
+#[doc = "    \"queued\": {"]
+#[doc = "      \"type\": \"integer\","]
+#[doc = "      \"format\": \"uint32\","]
+#[doc = "      \"minimum\": 0.0"]
+#[doc = "    },"]
+#[doc = "    \"running\": {"]
+#[doc = "      \"type\": \"integer\","]
+#[doc = "      \"format\": \"uint32\","]
+#[doc = "      \"minimum\": 0.0"]
+#[doc = "    },"]
+#[doc = "    \"total\": {"]
+#[doc = "      \"type\": \"integer\","]
+#[doc = "      \"format\": \"uint32\","]
+#[doc = "      \"minimum\": 0.0"]
 #[doc = "    }"]
 #[doc = "  }"]
 #[doc = "}"]
 #[doc = r" ```"]
 #[doc = r" </details>"]
 #[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
-pub struct TaskRetryRequest {
-    #[serde(rename = "taskId")]
-    pub task_id: ::std::string::String,
+pub struct TaskProgress {
+    pub blocked: u32,
+    #[serde(rename = "cancellationRequested")]
+    pub cancellation_requested: u32,
+    pub cancelled: u32,
+    pub completed: u32,
+    pub failed: u32,
+    pub queued: u32,
+    pub running: u32,
+    pub total: u32,
 }
-impl TaskRetryRequest {
-    pub fn builder() -> builder::TaskRetryRequest {
+impl TaskProgress {
+    pub fn builder() -> builder::TaskProgress {
         Default::default()
     }
 }
@@ -6377,8 +6336,8 @@ impl TaskRetryRequest {
 #[doc = "  \"type\": \"string\","]
 #[doc = "  \"enum\": ["]
 #[doc = "    \"queued\","]
-#[doc = "    \"blocked\","]
 #[doc = "    \"running\","]
+#[doc = "    \"partially-complete\","]
 #[doc = "    \"completed\","]
 #[doc = "    \"failed\","]
 #[doc = "    \"cancelled\","]
@@ -6402,10 +6361,10 @@ impl TaskRetryRequest {
 pub enum TaskStatus {
     #[serde(rename = "queued")]
     Queued,
-    #[serde(rename = "blocked")]
-    Blocked,
     #[serde(rename = "running")]
     Running,
+    #[serde(rename = "partially-complete")]
+    PartiallyComplete,
     #[serde(rename = "completed")]
     Completed,
     #[serde(rename = "failed")]
@@ -6419,8 +6378,8 @@ impl ::std::fmt::Display for TaskStatus {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
             Self::Queued => f.write_str("queued"),
-            Self::Blocked => f.write_str("blocked"),
             Self::Running => f.write_str("running"),
+            Self::PartiallyComplete => f.write_str("partially-complete"),
             Self::Completed => f.write_str("completed"),
             Self::Failed => f.write_str("failed"),
             Self::Cancelled => f.write_str("cancelled"),
@@ -6433,8 +6392,8 @@ impl ::std::str::FromStr for TaskStatus {
     fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
         match value {
             "queued" => Ok(Self::Queued),
-            "blocked" => Ok(Self::Blocked),
             "running" => Ok(Self::Running),
+            "partially-complete" => Ok(Self::PartiallyComplete),
             "completed" => Ok(Self::Completed),
             "failed" => Ok(Self::Failed),
             "cancelled" => Ok(Self::Cancelled),
@@ -6465,7 +6424,7 @@ impl ::std::convert::TryFrom<::std::string::String> for TaskStatus {
         value.parse()
     }
 }
-#[doc = "`TaskWorkProgress`"]
+#[doc = "`TaskSummary`"]
 #[doc = r""]
 #[doc = r" <details><summary>JSON schema</summary>"]
 #[doc = r""]
@@ -6473,20 +6432,19 @@ impl ::std::convert::TryFrom<::std::string::String> for TaskStatus {
 #[doc = "{"]
 #[doc = "  \"type\": \"object\","]
 #[doc = "  \"required\": ["]
-#[doc = "    \"completed\","]
-#[doc = "    \"message\","]
-#[doc = "    \"phase\","]
-#[doc = "    \"total\","]
-#[doc = "    \"unit\","]
-#[doc = "    \"updatedAtMs\""]
+#[doc = "    \"attention\","]
+#[doc = "    \"createdAtMs\","]
+#[doc = "    \"kind\","]
+#[doc = "    \"mutating\","]
+#[doc = "    \"progress\","]
+#[doc = "    \"status\","]
+#[doc = "    \"taskId\","]
+#[doc = "    \"updatedAtMs\","]
+#[doc = "    \"workspaceId\","]
+#[doc = "    \"workspacePath\""]
 #[doc = "  ],"]
 #[doc = "  \"properties\": {"]
-#[doc = "    \"completed\": {"]
-#[doc = "      \"type\": \"integer\","]
-#[doc = "      \"format\": \"uint32\","]
-#[doc = "      \"minimum\": 0.0"]
-#[doc = "    },"]
-#[doc = "    \"message\": {"]
+#[doc = "    \"activeStepKind\": {"]
 #[doc = "      \"anyOf\": ["]
 #[doc = "        {"]
 #[doc = "          \"type\": \"string\""]
@@ -6496,22 +6454,28 @@ impl ::std::convert::TryFrom<::std::string::String> for TaskStatus {
 #[doc = "        }"]
 #[doc = "      ]"]
 #[doc = "    },"]
-#[doc = "    \"phase\": {"]
-#[doc = "      \"anyOf\": ["]
-#[doc = "        {"]
-#[doc = "          \"type\": \"string\""]
-#[doc = "        },"]
-#[doc = "        {"]
-#[doc = "          \"type\": \"null\""]
-#[doc = "        }"]
-#[doc = "      ]"]
+#[doc = "    \"attention\": {"]
+#[doc = "      \"$ref\": \"#/definitions/TaskAttention\""]
 #[doc = "    },"]
-#[doc = "    \"total\": {"]
+#[doc = "    \"createdAtMs\": {"]
 #[doc = "      \"type\": \"integer\","]
-#[doc = "      \"format\": \"uint32\","]
+#[doc = "      \"format\": \"uint64\","]
+#[doc = "      \"maximum\": 9007199254740991.0,"]
 #[doc = "      \"minimum\": 0.0"]
 #[doc = "    },"]
-#[doc = "    \"unit\": {"]
+#[doc = "    \"kind\": {"]
+#[doc = "      \"type\": \"string\""]
+#[doc = "    },"]
+#[doc = "    \"mutating\": {"]
+#[doc = "      \"type\": \"boolean\""]
+#[doc = "    },"]
+#[doc = "    \"progress\": {"]
+#[doc = "      \"$ref\": \"#/definitions/TaskProgress\""]
+#[doc = "    },"]
+#[doc = "    \"status\": {"]
+#[doc = "      \"$ref\": \"#/definitions/TaskStatus\""]
+#[doc = "    },"]
+#[doc = "    \"taskId\": {"]
 #[doc = "      \"type\": \"string\""]
 #[doc = "    },"]
 #[doc = "    \"updatedAtMs\": {"]
@@ -6519,23 +6483,59 @@ impl ::std::convert::TryFrom<::std::string::String> for TaskStatus {
 #[doc = "      \"format\": \"uint64\","]
 #[doc = "      \"maximum\": 9007199254740991.0,"]
 #[doc = "      \"minimum\": 0.0"]
+#[doc = "    },"]
+#[doc = "    \"workProgress\": {"]
+#[doc = "      \"anyOf\": ["]
+#[doc = "        {"]
+#[doc = "          \"$ref\": \"#/definitions/StepWorkProgress\""]
+#[doc = "        },"]
+#[doc = "        {"]
+#[doc = "          \"type\": \"null\""]
+#[doc = "        }"]
+#[doc = "      ]"]
+#[doc = "    },"]
+#[doc = "    \"workspaceId\": {"]
+#[doc = "      \"type\": \"string\""]
+#[doc = "    },"]
+#[doc = "    \"workspacePath\": {"]
+#[doc = "      \"type\": \"string\""]
 #[doc = "    }"]
 #[doc = "  }"]
 #[doc = "}"]
 #[doc = r" ```"]
 #[doc = r" </details>"]
 #[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
-pub struct TaskWorkProgress {
-    pub completed: u32,
-    pub message: ::std::option::Option<::std::string::String>,
-    pub phase: ::std::option::Option<::std::string::String>,
-    pub total: u32,
-    pub unit: ::std::string::String,
+pub struct TaskSummary {
+    #[serde(
+        rename = "activeStepKind",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub active_step_kind: ::std::option::Option<::std::string::String>,
+    pub attention: TaskAttention,
+    #[serde(rename = "createdAtMs")]
+    pub created_at_ms: u64,
+    pub kind: ::std::string::String,
+    pub mutating: bool,
+    pub progress: TaskProgress,
+    pub status: TaskStatus,
+    #[serde(rename = "taskId")]
+    pub task_id: ::std::string::String,
     #[serde(rename = "updatedAtMs")]
     pub updated_at_ms: u64,
+    #[serde(
+        rename = "workProgress",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub work_progress: ::std::option::Option<StepWorkProgress>,
+    #[serde(rename = "workspaceId")]
+    pub workspace_id: ::std::string::String,
+    #[serde(rename = "workspacePath")]
+    pub workspace_path: ::std::string::String,
 }
-impl TaskWorkProgress {
-    pub fn builder() -> builder::TaskWorkProgress {
+impl TaskSummary {
+    pub fn builder() -> builder::TaskSummary {
         Default::default()
     }
 }
@@ -10151,480 +10151,6 @@ pub mod builder {
         }
     }
     #[derive(Clone, Debug)]
-    pub struct OperationCancelRequest {
-        operation_id: ::std::result::Result<::std::string::String, ::std::string::String>,
-    }
-    impl ::std::default::Default for OperationCancelRequest {
-        fn default() -> Self {
-            Self {
-                operation_id: Err("no value supplied for operation_id".to_string()),
-            }
-        }
-    }
-    impl OperationCancelRequest {
-        pub fn operation_id<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<::std::string::String>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.operation_id = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for operation_id: {e}"));
-            self
-        }
-    }
-    impl ::std::convert::TryFrom<OperationCancelRequest> for super::OperationCancelRequest {
-        type Error = super::error::ConversionError;
-        fn try_from(
-            value: OperationCancelRequest,
-        ) -> ::std::result::Result<Self, super::error::ConversionError> {
-            Ok(Self {
-                operation_id: value.operation_id?,
-            })
-        }
-    }
-    impl ::std::convert::From<super::OperationCancelRequest> for OperationCancelRequest {
-        fn from(value: super::OperationCancelRequest) -> Self {
-            Self {
-                operation_id: Ok(value.operation_id),
-            }
-        }
-    }
-    #[derive(Clone, Debug)]
-    pub struct OperationDetail {
-        operation: ::std::result::Result<super::OperationSummary, ::std::string::String>,
-        tasks: ::std::result::Result<::std::vec::Vec<super::TaskDetail>, ::std::string::String>,
-    }
-    impl ::std::default::Default for OperationDetail {
-        fn default() -> Self {
-            Self {
-                operation: Err("no value supplied for operation".to_string()),
-                tasks: Err("no value supplied for tasks".to_string()),
-            }
-        }
-    }
-    impl OperationDetail {
-        pub fn operation<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<super::OperationSummary>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.operation = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for operation: {e}"));
-            self
-        }
-        pub fn tasks<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<::std::vec::Vec<super::TaskDetail>>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.tasks = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for tasks: {e}"));
-            self
-        }
-    }
-    impl ::std::convert::TryFrom<OperationDetail> for super::OperationDetail {
-        type Error = super::error::ConversionError;
-        fn try_from(
-            value: OperationDetail,
-        ) -> ::std::result::Result<Self, super::error::ConversionError> {
-            Ok(Self {
-                operation: value.operation?,
-                tasks: value.tasks?,
-            })
-        }
-    }
-    impl ::std::convert::From<super::OperationDetail> for OperationDetail {
-        fn from(value: super::OperationDetail) -> Self {
-            Self {
-                operation: Ok(value.operation),
-                tasks: Ok(value.tasks),
-            }
-        }
-    }
-    #[derive(Clone, Debug)]
-    pub struct OperationDetailQuery {
-        operation_id: ::std::result::Result<::std::string::String, ::std::string::String>,
-    }
-    impl ::std::default::Default for OperationDetailQuery {
-        fn default() -> Self {
-            Self {
-                operation_id: Err("no value supplied for operation_id".to_string()),
-            }
-        }
-    }
-    impl OperationDetailQuery {
-        pub fn operation_id<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<::std::string::String>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.operation_id = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for operation_id: {e}"));
-            self
-        }
-    }
-    impl ::std::convert::TryFrom<OperationDetailQuery> for super::OperationDetailQuery {
-        type Error = super::error::ConversionError;
-        fn try_from(
-            value: OperationDetailQuery,
-        ) -> ::std::result::Result<Self, super::error::ConversionError> {
-            Ok(Self {
-                operation_id: value.operation_id?,
-            })
-        }
-    }
-    impl ::std::convert::From<super::OperationDetailQuery> for OperationDetailQuery {
-        fn from(value: super::OperationDetailQuery) -> Self {
-            Self {
-                operation_id: Ok(value.operation_id),
-            }
-        }
-    }
-    #[derive(Clone, Debug)]
-    pub struct OperationProgress {
-        blocked: ::std::result::Result<u32, ::std::string::String>,
-        cancellation_requested: ::std::result::Result<u32, ::std::string::String>,
-        cancelled: ::std::result::Result<u32, ::std::string::String>,
-        completed: ::std::result::Result<u32, ::std::string::String>,
-        failed: ::std::result::Result<u32, ::std::string::String>,
-        queued: ::std::result::Result<u32, ::std::string::String>,
-        running: ::std::result::Result<u32, ::std::string::String>,
-        total: ::std::result::Result<u32, ::std::string::String>,
-    }
-    impl ::std::default::Default for OperationProgress {
-        fn default() -> Self {
-            Self {
-                blocked: Err("no value supplied for blocked".to_string()),
-                cancellation_requested: Err(
-                    "no value supplied for cancellation_requested".to_string()
-                ),
-                cancelled: Err("no value supplied for cancelled".to_string()),
-                completed: Err("no value supplied for completed".to_string()),
-                failed: Err("no value supplied for failed".to_string()),
-                queued: Err("no value supplied for queued".to_string()),
-                running: Err("no value supplied for running".to_string()),
-                total: Err("no value supplied for total".to_string()),
-            }
-        }
-    }
-    impl OperationProgress {
-        pub fn blocked<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<u32>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.blocked = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for blocked: {e}"));
-            self
-        }
-        pub fn cancellation_requested<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<u32>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.cancellation_requested = value.try_into().map_err(|e| {
-                format!("error converting supplied value for cancellation_requested: {e}")
-            });
-            self
-        }
-        pub fn cancelled<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<u32>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.cancelled = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for cancelled: {e}"));
-            self
-        }
-        pub fn completed<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<u32>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.completed = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for completed: {e}"));
-            self
-        }
-        pub fn failed<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<u32>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.failed = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for failed: {e}"));
-            self
-        }
-        pub fn queued<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<u32>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.queued = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for queued: {e}"));
-            self
-        }
-        pub fn running<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<u32>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.running = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for running: {e}"));
-            self
-        }
-        pub fn total<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<u32>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.total = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for total: {e}"));
-            self
-        }
-    }
-    impl ::std::convert::TryFrom<OperationProgress> for super::OperationProgress {
-        type Error = super::error::ConversionError;
-        fn try_from(
-            value: OperationProgress,
-        ) -> ::std::result::Result<Self, super::error::ConversionError> {
-            Ok(Self {
-                blocked: value.blocked?,
-                cancellation_requested: value.cancellation_requested?,
-                cancelled: value.cancelled?,
-                completed: value.completed?,
-                failed: value.failed?,
-                queued: value.queued?,
-                running: value.running?,
-                total: value.total?,
-            })
-        }
-    }
-    impl ::std::convert::From<super::OperationProgress> for OperationProgress {
-        fn from(value: super::OperationProgress) -> Self {
-            Self {
-                blocked: Ok(value.blocked),
-                cancellation_requested: Ok(value.cancellation_requested),
-                cancelled: Ok(value.cancelled),
-                completed: Ok(value.completed),
-                failed: Ok(value.failed),
-                queued: Ok(value.queued),
-                running: Ok(value.running),
-                total: Ok(value.total),
-            }
-        }
-    }
-    #[derive(Clone, Debug)]
-    pub struct OperationSummary {
-        active_task_kind: ::std::result::Result<
-            ::std::option::Option<::std::string::String>,
-            ::std::string::String,
-        >,
-        attention: ::std::result::Result<super::OperationAttention, ::std::string::String>,
-        created_at_ms: ::std::result::Result<u64, ::std::string::String>,
-        kind: ::std::result::Result<::std::string::String, ::std::string::String>,
-        mutating: ::std::result::Result<bool, ::std::string::String>,
-        operation_id: ::std::result::Result<::std::string::String, ::std::string::String>,
-        progress: ::std::result::Result<super::OperationProgress, ::std::string::String>,
-        status: ::std::result::Result<super::OperationStatus, ::std::string::String>,
-        updated_at_ms: ::std::result::Result<u64, ::std::string::String>,
-        work_progress: ::std::result::Result<
-            ::std::option::Option<super::TaskWorkProgress>,
-            ::std::string::String,
-        >,
-        workspace_id: ::std::result::Result<::std::string::String, ::std::string::String>,
-        workspace_path: ::std::result::Result<::std::string::String, ::std::string::String>,
-    }
-    impl ::std::default::Default for OperationSummary {
-        fn default() -> Self {
-            Self {
-                active_task_kind: Ok(Default::default()),
-                attention: Err("no value supplied for attention".to_string()),
-                created_at_ms: Err("no value supplied for created_at_ms".to_string()),
-                kind: Err("no value supplied for kind".to_string()),
-                mutating: Err("no value supplied for mutating".to_string()),
-                operation_id: Err("no value supplied for operation_id".to_string()),
-                progress: Err("no value supplied for progress".to_string()),
-                status: Err("no value supplied for status".to_string()),
-                updated_at_ms: Err("no value supplied for updated_at_ms".to_string()),
-                work_progress: Ok(Default::default()),
-                workspace_id: Err("no value supplied for workspace_id".to_string()),
-                workspace_path: Err("no value supplied for workspace_path".to_string()),
-            }
-        }
-    }
-    impl OperationSummary {
-        pub fn active_task_kind<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<::std::option::Option<::std::string::String>>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.active_task_kind = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for active_task_kind: {e}"));
-            self
-        }
-        pub fn attention<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<super::OperationAttention>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.attention = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for attention: {e}"));
-            self
-        }
-        pub fn created_at_ms<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<u64>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.created_at_ms = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for created_at_ms: {e}"));
-            self
-        }
-        pub fn kind<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<::std::string::String>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.kind = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for kind: {e}"));
-            self
-        }
-        pub fn mutating<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<bool>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.mutating = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for mutating: {e}"));
-            self
-        }
-        pub fn operation_id<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<::std::string::String>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.operation_id = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for operation_id: {e}"));
-            self
-        }
-        pub fn progress<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<super::OperationProgress>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.progress = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for progress: {e}"));
-            self
-        }
-        pub fn status<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<super::OperationStatus>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.status = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for status: {e}"));
-            self
-        }
-        pub fn updated_at_ms<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<u64>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.updated_at_ms = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for updated_at_ms: {e}"));
-            self
-        }
-        pub fn work_progress<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<::std::option::Option<super::TaskWorkProgress>>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.work_progress = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for work_progress: {e}"));
-            self
-        }
-        pub fn workspace_id<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<::std::string::String>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.workspace_id = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for workspace_id: {e}"));
-            self
-        }
-        pub fn workspace_path<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<::std::string::String>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.workspace_path = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for workspace_path: {e}"));
-            self
-        }
-    }
-    impl ::std::convert::TryFrom<OperationSummary> for super::OperationSummary {
-        type Error = super::error::ConversionError;
-        fn try_from(
-            value: OperationSummary,
-        ) -> ::std::result::Result<Self, super::error::ConversionError> {
-            Ok(Self {
-                active_task_kind: value.active_task_kind?,
-                attention: value.attention?,
-                created_at_ms: value.created_at_ms?,
-                kind: value.kind?,
-                mutating: value.mutating?,
-                operation_id: value.operation_id?,
-                progress: value.progress?,
-                status: value.status?,
-                updated_at_ms: value.updated_at_ms?,
-                work_progress: value.work_progress?,
-                workspace_id: value.workspace_id?,
-                workspace_path: value.workspace_path?,
-            })
-        }
-    }
-    impl ::std::convert::From<super::OperationSummary> for OperationSummary {
-        fn from(value: super::OperationSummary) -> Self {
-            Self {
-                active_task_kind: Ok(value.active_task_kind),
-                attention: Ok(value.attention),
-                created_at_ms: Ok(value.created_at_ms),
-                kind: Ok(value.kind),
-                mutating: Ok(value.mutating),
-                operation_id: Ok(value.operation_id),
-                progress: Ok(value.progress),
-                status: Ok(value.status),
-                updated_at_ms: Ok(value.updated_at_ms),
-                work_progress: Ok(value.work_progress),
-                workspace_id: Ok(value.workspace_id),
-                workspace_path: Ok(value.workspace_path),
-            }
-        }
-    }
-    #[derive(Clone, Debug)]
     pub struct OutputPathsQuery {
         pos: ::std::result::Result<u32, ::std::string::String>,
     }
@@ -12726,30 +12252,30 @@ pub mod builder {
         }
     }
     #[derive(Clone, Debug)]
-    pub struct TaskAttempt {
+    pub struct StepAttempt {
         attempt_id: ::std::result::Result<::std::string::String, ::std::string::String>,
         error:
-            ::std::result::Result<::std::option::Option<super::TaskError>, ::std::string::String>,
+            ::std::result::Result<::std::option::Option<super::StepError>, ::std::string::String>,
         finished_at_ms: ::std::result::Result<::std::option::Option<u64>, ::std::string::String>,
-        operation_id: ::std::result::Result<::std::string::String, ::std::string::String>,
         started_at_ms: ::std::result::Result<::std::option::Option<u64>, ::std::string::String>,
-        status: ::std::result::Result<super::TaskStatus, ::std::string::String>,
+        status: ::std::result::Result<super::StepStatus, ::std::string::String>,
+        step_id: ::std::result::Result<::std::string::String, ::std::string::String>,
         task_id: ::std::result::Result<::std::string::String, ::std::string::String>,
     }
-    impl ::std::default::Default for TaskAttempt {
+    impl ::std::default::Default for StepAttempt {
         fn default() -> Self {
             Self {
                 attempt_id: Err("no value supplied for attempt_id".to_string()),
                 error: Err("no value supplied for error".to_string()),
                 finished_at_ms: Err("no value supplied for finished_at_ms".to_string()),
-                operation_id: Err("no value supplied for operation_id".to_string()),
                 started_at_ms: Err("no value supplied for started_at_ms".to_string()),
                 status: Err("no value supplied for status".to_string()),
+                step_id: Err("no value supplied for step_id".to_string()),
                 task_id: Err("no value supplied for task_id".to_string()),
             }
         }
     }
-    impl TaskAttempt {
+    impl StepAttempt {
         pub fn attempt_id<T>(mut self, value: T) -> Self
         where
             T: ::std::convert::TryInto<::std::string::String>,
@@ -12762,7 +12288,7 @@ pub mod builder {
         }
         pub fn error<T>(mut self, value: T) -> Self
         where
-            T: ::std::convert::TryInto<::std::option::Option<super::TaskError>>,
+            T: ::std::convert::TryInto<::std::option::Option<super::StepError>>,
             T::Error: ::std::fmt::Display,
         {
             self.error = value
@@ -12780,16 +12306,6 @@ pub mod builder {
                 .map_err(|e| format!("error converting supplied value for finished_at_ms: {e}"));
             self
         }
-        pub fn operation_id<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<::std::string::String>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.operation_id = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for operation_id: {e}"));
-            self
-        }
         pub fn started_at_ms<T>(mut self, value: T) -> Self
         where
             T: ::std::convert::TryInto<::std::option::Option<u64>>,
@@ -12802,12 +12318,22 @@ pub mod builder {
         }
         pub fn status<T>(mut self, value: T) -> Self
         where
-            T: ::std::convert::TryInto<super::TaskStatus>,
+            T: ::std::convert::TryInto<super::StepStatus>,
             T::Error: ::std::fmt::Display,
         {
             self.status = value
                 .try_into()
                 .map_err(|e| format!("error converting supplied value for status: {e}"));
+            self
+        }
+        pub fn step_id<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::string::String>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.step_id = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for step_id: {e}"));
             self
         }
         pub fn task_id<T>(mut self, value: T) -> Self
@@ -12821,32 +12347,592 @@ pub mod builder {
             self
         }
     }
-    impl ::std::convert::TryFrom<TaskAttempt> for super::TaskAttempt {
+    impl ::std::convert::TryFrom<StepAttempt> for super::StepAttempt {
         type Error = super::error::ConversionError;
         fn try_from(
-            value: TaskAttempt,
+            value: StepAttempt,
         ) -> ::std::result::Result<Self, super::error::ConversionError> {
             Ok(Self {
                 attempt_id: value.attempt_id?,
                 error: value.error?,
                 finished_at_ms: value.finished_at_ms?,
-                operation_id: value.operation_id?,
                 started_at_ms: value.started_at_ms?,
                 status: value.status?,
+                step_id: value.step_id?,
                 task_id: value.task_id?,
             })
         }
     }
-    impl ::std::convert::From<super::TaskAttempt> for TaskAttempt {
-        fn from(value: super::TaskAttempt) -> Self {
+    impl ::std::convert::From<super::StepAttempt> for StepAttempt {
+        fn from(value: super::StepAttempt) -> Self {
             Self {
                 attempt_id: Ok(value.attempt_id),
                 error: Ok(value.error),
                 finished_at_ms: Ok(value.finished_at_ms),
-                operation_id: Ok(value.operation_id),
                 started_at_ms: Ok(value.started_at_ms),
                 status: Ok(value.status),
+                step_id: Ok(value.step_id),
                 task_id: Ok(value.task_id),
+            }
+        }
+    }
+    #[derive(Clone, Debug)]
+    pub struct StepCancelRequest {
+        step_id: ::std::result::Result<::std::string::String, ::std::string::String>,
+    }
+    impl ::std::default::Default for StepCancelRequest {
+        fn default() -> Self {
+            Self {
+                step_id: Err("no value supplied for step_id".to_string()),
+            }
+        }
+    }
+    impl StepCancelRequest {
+        pub fn step_id<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::string::String>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.step_id = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for step_id: {e}"));
+            self
+        }
+    }
+    impl ::std::convert::TryFrom<StepCancelRequest> for super::StepCancelRequest {
+        type Error = super::error::ConversionError;
+        fn try_from(
+            value: StepCancelRequest,
+        ) -> ::std::result::Result<Self, super::error::ConversionError> {
+            Ok(Self {
+                step_id: value.step_id?,
+            })
+        }
+    }
+    impl ::std::convert::From<super::StepCancelRequest> for StepCancelRequest {
+        fn from(value: super::StepCancelRequest) -> Self {
+            Self {
+                step_id: Ok(value.step_id),
+            }
+        }
+    }
+    #[derive(Clone, Debug)]
+    pub struct StepDependencyBlock {
+        error:
+            ::std::result::Result<::std::option::Option<super::StepError>, ::std::string::String>,
+        status: ::std::result::Result<super::StepStatus, ::std::string::String>,
+        step_id: ::std::result::Result<::std::string::String, ::std::string::String>,
+        step_kind: ::std::result::Result<::std::string::String, ::std::string::String>,
+    }
+    impl ::std::default::Default for StepDependencyBlock {
+        fn default() -> Self {
+            Self {
+                error: Err("no value supplied for error".to_string()),
+                status: Err("no value supplied for status".to_string()),
+                step_id: Err("no value supplied for step_id".to_string()),
+                step_kind: Err("no value supplied for step_kind".to_string()),
+            }
+        }
+    }
+    impl StepDependencyBlock {
+        pub fn error<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::option::Option<super::StepError>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.error = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for error: {e}"));
+            self
+        }
+        pub fn status<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<super::StepStatus>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.status = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for status: {e}"));
+            self
+        }
+        pub fn step_id<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::string::String>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.step_id = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for step_id: {e}"));
+            self
+        }
+        pub fn step_kind<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::string::String>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.step_kind = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for step_kind: {e}"));
+            self
+        }
+    }
+    impl ::std::convert::TryFrom<StepDependencyBlock> for super::StepDependencyBlock {
+        type Error = super::error::ConversionError;
+        fn try_from(
+            value: StepDependencyBlock,
+        ) -> ::std::result::Result<Self, super::error::ConversionError> {
+            Ok(Self {
+                error: value.error?,
+                status: value.status?,
+                step_id: value.step_id?,
+                step_kind: value.step_kind?,
+            })
+        }
+    }
+    impl ::std::convert::From<super::StepDependencyBlock> for StepDependencyBlock {
+        fn from(value: super::StepDependencyBlock) -> Self {
+            Self {
+                error: Ok(value.error),
+                status: Ok(value.status),
+                step_id: Ok(value.step_id),
+                step_kind: Ok(value.step_kind),
+            }
+        }
+    }
+    #[derive(Clone, Debug)]
+    pub struct StepDetail {
+        attempts: ::std::result::Result<::std::vec::Vec<super::StepAttempt>, ::std::string::String>,
+        blocked_by: ::std::result::Result<
+            ::std::vec::Vec<super::StepDependencyBlock>,
+            ::std::string::String,
+        >,
+        dependencies:
+            ::std::result::Result<::std::vec::Vec<::std::string::String>, ::std::string::String>,
+        enqueue_order: ::std::result::Result<u64, ::std::string::String>,
+        status: ::std::result::Result<super::StepStatus, ::std::string::String>,
+        step_id: ::std::result::Result<::std::string::String, ::std::string::String>,
+        step_kind: ::std::result::Result<::std::string::String, ::std::string::String>,
+        task_id: ::std::result::Result<::std::string::String, ::std::string::String>,
+        weight: ::std::result::Result<u32, ::std::string::String>,
+        work_progress: ::std::result::Result<
+            ::std::option::Option<super::StepWorkProgress>,
+            ::std::string::String,
+        >,
+        workspace_id: ::std::result::Result<::std::string::String, ::std::string::String>,
+    }
+    impl ::std::default::Default for StepDetail {
+        fn default() -> Self {
+            Self {
+                attempts: Err("no value supplied for attempts".to_string()),
+                blocked_by: Err("no value supplied for blocked_by".to_string()),
+                dependencies: Err("no value supplied for dependencies".to_string()),
+                enqueue_order: Err("no value supplied for enqueue_order".to_string()),
+                status: Err("no value supplied for status".to_string()),
+                step_id: Err("no value supplied for step_id".to_string()),
+                step_kind: Err("no value supplied for step_kind".to_string()),
+                task_id: Err("no value supplied for task_id".to_string()),
+                weight: Err("no value supplied for weight".to_string()),
+                work_progress: Ok(Default::default()),
+                workspace_id: Err("no value supplied for workspace_id".to_string()),
+            }
+        }
+    }
+    impl StepDetail {
+        pub fn attempts<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::vec::Vec<super::StepAttempt>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.attempts = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for attempts: {e}"));
+            self
+        }
+        pub fn blocked_by<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::vec::Vec<super::StepDependencyBlock>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.blocked_by = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for blocked_by: {e}"));
+            self
+        }
+        pub fn dependencies<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::vec::Vec<::std::string::String>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.dependencies = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for dependencies: {e}"));
+            self
+        }
+        pub fn enqueue_order<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<u64>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.enqueue_order = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for enqueue_order: {e}"));
+            self
+        }
+        pub fn status<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<super::StepStatus>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.status = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for status: {e}"));
+            self
+        }
+        pub fn step_id<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::string::String>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.step_id = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for step_id: {e}"));
+            self
+        }
+        pub fn step_kind<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::string::String>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.step_kind = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for step_kind: {e}"));
+            self
+        }
+        pub fn task_id<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::string::String>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.task_id = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for task_id: {e}"));
+            self
+        }
+        pub fn weight<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<u32>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.weight = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for weight: {e}"));
+            self
+        }
+        pub fn work_progress<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::option::Option<super::StepWorkProgress>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.work_progress = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for work_progress: {e}"));
+            self
+        }
+        pub fn workspace_id<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::string::String>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.workspace_id = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for workspace_id: {e}"));
+            self
+        }
+    }
+    impl ::std::convert::TryFrom<StepDetail> for super::StepDetail {
+        type Error = super::error::ConversionError;
+        fn try_from(
+            value: StepDetail,
+        ) -> ::std::result::Result<Self, super::error::ConversionError> {
+            Ok(Self {
+                attempts: value.attempts?,
+                blocked_by: value.blocked_by?,
+                dependencies: value.dependencies?,
+                enqueue_order: value.enqueue_order?,
+                status: value.status?,
+                step_id: value.step_id?,
+                step_kind: value.step_kind?,
+                task_id: value.task_id?,
+                weight: value.weight?,
+                work_progress: value.work_progress?,
+                workspace_id: value.workspace_id?,
+            })
+        }
+    }
+    impl ::std::convert::From<super::StepDetail> for StepDetail {
+        fn from(value: super::StepDetail) -> Self {
+            Self {
+                attempts: Ok(value.attempts),
+                blocked_by: Ok(value.blocked_by),
+                dependencies: Ok(value.dependencies),
+                enqueue_order: Ok(value.enqueue_order),
+                status: Ok(value.status),
+                step_id: Ok(value.step_id),
+                step_kind: Ok(value.step_kind),
+                task_id: Ok(value.task_id),
+                weight: Ok(value.weight),
+                work_progress: Ok(value.work_progress),
+                workspace_id: Ok(value.workspace_id),
+            }
+        }
+    }
+    #[derive(Clone, Debug)]
+    pub struct StepDetailQuery {
+        step_id: ::std::result::Result<::std::string::String, ::std::string::String>,
+    }
+    impl ::std::default::Default for StepDetailQuery {
+        fn default() -> Self {
+            Self {
+                step_id: Err("no value supplied for step_id".to_string()),
+            }
+        }
+    }
+    impl StepDetailQuery {
+        pub fn step_id<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::string::String>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.step_id = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for step_id: {e}"));
+            self
+        }
+    }
+    impl ::std::convert::TryFrom<StepDetailQuery> for super::StepDetailQuery {
+        type Error = super::error::ConversionError;
+        fn try_from(
+            value: StepDetailQuery,
+        ) -> ::std::result::Result<Self, super::error::ConversionError> {
+            Ok(Self {
+                step_id: value.step_id?,
+            })
+        }
+    }
+    impl ::std::convert::From<super::StepDetailQuery> for StepDetailQuery {
+        fn from(value: super::StepDetailQuery) -> Self {
+            Self {
+                step_id: Ok(value.step_id),
+            }
+        }
+    }
+    #[derive(Clone, Debug)]
+    pub struct StepError {
+        code: ::std::result::Result<::std::string::String, ::std::string::String>,
+        message: ::std::result::Result<::std::string::String, ::std::string::String>,
+    }
+    impl ::std::default::Default for StepError {
+        fn default() -> Self {
+            Self {
+                code: Err("no value supplied for code".to_string()),
+                message: Err("no value supplied for message".to_string()),
+            }
+        }
+    }
+    impl StepError {
+        pub fn code<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::string::String>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.code = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for code: {e}"));
+            self
+        }
+        pub fn message<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::string::String>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.message = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for message: {e}"));
+            self
+        }
+    }
+    impl ::std::convert::TryFrom<StepError> for super::StepError {
+        type Error = super::error::ConversionError;
+        fn try_from(
+            value: StepError,
+        ) -> ::std::result::Result<Self, super::error::ConversionError> {
+            Ok(Self {
+                code: value.code?,
+                message: value.message?,
+            })
+        }
+    }
+    impl ::std::convert::From<super::StepError> for StepError {
+        fn from(value: super::StepError) -> Self {
+            Self {
+                code: Ok(value.code),
+                message: Ok(value.message),
+            }
+        }
+    }
+    #[derive(Clone, Debug)]
+    pub struct StepRetryRequest {
+        step_id: ::std::result::Result<::std::string::String, ::std::string::String>,
+    }
+    impl ::std::default::Default for StepRetryRequest {
+        fn default() -> Self {
+            Self {
+                step_id: Err("no value supplied for step_id".to_string()),
+            }
+        }
+    }
+    impl StepRetryRequest {
+        pub fn step_id<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::string::String>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.step_id = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for step_id: {e}"));
+            self
+        }
+    }
+    impl ::std::convert::TryFrom<StepRetryRequest> for super::StepRetryRequest {
+        type Error = super::error::ConversionError;
+        fn try_from(
+            value: StepRetryRequest,
+        ) -> ::std::result::Result<Self, super::error::ConversionError> {
+            Ok(Self {
+                step_id: value.step_id?,
+            })
+        }
+    }
+    impl ::std::convert::From<super::StepRetryRequest> for StepRetryRequest {
+        fn from(value: super::StepRetryRequest) -> Self {
+            Self {
+                step_id: Ok(value.step_id),
+            }
+        }
+    }
+    #[derive(Clone, Debug)]
+    pub struct StepWorkProgress {
+        completed: ::std::result::Result<u32, ::std::string::String>,
+        message: ::std::result::Result<
+            ::std::option::Option<::std::string::String>,
+            ::std::string::String,
+        >,
+        phase: ::std::result::Result<
+            ::std::option::Option<::std::string::String>,
+            ::std::string::String,
+        >,
+        total: ::std::result::Result<u32, ::std::string::String>,
+        unit: ::std::result::Result<::std::string::String, ::std::string::String>,
+        updated_at_ms: ::std::result::Result<u64, ::std::string::String>,
+    }
+    impl ::std::default::Default for StepWorkProgress {
+        fn default() -> Self {
+            Self {
+                completed: Err("no value supplied for completed".to_string()),
+                message: Err("no value supplied for message".to_string()),
+                phase: Err("no value supplied for phase".to_string()),
+                total: Err("no value supplied for total".to_string()),
+                unit: Err("no value supplied for unit".to_string()),
+                updated_at_ms: Err("no value supplied for updated_at_ms".to_string()),
+            }
+        }
+    }
+    impl StepWorkProgress {
+        pub fn completed<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<u32>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.completed = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for completed: {e}"));
+            self
+        }
+        pub fn message<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::option::Option<::std::string::String>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.message = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for message: {e}"));
+            self
+        }
+        pub fn phase<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::option::Option<::std::string::String>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.phase = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for phase: {e}"));
+            self
+        }
+        pub fn total<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<u32>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.total = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for total: {e}"));
+            self
+        }
+        pub fn unit<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::string::String>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.unit = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for unit: {e}"));
+            self
+        }
+        pub fn updated_at_ms<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<u64>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.updated_at_ms = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for updated_at_ms: {e}"));
+            self
+        }
+    }
+    impl ::std::convert::TryFrom<StepWorkProgress> for super::StepWorkProgress {
+        type Error = super::error::ConversionError;
+        fn try_from(
+            value: StepWorkProgress,
+        ) -> ::std::result::Result<Self, super::error::ConversionError> {
+            Ok(Self {
+                completed: value.completed?,
+                message: value.message?,
+                phase: value.phase?,
+                total: value.total?,
+                unit: value.unit?,
+                updated_at_ms: value.updated_at_ms?,
+            })
+        }
+    }
+    impl ::std::convert::From<super::StepWorkProgress> for StepWorkProgress {
+        fn from(value: super::StepWorkProgress) -> Self {
+            Self {
+                completed: Ok(value.completed),
+                message: Ok(value.message),
+                phase: Ok(value.phase),
+                total: Ok(value.total),
+                unit: Ok(value.unit),
+                updated_at_ms: Ok(value.updated_at_ms),
             }
         }
     }
@@ -13004,235 +13090,37 @@ pub mod builder {
         }
     }
     #[derive(Clone, Debug)]
-    pub struct TaskDependencyBlock {
-        error:
-            ::std::result::Result<::std::option::Option<super::TaskError>, ::std::string::String>,
-        status: ::std::result::Result<super::TaskStatus, ::std::string::String>,
-        task_id: ::std::result::Result<::std::string::String, ::std::string::String>,
-        task_kind: ::std::result::Result<::std::string::String, ::std::string::String>,
-    }
-    impl ::std::default::Default for TaskDependencyBlock {
-        fn default() -> Self {
-            Self {
-                error: Err("no value supplied for error".to_string()),
-                status: Err("no value supplied for status".to_string()),
-                task_id: Err("no value supplied for task_id".to_string()),
-                task_kind: Err("no value supplied for task_kind".to_string()),
-            }
-        }
-    }
-    impl TaskDependencyBlock {
-        pub fn error<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<::std::option::Option<super::TaskError>>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.error = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for error: {e}"));
-            self
-        }
-        pub fn status<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<super::TaskStatus>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.status = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for status: {e}"));
-            self
-        }
-        pub fn task_id<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<::std::string::String>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.task_id = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for task_id: {e}"));
-            self
-        }
-        pub fn task_kind<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<::std::string::String>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.task_kind = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for task_kind: {e}"));
-            self
-        }
-    }
-    impl ::std::convert::TryFrom<TaskDependencyBlock> for super::TaskDependencyBlock {
-        type Error = super::error::ConversionError;
-        fn try_from(
-            value: TaskDependencyBlock,
-        ) -> ::std::result::Result<Self, super::error::ConversionError> {
-            Ok(Self {
-                error: value.error?,
-                status: value.status?,
-                task_id: value.task_id?,
-                task_kind: value.task_kind?,
-            })
-        }
-    }
-    impl ::std::convert::From<super::TaskDependencyBlock> for TaskDependencyBlock {
-        fn from(value: super::TaskDependencyBlock) -> Self {
-            Self {
-                error: Ok(value.error),
-                status: Ok(value.status),
-                task_id: Ok(value.task_id),
-                task_kind: Ok(value.task_kind),
-            }
-        }
-    }
-    #[derive(Clone, Debug)]
     pub struct TaskDetail {
-        attempts: ::std::result::Result<::std::vec::Vec<super::TaskAttempt>, ::std::string::String>,
-        blocked_by: ::std::result::Result<
-            ::std::vec::Vec<super::TaskDependencyBlock>,
-            ::std::string::String,
-        >,
-        dependencies:
-            ::std::result::Result<::std::vec::Vec<::std::string::String>, ::std::string::String>,
-        enqueue_order: ::std::result::Result<u64, ::std::string::String>,
-        operation_id: ::std::result::Result<::std::string::String, ::std::string::String>,
-        status: ::std::result::Result<super::TaskStatus, ::std::string::String>,
-        task_id: ::std::result::Result<::std::string::String, ::std::string::String>,
-        task_kind: ::std::result::Result<::std::string::String, ::std::string::String>,
-        weight: ::std::result::Result<u32, ::std::string::String>,
-        work_progress: ::std::result::Result<
-            ::std::option::Option<super::TaskWorkProgress>,
-            ::std::string::String,
-        >,
-        workspace_id: ::std::result::Result<::std::string::String, ::std::string::String>,
+        steps: ::std::result::Result<::std::vec::Vec<super::StepDetail>, ::std::string::String>,
+        task: ::std::result::Result<super::TaskSummary, ::std::string::String>,
     }
     impl ::std::default::Default for TaskDetail {
         fn default() -> Self {
             Self {
-                attempts: Err("no value supplied for attempts".to_string()),
-                blocked_by: Err("no value supplied for blocked_by".to_string()),
-                dependencies: Err("no value supplied for dependencies".to_string()),
-                enqueue_order: Err("no value supplied for enqueue_order".to_string()),
-                operation_id: Err("no value supplied for operation_id".to_string()),
-                status: Err("no value supplied for status".to_string()),
-                task_id: Err("no value supplied for task_id".to_string()),
-                task_kind: Err("no value supplied for task_kind".to_string()),
-                weight: Err("no value supplied for weight".to_string()),
-                work_progress: Ok(Default::default()),
-                workspace_id: Err("no value supplied for workspace_id".to_string()),
+                steps: Err("no value supplied for steps".to_string()),
+                task: Err("no value supplied for task".to_string()),
             }
         }
     }
     impl TaskDetail {
-        pub fn attempts<T>(mut self, value: T) -> Self
+        pub fn steps<T>(mut self, value: T) -> Self
         where
-            T: ::std::convert::TryInto<::std::vec::Vec<super::TaskAttempt>>,
+            T: ::std::convert::TryInto<::std::vec::Vec<super::StepDetail>>,
             T::Error: ::std::fmt::Display,
         {
-            self.attempts = value
+            self.steps = value
                 .try_into()
-                .map_err(|e| format!("error converting supplied value for attempts: {e}"));
+                .map_err(|e| format!("error converting supplied value for steps: {e}"));
             self
         }
-        pub fn blocked_by<T>(mut self, value: T) -> Self
+        pub fn task<T>(mut self, value: T) -> Self
         where
-            T: ::std::convert::TryInto<::std::vec::Vec<super::TaskDependencyBlock>>,
+            T: ::std::convert::TryInto<super::TaskSummary>,
             T::Error: ::std::fmt::Display,
         {
-            self.blocked_by = value
+            self.task = value
                 .try_into()
-                .map_err(|e| format!("error converting supplied value for blocked_by: {e}"));
-            self
-        }
-        pub fn dependencies<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<::std::vec::Vec<::std::string::String>>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.dependencies = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for dependencies: {e}"));
-            self
-        }
-        pub fn enqueue_order<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<u64>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.enqueue_order = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for enqueue_order: {e}"));
-            self
-        }
-        pub fn operation_id<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<::std::string::String>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.operation_id = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for operation_id: {e}"));
-            self
-        }
-        pub fn status<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<super::TaskStatus>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.status = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for status: {e}"));
-            self
-        }
-        pub fn task_id<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<::std::string::String>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.task_id = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for task_id: {e}"));
-            self
-        }
-        pub fn task_kind<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<::std::string::String>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.task_kind = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for task_kind: {e}"));
-            self
-        }
-        pub fn weight<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<u32>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.weight = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for weight: {e}"));
-            self
-        }
-        pub fn work_progress<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<::std::option::Option<super::TaskWorkProgress>>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.work_progress = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for work_progress: {e}"));
-            self
-        }
-        pub fn workspace_id<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<::std::string::String>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.workspace_id = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for workspace_id: {e}"));
+                .map_err(|e| format!("error converting supplied value for task: {e}"));
             self
         }
     }
@@ -13242,34 +13130,16 @@ pub mod builder {
             value: TaskDetail,
         ) -> ::std::result::Result<Self, super::error::ConversionError> {
             Ok(Self {
-                attempts: value.attempts?,
-                blocked_by: value.blocked_by?,
-                dependencies: value.dependencies?,
-                enqueue_order: value.enqueue_order?,
-                operation_id: value.operation_id?,
-                status: value.status?,
-                task_id: value.task_id?,
-                task_kind: value.task_kind?,
-                weight: value.weight?,
-                work_progress: value.work_progress?,
-                workspace_id: value.workspace_id?,
+                steps: value.steps?,
+                task: value.task?,
             })
         }
     }
     impl ::std::convert::From<super::TaskDetail> for TaskDetail {
         fn from(value: super::TaskDetail) -> Self {
             Self {
-                attempts: Ok(value.attempts),
-                blocked_by: Ok(value.blocked_by),
-                dependencies: Ok(value.dependencies),
-                enqueue_order: Ok(value.enqueue_order),
-                operation_id: Ok(value.operation_id),
-                status: Ok(value.status),
-                task_id: Ok(value.task_id),
-                task_kind: Ok(value.task_kind),
-                weight: Ok(value.weight),
-                work_progress: Ok(value.work_progress),
-                workspace_id: Ok(value.workspace_id),
+                steps: Ok(value.steps),
+                task: Ok(value.task),
             }
         }
     }
@@ -13314,127 +13184,63 @@ pub mod builder {
         }
     }
     #[derive(Clone, Debug)]
-    pub struct TaskError {
-        code: ::std::result::Result<::std::string::String, ::std::string::String>,
-        message: ::std::result::Result<::std::string::String, ::std::string::String>,
-    }
-    impl ::std::default::Default for TaskError {
-        fn default() -> Self {
-            Self {
-                code: Err("no value supplied for code".to_string()),
-                message: Err("no value supplied for message".to_string()),
-            }
-        }
-    }
-    impl TaskError {
-        pub fn code<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<::std::string::String>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.code = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for code: {e}"));
-            self
-        }
-        pub fn message<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<::std::string::String>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.message = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for message: {e}"));
-            self
-        }
-    }
-    impl ::std::convert::TryFrom<TaskError> for super::TaskError {
-        type Error = super::error::ConversionError;
-        fn try_from(
-            value: TaskError,
-        ) -> ::std::result::Result<Self, super::error::ConversionError> {
-            Ok(Self {
-                code: value.code?,
-                message: value.message?,
-            })
-        }
-    }
-    impl ::std::convert::From<super::TaskError> for TaskError {
-        fn from(value: super::TaskError) -> Self {
-            Self {
-                code: Ok(value.code),
-                message: Ok(value.message),
-            }
-        }
-    }
-    #[derive(Clone, Debug)]
-    pub struct TaskRetryRequest {
-        task_id: ::std::result::Result<::std::string::String, ::std::string::String>,
-    }
-    impl ::std::default::Default for TaskRetryRequest {
-        fn default() -> Self {
-            Self {
-                task_id: Err("no value supplied for task_id".to_string()),
-            }
-        }
-    }
-    impl TaskRetryRequest {
-        pub fn task_id<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<::std::string::String>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.task_id = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for task_id: {e}"));
-            self
-        }
-    }
-    impl ::std::convert::TryFrom<TaskRetryRequest> for super::TaskRetryRequest {
-        type Error = super::error::ConversionError;
-        fn try_from(
-            value: TaskRetryRequest,
-        ) -> ::std::result::Result<Self, super::error::ConversionError> {
-            Ok(Self {
-                task_id: value.task_id?,
-            })
-        }
-    }
-    impl ::std::convert::From<super::TaskRetryRequest> for TaskRetryRequest {
-        fn from(value: super::TaskRetryRequest) -> Self {
-            Self {
-                task_id: Ok(value.task_id),
-            }
-        }
-    }
-    #[derive(Clone, Debug)]
-    pub struct TaskWorkProgress {
+    pub struct TaskProgress {
+        blocked: ::std::result::Result<u32, ::std::string::String>,
+        cancellation_requested: ::std::result::Result<u32, ::std::string::String>,
+        cancelled: ::std::result::Result<u32, ::std::string::String>,
         completed: ::std::result::Result<u32, ::std::string::String>,
-        message: ::std::result::Result<
-            ::std::option::Option<::std::string::String>,
-            ::std::string::String,
-        >,
-        phase: ::std::result::Result<
-            ::std::option::Option<::std::string::String>,
-            ::std::string::String,
-        >,
+        failed: ::std::result::Result<u32, ::std::string::String>,
+        queued: ::std::result::Result<u32, ::std::string::String>,
+        running: ::std::result::Result<u32, ::std::string::String>,
         total: ::std::result::Result<u32, ::std::string::String>,
-        unit: ::std::result::Result<::std::string::String, ::std::string::String>,
-        updated_at_ms: ::std::result::Result<u64, ::std::string::String>,
     }
-    impl ::std::default::Default for TaskWorkProgress {
+    impl ::std::default::Default for TaskProgress {
         fn default() -> Self {
             Self {
+                blocked: Err("no value supplied for blocked".to_string()),
+                cancellation_requested: Err(
+                    "no value supplied for cancellation_requested".to_string()
+                ),
+                cancelled: Err("no value supplied for cancelled".to_string()),
                 completed: Err("no value supplied for completed".to_string()),
-                message: Err("no value supplied for message".to_string()),
-                phase: Err("no value supplied for phase".to_string()),
+                failed: Err("no value supplied for failed".to_string()),
+                queued: Err("no value supplied for queued".to_string()),
+                running: Err("no value supplied for running".to_string()),
                 total: Err("no value supplied for total".to_string()),
-                unit: Err("no value supplied for unit".to_string()),
-                updated_at_ms: Err("no value supplied for updated_at_ms".to_string()),
             }
         }
     }
-    impl TaskWorkProgress {
+    impl TaskProgress {
+        pub fn blocked<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<u32>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.blocked = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for blocked: {e}"));
+            self
+        }
+        pub fn cancellation_requested<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<u32>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.cancellation_requested = value.try_into().map_err(|e| {
+                format!("error converting supplied value for cancellation_requested: {e}")
+            });
+            self
+        }
+        pub fn cancelled<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<u32>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.cancelled = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for cancelled: {e}"));
+            self
+        }
         pub fn completed<T>(mut self, value: T) -> Self
         where
             T: ::std::convert::TryInto<u32>,
@@ -13445,24 +13251,34 @@ pub mod builder {
                 .map_err(|e| format!("error converting supplied value for completed: {e}"));
             self
         }
-        pub fn message<T>(mut self, value: T) -> Self
+        pub fn failed<T>(mut self, value: T) -> Self
         where
-            T: ::std::convert::TryInto<::std::option::Option<::std::string::String>>,
+            T: ::std::convert::TryInto<u32>,
             T::Error: ::std::fmt::Display,
         {
-            self.message = value
+            self.failed = value
                 .try_into()
-                .map_err(|e| format!("error converting supplied value for message: {e}"));
+                .map_err(|e| format!("error converting supplied value for failed: {e}"));
             self
         }
-        pub fn phase<T>(mut self, value: T) -> Self
+        pub fn queued<T>(mut self, value: T) -> Self
         where
-            T: ::std::convert::TryInto<::std::option::Option<::std::string::String>>,
+            T: ::std::convert::TryInto<u32>,
             T::Error: ::std::fmt::Display,
         {
-            self.phase = value
+            self.queued = value
                 .try_into()
-                .map_err(|e| format!("error converting supplied value for phase: {e}"));
+                .map_err(|e| format!("error converting supplied value for queued: {e}"));
+            self
+        }
+        pub fn running<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<u32>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.running = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for running: {e}"));
             self
         }
         pub fn total<T>(mut self, value: T) -> Self
@@ -13475,14 +13291,156 @@ pub mod builder {
                 .map_err(|e| format!("error converting supplied value for total: {e}"));
             self
         }
-        pub fn unit<T>(mut self, value: T) -> Self
+    }
+    impl ::std::convert::TryFrom<TaskProgress> for super::TaskProgress {
+        type Error = super::error::ConversionError;
+        fn try_from(
+            value: TaskProgress,
+        ) -> ::std::result::Result<Self, super::error::ConversionError> {
+            Ok(Self {
+                blocked: value.blocked?,
+                cancellation_requested: value.cancellation_requested?,
+                cancelled: value.cancelled?,
+                completed: value.completed?,
+                failed: value.failed?,
+                queued: value.queued?,
+                running: value.running?,
+                total: value.total?,
+            })
+        }
+    }
+    impl ::std::convert::From<super::TaskProgress> for TaskProgress {
+        fn from(value: super::TaskProgress) -> Self {
+            Self {
+                blocked: Ok(value.blocked),
+                cancellation_requested: Ok(value.cancellation_requested),
+                cancelled: Ok(value.cancelled),
+                completed: Ok(value.completed),
+                failed: Ok(value.failed),
+                queued: Ok(value.queued),
+                running: Ok(value.running),
+                total: Ok(value.total),
+            }
+        }
+    }
+    #[derive(Clone, Debug)]
+    pub struct TaskSummary {
+        active_step_kind: ::std::result::Result<
+            ::std::option::Option<::std::string::String>,
+            ::std::string::String,
+        >,
+        attention: ::std::result::Result<super::TaskAttention, ::std::string::String>,
+        created_at_ms: ::std::result::Result<u64, ::std::string::String>,
+        kind: ::std::result::Result<::std::string::String, ::std::string::String>,
+        mutating: ::std::result::Result<bool, ::std::string::String>,
+        progress: ::std::result::Result<super::TaskProgress, ::std::string::String>,
+        status: ::std::result::Result<super::TaskStatus, ::std::string::String>,
+        task_id: ::std::result::Result<::std::string::String, ::std::string::String>,
+        updated_at_ms: ::std::result::Result<u64, ::std::string::String>,
+        work_progress: ::std::result::Result<
+            ::std::option::Option<super::StepWorkProgress>,
+            ::std::string::String,
+        >,
+        workspace_id: ::std::result::Result<::std::string::String, ::std::string::String>,
+        workspace_path: ::std::result::Result<::std::string::String, ::std::string::String>,
+    }
+    impl ::std::default::Default for TaskSummary {
+        fn default() -> Self {
+            Self {
+                active_step_kind: Ok(Default::default()),
+                attention: Err("no value supplied for attention".to_string()),
+                created_at_ms: Err("no value supplied for created_at_ms".to_string()),
+                kind: Err("no value supplied for kind".to_string()),
+                mutating: Err("no value supplied for mutating".to_string()),
+                progress: Err("no value supplied for progress".to_string()),
+                status: Err("no value supplied for status".to_string()),
+                task_id: Err("no value supplied for task_id".to_string()),
+                updated_at_ms: Err("no value supplied for updated_at_ms".to_string()),
+                work_progress: Ok(Default::default()),
+                workspace_id: Err("no value supplied for workspace_id".to_string()),
+                workspace_path: Err("no value supplied for workspace_path".to_string()),
+            }
+        }
+    }
+    impl TaskSummary {
+        pub fn active_step_kind<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::option::Option<::std::string::String>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.active_step_kind = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for active_step_kind: {e}"));
+            self
+        }
+        pub fn attention<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<super::TaskAttention>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.attention = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for attention: {e}"));
+            self
+        }
+        pub fn created_at_ms<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<u64>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.created_at_ms = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for created_at_ms: {e}"));
+            self
+        }
+        pub fn kind<T>(mut self, value: T) -> Self
         where
             T: ::std::convert::TryInto<::std::string::String>,
             T::Error: ::std::fmt::Display,
         {
-            self.unit = value
+            self.kind = value
                 .try_into()
-                .map_err(|e| format!("error converting supplied value for unit: {e}"));
+                .map_err(|e| format!("error converting supplied value for kind: {e}"));
+            self
+        }
+        pub fn mutating<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<bool>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.mutating = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for mutating: {e}"));
+            self
+        }
+        pub fn progress<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<super::TaskProgress>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.progress = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for progress: {e}"));
+            self
+        }
+        pub fn status<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<super::TaskStatus>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.status = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for status: {e}"));
+            self
+        }
+        pub fn task_id<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::string::String>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.task_id = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for task_id: {e}"));
             self
         }
         pub fn updated_at_ms<T>(mut self, value: T) -> Self
@@ -13495,31 +13453,73 @@ pub mod builder {
                 .map_err(|e| format!("error converting supplied value for updated_at_ms: {e}"));
             self
         }
+        pub fn work_progress<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::option::Option<super::StepWorkProgress>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.work_progress = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for work_progress: {e}"));
+            self
+        }
+        pub fn workspace_id<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::string::String>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.workspace_id = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for workspace_id: {e}"));
+            self
+        }
+        pub fn workspace_path<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::string::String>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.workspace_path = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for workspace_path: {e}"));
+            self
+        }
     }
-    impl ::std::convert::TryFrom<TaskWorkProgress> for super::TaskWorkProgress {
+    impl ::std::convert::TryFrom<TaskSummary> for super::TaskSummary {
         type Error = super::error::ConversionError;
         fn try_from(
-            value: TaskWorkProgress,
+            value: TaskSummary,
         ) -> ::std::result::Result<Self, super::error::ConversionError> {
             Ok(Self {
-                completed: value.completed?,
-                message: value.message?,
-                phase: value.phase?,
-                total: value.total?,
-                unit: value.unit?,
+                active_step_kind: value.active_step_kind?,
+                attention: value.attention?,
+                created_at_ms: value.created_at_ms?,
+                kind: value.kind?,
+                mutating: value.mutating?,
+                progress: value.progress?,
+                status: value.status?,
+                task_id: value.task_id?,
                 updated_at_ms: value.updated_at_ms?,
+                work_progress: value.work_progress?,
+                workspace_id: value.workspace_id?,
+                workspace_path: value.workspace_path?,
             })
         }
     }
-    impl ::std::convert::From<super::TaskWorkProgress> for TaskWorkProgress {
-        fn from(value: super::TaskWorkProgress) -> Self {
+    impl ::std::convert::From<super::TaskSummary> for TaskSummary {
+        fn from(value: super::TaskSummary) -> Self {
             Self {
-                completed: Ok(value.completed),
-                message: Ok(value.message),
-                phase: Ok(value.phase),
-                total: Ok(value.total),
-                unit: Ok(value.unit),
+                active_step_kind: Ok(value.active_step_kind),
+                attention: Ok(value.attention),
+                created_at_ms: Ok(value.created_at_ms),
+                kind: Ok(value.kind),
+                mutating: Ok(value.mutating),
+                progress: Ok(value.progress),
+                status: Ok(value.status),
+                task_id: Ok(value.task_id),
                 updated_at_ms: Ok(value.updated_at_ms),
+                work_progress: Ok(value.work_progress),
+                workspace_id: Ok(value.workspace_id),
+                workspace_path: Ok(value.workspace_path),
             }
         }
     }

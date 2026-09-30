@@ -3,7 +3,7 @@ mod routes;
 
 use axum::Router;
 
-pub use crop::{CropJobState, HasCropJobs};
+pub use crop::{CropTaskState, HasCropTasks};
 pub use routes::{crop_router, router};
 
 /// Build the transport-neutral Aligner application.

@@ -5,9 +5,9 @@ import { createTaskPort } from "../src/ports/tasks";
 import { runClientEffect } from "../src/infra/runtime";
 import { TaskCommandError } from "@lisca/contracts/http-api";
 
-const operation = {
-  operationId: "op-1",
-  kind: "test-operation",
+const task = {
+  taskId: "task-1",
+  kind: "test-task",
   workspaceId: "workspace-1",
   workspacePath: "/workspace",
   mutating: true,
@@ -37,26 +37,26 @@ afterEach(() => {
 });
 
 describe("createTaskPort", () => {
-  it("reads and decodes the generic operation list", async () => {
+  it("reads and decodes the generic task list", async () => {
     const requested: string[] = [];
     const port = createTaskPort({
       fetch: async (input) => {
         requested.push(String(input));
-        return Response.json([operation]);
+        return Response.json([task]);
       },
     });
 
-    const result = await Effect.runPromise(port.listOperations());
-    expect(result).toEqual([operation]);
-    expect(requested[0]).toContain("/tasks/operations");
+    const result = await Effect.runPromise(port.listTasks());
+    expect(result).toEqual([task]);
+    expect(requested[0]).toContain("/tasks");
   });
 
-  it("uses stable IDs for operation and task detail reads", async () => {
+  it("uses stable IDs for task and step detail reads", async () => {
     const requested: string[] = [];
-    const task = {
+    const step = {
+      stepId: "step-1",
       taskId: "task-1",
-      operationId: "op-1",
-      taskKind: "test-task",
+      stepKind: "test-step",
       workspaceId: "workspace-1",
       status: "running",
       weight: 1,
@@ -69,25 +69,25 @@ describe("createTaskPort", () => {
       fetch: async (input) => {
         const url = String(input);
         requested.push(url);
-        return Response.json(url.includes("/tasks/task") ? task : { operation, tasks: [task] });
+        return Response.json(url.includes("/tasks/step") ? step : { task, steps: [step] });
       },
     });
 
-    await expect(Effect.runPromise(port.getOperation("op-1"))).resolves.toEqual({
-      operation,
-      tasks: [task],
+    await expect(Effect.runPromise(port.getTask("task-1"))).resolves.toEqual({
+      task,
+      steps: [step],
     });
-    await expect(Effect.runPromise(port.getTask("task-1"))).resolves.toEqual(task);
-    expect(requested[0]).toContain("operationId=op-1");
-    expect(requested[1]).toContain("taskId=task-1");
+    await expect(Effect.runPromise(port.getStep("step-1"))).resolves.toEqual(step);
+    expect(requested[0]).toContain("taskId=task-1");
+    expect(requested[1]).toContain("stepId=step-1");
   });
 
-  it("sends typed lifecycle commands and returns the canonical operation detail", async () => {
+  it("sends typed lifecycle commands and returns the canonical task detail", async () => {
     const requested: Array<{ url: string; method: string; body: unknown }> = [];
-    const task = {
+    const step = {
+      stepId: "step-1",
       taskId: "task-1",
-      operationId: "op-1",
-      taskKind: "test-task",
+      stepKind: "test-step",
       workspaceId: "workspace-1",
       status: "cancelled",
       weight: 1,
@@ -97,12 +97,12 @@ describe("createTaskPort", () => {
       attempts: [],
     } as const;
     const detail = {
-      operation: {
-        ...operation,
+      task: {
+        ...task,
         status: "cancelled" as const,
-        progress: { ...operation.progress, running: 0, cancelled: 1 },
+        progress: { ...task.progress, running: 0, cancelled: 1 },
       },
-      tasks: [task],
+      steps: [step],
     };
     const port = createTaskPort({
       fetch: async (input, init) => {
@@ -116,24 +116,24 @@ describe("createTaskPort", () => {
       },
     });
 
-    await expect(Effect.runPromise(port.cancelOperation("op-1"))).resolves.toEqual(detail);
     await expect(Effect.runPromise(port.cancelTask("task-1"))).resolves.toEqual(detail);
-    await expect(Effect.runPromise(port.retryTask("task-1"))).resolves.toEqual(detail);
+    await expect(Effect.runPromise(port.cancelStep("step-1"))).resolves.toEqual(detail);
+    await expect(Effect.runPromise(port.retryStep("step-1"))).resolves.toEqual(detail);
     expect(requested).toEqual([
-      {
-        url: "http://localhost:8765/tasks/operation/cancel",
-        method: "POST",
-        body: { operationId: "op-1" },
-      },
       {
         url: "http://localhost:8765/tasks/task/cancel",
         method: "POST",
         body: { taskId: "task-1" },
       },
       {
-        url: "http://localhost:8765/tasks/task/retry",
+        url: "http://localhost:8765/tasks/step/cancel",
         method: "POST",
-        body: { taskId: "task-1" },
+        body: { stepId: "step-1" },
+      },
+      {
+        url: "http://localhost:8765/tasks/step/retry",
+        method: "POST",
+        body: { stepId: "step-1" },
       },
     ]);
   });
@@ -145,16 +145,16 @@ describe("createTaskPort", () => {
           {
             _tag: "TaskCommandError",
             code: "invalid-transition",
-            entity: "task",
-            id: "task-1",
+            entity: "step",
+            id: "step-1",
             currentStatus: "running",
-            message: "cannot retry task task-1 while it is running",
+            message: "cannot retry step step-1 while it is running",
           },
           { status: 409 },
         ),
     });
 
-    const error = await runClientEffect(port.retryTask("task-1")).catch((cause: unknown) => cause);
+    const error = await runClientEffect(port.retryStep("step-1")).catch((cause: unknown) => cause);
     expect(error).toBeInstanceOf(TaskCommandError);
     expect(error).toMatchObject({
       _tag: "TaskCommandError",

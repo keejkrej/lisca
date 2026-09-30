@@ -1,22 +1,22 @@
 export type StudioTaskScope = "crop" | "analysis";
 
-/** Align lists crop operations. Analysis lists analysis operations. */
+/** Align lists crop tasks. Analysis lists analysis tasks. */
 export function studioTaskScopeForPath(pathname: string): StudioTaskScope | null {
   if (pathname === "/align") return "crop";
   if (pathname === "/analysis") return "analysis";
   return null;
 }
 
-export function operationMatchesStudioTaskScope(kind: string, scope: StudioTaskScope): boolean {
+export function taskMatchesStudioTaskScope(kind: string, scope: StudioTaskScope): boolean {
   if (scope === "crop") return kind === "crop-roi";
   return kind.startsWith("analysis/");
 }
 
-export function filterStudioTaskOperations<T extends { kind: string }>(
-  operations: readonly T[],
+export function filterStudioTasks<T extends { kind: string }>(
+  tasks: readonly T[],
   scope: StudioTaskScope,
 ): T[] {
-  return operations.filter((operation) => operationMatchesStudioTaskScope(operation.kind, scope));
+  return tasks.filter((task) => taskMatchesStudioTaskScope(task.kind, scope));
 }
 
 export type StudioTaskCenterCopy = {

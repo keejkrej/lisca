@@ -17,15 +17,13 @@ use lisca::{
         LatestAnalysisQuery, SaveAssayJsonRequest, SaveAssayJsonResponse,
     },
 };
-use lisca_server::{
-    normalize_workspace_path, HasTaskScheduler, OperationSpec, TaskFailure, TaskSpec,
-};
+use lisca_server::{normalize_workspace_path, HasTaskScheduler, StepFailure, StepSpec, TaskSpec};
 
-use crate::analysis::HasAnalysisJobs;
+use crate::analysis::HasAnalysisTasks;
 
 pub fn router<S>() -> Router<S>
 where
-    S: HasAnalysisJobs + HasTaskScheduler + Clone + Send + Sync + 'static,
+    S: HasAnalysisTasks + HasTaskScheduler + Clone + Send + Sync + 'static,
 {
     Router::new()
         .route("/studio/save-assay-json", post(save_assay_json_handler))
@@ -74,57 +72,57 @@ fn load_assay_json(workspace: &Path) -> Result<AssayJsonFile, FsError> {
         .map_err(|error| FsError::new(format!("invalid assay.json: {error}")))
 }
 
-type AnalysisTaskJob = Arc<dyn Fn() -> Result<(), String> + Send + Sync>;
+type AnalysisStepRun = Arc<dyn Fn() -> Result<(), String> + Send + Sync>;
 
-fn analysis_task(
+fn analysis_step(
     kind: impl Into<String>,
     dependencies: Vec<String>,
-    job: AnalysisTaskJob,
-) -> TaskSpec {
-    TaskSpec::new(kind, 1, move |context| {
-        let job = job.clone();
+    run: AnalysisStepRun,
+) -> StepSpec {
+    StepSpec::new(kind, 1, move |context| {
+        let run = run.clone();
         async move {
             context.checkpoint()?;
-            let result = tokio::task::spawn_blocking(move || job())
+            let result = tokio::task::spawn_blocking(move || run())
                 .await
-                .map_err(|error| TaskFailure::new("analysis_worker_failed", error.to_string()))?;
+                .map_err(|error| StepFailure::new("analysis_worker_failed", error.to_string()))?;
             context.checkpoint()?;
-            result.map_err(|error| TaskFailure::new("analysis_stage_failed", error))
+            result.map_err(|error| StepFailure::new("analysis_stage_failed", error))
         }
     })
     .with_dependencies(dependencies)
 }
 
-fn build_analysis_operation(
+fn build_analysis_task(
     scheduler: &lisca_server::TaskScheduler,
     workspace: PathBuf,
     assay: AssayJsonFile,
     request_id: &str,
-) -> Result<lisca::protocol::OperationDetail, lisca_server::SchedulerError> {
+) -> Result<lisca::protocol::TaskDetail, lisca_server::SchedulerError> {
     match assay.type_ {
-        AssayType::Transfection => build_transfection_operation(scheduler, workspace, assay),
-        AssayType::Killing => build_killing_operation(scheduler, workspace, assay, request_id),
+        AssayType::Transfection => build_transfection_task(scheduler, workspace, assay),
+        AssayType::Killing => build_killing_task(scheduler, workspace, assay, request_id),
         assay_id => {
-            let task = analysis_task(
+            let step = analysis_step(
                 format!("analysis/unsupported/{assay_id}"),
                 Vec::new(),
                 Arc::new(move || Err(format!("unsupported assay id '{assay_id}'"))),
             );
-            scheduler.submit(OperationSpec::new(
+            scheduler.submit(TaskSpec::new(
                 format!("analysis/{assay_id}"),
                 workspace.to_string_lossy(),
                 true,
-                vec![task],
+                vec![step],
             ))
         }
     }
 }
 
-fn build_transfection_operation(
+fn build_transfection_task(
     scheduler: &lisca_server::TaskScheduler,
     workspace: PathBuf,
     assay: AssayJsonFile,
-) -> Result<lisca::protocol::OperationDetail, lisca_server::SchedulerError> {
+) -> Result<lisca::protocol::TaskDetail, lisca_server::SchedulerError> {
     use lisca::analysis::{
         assays::transfection,
         slide::{build_slide_mapping, SlideMapping},
@@ -133,16 +131,16 @@ fn build_transfection_operation(
     let mapping = match build_slide_mapping(&assay) {
         Ok(mapping) => Arc::new(mapping),
         Err(message) => {
-            let task = analysis_task(
+            let step = analysis_step(
                 "analysis/transfection/prepare",
                 Vec::new(),
                 Arc::new(move || Err(message.clone())),
             );
-            return scheduler.submit(OperationSpec::new(
+            return scheduler.submit(TaskSpec::new(
                 "analysis/transfection",
                 workspace.to_string_lossy(),
                 true,
-                vec![task],
+                vec![step],
             ));
         }
     };
@@ -152,16 +150,16 @@ fn build_transfection_operation(
     // `analysis.skipSegment` measures every pixel of the site. That area is the
     // crop size, so it stays constant across time. The masked path segments first.
     let full_frame = transfection::skip_segment(&assay);
-    let mut tasks = Vec::new();
+    let mut steps = Vec::new();
 
     // Prepare validates assay mapping only (no slide.json side file).
-    let prepare = analysis_task(
+    let prepare = analysis_step(
         "analysis/transfection/prepare",
         Vec::new(),
         Arc::new(move || Ok(())),
     );
-    let prepare_id = prepare.task_id().to_string();
-    tasks.push(prepare);
+    let prepare_id = prepare.step_id().to_string();
+    steps.push(prepare);
 
     let mut segment_ids_by_channel = std::collections::BTreeMap::<u32, Vec<String>>::new();
     if !full_frame {
@@ -172,13 +170,13 @@ fn build_transfection_operation(
                 shard_entry.positions = vec![*position];
                 shard.insert(*slide_channel, shard_entry);
                 let shard = Arc::new(shard);
-                let task_workspace = workspace.clone();
-                let task = analysis_task(
+                let step_workspace = workspace.clone();
+                let step = analysis_step(
                     format!("analysis/transfection/segment/Pos{position}"),
                     vec![prepare_id.clone()],
                     Arc::new(move || {
                         transfection::run_segment(
-                            &task_workspace,
+                            &step_workspace,
                             &shard,
                             &transfection::SegmentOptions {
                                 jobs: 1,
@@ -190,8 +188,8 @@ fn build_transfection_operation(
                 segment_ids_by_channel
                     .entry(*slide_channel)
                     .or_default()
-                    .push(task.task_id().to_string());
-                tasks.push(task);
+                    .push(step.step_id().to_string());
+                steps.push(step);
             }
         }
     }
@@ -201,7 +199,7 @@ fn build_transfection_operation(
         let mut shard = SlideMapping::new();
         shard.insert(*slide_channel, entry.clone());
         let shard = Arc::new(shard);
-        let task_workspace = workspace.clone();
+        let step_workspace = workspace.clone();
         let dependencies = if full_frame {
             vec![prepare_id.clone()]
         } else {
@@ -209,20 +207,20 @@ fn build_transfection_operation(
                 .remove(slide_channel)
                 .unwrap_or_default()
         };
-        let task = analysis_task(
+        let step = analysis_step(
             format!("analysis/transfection/timeseries/sc{slide_channel}"),
             dependencies,
             Arc::new(move || {
-                transfection::run_timeseries_with_mode(&task_workspace, &shard, 1, full_frame)
+                transfection::run_timeseries_with_mode(&step_workspace, &shard, 1, full_frame)
             }),
         );
-        timeseries_ids.push(task.task_id().to_string());
-        tasks.push(task);
+        timeseries_ids.push(step.step_id().to_string());
+        steps.push(step);
     }
 
     let plot_ts_workspace = workspace.clone();
     let plot_ts_mapping = mapping.clone();
-    let plot_ts = analysis_task(
+    let plot_ts = analysis_step(
         "analysis/transfection/plot-timeseries",
         timeseries_ids.clone(),
         Arc::new(move || {
@@ -234,30 +232,30 @@ fn build_transfection_operation(
             )
         }),
     );
-    let plot_ts_id = plot_ts.task_id().to_string();
-    tasks.push(plot_ts);
+    let plot_ts_id = plot_ts.step_id().to_string();
+    steps.push(plot_ts);
 
     let auc_workspace = workspace.clone();
-    let auc = analysis_task(
+    let auc = analysis_step(
         "analysis/transfection/auc",
         timeseries_ids,
         Arc::new(move || transfection::run_auc(&auc_workspace, interval).map(|_| ())),
     );
-    let auc_id = auc.task_id().to_string();
-    tasks.push(auc);
+    let auc_id = auc.step_id().to_string();
+    steps.push(auc);
 
     let plot_auc_workspace = workspace.clone();
     let plot_auc_mapping = mapping.clone();
-    let plot_auc = analysis_task(
+    let plot_auc = analysis_step(
         "analysis/transfection/plot-auc",
         vec![auc_id.clone()],
         Arc::new(move || transfection::run_plot_auc(&plot_auc_workspace, &plot_auc_mapping)),
     );
-    let plot_auc_id = plot_auc.task_id().to_string();
-    tasks.push(plot_auc);
+    let plot_auc_id = plot_auc.step_id().to_string();
+    steps.push(plot_auc);
 
     let fit_workspace = workspace.clone();
-    let fit = analysis_task(
+    let fit = analysis_step(
         "analysis/transfection/fit",
         vec![auc_id],
         Arc::new(move || {
@@ -270,12 +268,12 @@ fn build_transfection_operation(
             .map(|_| ())
         }),
     );
-    let fit_id = fit.task_id().to_string();
-    tasks.push(fit);
+    let fit_id = fit.step_id().to_string();
+    steps.push(fit);
 
     let plot_fit_workspace = workspace.clone();
     let plot_fit_mapping = mapping;
-    let plot_fit = analysis_task(
+    let plot_fit = analysis_step(
         "analysis/transfection/plot-fit",
         vec![fit_id],
         Arc::new(move || {
@@ -287,30 +285,30 @@ fn build_transfection_operation(
             )
         }),
     );
-    let plot_fit_id = plot_fit.task_id().to_string();
-    tasks.push(plot_fit);
+    let plot_fit_id = plot_fit.step_id().to_string();
+    steps.push(plot_fit);
 
     let finalize_workspace = workspace.clone();
-    tasks.push(analysis_task(
+    steps.push(analysis_step(
         "analysis/transfection/finalize",
         vec![plot_ts_id, plot_auc_id, plot_fit_id],
         Arc::new(move || analysis::workspace_analysis_manifest(&finalize_workspace).map(|_| ())),
     ));
 
-    scheduler.submit(OperationSpec::new(
+    scheduler.submit(TaskSpec::new(
         "analysis/transfection",
         workspace.to_string_lossy(),
         true,
-        tasks,
+        steps,
     ))
 }
 
-fn build_killing_operation(
+fn build_killing_task(
     scheduler: &lisca_server::TaskScheduler,
     workspace: PathBuf,
     assay: AssayJsonFile,
     request_id: &str,
-) -> Result<lisca::protocol::OperationDetail, lisca_server::SchedulerError> {
+) -> Result<lisca::protocol::TaskDetail, lisca_server::SchedulerError> {
     use lisca::analysis::{
         assays::killing,
         slide::{build_slide_mapping, parse_interval_minutes, SlideMapping},
@@ -319,16 +317,16 @@ fn build_killing_operation(
     let mapping = match build_slide_mapping(&assay) {
         Ok(mapping) => Arc::new(mapping),
         Err(message) => {
-            let task = analysis_task(
+            let step = analysis_step(
                 "analysis/killing/prepare",
                 Vec::new(),
                 Arc::new(move || Err(message.clone())),
             );
-            return scheduler.submit(OperationSpec::new(
+            return scheduler.submit(TaskSpec::new(
                 "analysis/killing",
                 workspace.to_string_lossy(),
                 true,
-                vec![task],
+                vec![step],
             ));
         }
     };
@@ -347,15 +345,15 @@ fn build_killing_operation(
     let staging_root = workspace
         .join(".analysis-staging")
         .join(format!("killing-{safe_request_id}"));
-    let mut tasks = Vec::new();
+    let mut steps = Vec::new();
 
-    let prepare = analysis_task(
+    let prepare = analysis_step(
         "analysis/killing/prepare",
         Vec::new(),
         Arc::new(move || Ok(())),
     );
-    let prepare_id = prepare.task_id().to_string();
-    tasks.push(prepare);
+    let prepare_id = prepare.step_id().to_string();
+    steps.push(prepare);
 
     let mut predict_ids = Vec::new();
     let mut shard_paths = Vec::new();
@@ -368,78 +366,78 @@ fn build_killing_operation(
             let shard_mapping = Arc::new(shard_mapping);
             let shard_path = staging_root.join(format!("sc{slide_channel}-Pos{position}"));
             shard_paths.push(shard_path.clone());
-            let task_workspace = workspace.clone();
-            let task_shard = shard_path;
-            let task = analysis_task(
+            let step_workspace = workspace.clone();
+            let step_shard = shard_path;
+            let step = analysis_step(
                 format!("analysis/killing/predict/Pos{position}"),
                 vec![prepare_id.clone()],
                 Arc::new(move || {
-                    let model = killing::resolve_model_path(&task_workspace)?;
-                    killing::run_predict_shard(&task_workspace, &task_shard, &shard_mapping, &model)
+                    let model = killing::resolve_model_path(&step_workspace)?;
+                    killing::run_predict_shard(&step_workspace, &step_shard, &shard_mapping, &model)
                 }),
             );
-            predict_ids.push(task.task_id().to_string());
-            tasks.push(task);
+            predict_ids.push(step.step_id().to_string());
+            steps.push(step);
         }
     }
 
     let merge_workspace = workspace.clone();
     let merge_shards = shard_paths.clone();
-    let merge = analysis_task(
+    let merge = analysis_step(
         "analysis/killing/merge-predictions",
         predict_ids,
         Arc::new(move || killing::merge_prediction_shards(&merge_workspace, &merge_shards)),
     );
-    let merge_id = merge.task_id().to_string();
-    tasks.push(merge);
+    let merge_id = merge.step_id().to_string();
+    steps.push(merge);
 
     let plot_ts_workspace = workspace.clone();
     let plot_ts_mapping = mapping.clone();
-    let plot_ts = analysis_task(
+    let plot_ts = analysis_step(
         "analysis/killing/plot-timeseries",
         vec![merge_id.clone()],
         Arc::new(move || {
             killing::run_plot_timeseries_stage(&plot_ts_workspace, &plot_ts_mapping, interval)
         }),
     );
-    let plot_ts_id = plot_ts.task_id().to_string();
-    tasks.push(plot_ts);
+    let plot_ts_id = plot_ts.step_id().to_string();
+    steps.push(plot_ts);
 
     let clean_workspace = workspace.clone();
     let clean_mapping = mapping.clone();
-    let clean = analysis_task(
+    let clean = analysis_step(
         "analysis/killing/clean",
         vec![merge_id],
         Arc::new(move || killing::run_clean_stage(&clean_workspace, &clean_mapping)),
     );
-    let clean_id = clean.task_id().to_string();
-    tasks.push(clean);
+    let clean_id = clean.step_id().to_string();
+    steps.push(clean);
 
     let kill_workspace = workspace.clone();
     let kill_mapping = mapping.clone();
-    let plot_kill = analysis_task(
+    let plot_kill = analysis_step(
         "analysis/killing/plot-kill",
         vec![clean_id.clone()],
         Arc::new(move || killing::run_plot_kill_stage(&kill_workspace, &kill_mapping, interval)),
     );
-    let plot_kill_id = plot_kill.task_id().to_string();
-    tasks.push(plot_kill);
+    let plot_kill_id = plot_kill.step_id().to_string();
+    steps.push(plot_kill);
 
     let death_workspace = workspace.clone();
     let death_mapping = mapping;
-    let plot_death = analysis_task(
+    let plot_death = analysis_step(
         "analysis/killing/plot-death-times",
         vec![clean_id],
         Arc::new(move || {
             killing::run_plot_death_times_stage(&death_workspace, &death_mapping, interval)
         }),
     );
-    let plot_death_id = plot_death.task_id().to_string();
-    tasks.push(plot_death);
+    let plot_death_id = plot_death.step_id().to_string();
+    steps.push(plot_death);
 
     let finalize_workspace = workspace.clone();
     let finalize_staging = staging_root;
-    tasks.push(analysis_task(
+    steps.push(analysis_step(
         "analysis/killing/finalize",
         vec![plot_ts_id, plot_kill_id, plot_death_id],
         Arc::new(move || {
@@ -451,15 +449,15 @@ fn build_killing_operation(
         }),
     ));
 
-    scheduler.submit(OperationSpec::new(
+    scheduler.submit(TaskSpec::new(
         "analysis/killing",
         workspace.to_string_lossy(),
         true,
-        tasks,
+        steps,
     ))
 }
 
-async fn start_analysis_handler<S: HasAnalysisJobs + HasTaskScheduler>(
+async fn start_analysis_handler<S: HasAnalysisTasks + HasTaskScheduler>(
     State(state): State<S>,
     Json(payload): Json<AnalysisStartRequest>,
 ) -> Result<Json<AnalysisProgress>, FsError> {
@@ -480,21 +478,21 @@ async fn start_analysis_handler<S: HasAnalysisJobs + HasTaskScheduler>(
         .await
         .map_err(|error| FsError::internal(format!("assay load worker failed: {error}")))??;
     let initial = state
-        .analysis_jobs()
+        .analysis_tasks()
         .submit(&request_id, &workspace_path, || {
-            build_analysis_operation(state.task_scheduler(), workspace, assay_json, &request_id)
+            build_analysis_task(state.task_scheduler(), workspace, assay_json, &request_id)
         })
         .map_err(FsError::new)?;
     Ok(Json(initial))
 }
 
-async fn analysis_progress_handler<S: HasAnalysisJobs + HasTaskScheduler>(
+async fn analysis_progress_handler<S: HasAnalysisTasks + HasTaskScheduler>(
     State(state): State<S>,
     Query(query): Query<AnalysisProgressQuery>,
 ) -> Result<Json<AnalysisProgress>, FsError> {
     let progress = tokio::task::spawn_blocking(move || {
         state
-            .analysis_jobs()
+            .analysis_tasks()
             .progress(state.task_scheduler(), &query.request_id)
     })
     .await
@@ -502,10 +500,10 @@ async fn analysis_progress_handler<S: HasAnalysisJobs + HasTaskScheduler>(
     .map_err(FsError::internal)?;
     progress
         .map(Json)
-        .ok_or_else(|| FsError::new("analysis job not found"))
+        .ok_or_else(|| FsError::new("analysis task not found"))
 }
 
-async fn analysis_latest_progress_handler<S: HasAnalysisJobs + HasTaskScheduler>(
+async fn analysis_latest_progress_handler<S: HasAnalysisTasks + HasTaskScheduler>(
     State(state): State<S>,
     Query(query): Query<LatestAnalysisQuery>,
 ) -> Result<Json<Option<AnalysisProgress>>, FsError> {
@@ -517,7 +515,7 @@ async fn analysis_latest_progress_handler<S: HasAnalysisJobs + HasTaskScheduler>
     let progress_workspace_path = workspace_path.clone();
     let latest = tokio::task::spawn_blocking(move || {
         state
-            .analysis_jobs()
+            .analysis_tasks()
             .latest(state.task_scheduler(), &progress_workspace_path)
     })
     .await
@@ -590,20 +588,20 @@ mod tests {
     use axum::extract::State;
     use lisca::protocol::{AnalysisProgress, AnalysisStartRequest, AnalysisStatus, AssayType};
 
-    use super::{build_analysis_operation, load_assay_json, start_analysis_handler};
-    use crate::analysis::{AnalysisJobState, HasAnalysisJobs};
+    use super::{build_analysis_task, load_assay_json, start_analysis_handler};
+    use crate::analysis::{AnalysisTaskState, HasAnalysisTasks};
     use lisca_server::{HasTaskScheduler, SchedulerConfig, TaskScheduler};
 
     #[derive(Clone)]
     struct TestState {
-        analysis: AnalysisJobState,
+        analysis: AnalysisTaskState,
         tasks: TaskScheduler,
     }
 
     impl TestState {
         fn new() -> Self {
             Self {
-                analysis: AnalysisJobState::new(),
+                analysis: AnalysisTaskState::new(),
                 tasks: TaskScheduler::new(SchedulerConfig {
                     capacity: 2,
                     history_cap: 20,
@@ -613,8 +611,8 @@ mod tests {
         }
     }
 
-    impl HasAnalysisJobs for TestState {
-        fn analysis_jobs(&self) -> &AnalysisJobState {
+    impl HasAnalysisTasks for TestState {
+        fn analysis_tasks(&self) -> &AnalysisTaskState {
             &self.analysis
         }
     }
@@ -655,8 +653,8 @@ mod tests {
             let progress = state
                 .analysis
                 .progress(&state.tasks, request_id)
-                .expect("analysis job state should not be poisoned")
-                .expect("analysis job should exist");
+                .expect("analysis task state should not be poisoned")
+                .expect("analysis task should exist");
             if progress.status == AnalysisStatus::Error {
                 return progress;
             }
@@ -713,42 +711,42 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn assay_operations_expose_real_fan_out_and_fan_in_graphs() {
+    async fn assay_tasks_expose_real_fan_out_and_fan_in_graphs() {
         for assay_id in [AssayType::Transfection, AssayType::Killing] {
             let state = TestState::new();
             let workspace = graph_workspace(assay_id);
             let assay = load_assay_json(&workspace).unwrap();
             let detail =
-                build_analysis_operation(&state.tasks, workspace.clone(), assay, "graph-fixture")
+                build_analysis_task(&state.tasks, workspace.clone(), assay, "graph-fixture")
                     .unwrap();
             let prefix = match assay_id {
                 AssayType::Transfection => "analysis/transfection",
                 AssayType::Killing => "analysis/killing",
                 _ => unreachable!(),
             };
-            let position_task_count = detail
-                .tasks
+            let position_step_count = detail
+                .steps
                 .iter()
-                .filter(|task| {
-                    task.task_kind.starts_with(&format!("{prefix}/segment/Pos"))
-                        || task.task_kind.starts_with(&format!("{prefix}/predict/Pos"))
+                .filter(|step| {
+                    step.step_kind.starts_with(&format!("{prefix}/segment/Pos"))
+                        || step.step_kind.starts_with(&format!("{prefix}/predict/Pos"))
                 })
                 .count();
-            assert_eq!(position_task_count, 2);
+            assert_eq!(position_step_count, 2);
             let fan_in = detail
-                .tasks
+                .steps
                 .iter()
-                .find(|task| {
-                    task.task_kind.ends_with("/timeseries/sc0")
-                        || task.task_kind.ends_with("/merge-predictions")
+                .find(|step| {
+                    step.step_kind.ends_with("/timeseries/sc0")
+                        || step.step_kind.ends_with("/merge-predictions")
                 })
                 .unwrap();
             assert_eq!(fan_in.dependencies.len(), 2);
             assert!(detail
-                .tasks
+                .steps
                 .iter()
-                .any(|task| task.task_kind.ends_with("/finalize")));
-            let _ = state.tasks.cancel_operation(&detail.operation.operation_id);
+                .any(|step| step.step_kind.ends_with("/finalize")));
+            let _ = state.tasks.cancel_task(&detail.task.task_id);
             fs::remove_dir_all(workspace).unwrap();
         }
     }
@@ -765,26 +763,25 @@ mod tests {
 
         let assay = load_assay_json(&workspace).unwrap();
         let detail =
-            build_analysis_operation(&state.tasks, workspace.clone(), assay, "skip-segment")
-                .unwrap();
+            build_analysis_task(&state.tasks, workspace.clone(), assay, "skip-segment").unwrap();
 
         assert!(detail
-            .tasks
+            .steps
             .iter()
-            .all(|task| !task.task_kind.contains("/segment/")));
+            .all(|step| !step.step_kind.contains("/segment/")));
         let prepare = detail
-            .tasks
+            .steps
             .iter()
-            .find(|task| task.task_kind.ends_with("/prepare"))
+            .find(|step| step.step_kind.ends_with("/prepare"))
             .unwrap();
         let timeseries = detail
-            .tasks
+            .steps
             .iter()
-            .find(|task| task.task_kind.ends_with("/timeseries/sc0"))
+            .find(|step| step.step_kind.ends_with("/timeseries/sc0"))
             .unwrap();
-        assert_eq!(timeseries.dependencies, vec![prepare.task_id.clone()]);
+        assert_eq!(timeseries.dependencies, vec![prepare.step_id.clone()]);
 
-        let _ = state.tasks.cancel_operation(&detail.operation.operation_id);
+        let _ = state.tasks.cancel_task(&detail.task.task_id);
         fs::remove_dir_all(workspace).unwrap();
     }
 }

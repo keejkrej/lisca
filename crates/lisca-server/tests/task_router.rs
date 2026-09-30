@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use axum::{body::Body, http::Request};
 use lisca_server::{
-    task_router, HasTaskScheduler, OperationSpec, SchedulerConfig, TaskScheduler, TaskSpec,
+    task_router, HasTaskScheduler, SchedulerConfig, StepSpec, TaskScheduler, TaskSpec,
 };
 use tower::ServiceExt;
 
@@ -25,18 +25,18 @@ impl HasTaskScheduler for TestState {
 }
 
 #[tokio::test]
-async fn list_route_projects_submitted_operations_from_shared_scheduler() {
+async fn list_route_projects_submitted_tasks_from_shared_scheduler() {
     let scheduler = TaskScheduler::new(SchedulerConfig {
         capacity: 1,
         history_cap: 10,
     })
     .unwrap();
-    let operation = scheduler
-        .submit(OperationSpec::new(
+    let task = scheduler
+        .submit(TaskSpec::new(
             "router-test",
             "/workspace/router-test",
             true,
-            vec![TaskSpec::new("pending", 1, |_context| {
+            vec![StepSpec::new("pending", 1, |_context| {
                 std::future::pending()
             })],
         ))
@@ -46,7 +46,7 @@ async fn list_route_projects_submitted_operations_from_shared_scheduler() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/tasks/operations")
+                .uri("/tasks")
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -55,7 +55,7 @@ async fn list_route_projects_submitted_operations_from_shared_scheduler() {
 
     assert_eq!(response.status(), axum::http::StatusCode::OK);
     let body = response_body(response).await;
-    assert!(body.contains(&operation.operation.operation_id));
+    assert!(body.contains(&task.task.task_id));
     assert!(body.contains("router-test"));
 }
 
@@ -67,12 +67,12 @@ async fn lifecycle_routes_return_canonical_projections_and_typed_transition_erro
     })
     .unwrap();
     let (started_tx, mut started_rx) = tokio::sync::mpsc::unbounded_channel();
-    let operation = scheduler
-        .submit(OperationSpec::new(
+    let task = scheduler
+        .submit(TaskSpec::new(
             "router-lifecycle",
             "/workspace/router-lifecycle",
             true,
-            vec![TaskSpec::new("pending", 1, move |_context| {
+            vec![StepSpec::new("pending", 1, move |_context| {
                 let started = started_tx.clone();
                 async move {
                     started.send(()).unwrap();
@@ -85,7 +85,7 @@ async fn lifecycle_routes_return_canonical_projections_and_typed_transition_erro
         .await
         .unwrap()
         .unwrap();
-    let task_id = operation.tasks[0].task_id.clone();
+    let step_id = task.steps[0].step_id.clone();
     let app = task_router::<TestState>().with_state(TestState { scheduler });
 
     let retry = app
@@ -93,9 +93,9 @@ async fn lifecycle_routes_return_canonical_projections_and_typed_transition_erro
         .oneshot(
             Request::builder()
                 .method("POST")
-                .uri("/tasks/task/retry")
+                .uri("/tasks/step/retry")
                 .header("content-type", "application/json")
-                .body(Body::from(format!(r#"{{"taskId":"{task_id}"}}"#)))
+                .body(Body::from(format!(r#"{{"stepId":"{step_id}"}}"#)))
                 .unwrap(),
         )
         .await
@@ -111,11 +111,11 @@ async fn lifecycle_routes_return_canonical_projections_and_typed_transition_erro
         .oneshot(
             Request::builder()
                 .method("POST")
-                .uri("/tasks/operation/cancel")
+                .uri("/tasks/task/cancel")
                 .header("content-type", "application/json")
                 .body(Body::from(format!(
-                    r#"{{"operationId":"{}"}}"#,
-                    operation.operation.operation_id
+                    r#"{{"taskId":"{}"}}"#,
+                    task.task.task_id
                 )))
                 .unwrap(),
         )
@@ -130,9 +130,9 @@ async fn lifecycle_routes_return_canonical_projections_and_typed_transition_erro
         .oneshot(
             Request::builder()
                 .method("POST")
-                .uri("/tasks/task/cancel")
+                .uri("/tasks/step/cancel")
                 .header("content-type", "application/json")
-                .body(Body::from(r#"{"taskId":"missing"}"#))
+                .body(Body::from(r#"{"stepId":"missing"}"#))
                 .unwrap(),
         )
         .await
@@ -140,5 +140,5 @@ async fn lifecycle_routes_return_canonical_projections_and_typed_transition_erro
     assert_eq!(missing.status(), axum::http::StatusCode::CONFLICT);
     let missing_body = response_body(missing).await;
     assert!(missing_body.contains(r#""code":"not-found""#));
-    assert!(missing_body.contains(r#""entity":"task""#));
+    assert!(missing_body.contains(r#""entity":"step""#));
 }
