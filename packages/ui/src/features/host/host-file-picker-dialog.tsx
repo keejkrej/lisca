@@ -1,14 +1,20 @@
 import type { HostFilePickerMode, HostFilePickerOperations } from "@lisca/utils";
 import { useHostFilePickerState } from "@lisca/ui-headless/host-file-picker-state";
+import { favoriteLabel } from "@lisca/ui-headless/host-file-picker-state";
 import IconArrowUpRegular from "phosphor-icons-solid/IconArrowUpRegular";
+import IconEyeRegular from "phosphor-icons-solid/IconEyeRegular";
+import IconEyeSlashRegular from "phosphor-icons-solid/IconEyeSlashRegular";
 import IconHouseRegular from "phosphor-icons-solid/IconHouseRegular";
 import IconPlusRegular from "phosphor-icons-solid/IconPlusRegular";
+import IconStarFill from "phosphor-icons-solid/IconStarFill";
 import IconXRegular from "phosphor-icons-solid/IconXRegular";
 import { For, onCleanup, onMount, Show, createSignal } from "solid-js";
 
 import { Button } from "../../components/ui/button";
 import { Field, FieldLabel } from "../../components/ui/field";
 import { Input } from "../../components/ui/input";
+import { ScrollArea } from "../../components/ui/scroll-area";
+import { cn } from "../../lib/utils";
 import { DialogSurface } from "../../shell/modal/dialog-surface";
 import { ModalScrim } from "../../shell/modal/modal-scrim";
 import { HostFilePickerRow } from "./host-file-picker-row";
@@ -182,13 +188,66 @@ export function HostFilePickerDialog(props: HostFilePickerDialogProps) {
               >
                 <IconPlusRegular class="size-4" />
               </Button>
+              <Button
+                aria-label={picker.showHidden() ? "Hide hidden items" : "Show hidden items"}
+                aria-pressed={picker.showHidden() ? "true" : "false"}
+                class="ml-auto"
+                size="icon-sm"
+                title={picker.showHidden() ? "Hide hidden items" : "Show hidden items"}
+                type="button"
+                variant="ghost"
+                onClick={picker.toggleShowHidden}
+              >
+                {picker.showHidden() ? (
+                  <IconEyeRegular class="size-4" />
+                ) : (
+                  <IconEyeSlashRegular class="size-4" />
+                )}
+              </Button>
             </div>
 
-            <div class="max-h-[min(360px,42vh)] min-h-[220px] overflow-auto rounded-md border border-border bg-background/50">
+            <Show when={picker.favorites().length > 0}>
+              <ul aria-label="Favorite folders" class="flex flex-wrap gap-1.5">
+                <For each={picker.favorites()}>
+                  {(path) => (
+                    <li
+                      class={cn(
+                        "flex max-w-56 items-center rounded-md border text-sm transition-colors",
+                        picker.list()?.path === path
+                          ? "border-primary/60 bg-primary/10 text-foreground"
+                          : "border-border text-muted-foreground hover:text-foreground",
+                      )}
+                    >
+                      <button
+                        class="flex min-w-0 items-center gap-1.5 py-1 pr-1 pl-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        disabled={picker.loading()}
+                        title={path}
+                        type="button"
+                        onClick={() => picker.openFavorite(path)}
+                      >
+                        <IconStarFill class="size-3.5 shrink-0 text-primary" />
+                        <span class="truncate">{favoriteLabel(path)}</span>
+                      </button>
+                      <button
+                        aria-label={`Remove ${favoriteLabel(path)} from favorites`}
+                        class="inline-flex shrink-0 items-center py-1 pr-1.5 pl-1 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        type="button"
+                        onClick={() => picker.toggleFavorite(path)}
+                      >
+                        <IconXRegular class="size-3" />
+                      </button>
+                    </li>
+                  )}
+                </For>
+              </ul>
+            </Show>
+
+            <ScrollArea
+              class="rounded-md border border-border bg-background/50"
+              viewportClass="max-h-[min(360px,42vh)] min-h-[220px]"
+            >
               <Show
-                when={
-                  !picker.loading() && !picker.error() && (picker.list()?.entries ?? []).length > 0
-                }
+                when={!picker.loading() && !picker.error() && picker.entries().length > 0}
                 fallback={
                   <Show
                     when={picker.loading()}
@@ -197,7 +256,7 @@ export function HostFilePickerDialog(props: HostFilePickerDialogProps) {
                         when={picker.error()}
                         fallback={
                           <div class="flex h-[220px] items-center justify-center text-muted-foreground text-sm">
-                            No entries.
+                            {picker.hiddenCount() > 0 ? "Only hidden items here." : "No entries."}
                           </div>
                         }
                       >
@@ -212,22 +271,24 @@ export function HostFilePickerDialog(props: HostFilePickerDialogProps) {
                 }
               >
                 <ul class="divide-y divide-border/60">
-                  <For each={picker.list()?.entries ?? []}>
+                  <For each={picker.entries()}>
                     {(entry) => (
                       <HostFilePickerRow
                         entry={entry}
                         muted={
                           !entry.isDirectory && !picker.dirMode() && !picker.fileMatchesMode(entry)
                         }
+                        favorite={picker.isFavorite(entry.path)}
                         selected={picker.selectedFile()?.path === entry.path && !entry.isDirectory}
                         onClick={picker.handleRowClick}
                         onDoubleClick={picker.handleRowDoubleClick}
+                        onToggleFavorite={(folder) => picker.toggleFavorite(folder.path)}
                       />
                     )}
                   </For>
                 </ul>
               </Show>
-            </div>
+            </ScrollArea>
           </div>
 
           <div class="flex justify-end gap-2 border-t border-border px-5 py-4">

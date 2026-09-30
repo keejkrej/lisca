@@ -1,6 +1,15 @@
 import type { HostFsEntry, HostListDirectoryResult } from "@lisca/contracts";
-import type { HostFilePickerMode, HostFilePickerOperations } from "@lisca/utils";
+import {
+  liscaLocalStorage,
+  readStorageJson,
+  writeStorageJson,
+  type HostFilePickerMode,
+  type HostFilePickerOperations,
+} from "@lisca/utils";
 import { createEffect, createMemo, createSignal, onCleanup } from "solid-js";
+
+export const HOST_FILE_PICKER_FAVORITES_STORAGE_KEY = "lisca.hostFilePicker.favorites";
+
 function pathExtLower(name: string): string {
   const index = name.lastIndexOf(".");
   if (index <= 0 || index === name.length - 1) return "";
@@ -29,6 +38,41 @@ export function hostFilePickerLocationLabel(list: HostListDirectoryResult | null
   const path = list?.path?.trim();
   return path ? path : null;
 }
+export function isHiddenEntry(entry: HostFsEntry): boolean {
+  return entry.name.startsWith(".");
+}
+
+export function visibleEntries(
+  entries: readonly HostFsEntry[],
+  showHidden: boolean,
+): readonly HostFsEntry[] {
+  return showHidden ? entries : entries.filter((entry) => !isHiddenEntry(entry));
+}
+
+export function favoriteLabel(path: string): string {
+  const trimmed = path.replace(/[\\/]+$/, "");
+  const name = trimmed.slice(Math.max(trimmed.lastIndexOf("/"), trimmed.lastIndexOf("\\")) + 1);
+  return name || path;
+}
+
+export function normalizeFavoritePaths(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  const paths = value.filter((item): item is string => typeof item === "string" && item !== "");
+  return [...new Set(paths)];
+}
+
+export function toggleFavoritePath(favorites: readonly string[], path: string): string[] {
+  return favorites.includes(path)
+    ? favorites.filter((item) => item !== path)
+    : [...favorites, path];
+}
+
+function readFavoritePaths(): string[] {
+  return normalizeFavoritePaths(
+    readStorageJson<unknown>(liscaLocalStorage(), HOST_FILE_PICKER_FAVORITES_STORAGE_KEY),
+  );
+}
+
 export type UseHostFilePickerStateOptions = {
   open: boolean;
   mode: HostFilePickerMode;
@@ -42,6 +86,8 @@ export function useHostFilePickerState(options: () => UseHostFilePickerStateOpti
   const [loading, setLoading] = createSignal(false);
   const [error, setError] = createSignal<string | null>(null);
   const [selectedFile, setSelectedFile] = createSignal<HostFsEntry | null>(null);
+  const [showHidden, setShowHidden] = createSignal(false);
+  const [favorites, setFavorites] = createSignal<string[]>(readFavoritePaths());
   const loadPath = async (path: string | null) => {
     const { hostPort } = options();
     setLoading(true);
@@ -70,6 +116,8 @@ export function useHostFilePickerState(options: () => UseHostFilePickerStateOpti
     setList(null);
     setSelectedFile(null);
     setError(null);
+    setShowHidden(false);
+    setFavorites(readFavoritePaths());
     setLoading(true);
     void (async () => {
       try {
@@ -101,6 +149,25 @@ export function useHostFilePickerState(options: () => UseHostFilePickerStateOpti
   const dirMode = createMemo(() => isDirectoryMode(options().mode));
   const canGoUp = createMemo(() => canGoUpFromList(list()));
   const locationLabel = createMemo(() => hostFilePickerLocationLabel(list()));
+  const entries = createMemo(() => visibleEntries(list()?.entries ?? [], showHidden()));
+  const hiddenCount = createMemo(
+    () => (list()?.entries ?? []).filter((entry) => isHiddenEntry(entry)).length,
+  );
+  const toggleShowHidden = () => {
+    const next = !showHidden();
+    setShowHidden(next);
+    const file = selectedFile();
+    if (!next && file && isHiddenEntry(file)) setSelectedFile(null);
+  };
+  const isFavorite = (path: string) => favorites().includes(path);
+  const toggleFavorite = (path: string) => {
+    const next = toggleFavoritePath(readFavoritePaths(), path);
+    setFavorites(next);
+    writeStorageJson(liscaLocalStorage(), HOST_FILE_PICKER_FAVORITES_STORAGE_KEY, next);
+  };
+  const openFavorite = (path: string) => {
+    void loadPath(path);
+  };
   const goUp = () => {
     const currentList = list();
     const parent = currentList?.parent;
@@ -191,6 +258,14 @@ export function useHostFilePickerState(options: () => UseHostFilePickerStateOpti
     dirMode,
     canGoUp,
     locationLabel,
+    entries,
+    hiddenCount,
+    showHidden,
+    toggleShowHidden,
+    favorites,
+    isFavorite,
+    toggleFavorite,
+    openFavorite,
     goUp,
     goHome,
     createDirectory,
