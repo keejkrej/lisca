@@ -18,7 +18,7 @@ import type { AlignerDataPort } from "../ports/types";
 import { runClientEffect } from "../infra/runtime";
 import { acknowledgeCropRecovery, rememberCropRecovery } from "./crop-recovery";
 
-/** Initial `queued` progress for a freshly-submitted crop job. */
+/** Initial `queued` progress for a freshly-submitted crop task. */
 export function makeQueuedCropProgress(requestId: string, totalPositions: number): CropRoiProgress {
   return {
     requestId,
@@ -32,7 +32,7 @@ export function makeQueuedCropProgress(requestId: string, totalPositions: number
   };
 }
 
-/** Terminal `error` progress for a crop job that failed before/while running. */
+/** Terminal `error` progress for a crop task that failed before/while running. */
 export function makeErrorCropProgress(
   requestId: string,
   totalPositions: number,
@@ -56,16 +56,16 @@ export type RunCropRoiOptions = {
   request: CropRoiRequest;
   /** Called with the queued progress, every progress update, and any error progress. */
   onProgress: (progress: CropRoiProgress) => void;
-  /** Called with a human-readable message when the job fails. */
+  /** Called with a human-readable message when the task fails. */
   onError: (message: string) => void;
-  /** Called once with the terminal progress when the job completes. */
+  /** Called once with the terminal progress when the task completes. */
   onCompleted: (progress: CropRoiProgress) => void;
   /** Format a thrown cause into a user-facing message. */
   toErrorMessage: (cause: unknown, fallback: string) => string;
 };
 
 /**
- * Submit a crop ROI job and drive its progress subscription to a terminal
+ * Submit a crop ROI task and drive its progress subscription to a terminal
  * state. Shared by the aligner and studio align sessions; callers supply the
  * request and the side effects (progress/status/navigation) they care about.
  */

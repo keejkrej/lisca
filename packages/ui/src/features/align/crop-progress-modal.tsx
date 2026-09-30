@@ -12,7 +12,7 @@ export type CropProgressModalProps = {
   onCancel: () => void;
 };
 
-/** ROI crop progress overlay. Renders nothing until a job is active. */
+/** ROI crop progress overlay. Renders nothing until a task is active. */
 export function CropProgressModal(props: CropProgressModalProps) {
   const state = () => useCropProgressModal(props.progress);
 

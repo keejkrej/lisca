@@ -31,7 +31,7 @@ export function AlignerWorkSessionGate(props: { children?: JSX.Element }) {
           setSource: alignerUiActions.setSource,
           setUi,
           resumePendingRuns: async () => {
-            // Crop jobs are not owned by Aligner.
+            // Crop tasks are not owned by Aligner.
           },
         });
       }}

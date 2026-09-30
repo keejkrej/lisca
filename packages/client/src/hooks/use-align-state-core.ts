@@ -91,7 +91,7 @@ export type UseAlignStateCoreDeps = {
     };
     useCanvasTransaction: () => <T>(options: CanvasResourceTransactionOptions<T>) => () => void;
   };
-  /** Default true. Standalone Aligner sets false (light shell — no crop jobs). */
+  /** Default true. Standalone Aligner sets false (light shell — no crop tasks). */
   enableCrop?: boolean;
 };
 

@@ -93,7 +93,7 @@ describe("crop recovery", () => {
       client: {
         cropRoi: () =>
           Effect.succeed({
-            requestId: "live-job",
+            requestId: "live-task",
             status: "queued" as const,
             disposition: "started" as const,
           }),
@@ -109,25 +109,25 @@ describe("crop recovery", () => {
       toErrorMessage: String,
     });
 
-    const completed = progress("live-job", "completed");
+    const completed = progress("live-task", "completed");
     emitProgress(completed);
     expect(onCompleted).toHaveBeenCalledWith(completed);
     expect(readCropRecovery(request.workspacePath)).toEqual({
-      requestId: "live-job",
+      requestId: "live-task",
       terminalAcknowledged: true,
     });
     stop();
   });
 
-  it("restores active jobs even without prior local metadata", async () => {
+  it("restores active tasks even without prior local metadata", async () => {
     const stop = vi.fn();
-    const latest = progress("server-job");
+    const latest = progress("server-task");
     const onProgress = vi.fn();
     const result = await resumeCropPendingRun({
       client: {
         getLatestCropProgress: () => Effect.succeed(latest),
         onCropRoiProgress: (requestId) => {
-          expect(requestId).toBe("server-job");
+          expect(requestId).toBe("server-task");
           return stop;
         },
       },
@@ -137,15 +137,15 @@ describe("crop recovery", () => {
 
     expect(result).toEqual({ kind: "active", progress: latest, stop });
     expect(onProgress).toHaveBeenCalledWith(latest);
-    expect(readCropRecovery(request.workspacePath)?.requestId).toBe("server-job");
+    expect(readCropRecovery(request.workspacePath)?.requestId).toBe("server-task");
   });
 
-  it("acknowledges an active restored job when its subscription reaches terminal", async () => {
+  it("acknowledges an active restored task when its subscription reaches terminal", async () => {
     let emitProgress!: (progress: CropRoiProgress) => void;
     const onTerminal = vi.fn();
     await resumeCropPendingRun({
       client: {
-        getLatestCropProgress: () => Effect.succeed(progress("restored-job")),
+        getLatestCropProgress: () => Effect.succeed(progress("restored-task")),
         onCropRoiProgress: (_requestId, listener) => {
           emitProgress = listener;
           return () => {};
@@ -156,21 +156,21 @@ describe("crop recovery", () => {
       onTerminal,
     });
 
-    const completed = progress("restored-job", "completed");
+    const completed = progress("restored-task", "completed");
     emitProgress(completed);
     expect(onTerminal).toHaveBeenCalledWith(completed);
     expect(readCropRecovery(request.workspacePath)?.terminalAcknowledged).toBe(true);
   });
 
-  it("cancels by the active progress request ID, including restored jobs", () => {
-    expect(cropRequestIdForCancellation(progress("restored-job"))).toBe("restored-job");
-    expect(cropRequestIdForCancellation(progress("finished-job", "completed"))).toBeNull();
+  it("cancels by the active progress request ID, including restored tasks", () => {
+    expect(cropRequestIdForCancellation(progress("restored-task"))).toBe("restored-task");
+    expect(cropRequestIdForCancellation(progress("finished-task", "completed"))).toBeNull();
     expect(cropRequestIdForCancellation(null)).toBeNull();
   });
 
-  it("returns known terminal jobs once without subscribing", async () => {
-    rememberCropRecovery(request.workspacePath, "finished-job");
-    const latest = progress("finished-job", "completed");
+  it("returns known terminal tasks once without subscribing", async () => {
+    rememberCropRecovery(request.workspacePath, "finished-task");
+    const latest = progress("finished-task", "completed");
     const subscribe = vi.fn();
     const options = {
       client: {
@@ -186,7 +186,7 @@ describe("crop recovery", () => {
       progress: latest,
       acknowledged: false,
     });
-    acknowledgeCropRecovery(request.workspacePath, "finished-job");
+    acknowledgeCropRecovery(request.workspacePath, "finished-task");
     expect(await resumeCropPendingRun(options)).toEqual({
       kind: "terminal",
       progress: latest,
