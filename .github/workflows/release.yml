@@ -153,25 +153,32 @@ jobs:
             --wait --timeout 30m
           xcrun stapler staple "${dmgs[0]}"
 
+      # Check the app users install, inside the DMG; with only the dmg target Tauri does not
+      # keep a loose .app in the release directory.
       - name: Verify macOS signature and notarization
         if: runner.os == 'macOS'
         shell: bash
         run: |
           set -euo pipefail
           shopt -s nullglob
-          dest="apps/${{ matrix.product }}/desktop/release"
-          apps=("${dest}/macos/"*.app)
-          dmgs=("${dest}/dmg/"*.dmg)
-          if [ "${#apps[@]}" -ne 1 ] || [ "${#dmgs[@]}" -ne 1 ]; then
-            echo "Expected one .app and one DMG, found ${#apps[@]} and ${#dmgs[@]}" >&2
+          dmgs=("apps/${{ matrix.product }}/desktop/release/dmg/"*.dmg)
+          if [ "${#dmgs[@]}" -ne 1 ]; then
+            echo "Expected one DMG, found ${#dmgs[@]}" >&2
             exit 1
           fi
-          codesign --verify --deep --strict --verbose=2 "${apps[0]}"
-          xcrun stapler validate "${apps[0]}"
-          spctl --assess --type execute --verbose=4 "${apps[0]}"
           codesign --verify --strict --verbose=2 "${dmgs[0]}"
           xcrun stapler validate "${dmgs[0]}"
           spctl --assess --type open --context context:primary-signature --verbose=4 "${dmgs[0]}"
+          mnt="$(mktemp -d)"
+          hdiutil attach "${dmgs[0]}" -readonly -nobrowse -mountpoint "${mnt}" >/dev/null
+          trap 'hdiutil detach "${mnt}" >/dev/null' EXIT
+          apps=("${mnt}/"*.app)
+          if [ "${#apps[@]}" -ne 1 ]; then
+            echo "Expected one .app in the DMG, found ${#apps[@]}" >&2
+            exit 1
+          fi
+          codesign --verify --deep --strict --verbose=2 "${apps[0]}"
+          spctl --assess --type execute --verbose=4 "${apps[0]}"
 
       - name: Upload installers
         shell: bash
