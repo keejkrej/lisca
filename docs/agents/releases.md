@@ -49,6 +49,23 @@ whose version differs from any of the nine desktop manifest fields fails without
 7. Wait for all nine `Release` matrix jobs to succeed, then verify that the GitHub Release contains one
    DMG, one NSIS installer, and one Debian package for each product.
 
+## macOS signing
+
+macOS DMGs are signed with the Developer ID Application certificate and notarized in the `Release`
+workflow. A macOS job fails before packaging if any of these Actions secrets is missing:
+
+| Secret                       | Value                                                                         |
+| ---------------------------- | ----------------------------------------------------------------------------- |
+| `APPLE_CERTIFICATE`          | Base64 of the exported Developer ID Application `.p12` (`base64 -i cert.p12`) |
+| `APPLE_CERTIFICATE_PASSWORD` | Password chosen when exporting the `.p12`                                     |
+| `APPLE_SIGNING_IDENTITY`     | `Developer ID Application: Name (TEAMID)`                                     |
+| `APPLE_ID`                   | Apple Account email of the developer team member                              |
+| `APPLE_PASSWORD`             | App-specific password from account.apple.com                                  |
+| `APPLE_TEAM_ID`              | 10-character team ID                                                          |
+
+Local `pnpm run dist:<product>` builds without these variables stay unsigned. Do not distribute them
+through a browser download: Gatekeeper reports quarantined unsigned bundles as damaged.
+
 Release notes follow the product version. Internal dependency changes are described in the notes but do
 not force unrelated package-version bumps.
 
@@ -57,7 +74,8 @@ not force unrelated package-version bumps.
 Jupyter notebooks are a second, independent SemVer train. They do not share a version with desktop
 installers and must not be hooked into `.github/workflows/release.yml`.
 
-- Desktop tags: `vX.Y.Z` → unsigned Studio, Aligner, and Annotator installers (DMG, NSIS, deb).
+- Desktop tags: `vX.Y.Z` → Studio, Aligner, and Annotator installers (signed and notarized DMG,
+  unsigned NSIS, deb).
 - Notebook tags: `notebooks-vX.Y.Z` on the **export commit** of branch `notebooks` (not `main`).
   Asset: `lisca-notebooks-X.Y.Z.zip`. Workflow: `.github/workflows/release-jupyternotebook.yml`.
 - Bump `notebooks/VERSION` (and `notebooks/pyproject.toml`) on **`main`**. Daily work never lands on

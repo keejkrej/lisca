@@ -32,7 +32,7 @@ jobs:
         with:
           generate_release_notes: true
           body: |
-            Unsigned first-pass desktop installers.
+            Desktop installers.
 
             | App | macOS | Windows | Linux |
             | --- | --- | --- | --- |
@@ -40,7 +40,8 @@ jobs:
             | Aligner | DMG | NSIS | deb |
             | Annotator | DMG | NSIS | deb |
 
-            These builds are not signed or notarized. macOS Gatekeeper and Windows SmartScreen will warn.
+            macOS builds are signed with a Developer ID and notarized by Apple. Windows builds are not
+            signed yet, so SmartScreen will warn.
 
             Linux is Debian/Ubuntu `.deb` only. There is no AppImage, rpm, or pacman package.
 
@@ -96,8 +97,81 @@ jobs:
             -o ./models/killing-assay-resnet18/model.onnx
           test -s models/killing-assay-resnet18/model.onnx
 
+      # Without these, Tauri leaves only the linker's ad-hoc signature on the executable and
+      # macOS reports the downloaded app as "damaged". Fail rather than ship that.
+      - name: Check macOS signing secrets
+        if: runner.os == 'macOS'
+        shell: bash
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          missing=0
+          for name in APPLE_CERTIFICATE APPLE_CERTIFICATE_PASSWORD APPLE_SIGNING_IDENTITY APPLE_ID APPLE_PASSWORD APPLE_TEAM_ID; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Missing Actions secret ${name} (see docs/agents/releases.md)"
+              missing=1
+            fi
+          done
+          exit "${missing}"
+
+      # Tauri imports the certificate into a temporary keychain, signs the bundle with the
+      # hardened runtime, notarizes and staples the .app, then builds and signs the DMG.
       - name: Package desktop app
+        env:
+          APPLE_CERTIFICATE: ${{ runner.os == 'macOS' && secrets.APPLE_CERTIFICATE || '' }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ runner.os == 'macOS' && secrets.APPLE_CERTIFICATE_PASSWORD || '' }}
+          APPLE_SIGNING_IDENTITY: ${{ runner.os == 'macOS' && secrets.APPLE_SIGNING_IDENTITY || '' }}
+          APPLE_ID: ${{ runner.os == 'macOS' && secrets.APPLE_ID || '' }}
+          APPLE_PASSWORD: ${{ runner.os == 'macOS' && secrets.APPLE_PASSWORD || '' }}
+          APPLE_TEAM_ID: ${{ runner.os == 'macOS' && secrets.APPLE_TEAM_ID || '' }}
         run: pnpm run dist:${{ matrix.product }}
+
+      # Tauri 2.11 leaves the signed DMG itself unnotarized (tauri-apps/tauri#15822), so submit
+      # and staple the DMG that gets uploaded.
+      - name: Notarize macOS DMG
+        if: runner.os == 'macOS'
+        shell: bash
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          dmgs=("apps/${{ matrix.product }}/desktop/release/dmg/"*.dmg)
+          if [ "${#dmgs[@]}" -ne 1 ]; then
+            echo "Expected one DMG, found ${#dmgs[@]}" >&2
+            exit 1
+          fi
+          xcrun notarytool submit "${dmgs[0]}" \
+            --apple-id "${APPLE_ID}" --password "${APPLE_PASSWORD}" --team-id "${APPLE_TEAM_ID}" \
+            --wait --timeout 30m
+          xcrun stapler staple "${dmgs[0]}"
+
+      - name: Verify macOS signature and notarization
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          dest="apps/${{ matrix.product }}/desktop/release"
+          apps=("${dest}/macos/"*.app)
+          dmgs=("${dest}/dmg/"*.dmg)
+          if [ "${#apps[@]}" -ne 1 ] || [ "${#dmgs[@]}" -ne 1 ]; then
+            echo "Expected one .app and one DMG, found ${#apps[@]} and ${#dmgs[@]}" >&2
+            exit 1
+          fi
+          codesign --verify --deep --strict --verbose=2 "${apps[0]}"
+          xcrun stapler validate "${apps[0]}"
+          spctl --assess --type execute --verbose=4 "${apps[0]}"
+          codesign --verify --strict --verbose=2 "${dmgs[0]}"
+          xcrun stapler validate "${dmgs[0]}"
+          spctl --assess --type open --context context:primary-signature --verbose=4 "${dmgs[0]}"
 
       - name: Upload installers
         shell: bash
