@@ -11,10 +11,13 @@ describe("Studio Align instrument stack composition", () => {
   const routeSource = readSource("../src/routes/align.tsx");
 
   it("stacks Navigation, Contrast, and Geometry above Grid, Tool, Selection, and Action", () => {
-    const expertBlock = stackSource.match(/<Show when=\{props\.expert\}>([\s\S]*?)<\/Show>/)?.[1] ?? "";
+    const expertBlock =
+      stackSource.match(/<Show when=\{props\.expert\}>([\s\S]*?)<\/Show>/)?.[1] ?? "";
     expect(expertBlock).toMatch(/<StudioAlignNav\s*\/>/);
     expect(expertBlock).toMatch(/gridRail\("geometry"\)/);
-    expect(expertBlock).not.toMatch(/<AlignSelectionRail|<AlignToolSection|title="Action"|gridRail\("grid"\)/);
+    expect(expertBlock).not.toMatch(
+      /<AlignSelectionRail|<AlignToolSection|title="Action"|gridRail\("grid"\)/,
+    );
 
     const navIdx = stackSource.indexOf("<StudioAlignNav");
     const geometryIdx = stackSource.indexOf('gridRail("geometry")');
@@ -31,9 +34,9 @@ describe("Studio Align instrument stack composition", () => {
 
   it("uses the shared Action vocabulary: Save, Back, Next, Crop", () => {
     const action = stackSource.slice(stackSource.indexOf('title="Action"'));
-    const labels = [...action.matchAll(/>\s*(\{[^}]*"Save"\}|Save|Back|Next|Crop|Continue)\s*</g)].map(
-      (match) => (match[1]!.includes("Save") ? "Save" : match[1]),
-    );
+    const labels = [
+      ...action.matchAll(/>\s*(\{[^}]*"Save"\}|Save|Back|Next|Crop|Continue)\s*</g),
+    ].map((match) => (match[1]!.includes("Save") ? "Save" : match[1]));
     expect(labels).toEqual(["Save", "Back", "Next", "Crop"]);
     expect(action).not.toMatch(/>\s*(Exclude|Jump)\s*</);
     expect(action).not.toMatch(/saveAndAdvance/);

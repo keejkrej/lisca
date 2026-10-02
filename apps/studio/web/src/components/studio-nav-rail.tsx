@@ -30,11 +30,7 @@ function stepLabel(index: number): string {
 
 /** Keeps ⌘ and the key in fixed columns so ↑/↓ line up with 1–5. */
 function RailChordHint(props: { label: string }) {
-  const prefix = props.label.startsWith("⌘")
-    ? "⌘"
-    : props.label.startsWith("Ctrl+")
-      ? "Ctrl+"
-      : "";
+  const prefix = props.label.startsWith("⌘") ? "⌘" : props.label.startsWith("Ctrl+") ? "Ctrl+" : "";
   const key = prefix ? props.label.slice(prefix.length) : props.label;
   return (
     <span

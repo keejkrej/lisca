@@ -36,8 +36,7 @@ function contrastingInk(rgb: RgbColor) {
     const srgb = value / 255;
     return srgb <= 0.03928 ? srgb / 12.92 : ((srgb + 0.055) / 1.055) ** 2.4;
   };
-  const luminance =
-    0.2126 * channel(rgb.r) + 0.7152 * channel(rgb.g) + 0.0722 * channel(rgb.b);
+  const luminance = 0.2126 * channel(rgb.r) + 0.7152 * channel(rgb.g) + 0.0722 * channel(rgb.b);
   return luminance > 0.179 ? "rgb(10, 10, 10)" : "rgb(255, 255, 255)";
 }
 

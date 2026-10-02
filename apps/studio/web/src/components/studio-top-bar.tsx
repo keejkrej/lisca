@@ -11,11 +11,15 @@ export function StudioTopBar(props: { showExpert?: boolean }) {
   const server = useShellServer();
   const expertMode = useAtomValue(() => studioExpertModeAtom);
   const setExpertMode = useAtomSet(() => studioExpertModeAtom);
-  useStudioCommandShortcut("expert", () => true, () => {
-    const next = !expertMode();
-    setExpertMode(next);
-    setStudioExpertMode(next);
-  });
+  useStudioCommandShortcut(
+    "expert",
+    () => true,
+    () => {
+      const next = !expertMode();
+      setExpertMode(next);
+      setStudioExpertMode(next);
+    },
+  );
 
   return (
     <div
