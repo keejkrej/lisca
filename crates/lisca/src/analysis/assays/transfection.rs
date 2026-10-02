@@ -56,6 +56,19 @@ pub fn skip_segment(assay_json: &AssayJsonFile) -> bool {
         .unwrap_or(false)
 }
 
+/// Mask method from `analysis.segmentationMode`. `smart` uses the model.
+/// A missing field, and `logstd`, stay on the local log-std (Otsu) path.
+pub fn segment_backend(assay_json: &AssayJsonFile) -> SegmentBackend {
+    match assay_json
+        .analysis
+        .as_ref()
+        .and_then(|analysis| analysis.segmentation_mode.as_ref())
+    {
+        Some(crate::protocol::AssaySegmentationMode::Smart) => SegmentBackend::Onnx,
+        _ => SegmentBackend::Otsu,
+    }
+}
+
 /// Resolve frame interval. Prefers assay.json `interval.value`/`interval.unit`.
 /// When missing, uses the assay-specific default (transfection: 10 min). Other assays
 /// require an explicit positive interval.

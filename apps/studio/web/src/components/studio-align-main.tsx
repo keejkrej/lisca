@@ -88,7 +88,7 @@ export function StudioAlignMain() {
     <>
       <ViewportCard>
         <StageCanvas
-          captionCenter={<CanvasToastStack layout="inline" messages={toasts()} />}
+          notice={<CanvasToastStack messages={toasts()} />}
           captionLeft={`Position ${positionLabel()} · ${SAVE_STATE_LABEL[state.positionSaveState]}`}
           captionRight={
             canvas.frame ? `${canvas.frame.width} × ${canvas.frame.height} px` : "No frame"

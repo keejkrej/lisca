@@ -1,16 +1,26 @@
 import type { AlignerSource } from "@lisca/contracts";
-import { ASSAY_TYPE, type StudioDataSourceKind } from "@lisca/contracts/assay";
+import {
+  ASSAY_TYPE,
+  type AssaySegmentationMode,
+  type StudioDataSourceKind,
+} from "@lisca/contracts/assay";
 import type { HostFilePickerMode } from "@lisca/ui/features";
 import {
   Field,
   FieldLabel,
   FieldTitle,
   Input,
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+  InputGroupText,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
+  ToggleGroup,
+  ToggleGroupItem,
 } from "@lisca/ui/components";
 import {
   FolderSourceParseModal,
@@ -34,6 +44,11 @@ const TIMELAPSE_UNITS: { value: TimelapseUnit; label: string }[] = [
   { value: "second", label: "Second" },
   { value: "minute", label: "Minute" },
   { value: "hour", label: "Hour" },
+];
+
+const SEGMENTATION_MODES: { value: AssaySegmentationMode; label: string }[] = [
+  { value: "logstd", label: "Log-std" },
+  { value: "smart", label: "Smart" },
 ];
 
 type StudioPathPickerState = null | { kind: "save" } | { kind: "source"; mode: HostFilePickerMode };
@@ -162,11 +177,11 @@ export function MetadataFields(props: { hostPort: HostFilePickerOperations }) {
             <FieldLabel class="text-sm font-medium leading-[18px]" id="studio-timelapse-label">
               Interval
             </FieldLabel>
-            <div class="flex w-full min-w-0 items-stretch gap-2">
-              <Input
+            <InputGroup>
+              <InputGroupInput
                 autocomplete="off"
                 aria-labelledby="studio-timelapse-label"
-                class="h-8 w-20 shrink-0 px-3 font-mono text-[13px]"
+                class="h-8 px-3 font-mono text-[13px]"
                 min={1}
                 name="timelapse-interval"
                 placeholder={intervalPlaceholder()}
@@ -179,42 +194,46 @@ export function MetadataFields(props: { hostPort: HostFilePickerOperations }) {
                   patch({ intervalValue: value == null || Number.isNaN(value) ? null : value });
                 }}
               />
-              <Select<TimelapseUnit>
-                options={TIMELAPSE_UNITS.map((unit) => unit.value)}
-                placement="bottom-end"
-                value={wizard().intervalUnit}
-                onChange={(unit) => unit != null && patch({ intervalUnit: unit })}
-                itemComponent={(props) => (
-                  <SelectItem item={props.item}>
-                    {TIMELAPSE_UNITS.find((unit) => unit.value === props.item.rawValue)?.label ??
-                      props.item.rawValue}
-                  </SelectItem>
-                )}
-              >
-                <SelectTrigger
-                  aria-labelledby="studio-timelapse-label"
-                  class="h-8 min-w-0 flex-1 px-3 text-[13px]"
+              <InputGroupAddon align="inline-end" class="pr-1">
+                <Select<TimelapseUnit>
+                  options={TIMELAPSE_UNITS.map((unit) => unit.value)}
+                  placement="bottom-end"
+                  sameWidth={false}
+                  value={wizard().intervalUnit}
+                  onChange={(unit) => unit != null && patch({ intervalUnit: unit })}
+                  itemComponent={(props) => (
+                    <SelectItem item={props.item}>
+                      {TIMELAPSE_UNITS.find((unit) => unit.value === props.item.rawValue)?.label ??
+                        props.item.rawValue}
+                    </SelectItem>
+                  )}
                 >
-                  <SelectValue<TimelapseUnit>>
-                    {(state) =>
-                      TIMELAPSE_UNITS.find((unit) => unit.value === state.selectedOption())?.label
-                    }
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent />
-              </Select>
-            </div>
+                  <SelectTrigger
+                    aria-label="Interval unit"
+                    class="h-7 border-0 bg-transparent px-2 text-[13px] shadow-none focus-visible:ring-0 dark:bg-transparent"
+                    size="sm"
+                  >
+                    <SelectValue<TimelapseUnit>>
+                      {(state) =>
+                        TIMELAPSE_UNITS.find((unit) => unit.value === state.selectedOption())?.label
+                      }
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent />
+                </Select>
+              </InputGroupAddon>
+            </InputGroup>
           </Field>
           <Show when={wizard().assayId === ASSAY_TYPE.TRANSFECTION}>
             <Field class="min-w-0 flex-1 gap-2">
               <FieldLabel class="text-sm font-medium leading-[18px]" id="studio-max-onset-label">
                 Max onset time t0
               </FieldLabel>
-              <div class="relative">
-                <Input
+              <InputGroup>
+                <InputGroupInput
                   autocomplete="off"
                   aria-labelledby="studio-max-onset-label"
-                  class="h-8 w-full px-3 pr-12 font-mono text-[13px]"
+                  class="h-8 px-3 font-mono text-[13px]"
                   min={0}
                   name="max-onset-minutes"
                   placeholder={`e.g. ${defaultMaxOnsetMinutesForAssay(ASSAY_TYPE.TRANSFECTION) ?? 120}…`}
@@ -236,10 +255,10 @@ export function MetadataFields(props: { hostPort: HostFilePickerOperations }) {
                     setAnalysis({ maxOnsetMinutes: value });
                   }}
                 />
-                <span class="pointer-events-none absolute inset-y-0 right-3 flex items-center text-[13px] text-muted-foreground">
-                  min
-                </span>
-              </div>
+                <InputGroupAddon align="inline-end">
+                  <InputGroupText class="text-[13px]">min</InputGroupText>
+                </InputGroupAddon>
+              </InputGroup>
             </Field>
           </Show>
         </div>
@@ -257,6 +276,33 @@ export function MetadataFields(props: { hostPort: HostFilePickerOperations }) {
               />
               <span>Skip segmentation</span>
             </label>
+            <Field class="gap-2">
+              <FieldLabel
+                class="text-[13px] leading-[18px] text-muted-foreground"
+                id="studio-segmentation-mode-label"
+              >
+                Segmentation mode
+              </FieldLabel>
+              <ToggleGroup
+                aria-labelledby="studio-segmentation-mode-label"
+                class="w-fit!"
+                disabled={wizard().analysis?.skipSegment ?? false}
+                value={wizard().analysis?.segmentationMode ?? "logstd"}
+                variant="outline"
+                onChange={(mode) => {
+                  if (mode === "logstd" || mode === "smart") {
+                    setAnalysis({ segmentationMode: mode });
+                  }
+                }}
+              >
+                <ToggleGroupItem class="px-3 text-[13px]" value="logstd">
+                  Log-std
+                </ToggleGroupItem>
+                <ToggleGroupItem class="px-3 text-[13px]" value="smart">
+                  Smart
+                </ToggleGroupItem>
+              </ToggleGroup>
+            </Field>
           </Field>
         </Show>
       </div>

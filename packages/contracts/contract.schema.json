@@ -2347,6 +2347,13 @@
         "$ref": "#/definitions/AssaySampleRow"
       }
     },
+    "AssaySegmentationMode": {
+      "type": "string",
+      "enum": [
+        "logstd",
+        "smart"
+      ]
+    },
     "AssaySignalChannels": {
       "type": "array",
       "prefixItems": [
@@ -2410,6 +2417,9 @@
         },
         "skipSegment": {
           "type": "boolean"
+        },
+        "segmentationMode": {
+          "$ref": "#/definitions/AssaySegmentationMode"
         },
         "channels": {
           "$ref": "#/definitions/AssayChannels"

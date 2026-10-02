@@ -81,7 +81,7 @@ export function DemoAlignMain(props: { state: Accessor<DemoAlignState>; embedded
       fallback={
         <ViewportCard>
           <StageCanvas
-            captionCenter={<CanvasToastStack layout="inline" messages={toasts()} />}
+            notice={<CanvasToastStack messages={toasts()} />}
             captionLeft={captionLeft()}
             captionRight={captionRight()}
           >

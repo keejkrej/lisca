@@ -438,6 +438,7 @@ export const studioWizardActions = {
       const base = current.analysis ?? {
         maxOnsetMinutes: defaultMaxOnsetMinutesForAssay(current.assayId) ?? undefined,
         skipSegment: false,
+        segmentationMode: "logstd",
       };
       return {
         ...current,

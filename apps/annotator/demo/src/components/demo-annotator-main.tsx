@@ -114,7 +114,7 @@ export function DemoAnnotatorMain(props: {
             onConfirm={() => void smartSegment.confirmDownload()}
           />
           <StageCanvas
-            captionCenter={<CanvasToastStack layout="inline" messages={toasts()} />}
+            notice={<CanvasToastStack messages={toasts()} />}
             captionLeft={captionLeft()}
             captionRight={captionRight()}
           >

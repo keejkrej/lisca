@@ -1,4 +1,5 @@
 import { Button } from "@lisca/ui/components";
+import { CanvasToastStack } from "@lisca/ui/features";
 import { PanelSection, RailControlStack } from "@lisca/ui/shell";
 import { Show } from "solid-js";
 
@@ -20,11 +21,7 @@ export function StudioMetadataActions() {
           Save
         </Button>
         <Show when={save.saveError()}>
-          {(message) => (
-            <p class="text-destructive text-xs" role="alert">
-              {message()}
-            </p>
-          )}
+          {(message) => <CanvasToastStack messages={[{ text: message(), tone: "error" }]} />}
         </Show>
       </RailControlStack>
       <AssayOverwriteConfirmModal

@@ -2,10 +2,16 @@ import { createEffect, onCleanup, onMount } from "solid-js";
 import { useShellTheme } from "../../shell/theme/shell-theme";
 
 /**
- * Background color for canvas 2D fills. Prefers the live `--background` token on
- * `documentElement` so theme toggles are not subject to stale element styles.
+ * Background color for canvas 2D fills. Inside the instrument shell this is the
+ * paper fill, the same surface as the top bar. Otherwise it falls back to `--background`.
  */
 export function resolvedCanvasBackground(element?: HTMLElement | null): string {
+  const shell = element?.closest(".lisca-instrument-shell");
+  if (shell) {
+    const paper = getComputedStyle(shell).getPropertyValue("--instrument-paper").trim();
+    if (paper) return paper;
+  }
+
   const root = document.documentElement;
   const fromVar = getComputedStyle(root).getPropertyValue("--background").trim();
   if (fromVar) return fromVar;

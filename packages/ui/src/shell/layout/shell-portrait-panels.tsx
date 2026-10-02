@@ -92,7 +92,7 @@ export function ShellPortraitPanelOverlays() {
             aria-label="Left panel"
             inert={!layout.leftOpen}
             class={cn(
-              "absolute inset-y-0 left-0 z-50 flex max-w-[min(100%,20rem)] flex-col bg-muted shadow-xl transition-transform duration-200 ease-out",
+              "absolute inset-y-0 left-0 z-50 flex max-w-[min(100%,20rem)] flex-col bg-stage shadow-xl transition-transform duration-200 ease-out",
               layout.leftOpen ? "translate-x-0" : "-translate-x-full pointer-events-none",
             )}
           >
@@ -117,7 +117,7 @@ export function ShellPortraitPanelOverlays() {
             aria-label="Right panel"
             inert={!layout.rightOpen}
             class={cn(
-              "absolute inset-y-0 right-0 z-50 flex max-w-[min(100%,20rem)] flex-col bg-muted shadow-xl transition-transform duration-200 ease-out",
+              "absolute inset-y-0 right-0 z-50 flex max-w-[min(100%,20rem)] flex-col bg-stage shadow-xl transition-transform duration-200 ease-out",
               layout.rightOpen ? "translate-x-0" : "translate-x-full pointer-events-none",
             )}
           >

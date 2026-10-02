@@ -151,6 +151,7 @@ fn build_transfection_task(
     // `analysis.skipSegment` measures every pixel of the ROI. That area is the
     // crop size, so it stays constant across time. The masked path segments first.
     let full_frame = transfection::skip_segment(&assay);
+    let backend = transfection::segment_backend(&assay);
     let mut steps = Vec::new();
 
     // Prepare validates the sample mapping only (no side files).
@@ -172,6 +173,7 @@ fn build_transfection_task(
         } else {
             let segment_workspace = workspace.clone();
             let segment_shard = shard.clone();
+            let segment_backend = backend;
             let segment = analysis_step(
                 format!("analysis/transfection/segment/Pos{position}"),
                 vec![prepare_id.clone()],
@@ -181,6 +183,7 @@ fn build_transfection_task(
                         &segment_shard,
                         &transfection::SegmentOptions {
                             jobs: 1,
+                            backend: segment_backend,
                             ..transfection::SegmentOptions::default()
                         },
                     )

@@ -219,19 +219,19 @@ export function AlignToolToolbar(props: AlignToolToolbarProps) {
             const toolButton = () => (
               <Button
                 aria-label={label()}
-                class="h-8 w-full min-w-0 justify-between px-3 text-xs"
+                class="h-8 w-full min-w-0 justify-start gap-2 px-3 text-xs"
                 size="sm"
                 title={label()}
                 type="button"
                 variant={props.mode === tool.mode ? "default" : "outline"}
                 onClick={() => props.onModeChange(tool.mode)}
               >
-                <span class="min-w-0 truncate">{tool.label}</span>
                 {shortcutsEnabled() ? (
-                  <kbd class="ml-auto flex size-4 shrink-0 items-center justify-center rounded-none bg-muted font-[inherit] font-medium text-[10px] text-muted-foreground">
+                  <kbd class="flex size-4 shrink-0 items-center justify-center rounded-none bg-muted font-[inherit] font-medium text-[10px] text-muted-foreground">
                     {index() + 1}
                   </kbd>
                 ) : null}
+                <span class="min-w-0 truncate">{tool.label}</span>
               </Button>
             );
 

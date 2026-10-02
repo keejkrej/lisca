@@ -911,6 +911,9 @@ impl ::std::convert::TryFrom<::std::string::String> for AppId {
 #[doc = "        \"$ref\": \"#/definitions/AssaySampleChannels\""]
 #[doc = "      }"]
 #[doc = "    },"]
+#[doc = "    \"segmentationMode\": {"]
+#[doc = "      \"$ref\": \"#/definitions/AssaySegmentationMode\""]
+#[doc = "    },"]
 #[doc = "    \"skipSegment\": {"]
 #[doc = "      \"type\": \"boolean\""]
 #[doc = "    }"]
@@ -935,6 +938,12 @@ pub struct AssayAnalysisConfig {
     )]
     pub sample_channels: ::std::vec::Vec<AssaySampleChannels>,
     #[serde(
+        rename = "segmentationMode",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub segmentation_mode: ::std::option::Option<AssaySegmentationMode>,
+    #[serde(
         rename = "skipSegment",
         default,
         skip_serializing_if = "::std::option::Option::is_none"
@@ -947,6 +956,7 @@ impl ::std::default::Default for AssayAnalysisConfig {
             channels: Default::default(),
             max_onset_minutes: Default::default(),
             sample_channels: Default::default(),
+            segmentation_mode: Default::default(),
             skip_segment: Default::default(),
         }
     }
@@ -1694,6 +1704,78 @@ impl ::std::convert::From<AssaySamples> for ::std::vec::Vec<AssaySampleRow> {
 impl ::std::convert::From<::std::vec::Vec<AssaySampleRow>> for AssaySamples {
     fn from(value: ::std::vec::Vec<AssaySampleRow>) -> Self {
         Self(value)
+    }
+}
+#[doc = "`AssaySegmentationMode`"]
+#[doc = r""]
+#[doc = r" <details><summary>JSON schema</summary>"]
+#[doc = r""]
+#[doc = r" ```json"]
+#[doc = "{"]
+#[doc = "  \"type\": \"string\","]
+#[doc = "  \"enum\": ["]
+#[doc = "    \"logstd\","]
+#[doc = "    \"smart\""]
+#[doc = "  ]"]
+#[doc = "}"]
+#[doc = r" ```"]
+#[doc = r" </details>"]
+#[derive(
+    :: serde :: Deserialize,
+    :: serde :: Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum AssaySegmentationMode {
+    #[serde(rename = "logstd")]
+    Logstd,
+    #[serde(rename = "smart")]
+    Smart,
+}
+impl ::std::fmt::Display for AssaySegmentationMode {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::Logstd => f.write_str("logstd"),
+            Self::Smart => f.write_str("smart"),
+        }
+    }
+}
+impl ::std::str::FromStr for AssaySegmentationMode {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "logstd" => Ok(Self::Logstd),
+            "smart" => Ok(Self::Smart),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for AssaySegmentationMode {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for AssaySegmentationMode {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for AssaySegmentationMode {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
     }
 }
 #[doc = "`AssaySignalChannels`"]
@@ -7527,6 +7609,10 @@ pub mod builder {
             ::std::vec::Vec<super::AssaySampleChannels>,
             ::std::string::String,
         >,
+        segmentation_mode: ::std::result::Result<
+            ::std::option::Option<super::AssaySegmentationMode>,
+            ::std::string::String,
+        >,
         skip_segment: ::std::result::Result<::std::option::Option<bool>, ::std::string::String>,
     }
     impl ::std::default::Default for AssayAnalysisConfig {
@@ -7535,6 +7621,7 @@ pub mod builder {
                 channels: Ok(Default::default()),
                 max_onset_minutes: Ok(Default::default()),
                 sample_channels: Ok(Default::default()),
+                segmentation_mode: Ok(Default::default()),
                 skip_segment: Ok(Default::default()),
             }
         }
@@ -7570,6 +7657,16 @@ pub mod builder {
                 .map_err(|e| format!("error converting supplied value for sample_channels: {e}"));
             self
         }
+        pub fn segmentation_mode<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::option::Option<super::AssaySegmentationMode>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.segmentation_mode = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for segmentation_mode: {e}"));
+            self
+        }
         pub fn skip_segment<T>(mut self, value: T) -> Self
         where
             T: ::std::convert::TryInto<::std::option::Option<bool>>,
@@ -7590,6 +7687,7 @@ pub mod builder {
                 channels: value.channels?,
                 max_onset_minutes: value.max_onset_minutes?,
                 sample_channels: value.sample_channels?,
+                segmentation_mode: value.segmentation_mode?,
                 skip_segment: value.skip_segment?,
             })
         }
@@ -7600,6 +7698,7 @@ pub mod builder {
                 channels: Ok(value.channels),
                 max_onset_minutes: Ok(value.max_onset_minutes),
                 sample_channels: Ok(value.sample_channels),
+                segmentation_mode: Ok(value.segmentation_mode),
                 skip_segment: Ok(value.skip_segment),
             }
         }

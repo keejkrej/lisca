@@ -53,8 +53,6 @@ export type AnnotationControlRailProps = {
 };
 
 export function AnnotationControlRail(props: AnnotationControlRailProps) {
-  const activeError = () =>
-    props.scanError ?? props.frameError ?? props.annotationError ?? props.saveError;
   const loading = () => props.scanLoading || props.frameLoading || props.annotationLoading;
   const isRail = () => props.sectionAppearance === "rail";
 
@@ -121,11 +119,6 @@ export function AnnotationControlRail(props: AnnotationControlRailProps) {
       </Show>
       <Show when={loading()}>
         <p class="col-span-full text-xs text-muted-foreground">Loading…</p>
-      </Show>
-      <Show when={activeError()}>
-        <p class="col-span-full text-xs text-destructive" role="alert">
-          {activeError()}
-        </p>
       </Show>
     </>
   );

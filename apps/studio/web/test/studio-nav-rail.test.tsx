@@ -202,8 +202,9 @@ describe("StudioNavRail Task Center", () => {
     const nav = screen.getByRole("navigation", { name: "Primary" });
     const statusBar = screen.getByRole("region", { name: "Studio status bar" });
 
-    expect(nav.classList.contains("px-7")).toBe(true);
-    expect(nav.classList.contains("items-center")).toBe(true);
+    const tabs = nav.firstElementChild;
+    expect(tabs?.classList.contains("ml-7")).toBe(true);
+    expect(tabs?.classList.contains("w-[200px]")).toBe(true);
     expect(nav.classList.contains("pl-12")).toBe(false);
     expect(nav.contains(trigger)).toBe(false);
     expect(statusBar.contains(trigger)).toBe(true);

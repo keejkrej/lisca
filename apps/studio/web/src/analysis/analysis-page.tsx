@@ -1,4 +1,5 @@
 import { Button } from "@lisca/ui/components";
+import { CanvasToastStack, useCanvasTransientStatus } from "@lisca/ui/features";
 import { AppShell } from "@lisca/ui/shell";
 import { AnalysisPlotGallery } from "./analysis-plot-gallery";
 import { createMemo, createResource, createSignal } from "solid-js";
@@ -117,8 +118,18 @@ export default function AnalysisPage() {
     if (section === activeSection() || isSaving()) return;
     setSelectedSection(section);
   };
+  const visibleSaveMessage = useCanvasTransientStatus(saveMessage);
+  const saveToast = createMemo(() => {
+    const text = visibleSaveMessage();
+    if (!text) return [];
+    return [
+      {
+        text,
+        tone: text.startsWith("Failed") ? ("error" as const) : undefined,
+      },
+    ];
+  });
   const defaultInstruction = () => resultSectionInstruction(activeSection(), assayKind());
-  const dockInstruction = () => saveMessage() ?? defaultInstruction();
   const sectionToolActions = createMemo(() => [
     {
       id: "traces",
@@ -146,6 +157,7 @@ export default function AnalysisPage() {
             <StudioTopBar showExpert />
           </AppShell.TopBar>
           <AppShell.Main>
+            <CanvasToastStack messages={saveToast()} />
             <AppShell.MainScroll contentClass="relative max-w-[1200px] px-6 py-8">
               <div class="relative flex min-h-full w-full flex-1 flex-col">
                 <AnalysisPlotGallery
@@ -199,7 +211,7 @@ export default function AnalysisPage() {
                 />
               </>
             )}
-            instruction={dockInstruction}
+            instruction={defaultInstruction}
           >
             <StudioAnalysisControls
               saveDisabled={!analysisPage.workspacePath?.trim() || !hasAnyPlots() || isSaving()}

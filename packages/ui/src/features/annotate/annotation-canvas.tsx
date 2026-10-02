@@ -389,7 +389,7 @@ export function AnnotationCanvas(props: AnnotationCanvasProps) {
     <div
       ref={viewportEl!}
       data-frame-view-zoom={frameView.view().zoom}
-      class={cn("relative h-full min-h-0 w-full overflow-hidden bg-background", props.class)}
+      class={cn("relative h-full min-h-0 w-full overflow-hidden bg-paper", props.class)}
     >
       <Show when={!props.frame && props.emptyText}>
         <div class="flex h-full items-center justify-center text-muted-foreground text-sm">

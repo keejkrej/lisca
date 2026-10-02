@@ -40,9 +40,11 @@ function NavButton(props: {
       aria-current={props.active ? "page" : undefined}
       aria-keyshortcuts={shortcutKey}
       class={cn(
-        "group flex h-9 w-full min-w-0 shrink-0 items-center gap-3 rounded-md text-left outline-none transition-colors",
-        "hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring",
-        props.active ? "text-foreground" : "text-muted-foreground",
+        "group flex h-9 w-full min-w-0 shrink-0 items-center gap-3 pr-3 pl-8 text-left outline-none transition-colors",
+        "focus-visible:ring-2 focus-visible:ring-ring",
+        props.active
+          ? "bg-primary text-primary-foreground"
+          : "bg-transparent text-muted-foreground hover:bg-secondary hover:text-foreground",
       )}
       to={props.to}
       onClick={(event) => {
@@ -64,24 +66,13 @@ function NavButton(props: {
         studioNavigate(navigate, props.to);
       }}
     >
-      <span aria-hidden="true" class={cn("h-4 w-0.5 shrink-0", props.active && "bg-primary")} />
       <span
         aria-hidden="true"
-        class={cn(
-          "w-[22px] shrink-0 text-[11px] leading-[14px] tabular-nums",
-          props.active ? "text-primary" : "text-muted-foreground",
-        )}
+        class="w-7 shrink-0 text-left text-[11px] leading-[14px] tabular-nums"
       >
         {stepLabel(props.index)}
       </span>
-      <span
-        class={cn(
-          "min-w-0 truncate text-sm leading-[18px]",
-          props.active ? "font-semibold" : "font-normal",
-        )}
-      >
-        {props.children}
-      </span>
+      <span class="min-w-0 truncate text-sm leading-[18px] font-medium">{props.children}</span>
     </Link>
   );
 }
@@ -123,11 +114,8 @@ export function StudioNavRail() {
   });
 
   return (
-    <nav
-      aria-label="Primary"
-      class="flex h-full min-h-0 flex-col items-center justify-center px-7 py-2.5"
-    >
-      <div class="flex w-fit min-w-0 shrink-0 flex-col">
+    <nav aria-label="Primary" class="flex h-full min-h-0 flex-col justify-center py-2.5">
+      <div class="ml-7 flex w-[200px] min-w-0 shrink-0 flex-col gap-1">
         <For each={STUDIO_PAGES}>
           {(page) => (
             <NavButton

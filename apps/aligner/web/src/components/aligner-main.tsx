@@ -70,7 +70,7 @@ export function AlignerMain() {
     <>
       <ViewportCard>
         <StageCanvas
-          captionCenter={<CanvasToastStack layout="inline" messages={toasts()} />}
+          notice={<CanvasToastStack messages={toasts()} />}
           captionLeft={`Position ${positionLabel()}`}
           captionRight={
             canvas.frame ? `${canvas.frame.width} × ${canvas.frame.height} px` : "No frame"
