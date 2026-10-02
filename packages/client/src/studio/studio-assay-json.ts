@@ -54,6 +54,7 @@ export function analysisConfigForAssay(
       ? {
           maxOnsetMinutes: analysis?.maxOnsetMinutes ?? TRANSFECTION_DEFAULT_MAX_ONSET_MINUTES,
           skipSegment: analysis?.skipSegment ?? false,
+          segmentationMode: analysis?.segmentationMode ?? "logstd",
         }
       : {};
 

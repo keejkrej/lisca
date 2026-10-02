@@ -31,13 +31,13 @@ describe("per-app brand tokens", () => {
   it("keeps GFP biological-only and distinct from Studio mint", () => {
     expect(theme).toMatch(/--instrument-gfp:\s*#10b981;/);
     expect(theme).toMatch(/--destructive:\s*#dc2626;/);
-    expect(appBlock(theme, "studio")).toMatch(/--lisca-brand:\s*#00ab69;/);
+    expect(appBlock(theme, "studio")).toMatch(/--lisca-brand:\s*#3ddc97;/);
     expect(appBlock(theme, "studio")).not.toMatch(/#10b981/);
-    expect(theme).toMatch(/\.dark\[data-lisca-app="studio"\] \{[^}]*--lisca-brand:\s*#3ddc97;/);
-    expect(appBlock(theme, "aligner")).toMatch(/--lisca-brand:\s*#4298f3;/);
-    expect(theme).toMatch(/\.dark\[data-lisca-app="aligner"\] \{[^}]*--lisca-brand:\s*#4ea3ff;/);
-    expect(appBlock(theme, "annotator")).toMatch(/--lisca-brand:\s*#e94244;/);
-    expect(theme).toMatch(/\.dark\[data-lisca-app="annotator"\] \{[^}]*--lisca-brand:\s*#f24b4b;/);
+    expect(theme).not.toMatch(/\.dark\[data-lisca-app="studio"\]/);
+    expect(appBlock(theme, "aligner")).toMatch(/--lisca-brand:\s*#4ea3ff;/);
+    expect(theme).not.toMatch(/\.dark\[data-lisca-app="aligner"\]/);
+    expect(appBlock(theme, "annotator")).toMatch(/--lisca-brand:\s*#f24b4b;/);
+    expect(theme).not.toMatch(/\.dark\[data-lisca-app="annotator"\]/);
     expect(appBlock(theme, "annotator")).not.toMatch(/#dc2626/);
     expect(theme).toMatch(
       /\[data-instrument-state-toggle\]\[aria-pressed="true"\] \{\n  background-color: var\(--lisca-brand/,

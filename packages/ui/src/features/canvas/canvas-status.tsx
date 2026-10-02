@@ -1,5 +1,6 @@
 import IconWarningCircleRegular from "phosphor-icons-solid/IconWarningCircleRegular";
 import { For, Show } from "solid-js";
+import { Portal } from "solid-js/web";
 
 import type { CanvasStatusMessage, CanvasStatusTone } from "@lisca/ui-headless";
 import { canvasToastPresentation } from "@lisca/ui-headless/canvas-status";
@@ -18,9 +19,9 @@ function toastToneClassName(tone: CanvasStatusTone | undefined) {
   if (tone === "error") return "z-destructive-surface";
   if (tone === "success") {
     // Neutral ink/muted — GFP green is biological signal only (DESIGN.md).
-    return "border-border/80 bg-muted text-foreground";
+    return "border-border bg-popover text-foreground";
   }
-  return "border-border/80 text-popover-foreground";
+  return "border-border bg-popover text-popover-foreground";
 }
 
 function toastIcon(message: CanvasStatusMessage) {
@@ -70,46 +71,55 @@ export function CanvasStatusMessageStack(props: {
   );
 }
 
+function ToastCards(props: { class?: string; fixed?: boolean; messages: CanvasStatusMessage[] }) {
+  return (
+    <div
+      aria-live="polite"
+      class={cn(
+        "pointer-events-none flex w-[min(22rem,calc(100%-2rem))] flex-col items-start gap-2",
+        props.fixed && "fixed bottom-4 left-4 z-50",
+        props.class,
+      )}
+    >
+      <For each={props.messages}>
+        {(message) => {
+          const icon = toastIcon(message);
+          return (
+            <div
+              class={cn(
+                "flex max-w-full items-start gap-2 rounded-none border px-3 py-2 text-sm leading-snug shadow-sm",
+                toastToneClassName(message.tone),
+              )}
+              role={message.tone === "error" ? "alert" : "status"}
+            >
+              {icon}
+              <span class="min-w-0">{message.text}</span>
+            </div>
+          );
+        }}
+      </For>
+    </div>
+  );
+}
+
 export function CanvasToastStack(props: {
   class?: string;
   messages?: CanvasStatusMessage[];
-  /** `overlay` floats over the canvas; `inline` sits in a stage caption row without covering the image. */
-  layout?: "overlay" | "inline";
+  /**
+   * `overlay` is portaled to the bottom-left of the window.
+   * `stack` renders in place, for a parent that places the cards.
+   */
+  layout?: "overlay" | "stack" | "inline";
 }) {
-  const inline = () => props.layout === "inline";
+  const overlay = () => props.layout !== "stack" && props.layout !== "inline";
+  const messages = () => props.messages ?? [];
   return (
-    <Show when={props.messages?.length}>
-      <div
-        aria-live="polite"
-        class={cn(
-          inline()
-            ? "flex min-w-0 items-center justify-center gap-2"
-            : "pointer-events-none absolute right-3 top-3 z-20 flex w-[min(24rem,calc(100%-1.5rem))] flex-col items-end gap-2",
-          props.class,
-        )}
-      >
-        <For each={props.messages}>
-          {(message) => {
-            const icon = toastIcon(message);
-            return (
-              <div
-                class={cn(
-                  "flex max-w-full items-start gap-2 rounded-lg border",
-                  inline()
-                    ? "min-w-0 items-center px-2 py-0.5 text-xs normal-case tracking-normal"
-                    : "bg-popover/75 px-3 py-2 text-sm leading-snug",
-                  toastToneClassName(message.tone),
-                )}
-                role={message.tone === "error" ? "alert" : "status"}
-                title={inline() ? message.text : undefined}
-              >
-                {icon}
-                <span class={cn("min-w-0", inline() && "truncate")}>{message.text}</span>
-              </div>
-            );
-          }}
-        </For>
-      </div>
+    <Show when={messages().length}>
+      <Show when={overlay()} fallback={<ToastCards class={props.class} messages={messages()} />}>
+        <Portal>
+          <ToastCards fixed class={props.class} messages={messages()} />
+        </Portal>
+      </Show>
     </Show>
   );
 }

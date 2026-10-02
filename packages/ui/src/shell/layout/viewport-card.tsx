@@ -11,7 +11,7 @@ export function ViewportCard(props: {
   return (
     <div
       class={cn(
-        "flex h-full min-h-0 flex-1 flex-col items-center justify-center bg-background p-6",
+        "flex h-full min-h-0 flex-1 flex-col items-center justify-center bg-paper p-6",
         props.class,
       )}
     >

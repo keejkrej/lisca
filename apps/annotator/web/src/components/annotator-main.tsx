@@ -59,7 +59,7 @@ export function AnnotatorMain() {
   return (
     <ViewportCard>
       <StageCanvas
-        captionCenter={<CanvasToastStack layout="inline" messages={toasts()} />}
+        notice={<CanvasToastStack messages={toasts()} />}
         captionLeft={`ROI ${nav.selection.roi ?? "—"} · Channel ${nav.selection.channel ?? "—"}`}
         captionRight={
           canvas.frame ? `${canvas.frame.width} × ${canvas.frame.height} px` : "No frame"

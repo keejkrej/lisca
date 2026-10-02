@@ -42,6 +42,25 @@ describe("MetadataFields misc", () => {
     renderWizard();
     expect(screen.getByText("Misc")).toBeTruthy();
     expect(screen.getByRole("checkbox", { name: "Skip segmentation" })).toBeTruthy();
+    expect(screen.getByText("Segmentation mode")).toBeTruthy();
+    const logstd = screen.getByRole("button", { name: "Log-std" });
+    const smart = screen.getByRole("button", { name: "Smart" });
+    expect(logstd.getAttribute("aria-pressed")).toBe("true");
+    expect(logstd.hasAttribute("disabled") || logstd.getAttribute("aria-disabled") === "true").toBe(
+      false,
+    );
+    fireEvent.click(smart);
+    await waitFor(() => {
+      expect(smart.getAttribute("aria-pressed")).toBe("true");
+    });
+    fireEvent.click(screen.getByRole("checkbox", { name: "Skip segmentation" }));
+    await waitFor(() => {
+      for (const mode of [logstd, smart]) {
+        expect(mode.hasAttribute("disabled") || mode.getAttribute("aria-disabled") === "true").toBe(
+          true,
+        );
+      }
+    });
     expect(screen.queryByText("Use the full ROI (skip mask)")).toBeNull();
 
     fireEvent.click(screen.getByRole("button", { name: /Killing/ }));

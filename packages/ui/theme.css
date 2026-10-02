@@ -165,37 +165,23 @@
 }
 
 /*
- * Per-app icon accents. Fills primary actions, focus rings, selected nav/tool,
- * and pressed Show/Edit/Expert toggles. The label stays ink.
- * Light mode deepens each icon accent so the fill reads on white. Dark mode
- * keeps the icon hex. Annotator light stops at #e94244, where ink on the fill
- * stays above 4.5:1. GFP (#10B981) and destructive (#DC2626) stay separate.
+ * Per-app accents. The same fill in light and dark: primary actions, focus
+ * rings, selected nav, and pressed Show/Edit/Expert toggles. The label stays
+ * ink. GFP (#10B981) and destructive (#DC2626) stay separate.
  */
 [data-lisca-app="studio"] {
-  --lisca-brand: #00ab69;
-  --lisca-brand-foreground: #171717;
-}
-
-.dark[data-lisca-app="studio"] {
   --lisca-brand: #3ddc97;
+  --lisca-brand-foreground: #171717;
 }
 
 [data-lisca-app="aligner"] {
-  --lisca-brand: #4298f3;
-  --lisca-brand-foreground: #171717;
-}
-
-.dark[data-lisca-app="aligner"] {
   --lisca-brand: #4ea3ff;
+  --lisca-brand-foreground: #171717;
 }
 
 [data-lisca-app="annotator"] {
-  --lisca-brand: #e94244;
-  --lisca-brand-foreground: #171717;
-}
-
-.dark[data-lisca-app="annotator"] {
   --lisca-brand: #f24b4b;
+  --lisca-brand-foreground: #171717;
 }
 
 /* Lisca-owned utilities (not shipped by zaidan style-lyra) */
@@ -219,14 +205,18 @@
   --instrument-gfp: #10b981;
   --instrument-ink: var(--foreground);
   --instrument-mute: var(--muted-foreground);
-  --instrument-paper: var(--background);
-  --instrument-rule: var(--border);
-  --instrument-stage: var(--muted);
+  /* 1px sheet edge. A light tint of the ink: dark on light paper, light on dark paper. */
+  --instrument-rule: color-mix(in oklab, var(--foreground) 12%, transparent);
+  /* Light center stays the brightest surface. Rails sit above the secondary
+     fill (#f5f5f5) so a secondary hover darkens instead of lifting. */
+  --instrument-paper: #ffffff;
+  --instrument-stage: #fafafa;
   font-family: var(--font-sans);
 }
 
-.lisca-instrument-shell .z-button-variant-outline {
-  background-color: transparent;
+.dark .lisca-instrument-shell {
+  --instrument-paper: #030303;
+  --instrument-stage: #0a0a0a;
 }
 
 /* Only opted-in rail sections shed their frame inside the instrument shell. */

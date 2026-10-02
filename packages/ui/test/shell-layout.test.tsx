@@ -74,7 +74,7 @@ describe("AppShell paper pane", () => {
     const topBar = stageTopBar();
     const main = screen.getByRole("main");
     const mainColumn = main.parentElement!;
-    hasClass(root, "bg-muted");
+    hasClass(root, "bg-stage");
     hasClass(root, "py-4");
     hasClass(root, "overflow-clip");
     hasClass(root, "overscroll-none");
@@ -86,12 +86,14 @@ describe("AppShell paper pane", () => {
     hasClass(topBar, "h-14");
     hasClass(topBar, "px-5");
     hasClass(topBar, "rounded-none");
+    hasClass(topBar, "bg-paper");
     hasClass(topBar, "border");
-    hasClass(topBar, "border-border");
+    hasClass(topBar, "border-rule");
     expect(topBar.className).not.toContain("shadow-[");
     hasClass(main, "rounded-none");
+    hasClass(main, "bg-paper");
     hasClass(main, "border");
-    hasClass(main, "border-border");
+    hasClass(main, "border-rule");
     expect(main.className).not.toContain("shadow-[");
     hasClass(main, "overflow-clip");
     expect(root.getAttribute("data-variant")).toBeNull();
@@ -181,7 +183,7 @@ describe("AppShell paper pane", () => {
     hasClass(panelOf(rightOverlay), "w-64");
     expect(leftOverlay.getAttribute("aria-hidden")).toBe("true");
     expect((leftOverlay as HTMLElement & { inert: boolean }).inert).toBe(true);
-    hasClass(leftOverlay, "bg-muted");
+    hasClass(leftOverlay, "bg-stage");
     expect(leftOverlay.classList.contains("border-r")).toBe(false);
 
     fireEvent.click(screen.getByRole("button", { name: "Open left panel" }));
@@ -322,7 +324,7 @@ describe("ViewportCard paper pane", () => {
 });
 
 describe("StageCanvas framing", () => {
-  it("fills the viewport with a muted well and pins the caption below it", () => {
+  it("fills the viewport with a paper well and pins the caption below it", () => {
     render(() => (
       <StageCanvas captionLeft="Position 01" captionRight="1024 × 768 px">
         <div data-testid="stage-child">canvas</div>
@@ -336,7 +338,7 @@ describe("StageCanvas framing", () => {
     hasClass(well, "flex-1");
     hasClass(well, "min-h-0");
     hasClass(well, "rounded-none");
-    hasClass(well, "bg-muted");
+    hasClass(well, "bg-paper");
     expect(well.className).not.toMatch(/aspect-/);
     expect(screen.getByText("Position 01")).toBeTruthy();
     expect(screen.getByText("1024 × 768 px")).toBeTruthy();
@@ -348,15 +350,10 @@ describe("StageCanvas framing", () => {
 });
 
 describe("StageCanvas caption status", () => {
-  it("renders inline toasts in the caption row instead of over the canvas", () => {
+  it("sends transient notices to the bottom-left of the window", () => {
     render(() => (
       <StageCanvas
-        captionCenter={
-          <CanvasToastStack
-            layout="inline"
-            messages={[{ text: "Var excluded 114 of 182 patterns" }]}
-          />
-        }
+        notice={<CanvasToastStack messages={[{ text: "Saved Pos67" }]} />}
         captionLeft="Position 90"
         captionRight="2048 × 2044 px"
       >
@@ -364,13 +361,17 @@ describe("StageCanvas caption status", () => {
       </StageCanvas>
     ));
     const toast = screen.getByRole("status");
-    expect(toast.textContent).toBe("Var excluded 114 of 182 patterns");
+    expect(toast.textContent).toBe("Saved Pos67");
+    expect(toast.className).toMatch(/rounded-none/);
     const stack = toast.parentElement!;
-    expect(stack.className).not.toMatch(/\babsolute\b/);
+    expect(stack.className).toMatch(/\bfixed\b/);
+    expect(stack.className).toMatch(/\bbottom-4\b/);
+    expect(stack.className).toMatch(/\bleft-4\b/);
+    expect(document.body.contains(toast)).toBe(true);
     const well = screen.getByTestId("stage-child").parentElement!;
     expect(well.contains(toast)).toBe(false);
     const caption = well.parentElement!.lastElementChild!;
-    expect(caption.contains(toast)).toBe(true);
+    expect(caption.contains(toast)).toBe(false);
     hasClass(caption, "h-7");
   });
 });

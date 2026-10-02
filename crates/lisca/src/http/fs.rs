@@ -196,7 +196,16 @@ fn list_directory(path: Option<String>) -> Result<HostListDirectoryResult, FsErr
 }
 
 fn read_text_file(path: &str) -> Result<ReadTextFileResponse, FsError> {
-    ensure_local_path_allowed(Path::new(path))?;
+    let path = Path::new(path);
+    ensure_local_path_allowed(path)?;
+    // Opening an assay reads this file before the wizard's strict schema. Rewrite
+    // legacy workspace names (mask → segmentation, slideChannel → sample) first.
+    if path.file_name().and_then(|name| name.to_str()) == Some("assay.json") {
+        if let Some(workspace) = path.parent().filter(|parent| parent.is_dir()) {
+            crate::migrations::migrate_workspace(workspace)
+                .map_err(|error| FsError::new(format!("workspace migration failed: {error}")))?;
+        }
+    }
     let contents = std::fs::read_to_string(path)
         .map_err(|error| local_io_error("failed to read text file", error))?;
     Ok(ReadTextFileResponse { contents })
@@ -435,6 +444,26 @@ mod tests {
         let parent = list_parent_path(Path::new("/root"));
         assert_eq!(parent.as_deref(), Some(""));
         std::env::remove_var("LISCA_FS_ROOTS");
+    }
+
+    #[test]
+    fn read_text_file_rewrites_legacy_assay_channel_names() {
+        let _guard = FS_ROOTS_LOCK.lock().unwrap();
+        let workspace =
+            std::env::temp_dir().join(format!("lisca-assay-migrate-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&workspace).unwrap();
+        let assay = workspace.join("assay.json");
+        std::fs::write(
+            &assay,
+            r#"{"analysis":{"channels":{"mask":0,"signal":[1]}}}"#,
+        )
+        .unwrap();
+        std::env::set_var("LISCA_FS_ROOTS", &workspace);
+        let response = read_text_file(assay.to_str().unwrap()).expect("read");
+        std::env::remove_var("LISCA_FS_ROOTS");
+        assert!(response.contents.contains("\"segmentation\""));
+        assert!(!response.contents.contains("\"mask\""));
+        std::fs::remove_dir_all(workspace).unwrap();
     }
 
     #[test]

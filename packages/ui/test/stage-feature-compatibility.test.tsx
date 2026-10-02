@@ -70,7 +70,9 @@ describe("stage rail tool compatibility", () => {
         name: `${action.label} (${action.key})`,
       });
       expect(button.textContent).toContain(action.label);
-      expect(button.querySelector("kbd")?.textContent).toBe(action.key);
+      const shortcut = button.querySelector("kbd");
+      expect(shortcut?.textContent).toBe(action.key);
+      expect(shortcut?.nextElementSibling?.textContent).toBe(action.label);
 
       fireEvent.keyDown(window, { key: action.key });
       expect(onModeChange).toHaveBeenLastCalledWith(action.mode);
@@ -136,7 +138,9 @@ describe("stage rail tool compatibility", () => {
       const button = within(railToolbar).getByRole("button", {
         name: `${label} (${index + 1})`,
       });
-      expect(button.querySelector("kbd")?.textContent).toBe(String(index + 1));
+      const shortcut = button.querySelector("kbd");
+      expect(shortcut?.textContent).toBe(String(index + 1));
+      expect(shortcut?.nextElementSibling?.textContent).toBe(label);
     }
     rail.unmount();
 

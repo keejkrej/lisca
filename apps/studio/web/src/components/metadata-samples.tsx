@@ -73,8 +73,11 @@ function SampleCard(props: {
   onRemove: () => void;
 }) {
   return (
-    <article aria-label={`Sample ${props.index + 1}`} class="flex min-w-0 flex-col gap-4">
-      <div class="grid min-w-0 grid-cols-[minmax(0,1fr)_2rem] items-end gap-2.5">
+    <article
+      aria-label={`Sample ${props.index + 1}`}
+      class="grid min-w-0 grid-cols-[minmax(0,1fr)_2rem] items-center gap-x-2.5"
+    >
+      <div class="flex min-w-0 flex-col gap-4">
         <label class="flex min-w-0 flex-col gap-1.5">
           <span class="text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
             Name
@@ -89,60 +92,60 @@ function SampleCard(props: {
             onChange={(event) => props.onChange({ name: event.currentTarget.value })}
           />
         </label>
-        <Button
-          aria-label="Remove sample"
-          class="size-8 shrink-0"
-          size="icon-sm"
-          type="button"
-          variant="ghost"
-          onClick={props.onRemove}
-        >
-          <IconTrashRegular />
-        </Button>
+        <div class="grid min-w-0 grid-cols-2 gap-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_7rem_minmax(0,1fr)]">
+          <SampleField label="Position start">
+            <SamplePositionInput
+              aria-label="Position start"
+              name={`samples.${props.index}.position-start`}
+              placeholder="e.g. 1…"
+              value={props.row.positionStart}
+              onChange={(positionStart) => props.onChange({ positionStart })}
+            />
+          </SampleField>
+          <SampleField label="Position end">
+            <SamplePositionInput
+              aria-label="Position finish"
+              name={`samples.${props.index}.position-finish`}
+              placeholder="e.g. 10…"
+              value={props.row.positionFinish}
+              onChange={(positionFinish) => props.onChange({ positionFinish })}
+            />
+          </SampleField>
+          <SampleField label="Segmentation">
+            <Input
+              autocomplete="off"
+              aria-label="Segmentation channel"
+              class="h-8 w-full px-2 text-center font-mono text-[13px]"
+              inputMode="numeric"
+              name={`samples.${props.index}.segmentation-channel`}
+              placeholder="e.g. 0…"
+              value={props.row.segmentation}
+              onChange={(event) => props.onChange({ segmentation: event.currentTarget.value })}
+            />
+          </SampleField>
+          <SampleField label="Signal">
+            <Input
+              autocomplete="off"
+              aria-label="Signal channels"
+              class="h-8 w-full px-3 text-center font-mono text-[13px]"
+              name={`samples.${props.index}.signal-channels`}
+              placeholder="e.g. 1 or 1,2…"
+              value={props.row.signal}
+              onChange={(event) => props.onChange({ signal: event.currentTarget.value })}
+            />
+          </SampleField>
+        </div>
       </div>
-      <div class="grid min-w-0 grid-cols-2 gap-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_7rem_minmax(0,1fr)]">
-        <SampleField label="Position start">
-          <SamplePositionInput
-            aria-label="Position start"
-            name={`samples.${props.index}.position-start`}
-            placeholder="e.g. 1…"
-            value={props.row.positionStart}
-            onChange={(positionStart) => props.onChange({ positionStart })}
-          />
-        </SampleField>
-        <SampleField label="Position end">
-          <SamplePositionInput
-            aria-label="Position finish"
-            name={`samples.${props.index}.position-finish`}
-            placeholder="e.g. 10…"
-            value={props.row.positionFinish}
-            onChange={(positionFinish) => props.onChange({ positionFinish })}
-          />
-        </SampleField>
-        <SampleField label="Segmentation">
-          <Input
-            autocomplete="off"
-            aria-label="Segmentation channel"
-            class="h-8 w-full px-2 text-center font-mono text-[13px]"
-            inputMode="numeric"
-            name={`samples.${props.index}.segmentation-channel`}
-            placeholder="e.g. 0…"
-            value={props.row.segmentation}
-            onChange={(event) => props.onChange({ segmentation: event.currentTarget.value })}
-          />
-        </SampleField>
-        <SampleField label="Signal">
-          <Input
-            autocomplete="off"
-            aria-label="Signal channels"
-            class="h-8 w-full px-3 text-center font-mono text-[13px]"
-            name={`samples.${props.index}.signal-channels`}
-            placeholder="e.g. 1 or 1,2…"
-            value={props.row.signal}
-            onChange={(event) => props.onChange({ signal: event.currentTarget.value })}
-          />
-        </SampleField>
-      </div>
+      <Button
+        aria-label="Remove sample"
+        class="justify-self-center"
+        size="icon"
+        type="button"
+        variant="ghost"
+        onClick={props.onRemove}
+      >
+        <IconTrashRegular />
+      </Button>
     </article>
   );
 }

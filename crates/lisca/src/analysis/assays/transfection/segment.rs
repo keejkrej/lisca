@@ -36,10 +36,10 @@ pub enum SegmentBackend {
 impl SegmentBackend {
     pub fn parse(value: &str) -> Result<Self, String> {
         match value.trim().to_ascii_lowercase().as_str() {
-            "otsu" | "classical" | "default" => Ok(Self::Otsu),
-            "onnx" | "unet" | "model" => Ok(Self::Onnx),
+            "otsu" | "classical" | "default" | "logstd" => Ok(Self::Otsu),
+            "onnx" | "unet" | "model" | "smart" => Ok(Self::Onnx),
             other => Err(format!(
-                "unknown segment backend {other:?} (expected otsu|onnx)"
+                "unknown segment backend {other:?} (expected logstd|smart)"
             )),
         }
     }

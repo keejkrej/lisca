@@ -191,7 +191,7 @@ export function AnnotationToolGrid(props: {
             return (
               <Button
                 aria-label={label()}
-                class="h-8 w-full min-w-0 justify-between px-3 text-xs"
+                class="h-8 w-full min-w-0 justify-start gap-2 px-3 text-xs"
                 disabled={action.disabled}
                 size="sm"
                 title={label()}
@@ -199,12 +199,12 @@ export function AnnotationToolGrid(props: {
                 variant={action.active ? "default" : "outline"}
                 onClick={action.onSelect}
               >
-                <span class="min-w-0 truncate">{action.label}</span>
                 {showShortcutLabels() ? (
-                  <kbd class="ml-auto flex size-4 shrink-0 items-center justify-center rounded-none bg-muted font-[inherit] font-medium text-[10px] text-muted-foreground">
+                  <kbd class="flex size-4 shrink-0 items-center justify-center rounded-none bg-muted font-[inherit] font-medium text-[10px] text-muted-foreground">
                     {index() + 1}
                   </kbd>
                 ) : null}
+                <span class="min-w-0 truncate">{action.label}</span>
               </Button>
             );
           }}

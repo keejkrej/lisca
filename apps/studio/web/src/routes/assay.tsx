@@ -1,8 +1,8 @@
-import { HostFilePickerDialog } from "@lisca/ui/features";
+import { CanvasToastStack, HostFilePickerDialog } from "@lisca/ui/features";
 import { AppShell } from "@lisca/ui/shell";
 import { createFileRoute } from "@tanstack/solid-router";
 import { useAtomSet, useAtomValue } from "@effect/atom-solid";
-import { createMemo, createSignal, Show } from "solid-js";
+import { createMemo, createSignal } from "solid-js";
 
 import { studioHostOperations } from "../api/studio-port";
 import { ChooseAssay } from "../components/choose-assay";
@@ -68,17 +68,12 @@ function AssayPage() {
             <StudioTopBar />
           </AppShell.TopBar>
           <AppShell.Main>
+            <CanvasToastStack
+              messages={
+                openAssayError() ? [{ text: openAssayError()!, tone: "error" as const }] : []
+              }
+            />
             <AppShell.MainScroll contentClass="max-w-[52rem] items-center justify-center px-4 py-6 md:px-12 md:py-10">
-              <Show when={openAssayError()}>
-                {(error) => (
-                  <p
-                    class="z-destructive-surface mb-4 w-full max-w-[28rem] rounded-lg px-3 py-2 text-sm"
-                    role="alert"
-                  >
-                    {error()}
-                  </p>
-                )}
-              </Show>
               <ChooseAssay />
             </AppShell.MainScroll>
           </AppShell.Main>

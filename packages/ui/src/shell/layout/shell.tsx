@@ -13,8 +13,9 @@ import { ShellLayoutProvider, useShellLayout } from "./shell-layout-context";
 import { ShellPortraitPanelControls, ShellPortraitPanelOverlays } from "./shell-portrait-panels";
 
 const shellDivider = "border-border";
-const shellSurface = "bg-background";
-const shellSheetSurface = "rounded-none border border-border bg-background";
+const shellSurface = "bg-paper";
+const shellSheetSurface =
+  "rounded-none border border-rule border-solid bg-paper [border-width:1px]";
 
 /** Fixed-height dock strip (`11rem`); scrolls inside if content overflows. */
 const shellDockFixed = "flex h-[11rem] shrink-0 flex-col overflow-hidden";
@@ -42,7 +43,7 @@ function ShellSidebarInner(props: {
   return (
     <aside
       aria-label={props.side === "left" ? "Left panel" : "Right panel"}
-      class={cn("flex h-full min-h-0 shrink-0 flex-col overflow-hidden bg-muted", widthClass())}
+      class={cn("flex h-full min-h-0 shrink-0 flex-col overflow-hidden bg-stage", widthClass())}
     >
       {props.children}
     </aside>
@@ -86,7 +87,7 @@ function SkipToMainLink() {
 function AppShellRoot(props: { children?: JSX.Element }) {
   return (
     <ShellLayoutProvider>
-      <div class="lisca-instrument-shell flex h-full min-h-0 flex-col overflow-clip overscroll-none bg-muted py-4 text-xs leading-4 text-foreground">
+      <div class="lisca-instrument-shell flex h-full min-h-0 flex-col overflow-clip overscroll-none bg-stage py-4 text-xs leading-4 text-foreground">
         <SkipToMainLink />
         {props.children}
       </div>
@@ -119,7 +120,7 @@ AppShellTopBar.displayName = "AppShell.TopBar";
  */
 function AppShellBody(props: { children?: JSX.Element }) {
   return (
-    <div class="relative flex min-h-0 flex-1 overflow-hidden bg-muted">
+    <div class="relative flex min-h-0 flex-1 overflow-hidden bg-stage">
       {props.children}
       <ShellPortraitPanelOverlays />
     </div>
@@ -130,7 +131,7 @@ AppShellBody.displayName = "AppShell.Body";
 /** Center stack: floating `TopBar`, paper `Main`, optional `Dock`. */
 function AppShellMainColumn(props: { children?: JSX.Element }) {
   return (
-    <div class="flex min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-visible bg-muted">
+    <div class="flex min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-visible bg-stage">
       {props.children}
     </div>
   );
