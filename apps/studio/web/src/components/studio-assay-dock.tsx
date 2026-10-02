@@ -1,17 +1,35 @@
 import { Button } from "@lisca/ui/components";
 import { PanelSection, RailControlStack } from "@lisca/ui/shell";
 
+import {
+  CommandShortcutHint,
+  commandShortcutKeys,
+  useStudioCommandShortcut,
+} from "../navigation/use-studio-command-shortcut";
+
 export function StudioAssayActions(props: {
   openingAssay: boolean;
   assayPickerOpen: boolean;
   onNewAssay: () => void;
   onOpenAssay: () => void;
 }) {
+  useStudioCommandShortcut(
+    "open",
+    () => !props.openingAssay && !props.assayPickerOpen,
+    () => props.onOpenAssay(),
+  );
+  useStudioCommandShortcut(
+    "new",
+    () => !props.openingAssay,
+    () => props.onNewAssay(),
+  );
+
   return (
     <PanelSection appearance="rail" title="Action">
       <RailControlStack>
         <Button
-          class="w-full justify-center"
+          aria-keyshortcuts={commandShortcutKeys("open")}
+          class="relative w-full justify-center"
           disabled={props.openingAssay || props.assayPickerOpen}
           size="sm"
           type="button"
@@ -19,15 +37,18 @@ export function StudioAssayActions(props: {
           onClick={props.onOpenAssay}
         >
           Open
+          <CommandShortcutHint command="open" />
         </Button>
         <Button
-          class="w-full justify-center"
+          aria-keyshortcuts={commandShortcutKeys("new")}
+          class="relative w-full justify-center"
           disabled={props.openingAssay}
           size="sm"
           type="button"
           onClick={props.onNewAssay}
         >
           New
+          <CommandShortcutHint command="new" />
         </Button>
       </RailControlStack>
     </PanelSection>

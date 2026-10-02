@@ -1,7 +1,7 @@
 import type { AnnotationLabel, RoiWorkspaceScan } from "@lisca/contracts";
 import type { AsyncResult } from "effect/unstable/reactivity";
 import { clamp } from "@lisca/utils";
-import { createEffect, untrack, type Accessor } from "solid-js";
+import { createEffect, on, untrack, type Accessor } from "solid-js";
 import type {
   AnnotatorUiActions,
   AnnotatorUiState,
@@ -88,13 +88,19 @@ export function useAnnotateSessionCore<State extends AnnotatorUiState>(
     }
   });
 
-  createEffect(() => {
-    const currentUi = ui();
-    const shellWorkspacePath = scan.shellWorkspacePath();
-    if (currentUi.workspacePath !== shellWorkspacePath) return;
-    const scanData = resultData(scan.scanResult());
-    if (scanData) actions.setStatus(setUi, "ROI workspace loaded");
-  });
+  // Announce a finished scan once. Tracking the whole UI atom here rewrote the
+  // status on save and on every ROI change, so "ROI workspace loaded" replaced
+  // the result the user had just asked about.
+  createEffect(
+    on(
+      () => [scan.shellWorkspacePath(), resultData(scan.scanResult())] as const,
+      ([shellWorkspacePath, scanData]) => {
+        const workspacePath = untrack(() => ui().workspacePath);
+        if (!scanData || workspacePath !== shellWorkspacePath) return;
+        actions.setStatus(setUi, "ROI workspace loaded");
+      },
+    ),
+  );
 
   createEffect(() => {
     const currentUi = ui();

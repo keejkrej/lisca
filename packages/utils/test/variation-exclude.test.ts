@@ -43,7 +43,17 @@ describe("computeVariationExcludePreview", () => {
 
     expect(preview.eligiblePatternCount).toBe(2);
     expect(preview.patternScores[0]?.score).toBeLessThan(preview.patternScores[1]?.score ?? 0);
+    expect(preview.patternScores[0]?.score).toBeLessThan(0.05);
+    expect(preview.patternScores[1]?.score ?? 0).toBeGreaterThan(0.2);
     expect(preview.threshold).toBeGreaterThan(preview.scoreMin);
+  });
+
+  it("scores a flat frame as no foreground", () => {
+    const preview = computeVariationExcludePreview(
+      { width: 12, height: 12, pixels: new Uint8Array(144).fill(40) },
+      [{ i: 0, j: 0, x: 1, y: 1, w: 8, h: 8 }],
+    );
+    expect(preview.patternScores[0]?.score).toBe(0);
   });
 
   it("skips empty clipped patterns", () => {

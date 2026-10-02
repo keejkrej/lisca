@@ -42,16 +42,18 @@ describe("MetadataFields misc", () => {
     renderWizard();
     expect(screen.getByText("Misc")).toBeTruthy();
     expect(screen.getByRole("checkbox", { name: "Skip segmentation" })).toBeTruthy();
-    expect(screen.getByText("Segmentation mode")).toBeTruthy();
-    const logstd = screen.getByRole("button", { name: "Log-std" });
-    const smart = screen.getByRole("button", { name: "Smart" });
-    expect(logstd.getAttribute("aria-pressed")).toBe("true");
+    expect(screen.getByText("Segmentation method")).toBeTruthy();
+    const logstd = screen.getByRole("radio", { name: "Log-std segmentation" });
+    const smart = screen.getByRole("radio", { name: "Smart segmentation" });
+    const method = screen.getByRole("radiogroup", { name: "Segmentation method" });
+    expect(method.parentElement?.className).toContain("ps-[calc(1rem+0.625rem)]");
+    expect((logstd as HTMLInputElement).checked).toBe(true);
     expect(logstd.hasAttribute("disabled") || logstd.getAttribute("aria-disabled") === "true").toBe(
       false,
     );
     fireEvent.click(smart);
     await waitFor(() => {
-      expect(smart.getAttribute("aria-pressed")).toBe("true");
+      expect((smart as HTMLInputElement).checked).toBe(true);
     });
     fireEvent.click(screen.getByRole("checkbox", { name: "Skip segmentation" }));
     await waitFor(() => {

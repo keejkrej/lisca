@@ -170,10 +170,24 @@ afterEach(() => {
 Object.defineProperty(window, "scrollTo", { value: vi.fn(), writable: true });
 
 describe("StudioNavRail Task Center", () => {
-  it("hides tasks away from Align and Analysis", async () => {
-    renderStudioShell("/annotate");
+  it("hides tasks on Align and on pages that do not wait on a run", async () => {
+    renderStudioShell("/align");
     expect(await screen.findByRole("button", { name: /Expert mode$/ })).toBeTruthy();
     expect(screen.queryByRole("button", { name: /^Tasks/ })).toBeNull();
+    cleanup();
+
+    renderStudioShell("/metadata");
+    expect(await screen.findByRole("button", { name: /Expert mode$/ })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /^Tasks/ })).toBeNull();
+  });
+
+  it("lists crop tasks on Annotate", async () => {
+    renderStudioShell("/annotate");
+    fireEvent.click(await screen.findByRole("button", { name: "Tasks, 1 active" }));
+    expect(await screen.findByRole("dialog", { name: "Tasks" })).toBeTruthy();
+    expect(screen.getByText("Background crop computations")).toBeTruthy();
+    expect(await screen.findByRole("button", { name: /Expand Crop ROI/ })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /Expand Analysis\/transfection/ })).toBeNull();
   });
 
   it("lists analysis tasks on the Analysis page", async () => {
@@ -192,7 +206,7 @@ describe("StudioNavRail Task Center", () => {
       "fetch",
       vi.fn(async () => new Response(null, { status: 200 })),
     );
-    const { router } = renderStudioShell();
+    const { router } = renderStudioShell("/annotate");
 
     const trigger = await screen.findByRole("button", { name: "Tasks, 1 active" });
     const expert = screen.getByRole("button", { name: /Expert mode$/ });
@@ -250,8 +264,8 @@ function expectStudioState(
   routeState: HTMLElement,
   workspaceState: HTMLElement,
 ) {
-  expect(routeHref).toBe("/align?position=7");
-  expect(routeState.textContent).toBe("/align?position=7");
+  expect(routeHref).toBe("/annotate");
+  expect(routeState.textContent).toBe("/annotate");
   expect(workspaceState.textContent).toBe("/experiments/studio-demo");
   expect(edit.value).toBe("edited unsaved phenotype");
 }

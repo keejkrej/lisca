@@ -156,6 +156,26 @@ describe("stage rail tool compatibility", () => {
     ).toBeTruthy();
   });
 
+  it("keeps tool numbers visible while shortcut keys are disabled", () => {
+    const onToolChange = vi.fn();
+    const actions = buildAnnotationToolActions("brush", onToolChange, false);
+    render(() => (
+      <AnnotationToolGrid
+        canEditTools
+        layout="rail"
+        shortcutsEnabled={false}
+        toolActions={actions}
+      />
+    ));
+
+    const toolbar = screen.getByRole("toolbar", { name: "Annotation tool" });
+    expect(
+      within(toolbar).getByRole("button", { name: "Brush (1)" }).querySelector("kbd")?.textContent,
+    ).toBe("1");
+    fireEvent.keyDown(window, { key: "2" });
+    expect(onToolChange).not.toHaveBeenCalled();
+  });
+
   it("keeps Magnifier available when annotation editing actions are disabled", () => {
     const onToolChange = vi.fn();
     const actions = buildAnnotationToolActions("brush", onToolChange, true, { viewable: true });
@@ -198,7 +218,7 @@ describe("stage rail tool compatibility", () => {
 });
 
 describe("PathButton stage compatibility", () => {
-  it("renders the stage label with a status dot and reveals the full path on hover, while the classic variant stays on the basename", async () => {
+  it("renders the stage label and reveals the full path on hover, while the classic variant stays on the basename", async () => {
     render(() => (
       <div>
         <PathButton
@@ -226,6 +246,8 @@ describe("PathButton stage compatibility", () => {
     expect(stage.textContent).toBe("Source");
     expect(stage.textContent).not.toContain("source-image");
     expect(stage.textContent).not.toContain(".nd2");
+    expect(stage.querySelector("span")?.className).toContain("text-foreground");
+    expect(stage.querySelector("span")?.className).not.toContain("text-muted-foreground");
     expect(screen.queryByTestId("unused-stage-icon")).toBeNull();
 
     // Hover the trigger to surface the tooltip with the full path.
@@ -238,7 +260,7 @@ describe("PathButton stage compatibility", () => {
     expect(classic.textContent).not.toContain(".nd2");
   });
 
-  it("labels an unset stage path with a muted dot and a pick prompt in the tooltip", async () => {
+  it("keeps an unset stage path the same color and shows the pick prompt on hover", async () => {
     render(() => (
       <PathButton appearance="stage" label="Workspace" value={null} onClick={() => undefined} />
     ));
@@ -246,6 +268,8 @@ describe("PathButton stage compatibility", () => {
     const trigger = screen.getByRole("button", { name: "Workspace: not set" });
     expect(trigger.textContent).toBe("Workspace");
     expect(trigger.textContent).not.toContain("Not set");
+    expect(trigger.querySelector("span")?.className).toContain("text-foreground");
+    expect(trigger.querySelector("span")?.className).not.toContain("text-muted-foreground");
 
     fireEvent.pointerEnter(trigger);
     expect(await screen.findByText("Pick a workspace folder")).toBeTruthy();

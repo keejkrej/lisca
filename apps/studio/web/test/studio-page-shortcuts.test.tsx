@@ -10,8 +10,10 @@ import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
 import { StudioNavRail } from "../src/components/studio-nav-rail";
 import {
+  studioHorizontalHistoryArrow,
   studioPageForShortcut,
   studioPageShortcutPlatform,
+  studioPageStepTarget,
 } from "../src/navigation/studio-page-shortcuts";
 import { setStudioAnnotateDirty } from "../src/state/studio-annotate-guard";
 
@@ -57,6 +59,46 @@ describe("studio page shortcuts", () => {
     expect(studioPageForShortcut({ ...baseContext, key: "4", metaKey: true }, "other")).toBeNull();
   });
 
+  it("steps the rail with Command+Up and Command+Down", () => {
+    expect(
+      studioPageStepTarget({ ...baseContext, key: "ArrowDown", metaKey: true }, "mac", "/assay"),
+    ).toEqual({ to: "/metadata" });
+    expect(
+      studioPageStepTarget({ ...baseContext, key: "ArrowUp", metaKey: true }, "mac", "/align"),
+    ).toEqual({ to: "/metadata" });
+    expect(
+      studioPageStepTarget({ ...baseContext, key: "ArrowUp", metaKey: true }, "mac", "/assay"),
+    ).toEqual({ to: null });
+    expect(
+      studioPageStepTarget(
+        { ...baseContext, key: "ArrowDown", ctrlKey: true },
+        "other",
+        "/annotate",
+      ),
+    ).toEqual({ to: "/analysis" });
+    expect(
+      studioPageStepTarget({ ...baseContext, key: "ArrowDown", ctrlKey: true }, "mac", "/assay"),
+    ).toBeNull();
+    expect(
+      studioPageStepTarget({ ...baseContext, key: "ArrowLeft", metaKey: true }, "mac", "/align"),
+    ).toBeNull();
+  });
+
+  it("recognizes Command+Left and Command+Right outside a text field", () => {
+    expect(
+      studioHorizontalHistoryArrow({ ...baseContext, key: "ArrowLeft", metaKey: true }, "mac"),
+    ).toBe(true);
+    expect(
+      studioHorizontalHistoryArrow(
+        { ...baseContext, key: "ArrowRight", metaKey: true, editableTarget: true },
+        "mac",
+      ),
+    ).toBe(false);
+    expect(
+      studioHorizontalHistoryArrow({ ...baseContext, key: "ArrowLeft", ctrlKey: true }, "mac"),
+    ).toBe(false);
+  });
+
   it("still matches while an editable field is focused", () => {
     expect(
       studioPageForShortcut(
@@ -100,6 +142,7 @@ describe("StudioNavRail page shortcuts", () => {
     cleanup();
     setStudioAnnotateDirty(false);
     vi.restoreAllMocks();
+    window.dispatchEvent(new KeyboardEvent("keyup", { key: "Meta", bubbles: true }));
   });
 
   it("switches pages with the platform chord and ignores the other modifier, repeats, and a cancelled annotate leave", async () => {
@@ -109,9 +152,25 @@ describe("StudioNavRail page shortcuts", () => {
     const shortcutLabel = platform === "mac" ? "Meta+2" : "Control+2";
     const router = renderNav("/assay");
     expect(await screen.findByRole("navigation", { name: "Primary" })).toBeTruthy();
-    expect(screen.getByRole("link", { name: "Metadata" }).getAttribute("aria-keyshortcuts")).toBe(
-      shortcutLabel,
-    );
+    const metadata = screen.getByRole("link", { name: "Metadata" });
+    const numberHint = platform === "mac" ? "⌘2" : "Ctrl+2";
+    const upHint = platform === "mac" ? "⌘↑" : "Ctrl+↑";
+    const downHint = platform === "mac" ? "⌘↓" : "Ctrl+↓";
+    const rail = screen.getByRole("navigation", { name: "Primary" });
+    expect(metadata.getAttribute("aria-keyshortcuts")).toBe(shortcutLabel);
+    expect(metadata.textContent).not.toContain(numberHint);
+    expect(rail.textContent).not.toContain(upHint);
+    expect(rail.textContent).not.toContain(downHint);
+
+    keydown(platform === "mac" ? "Meta" : "Control", chord);
+    expect(metadata.textContent).toContain(numberHint);
+    expect(metadata.textContent).not.toContain(upHint);
+    expect(metadata.textContent).not.toContain(downHint);
+    expect(rail.textContent?.startsWith(upHint)).toBe(true);
+    expect(rail.textContent?.endsWith(downHint)).toBe(true);
+    window.dispatchEvent(new KeyboardEvent("keyup", { key: "Meta", bubbles: true }));
+    expect(metadata.textContent).not.toContain(numberHint);
+    expect(rail.textContent).not.toContain(upHint);
 
     keydown("2", chord);
     await waitFor(() => expect(router.state.location.pathname).toBe("/metadata"));
@@ -135,6 +194,27 @@ describe("StudioNavRail page shortcuts", () => {
     vi.mocked(window.confirm).mockReturnValue(true);
     keydown("1", chord);
     await waitFor(() => expect(router.state.location.pathname).toBe("/assay"));
+  });
+
+  it("moves up and down the rail and ignores horizontal history arrows", async () => {
+    const platform = studioPageShortcutPlatform();
+    const chord = platform === "mac" ? { metaKey: true } : { ctrlKey: true };
+    const router = renderNav("/metadata");
+    expect(await screen.findByRole("navigation", { name: "Primary" })).toBeTruthy();
+
+    keydown("ArrowDown", chord);
+    await waitFor(() => expect(router.state.location.pathname).toBe("/align"));
+
+    keydown("ArrowUp", chord);
+    await waitFor(() => expect(router.state.location.pathname).toBe("/metadata"));
+
+    keydown("ArrowLeft", chord);
+    keydown("ArrowRight", chord);
+    expect(router.state.location.pathname).toBe("/metadata");
+
+    await router.navigate({ to: "/assay" });
+    keydown("ArrowUp", chord);
+    expect(router.state.location.pathname).toBe("/assay");
   });
 });
 

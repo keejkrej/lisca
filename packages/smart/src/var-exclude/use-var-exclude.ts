@@ -43,7 +43,7 @@ export function useVarExclude(options: {
     runGeneration = generation;
 
     onErrorRef.current?.(null);
-    onStatusRef.current?.("Var exclude");
+    onStatusRef.current?.("Log-std exclude");
     setBusy(true);
     try {
       const patterns = await options.provider.excludeEdgeAndVariation(input);
@@ -67,13 +67,13 @@ export function useVarExclude(options: {
     runGeneration = generation;
 
     onErrorRef.current?.(null);
-    onStatusRef.current?.("Var exclude preview");
+    onStatusRef.current?.("Log-std exclude preview");
     setBusy(true);
     try {
       const preview = await options.provider.preview(input);
       if (runGeneration !== generation) return;
       if (!preview) {
-        onStatusRef.current?.("No visible patterns for var exclude");
+        onStatusRef.current?.("No visible patterns for log-std exclude");
         return;
       }
       onPreviewRef.current?.(preview);

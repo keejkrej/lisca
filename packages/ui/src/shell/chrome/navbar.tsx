@@ -89,7 +89,7 @@ function ShellNavbarRoot(props: ShellNavbarProps) {
         {(text) => (
           <span
             aria-hidden="true"
-            class="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-xs font-semibold uppercase tracking-[0.2em] text-foreground/60"
+            class="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-xs font-semibold uppercase tracking-[0.2em] text-foreground"
           >
             {text()}
           </span>

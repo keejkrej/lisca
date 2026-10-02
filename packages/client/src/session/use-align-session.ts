@@ -448,11 +448,11 @@ export function useAlignSessionCore(options: UseAlignSessionCoreOptions) {
     const currentUi = ui();
     const { source, frame } = currentUi;
     if (!source || !frame) return;
-    sessionActions.reportStatus("Var exclude preview");
+    sessionActions.reportStatus("Log-std exclude preview");
     try {
       const preview = await previewVariationExclude();
       if (!preview) {
-        sessionActions.reportStatus("No visible patterns for var exclude");
+        sessionActions.reportStatus("No visible patterns for log-std exclude");
         return;
       }
       setVariationExcludePreview({
@@ -460,7 +460,7 @@ export function useAlignSessionCore(options: UseAlignSessionCoreOptions) {
         threshold: preview.threshold,
       });
     } catch (cause) {
-      sessionActions.reportError(backend.toErrorMessage(cause, "Var exclude preview failed"));
+      sessionActions.reportError(backend.toErrorMessage(cause, "Log-std exclude preview failed"));
     }
   };
 
@@ -475,7 +475,7 @@ export function useAlignSessionCore(options: UseAlignSessionCoreOptions) {
   const cancelVariationExclude = () => {
     if (!variationExcludePreview()) return;
     dismissVariationExcludePreview();
-    sessionActions.reportStatus("Var exclude cancelled");
+    sessionActions.reportStatus("Log-std exclude cancelled");
   };
 
   const applyVariationExclude = () => {
@@ -488,7 +488,7 @@ export function useAlignSessionCore(options: UseAlignSessionCoreOptions) {
     sessionActions.setExcludedPatternsForCurrentPosition(applied.patterns);
     setVariationExcludePreview(null);
     sessionActions.reportStatus(
-      `Var excluded ${applied.variationPatterns.length} of ${applied.eligiblePatternCount} patterns`,
+      `Log-std excluded ${applied.variationPatterns.length} of ${applied.eligiblePatternCount} patterns`,
     );
   };
 
@@ -497,7 +497,7 @@ export function useAlignSessionCore(options: UseAlignSessionCoreOptions) {
     const { source, frame, grid } = currentUi;
     const currentExcludedPatterns = derived().currentExcludedPatterns;
     if (!source || !frame) return;
-    sessionActions.reportStatus("Edge and var exclude");
+    sessionActions.reportStatus("Edge and log-std exclude");
     try {
       const preview = await previewVariationExclude();
       const finalExcludedPatterns = mergeEdgeAndVariationExcludedPatterns(
@@ -509,10 +509,10 @@ export function useAlignSessionCore(options: UseAlignSessionCoreOptions) {
       );
       sessionActions.setExcludedPatternsForCurrentPosition(finalExcludedPatterns);
       sessionActions.reportStatus(
-        `Edge and var excluded ${finalExcludedPatterns.length - currentExcludedPatterns.length} patterns`,
+        `Edge and log-std excluded ${finalExcludedPatterns.length - currentExcludedPatterns.length} patterns`,
       );
     } catch (cause) {
-      sessionActions.reportError(backend.toErrorMessage(cause, "Edge and var exclude failed"));
+      sessionActions.reportError(backend.toErrorMessage(cause, "Edge and log-std exclude failed"));
     }
   };
 

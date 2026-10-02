@@ -116,7 +116,6 @@ export function useStudioAnnotateDock() {
       return state.canGoToPreviousSite;
     },
     goToPreviousSite: bindLive(() => state.goToPreviousSite),
-    shuffleSelection: bindLive(() => state.shuffleSelection),
     requestContinueToAnalysis: bindLive(() => state.requestContinueToAnalysis),
   };
 }

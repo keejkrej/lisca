@@ -1,10 +1,16 @@
 import { cn } from "@lisca/ui/components";
 import { Link, useNavigate, useRouterState } from "@tanstack/solid-router";
-import { createEffect, For, onCleanup, type JSX } from "solid-js";
+import { createEffect, For, onCleanup, Show, type JSX } from "solid-js";
+
+import { commandModifierHeld } from "../navigation/command-modifier-held";
 
 import {
   STUDIO_PAGES,
+  studioHorizontalHistoryArrow,
   studioPageForShortcut,
+  studioPageShortcutHint,
+  studioPageStepHint,
+  studioPageStepTarget,
   studioPageShortcutPlatform,
   type StudioPageShortcutPlatform,
 } from "../navigation/studio-page-shortcuts";
@@ -22,6 +28,25 @@ function stepLabel(index: number): string {
   return STEP_ROMAN[index - 1] ?? String(index);
 }
 
+/** Keeps ⌘ and the key in fixed columns so ↑/↓ line up with 1–5. */
+function RailChordHint(props: { label: string }) {
+  const prefix = props.label.startsWith("⌘")
+    ? "⌘"
+    : props.label.startsWith("Ctrl+")
+      ? "Ctrl+"
+      : "";
+  const key = prefix ? props.label.slice(prefix.length) : props.label;
+  return (
+    <span
+      aria-hidden="true"
+      class="ml-auto inline-flex shrink-0 items-center text-[10px] font-medium leading-none text-current"
+    >
+      <span>{prefix}</span>
+      <span class="inline-flex w-3 justify-center">{key}</span>
+    </span>
+  );
+}
+
 function NavButton(props: {
   active: boolean;
   children: JSX.Element;
@@ -32,19 +57,19 @@ function NavButton(props: {
   leaveAnnotateGuard?: boolean;
 }) {
   const navigate = useNavigate();
-  const shortcutKey =
-    props.shortcutPlatform === "mac" ? `Meta+${props.index}` : `Control+${props.index}`;
+  const modifier = props.shortcutPlatform === "mac" ? "Meta" : "Control";
+  const hint = () => studioPageShortcutHint(props.index, props.shortcutPlatform);
 
   return (
     <Link
       aria-current={props.active ? "page" : undefined}
-      aria-keyshortcuts={shortcutKey}
+      aria-keyshortcuts={`${modifier}+${props.index}`}
       class={cn(
         "group flex h-9 w-full min-w-0 shrink-0 items-center gap-3 pr-3 pl-8 text-left outline-none transition-colors",
         "focus-visible:ring-2 focus-visible:ring-ring",
         props.active
           ? "bg-primary text-primary-foreground"
-          : "bg-transparent text-muted-foreground hover:bg-secondary hover:text-foreground",
+          : "bg-transparent text-foreground hover:bg-secondary",
       )}
       to={props.to}
       onClick={(event) => {
@@ -73,6 +98,9 @@ function NavButton(props: {
         {stepLabel(props.index)}
       </span>
       <span class="min-w-0 truncate text-sm leading-[18px] font-medium">{props.children}</span>
+      <Show when={commandModifierHeld()}>
+        <RailChordHint label={hint()} />
+      </Show>
     </Link>
   );
 }
@@ -92,30 +120,52 @@ export function StudioNavRail() {
 
   createEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.repeat || event.isComposing) return;
-      const to = studioPageForShortcut(
-        {
-          key: event.key,
-          editableTarget: isEditableTarget(event.target),
-          metaKey: event.metaKey,
-          ctrlKey: event.ctrlKey,
-          shiftKey: event.shiftKey,
-          altKey: event.altKey,
-        },
-        shortcutPlatform,
-      );
+      if (event.isComposing) return;
+      const context = {
+        key: event.key,
+        editableTarget: isEditableTarget(event.target),
+        metaKey: event.metaKey,
+        ctrlKey: event.ctrlKey,
+        shiftKey: event.shiftKey,
+        altKey: event.altKey,
+      };
+      if (studioHorizontalHistoryArrow(context, shortcutPlatform)) {
+        event.preventDefault();
+        return;
+      }
+      const current = `/${routeId()}` as StudioRouteTo;
+      const step = studioPageStepTarget(context, shortcutPlatform, current);
+      if (step) {
+        event.preventDefault();
+        if (!event.repeat && step.to) goTo(step.to);
+        return;
+      }
+      if (event.repeat) return;
+      const to = studioPageForShortcut(context, shortcutPlatform);
       if (!to) return;
       event.preventDefault();
       goTo(to);
     };
 
-    window.addEventListener("keydown", onKeyDown);
-    onCleanup(() => window.removeEventListener("keydown", onKeyDown));
+    window.addEventListener("keydown", onKeyDown, true);
+    onCleanup(() => window.removeEventListener("keydown", onKeyDown, true));
   });
+
+  const endHint = (direction: "up" | "down") => (
+    <Show when={commandModifierHeld()}>
+      <span
+        aria-hidden="true"
+        class="flex items-center pr-3 pl-8 text-[10px] font-medium leading-none text-foreground"
+      >
+        <RailChordHint label={studioPageStepHint(direction, shortcutPlatform)} />
+      </span>
+    </Show>
+  );
 
   return (
     <nav aria-label="Primary" class="flex h-full min-h-0 flex-col justify-center py-2.5">
       <div class="ml-7 flex w-[200px] min-w-0 shrink-0 flex-col gap-1">
+        {endHint("up")}
         <For each={STUDIO_PAGES}>
           {(page) => (
             <NavButton
@@ -129,6 +179,7 @@ export function StudioNavRail() {
             </NavButton>
           )}
         </For>
+        {endHint("down")}
       </div>
     </nav>
   );

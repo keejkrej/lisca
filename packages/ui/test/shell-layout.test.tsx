@@ -333,7 +333,7 @@ describe("StageCanvas framing", () => {
     const root = screen.getByTestId("stage-child").parentElement!.parentElement!;
     hasClass(root, "h-full");
     hasClass(root, "min-h-0");
-    hasClass(root, "gap-3");
+    hasClass(root, "gap-5");
     const well = root.firstElementChild!;
     hasClass(well, "flex-1");
     hasClass(well, "min-h-0");

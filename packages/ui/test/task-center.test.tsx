@@ -200,6 +200,7 @@ describe("Task Center dialog", () => {
     const trigger = view.getByRole("button", { name: "Tasks, 0 active" });
 
     expect(trigger.dataset.taskCenterAppearance).toBe("status-link");
+    expect(trigger.className).toContain("z-button-variant-outline");
     expect(trigger.textContent).toBe("Tasks");
     expect(trigger.querySelector('[data-slot="task-badge"]')).toBeNull();
 

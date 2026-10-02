@@ -4,7 +4,6 @@ import { createSignal, Show } from "solid-js";
 
 import { Button } from "../../components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../../components/ui/tooltip";
-import { cn } from "../../lib/utils";
 
 /** Basename path control (`Button` outline; matches shell chrome). */
 export function PathButton(props: {
@@ -54,7 +53,6 @@ function StagePathButton(props: {
   onClick?: () => void;
 }) {
   const [copied, setCopied] = createSignal(false);
-  const set = () => Boolean(props.value);
   const copyPath = async () => {
     if (!props.value) return;
     try {
@@ -86,12 +84,7 @@ function StagePathButton(props: {
         }}
         class="h-8 border-0 px-2.5 font-normal shadow-none"
       >
-        <span
-          class={cn(
-            "shrink-0 text-[10px] uppercase tracking-[0.12em] transition-colors",
-            set() ? "text-foreground" : "text-muted-foreground",
-          )}
-        >
+        <span class="shrink-0 text-[10px] font-normal uppercase tracking-[0.12em] text-foreground">
           {props.label}
         </span>
       </TooltipTrigger>

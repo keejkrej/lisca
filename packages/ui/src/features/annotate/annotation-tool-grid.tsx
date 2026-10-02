@@ -99,10 +99,12 @@ export function AnnotationToolGrid(props: {
   canEditTools: boolean;
   toolActions: DockToolAction[];
   class?: string;
+  /** When false, digit keys do not change tools. Number badges stay visible unless `showShortcutLabels` is false. */
   shortcutsEnabled?: boolean;
+  showShortcutLabels?: boolean;
   layout?: "grid" | "rail";
 }) {
-  const showShortcutLabels = () => props.shortcutsEnabled ?? true;
+  const showShortcutLabels = () => props.showShortcutLabels ?? true;
   const [lastEditFamily, setLastEditFamily] =
     createSignal<Exclude<AnnotationToolFamily, "magnifier">>("brush");
   createEffect(() => {

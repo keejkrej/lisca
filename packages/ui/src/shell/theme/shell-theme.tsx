@@ -135,9 +135,9 @@ export function ShellThemeToggle(props: { class?: string }) {
   return (
     <Button
       type="button"
-      variant="ghost"
+      variant="outline"
       size="icon-sm"
-      class={cn("size-7 text-muted-foreground", props.class)}
+      class={cn("size-7 text-foreground", props.class)}
       onClick={theme.toggleLightDark}
       title={title()}
       aria-label={title()}

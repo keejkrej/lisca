@@ -1,6 +1,6 @@
 import type { AnnotationLabel, RoiFrameRequest } from "@lisca/contracts";
 import { maskHasPixels, type FrameResult } from "@lisca/utils";
-import { resultData, resultLoading } from "../atoms/result-utils";
+import { resultData, resultInFlight } from "../atoms/result-utils";
 import {
   useAnnotateSessionCore,
   type AnnotateWorkspaceSync,
@@ -325,6 +325,7 @@ export function useAnnotateStateCore<State extends AnnotatorUiState>(
         labels: nextLabels,
       });
       deps.annotatorUiActions.applySavedLabels(setUi, savedLabels);
+      deps.annotatorUiActions.setStatus(setUi, "Saved labels");
     } catch (cause) {
       session.actions.setLabelError(deps.toErrorMessage(cause, "Annotation labels save failed"));
     }
@@ -373,7 +374,7 @@ export function useAnnotateStateCore<State extends AnnotatorUiState>(
       currentUi.annotationError ??
       currentUi.saveError;
     const transientStatus = visibleStatus();
-    const saveLabelsPending = resultLoading(saveLabelsResult());
+    const saveLabelsPending = resultInFlight(saveLabelsResult());
     const activeToastStatus = currentUi.frameLoading
       ? "Loading ROI frame"
       : currentUi.annotationLoading

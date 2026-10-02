@@ -204,7 +204,7 @@ export default function AnalysisPage() {
                 <StudioAnalysisExpert />
                 <StudioAnalysisControls
                   saveDisabled={!analysisPage.workspacePath?.trim() || !hasAnyPlots() || isSaving()}
-                  saveLabel={isSaving() ? "Saving PDF…" : "Save PDF"}
+                  saveLabel="Save PDF"
                   shortcutsEnabled={!isSaving()}
                   toolActions={hasAnyPlots() ? sectionToolActions() : []}
                   onSave={() => void savePdf()}
@@ -215,7 +215,7 @@ export default function AnalysisPage() {
           >
             <StudioAnalysisControls
               saveDisabled={!analysisPage.workspacePath?.trim() || !hasAnyPlots() || isSaving()}
-              saveLabel={isSaving() ? "Saving PDF…" : "Save PDF"}
+              saveLabel="Save PDF"
               shortcutsEnabled={!isSaving()}
               toolActions={hasAnyPlots() ? sectionToolActions() : []}
               onSave={() => void savePdf()}

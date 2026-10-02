@@ -13,12 +13,14 @@ function DemoAnnotatorToolToolbar(props: {
   toolActions: DockToolAction[];
   class?: string;
   shortcutsEnabled?: boolean;
+  showShortcutLabels?: boolean;
 }) {
   return (
     <AnnotationToolGrid
       canEditTools={props.canEditTools}
       class={props.class}
       shortcutsEnabled={props.shortcutsEnabled}
+      showShortcutLabels={props.showShortcutLabels}
       toolActions={props.toolActions}
     />
   );
@@ -48,6 +50,7 @@ export function DemoInlineAnnotatorToolbar(props: {
                     : props.state().activeLabelId === label.id;
                 return (
                   <button
+                    aria-pressed={selected()}
                     class={cn(
                       "min-w-0 truncate rounded-md border px-2 py-1.5 text-center text-xs font-medium disabled:cursor-not-allowed disabled:opacity-50",
                     )}
@@ -79,6 +82,7 @@ export function DemoInlineAnnotatorToolbar(props: {
             canEditTools={canEditTools()}
             class="mx-auto flex w-full max-w-md flex-col gap-2"
             shortcutsEnabled={false}
+            showShortcutLabels={false}
             toolActions={toolActions()}
           />
         </Show>

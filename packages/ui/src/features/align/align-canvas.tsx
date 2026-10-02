@@ -131,6 +131,25 @@ function drawGridOverlayFromScene(
   ctx.moveTo(scene.spacingB.start.x, scene.spacingB.start.y);
   ctx.lineTo(scene.spacingB.end.x, scene.spacingB.end.y);
   ctx.stroke();
+  drawAxisLabel(ctx, "X", scene.origin, scene.spacingA.end, alignGridOverlayColors.spacingA);
+  drawAxisLabel(ctx, "Y", scene.origin, scene.spacingB.end, alignGridOverlayColors.spacingB);
+}
+
+function drawAxisLabel(
+  ctx: CanvasRenderingContext2D,
+  label: string,
+  origin: { x: number; y: number },
+  end: { x: number; y: number },
+  color: string,
+) {
+  const dx = end.x - origin.x;
+  const dy = end.y - origin.y;
+  const length = Math.hypot(dx, dy) || 1;
+  ctx.fillStyle = color;
+  ctx.font = "600 12px sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(label, end.x + (dx / length) * 12, end.y + (dy / length) * 12);
 }
 
 export function AlignCanvas(props: AlignCanvasProps) {

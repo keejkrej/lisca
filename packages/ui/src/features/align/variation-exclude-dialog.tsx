@@ -49,13 +49,13 @@ export function VariationExcludeDialog(props: {
             <DialogSurface aria-labelledby="var-exclude-title" maxWidth="lg">
               <div class="border-b border-border px-5 py-3">
                 <h2 class="font-semibold text-foreground text-base" id="var-exclude-title">
-                  Var exclude
+                  Log-std exclude
                 </h2>
               </div>
 
               <div class="flex flex-col gap-3 px-5 py-4">
                 <div
-                  aria-label="Variation score histogram"
+                  aria-label="Log-std mask histogram"
                   class="flex h-28 items-end gap-0.5 rounded-md border border-border bg-background/50 px-2 py-2"
                 >
                   <For each={preview().histogramBins}>
@@ -87,7 +87,7 @@ export function VariationExcludeDialog(props: {
                     </span>
                   </div>
                   <Slider
-                    aria-label="Variation threshold"
+                    aria-label="Log-std threshold"
                     id="variation-threshold"
                     max={metrics().max}
                     min={metrics().min}

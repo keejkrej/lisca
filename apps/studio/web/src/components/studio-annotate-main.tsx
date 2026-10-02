@@ -12,9 +12,7 @@ import {
   useStudioAnnotateCanvas,
   useStudioAnnotateNav,
 } from "../state/studio-annotate-page-selectors";
-import { StudioAnalysisProgressModal } from "./studio-analysis-progress-modal";
 import { StudioEmptyState } from "./studio-empty-state";
-import { StudioAnalysisStartModal } from "./studio-analysis-start-modal";
 
 export function StudioAnnotateMain() {
   const { navigateTo } = useStudioNavigate();
@@ -90,8 +88,6 @@ export function StudioAnnotateMain() {
               />
             </StageCanvas>
           </ViewportCard>
-          <StudioAnalysisStartModal />
-          <StudioAnalysisProgressModal />
         </>
       }
     >
@@ -104,8 +100,6 @@ export function StudioAnnotateMain() {
             onAction={() => navigateTo("/metadata")}
           />
         </ViewportCard>
-        <StudioAnalysisStartModal />
-        <StudioAnalysisProgressModal />
       </Match>
       <Match when={!state.scanLoading && state.scan && state.scan.positions.length === 0}>
         <ViewportCard contentClass="relative max-w-[480px]">
@@ -116,8 +110,6 @@ export function StudioAnnotateMain() {
             onAction={() => navigateTo("/align")}
           />
         </ViewportCard>
-        <StudioAnalysisStartModal />
-        <StudioAnalysisProgressModal />
       </Match>
     </Switch>
   );

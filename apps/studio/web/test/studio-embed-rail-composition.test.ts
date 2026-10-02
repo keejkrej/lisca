@@ -10,21 +10,28 @@ describe("Studio Align instrument stack composition", () => {
   const navSource = readSource("../src/components/studio-align-nav.tsx");
   const routeSource = readSource("../src/routes/align.tsx");
 
-  it("gates Navigation, Contrast, Grid, and Geometry behind expert; keeps Selection basic", () => {
-    const expertBlocks = [
-      ...stackSource.matchAll(/<Show when=\{props\.expert\}>([\s\S]*?)<\/Show>/g),
-    ].map((match) => match[1] ?? "");
-    expect(expertBlocks).toHaveLength(2);
-    expect(expertBlocks[0]).toMatch(/<StudioAlignNav\s*\/>/);
-    expect(expertBlocks[1]).toMatch(/<AlignGridRail\b/);
-    expect(expertBlocks.join("")).not.toMatch(
-      /<AlignSelectionRail|<AlignToolSection|title="Action"/,
-    );
+  it("stacks Navigation, Contrast, and Geometry above Grid, Tool, Selection, and Action", () => {
+    const expertBlock = stackSource.match(/<Show when=\{props\.expert\}>([\s\S]*?)<\/Show>/)?.[1] ?? "";
+    expect(expertBlock).toMatch(/<StudioAlignNav\s*\/>/);
+    expect(expertBlock).toMatch(/gridRail\("geometry"\)/);
+    expect(expertBlock).not.toMatch(/<AlignSelectionRail|<AlignToolSection|title="Action"|gridRail\("grid"\)/);
+
+    const navIdx = stackSource.indexOf("<StudioAlignNav");
+    const geometryIdx = stackSource.indexOf('gridRail("geometry")');
+    const gridIdx = stackSource.indexOf('{gridRail("grid")}');
+    const toolIdx = stackSource.indexOf("<AlignToolSection");
+    const selectionIdx = stackSource.indexOf("<AlignSelectionRail");
+    const actionIdx = stackSource.indexOf('title="Action"');
+    expect(navIdx).toBeLessThan(geometryIdx);
+    expect(geometryIdx).toBeLessThan(gridIdx);
+    expect(gridIdx).toBeLessThan(toolIdx);
+    expect(toolIdx).toBeLessThan(selectionIdx);
+    expect(selectionIdx).toBeLessThan(actionIdx);
   });
 
   it("uses the shared Action vocabulary: Save, Back, Next, Crop", () => {
     const action = stackSource.slice(stackSource.indexOf('title="Action"'));
-    const labels = [...action.matchAll(/>\s*(\{[^}]*"Save"\}|Back|Next|Crop|Continue)\s*</g)].map(
+    const labels = [...action.matchAll(/>\s*(\{[^}]*"Save"\}|Save|Back|Next|Crop|Continue)\s*</g)].map(
       (match) => (match[1]!.includes("Save") ? "Save" : match[1]),
     );
     expect(labels).toEqual(["Save", "Back", "Next", "Crop"]);
@@ -40,7 +47,7 @@ describe("Studio Align instrument stack composition", () => {
     );
   });
 
-  it("orders Navigation, Contrast, Tool before Grid/Selection and Action last", () => {
+  it("orders Navigation and Contrast before Geometry, then Grid, Tool, Selection, and Action", () => {
     expect(navSource).toMatch(/<FrameNavigation\b/);
     expect(navSource).toMatch(/<ContrastControl\b/);
     expect(navSource.indexOf("<FrameNavigation")).toBeLessThan(
@@ -50,19 +57,9 @@ describe("Studio Align instrument stack composition", () => {
     expect(stackSource).toMatch(/<StudioAlignNav\s*\/>/);
     expect(stackSource).toMatch(/<AlignToolSection\b/);
     expect(stackSource).toMatch(/<AlignGridRail\b/);
+    expect(stackSource).toMatch(/railPart=\{railPart\}/);
     expect(stackSource).toMatch(/<AlignSelectionRail\b/);
     expect(stackSource).toMatch(/title="Action"/);
-
-    const navIdx = stackSource.indexOf("<StudioAlignNav");
-    const toolIdx = stackSource.indexOf("<AlignToolSection");
-    const gridIdx = stackSource.indexOf("<AlignGridRail");
-    const selectionIdx = stackSource.indexOf("<AlignSelectionRail");
-    const actionIdx = stackSource.indexOf('title="Action"');
-
-    expect(navIdx).toBeLessThan(toolIdx);
-    expect(toolIdx).toBeLessThan(gridIdx);
-    expect(gridIdx).toBeLessThan(selectionIdx);
-    expect(selectionIdx).toBeLessThan(actionIdx);
   });
 
   it("reuses AlignToolSection, AlignGridRail, and AlignSelectionRail primitives", () => {
@@ -78,17 +75,20 @@ describe("Studio Annotate instrument stack composition", () => {
   const navSource = readSource("../src/components/studio-annotate-nav.tsx");
   const routeSource = readSource("../src/routes/annotate.tsx");
 
-  it("mounts one shared stack in both modes with expert-only Shuffle", () => {
-    expect(routeSource).toMatch(
-      /expert=\{\(\) => <StudioAnnotateInstrumentStack\s+showShuffle\s*\/>\}/,
-    );
-    expect(routeSource).toMatch(/<StudioAnnotateInstrumentStack\s+showShuffle=\{false\}\s*\/>/);
+  it("mounts one shared stack and gates Navigation and Contrast behind expert", () => {
+    expect(routeSource).toMatch(/<StudioAnnotateInstrumentStack\s*\/>/);
+    expect(routeSource).not.toMatch(/expert=\{\(\) => <StudioAnnotateInstrumentStack/);
+    expect(routeSource).not.toMatch(/showShuffle|Shuffle/);
     expect(routeSource).not.toMatch(
       /StudioAnnotateRight|StudioAnnotateExpertRight|studio-annotate-dock/,
     );
+    const expertBlock =
+      stackSource.match(/<Show when=\{expertMode\(\)\}>([\s\S]*?)<\/Show>/)?.[1] ?? "";
+    expect(expertBlock).toMatch(/<StudioAnnotateNav\s*\/>/);
+    expect(expertBlock).not.toMatch(/Tool|Action|AnnotationControlRail/);
   });
 
-  it("orders Navigation, Contrast, Tool before Mode and Action last", () => {
+  it("orders Navigation and Contrast, then Mode before Tool, and Action last", () => {
     expect(navSource).toMatch(/<RoiFrameNavigation\b/);
     expect(navSource).toMatch(/<ContrastControl\b/);
     expect(navSource.indexOf("<RoiFrameNavigation")).toBeLessThan(
@@ -96,38 +96,41 @@ describe("Studio Annotate instrument stack composition", () => {
     );
 
     expect(stackSource).toMatch(/<StudioAnnotateNav\s*\/>/);
-    expect(stackSource).toMatch(/<StudioAnnotateToolSection\s*\/>/);
     expect(stackSource).toMatch(/<StudioAnnotateControlSections\s*\/>/);
     expect(stackSource).toMatch(/<StudioAnnotateActionSection/);
+    expect(stackSource).toMatch(/insertAfterMode=\{<StudioAnnotateToolSection\s*\/>\}/);
 
     const navIdx = stackSource.indexOf("<StudioAnnotateNav");
-    const toolIdx = stackSource.indexOf("<StudioAnnotateToolSection");
-    const modeIdx = stackSource.indexOf("<StudioAnnotateControlSections");
+    const controlsIdx = stackSource.indexOf("<StudioAnnotateControlSections");
     const actionIdx = stackSource.indexOf("<StudioAnnotateActionSection");
 
-    expect(navIdx).toBeLessThan(toolIdx);
-    expect(toolIdx).toBeLessThan(modeIdx);
-    expect(modeIdx).toBeLessThan(actionIdx);
+    expect(navIdx).toBeLessThan(controlsIdx);
+    expect(controlsIdx).toBeLessThan(actionIdx);
 
-    // Tool section mounts AnnotationToolGrid; Mode comes from AnnotationControlRail.
     expect(stackSource).toMatch(/title="Tool"/);
     expect(stackSource).toMatch(/<AnnotationToolGrid\b/);
     expect(stackSource).toMatch(/<AnnotationControlRail\b/);
-    expect(stackSource.indexOf('title="Tool"')).toBeLessThan(
-      stackSource.indexOf("<AnnotationControlRail"),
-    );
     expect(stackSource).toMatch(/title="Action"/);
+    const controlRail = readSource(
+      "../../../../packages/ui/src/features/annotate/annotation-control-rail.tsx",
+    );
+    expect(controlRail.indexOf('title="Mode"')).toBeLessThan(
+      controlRail.indexOf("{props.insertAfterMode}"),
+    );
+    expect(controlRail.indexOf("{props.insertAfterMode}")).toBeLessThan(
+      controlRail.indexOf('title="Labels"'),
+    );
   });
 
-  it("keeps Shuffle gated to the expert Action section", () => {
-    expect(stackSource).toMatch(/showShuffle/);
-    expect(stackSource).toMatch(/Shuffle/);
-    expect(stackSource).toMatch(/Show when=\{props\.showShuffle\}/);
+  it("drops Shuffle and wires Back and Next to the align chords", () => {
+    expect(stackSource).not.toMatch(/Shuffle|showShuffle|shuffleSelection/);
+    expect(stackSource).toMatch(/useStudioCommandShortcut\(\s*"back"/);
+    expect(stackSource).toMatch(/useStudioCommandShortcut\(\s*"next"/);
   });
 });
 
 describe("Studio right-rail flattened section contract", () => {
-  it("documents Align order Instruction → Nav → Contrast → Tool → Grid → Geometry → Selection → Action", () => {
+  it("documents Align order Instruction → Nav → Contrast → Geometry → Grid → Tool → Selection → Action", () => {
     const rightPanel = readSource("../src/components/studio-right-panel.tsx");
     const instruction = readSource("../src/components/studio-instruction-section.tsx");
     const stack = readSource("../src/components/studio-align-instrument-stack.tsx");
@@ -147,7 +150,7 @@ describe("Studio right-rail flattened section contract", () => {
     );
   });
 
-  it("documents Annotate order Instruction → Nav → Contrast → Tool → Mode → Labels → Edit → Brush → Action", () => {
+  it("documents Annotate order Instruction → Nav → Contrast → Mode → Tool → Labels → Edit → Brush → Action", () => {
     const stack = readSource("../src/components/studio-annotate-instrument-stack.tsx");
     const controlRail = readSource(
       "../../../../packages/ui/src/features/annotate/annotation-control-rail.tsx",

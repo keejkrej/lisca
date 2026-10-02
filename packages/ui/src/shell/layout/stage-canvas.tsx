@@ -18,7 +18,7 @@ export function StageCanvas(props: {
   notice?: JSX.Element;
 }) {
   return (
-    <div class={cn("flex h-full min-h-0 w-full flex-col gap-3", props.class)}>
+    <div class={cn("flex h-full min-h-0 w-full flex-col gap-5", props.class)}>
       <div
         class={cn(
           "relative min-h-0 w-full flex-1 overflow-hidden rounded-none bg-paper",

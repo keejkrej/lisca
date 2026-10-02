@@ -6,8 +6,9 @@ import { createEffect, onCleanup } from "solid-js";
 import { useNavigate } from "@tanstack/solid-router";
 import { runClientEffect } from "@lisca/client/runtime";
 
-import { studioNavigate } from "../navigation/use-studio-navigate";
 import { studioClient, toErrorMessage } from "../api/studio-port";
+import { openStudioTaskCenter } from "../components/studio-task-center-open";
+import { studioNavigate } from "../navigation/use-studio-navigate";
 import {
   annotationLabelsAtom,
   labelsIdleAtom,
@@ -58,7 +59,6 @@ export type StudioAnnotateState = ReturnType<ReturnType<typeof useAnnotateStateC
   goToNextSite: () => void;
   canGoToPreviousSite: boolean;
   goToPreviousSite: () => void;
-  shuffleSelection: () => void;
   requestContinueToAnalysis: () => void;
   workspaceMissing: boolean;
 };
@@ -105,34 +105,6 @@ export function useStudioAnnotateState(): StudioAnnotateState {
     analysisGeneration += 1;
     stopAnalysisProgress();
   });
-  const shuffleSelection = () => {
-    const current = annotate();
-    if (!current.scan?.positions.length) return;
-    const randomPosition =
-      current.scan.positions[Math.floor(Math.random() * current.scan.positions.length)];
-    const randomRoi =
-      randomPosition?.rois[Math.floor(Math.random() * randomPosition.rois.length)] ?? null;
-    const channel = randomPosition ? (randomPosition.channels[0] ?? null) : null;
-    const roi = randomRoi?.roi ?? null;
-    const timeIndex =
-      randomPosition && randomPosition.times.length > 0
-        ? Math.floor(Math.random() * randomPosition.times.length)
-        : 0;
-    const zIndex =
-      randomPosition && randomPosition.zSlices.length > 0
-        ? Math.floor(Math.random() * randomPosition.zSlices.length)
-        : 0;
-    if (!randomPosition) return;
-    current.changeSelection(() =>
-      current.setSelection({
-        pos: randomPosition.pos,
-        roi,
-        channel,
-        timeIndex,
-        zIndex,
-      }),
-    );
-  };
   const nextSite = () => {
     const current = annotate();
     return nextStudioAnnotateRoi(current.scan, current.selection);
@@ -158,6 +130,8 @@ export function useStudioAnnotateState(): StudioAnnotateState {
     const workspacePath = current.workspacePath;
     if (!workspacePath) return;
     setAnalysisStartConfirm(false);
+    openStudioTaskCenter("analysis");
+    studioNavigate(navigate, "/analysis");
     setStatus("Saving assay.json");
     const requestId = `studio-analysis-${Date.now()}-${Math.random().toString(36).slice(2)}`;
     const generation = analysisGeneration + 1;
@@ -243,13 +217,18 @@ export function useStudioAnnotateState(): StudioAnnotateState {
       }
     })();
   };
+  const analysisInFlight = () => {
+    const progress = ui().analysisProgress;
+    return progress != null && (progress.status === "queued" || progress.status === "running");
+  };
   const requestContinueToAnalysis = () => {
     const current = annotate();
+    if (!current.workspacePath || analysisInFlight()) return;
     if (current.annotation.dirty) {
       const proceed = window.confirm("You have unsaved annotation changes. Analyze anyway?");
       if (!proceed) return;
     }
-    setAnalysisStartConfirm(true);
+    startAnalysis();
   };
   createEffect(() => {
     setStudioAnnotateDirty(annotate().annotation.dirty);
@@ -420,7 +399,6 @@ export function useStudioAnnotateState(): StudioAnnotateState {
       return previousSite() !== null;
     },
     goToPreviousSite,
-    shuffleSelection,
     requestContinueToAnalysis,
     get workspaceMissing() {
       return !activeWorkspacePath();

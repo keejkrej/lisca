@@ -48,7 +48,6 @@ describe("Studio annotate page selectors", () => {
       get goToNextSite() {
         return goToNextSite;
       },
-      shuffleSelection: vi.fn(),
       requestContinueToAnalysis: vi.fn(),
     };
 
