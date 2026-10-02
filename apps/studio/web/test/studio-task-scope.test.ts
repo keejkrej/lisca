@@ -10,11 +10,11 @@ import {
 const task = (kind: string) => ({ kind });
 
 describe("studio task scope", () => {
-  it("keeps crop tasks on Align and analysis tasks on Analysis", () => {
-    expect(studioTaskScopeForPath("/align")).toBe("crop");
+  it("lists crop tasks on Annotate and analysis tasks on Analysis", () => {
+    expect(studioTaskScopeForPath("/annotate")).toBe("crop");
     expect(studioTaskScopeForPath("/analysis")).toBe("analysis");
+    expect(studioTaskScopeForPath("/align")).toBeNull();
     expect(studioTaskScopeForPath("/metadata")).toBeNull();
-    expect(studioTaskScopeForPath("/annotate")).toBeNull();
     expect(studioTaskScopeForPath("/assay")).toBeNull();
 
     const tasks = [

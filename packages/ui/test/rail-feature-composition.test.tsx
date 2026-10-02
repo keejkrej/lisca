@@ -1,5 +1,6 @@
-import { cleanup, render, screen, within } from "@solidjs/testing-library";
+import { cleanup, fireEvent, render, screen, within } from "@solidjs/testing-library";
 import { createDefaultAlignGrid } from "@lisca/utils";
+import { createSignal } from "solid-js";
 import { afterEach, describe, expect, it } from "vite-plus/test";
 
 import { AlignSelectionRail } from "../src/features/align/align-selection-rail";
@@ -81,7 +82,7 @@ describe("stage rail feature composition", () => {
     ).toEqual([
       ["Edit", "Reset"],
       ["Exclude all", "Edge exclude"],
-      ["Var exclude", "Smart exclude"],
+      ["Log-std exclude", "Smart exclude"],
     ]);
   });
 
@@ -96,7 +97,7 @@ describe("stage rail feature composition", () => {
     const labels = sectionFor("Labels");
     expect(labels.querySelector('[data-rail-layout="stack"]')).not.toBeNull();
     expect(labels.querySelector('[data-rail-layout="action-pair"]')).toBeNull();
-    expect(within(labels).getByRole("button", { name: "Add" })).toBeTruthy();
+    expect(within(labels).getByRole("button", { name: "Edit labels" })).toBeTruthy();
 
     const edit = sectionFor("Edit");
     expect(
@@ -133,4 +134,127 @@ describe("stage rail feature composition", () => {
       Array.from(shortcuts).every((shortcut) => shortcut.classList.contains("font-[inherit]")),
     ).toBe(true);
   });
+
+  it("highlights the label clicked in segmentation mode", () => {
+    const [activeLabelId, setActiveLabelId] = createSignal<string | null>("class-1");
+    render(() => (
+      <AnnotationControlRail
+        {...annotationProps}
+        activeLabelId={activeLabelId()}
+        labels={labelFixtures}
+        mode="segmentation"
+        sectionAppearance="rail"
+        setActiveLabelId={setActiveLabelId}
+      />
+    ));
+
+    const class2 = screen.getByRole("button", { name: "Class 2" });
+    fireEvent.click(class2);
+
+    expect(activeLabelId()).toBe("class-2");
+    expect(screen.getByRole("button", { name: "Class 1" }).getAttribute("style")).toContain(
+      "background-color: rgba(34, 197, 94, 0.08)",
+    );
+    expect(class2.getAttribute("aria-pressed")).toBe("true");
+    expect(class2.getAttribute("style")).toContain("background-color: rgb(59, 130, 246)");
+    expect(class2.getAttribute("style")).toContain("color: rgb(10, 10, 10)");
+    expect(class2.querySelector("svg")).not.toBeNull();
+  });
+
+  it("toggles the classification label and shows that choice", () => {
+    const [classificationLabelId, setClassificationLabelId] = createSignal<string | null>(null);
+    const annotation = {
+      get current() {
+        return { classificationLabelId: classificationLabelId(), mask: new Uint8Array() };
+      },
+      dirty: false,
+      canUndo: false,
+      canRedo: false,
+      undo: () => undefined,
+      redo: () => undefined,
+      discard: () => undefined,
+      commit: (value: { classificationLabelId: string | null; mask: Uint8Array }) => {
+        setClassificationLabelId(value.classificationLabelId);
+      },
+    };
+
+    render(() => (
+      <AnnotationControlRail
+        {...annotationProps}
+        annotation={annotation}
+        labels={labelFixtures}
+        mode="classification"
+        sectionAppearance="rail"
+      />
+    ));
+
+    const class1 = screen.getByRole("button", { name: "Class 1" });
+    fireEvent.keyDown(window, { code: "Digit1", key: "!", shiftKey: true });
+    expect(classificationLabelId()).toBe("class-1");
+    fireEvent.keyDown(window, { code: "Digit1", key: "!", shiftKey: true });
+    expect(classificationLabelId()).toBeNull();
+
+    fireEvent.click(class1);
+    expect(classificationLabelId()).toBe("class-1");
+    expect(class1.getAttribute("aria-pressed")).toBe("true");
+    expect(class1.getAttribute("style")).toContain("background-color: rgb(34, 197, 94)");
+    expect(class1.getAttribute("style")).toContain("color: rgb(10, 10, 10)");
+
+    fireEvent.click(class1);
+    expect(classificationLabelId()).toBeNull();
+    expect(class1.getAttribute("aria-pressed")).toBe("false");
+    expect(class1.getAttribute("style")).toContain("background-color: rgba(34, 197, 94, 0.08)");
+    expect(class1.querySelector("svg")).toBeNull();
+  });
+
+  it("toggles labels with Shift+digit and ignores blocked keys", () => {
+    const [activeLabelId, setActiveLabelId] = createSignal<string | null>(null);
+    const [canEdit, setCanEdit] = createSignal(true);
+    render(() => (
+      <AnnotationControlRail
+        {...annotationProps}
+        activeLabelId={activeLabelId()}
+        canEdit={canEdit()}
+        labels={labelFixtures}
+        mode="segmentation"
+        sectionAppearance="rail"
+        setActiveLabelId={setActiveLabelId}
+      />
+    ));
+
+    const class1 = screen.getByRole("button", { name: "Class 1" });
+    expect(class1.getAttribute("aria-keyshortcuts")).toBe("Shift+1");
+    expect(class1.querySelector("kbd")?.textContent).toBe("⇧1");
+    expect(screen.getByRole("button", { name: "Class 2" }).querySelector("kbd")?.textContent).toBe(
+      "⇧2",
+    );
+
+    fireEvent.keyDown(window, { code: "Digit1", key: "1", shiftKey: false });
+    expect(activeLabelId()).toBeNull();
+
+    fireEvent.keyDown(window, { code: "Digit2", key: "@", shiftKey: true });
+    expect(activeLabelId()).toBe("class-2");
+
+    const field = document.createElement("input");
+    document.body.appendChild(field);
+    fireEvent.keyDown(field, { code: "Digit1", key: "!", shiftKey: true });
+    expect(activeLabelId()).toBe("class-2");
+    field.remove();
+
+    const dialog = document.createElement("div");
+    dialog.setAttribute("role", "dialog");
+    document.body.appendChild(dialog);
+    fireEvent.keyDown(window, { code: "Digit1", key: "!", shiftKey: true });
+    expect(activeLabelId()).toBe("class-2");
+    dialog.remove();
+
+    setCanEdit(false);
+    fireEvent.keyDown(window, { code: "Digit1", key: "!", shiftKey: true });
+    expect(activeLabelId()).toBe("class-2");
+  });
 });
+
+const labelFixtures = [
+  { id: "class-1", name: "Class 1", color: "#22c55e" },
+  { id: "class-2", name: "Class 2", color: "#3b82f6" },
+];

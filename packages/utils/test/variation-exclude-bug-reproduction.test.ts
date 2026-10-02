@@ -9,47 +9,43 @@ import {
 import type { FrameResult } from "../src/frame";
 
 /**
- * Regression coverage for the Kapur threshold bin-edge fix.
- *
- * `maxEntropyThresholdOnHistogram` partitions bins into a background class
- * `probabilities.slice(0, split + 1)` (bin `split` included) and a foreground
- * class, then returns the bin EDGE between the last background bin and the
- * first foreground bin so that consumers filtering `score <= threshold` exclude
- * exactly the background bins. The bin-center return that preceded this code
- * sat half a bin too low and kept the upper-half patterns of the boundary bin.
+ * Regression coverage for the Kapur threshold bin-edge fix, plus the log-std
+ * foreground-fraction score: empty patterns stay at 0 and a cell-sized block
+ * outscores a one-pixel speck.
  */
 
-// 8x8 pattern = 64 px; one non-zero pixel of value v gives bandLength=ceil(64*0.1)=7,
-// highMean = v/7, lowMean = 0; score = (v/7) / max(0, 1.0) = v/7.
-const COLS = 5;
-const ROWS = 4;
-const CELL_W = 8;
-const CELL_H = 8;
-const CONTENT_VALUE = 255;
-// Faint values chosen so four empty-pattern scores (v=7,9,11,13) land in bin
-// [1.0, 2.0); the upper two (11/7, 13/7) are in that bin's upper half and were
-// wrongly kept under the old bin-center threshold (1.5).
-const EMPTY_FAINT_VALUES = [1, 2, 3, 4, 5, 6, 7, 9, 11, 13];
-const EMPTY_SCORES = EMPTY_FAINT_VALUES.map((v) => v / 7);
+const CELL = 16;
+const GAP = 8;
+
+function paintBlock(
+  pixels: Uint8Array,
+  width: number,
+  x: number,
+  y: number,
+  size: number,
+  value: number,
+) {
+  for (let row = y; row < y + size; row += 1) {
+    for (let col = x; col < x + size; col += 1) pixels[row * width + col] = value;
+  }
+}
 
 function buildFixtureFrame(): { frame: FrameResult; patterns: AlignGridPatternBox[] } {
-  const width = COLS * CELL_W; // 40
-  const height = ROWS * CELL_H; // 32
-  const pixels = new Uint8Array(width * height);
-  const patterns: AlignGridPatternBox[] = [];
-  let idx = 0;
-  for (let j = 0; j < ROWS; j += 1) {
-    for (let i = 0; i < COLS; i += 1) {
-      const x = i * CELL_W;
-      const y = j * CELL_H;
-      // One non-zero pixel at the pattern's top-left corner; the rest stay 0.
-      pixels[y * width + x] =
-        idx < EMPTY_FAINT_VALUES.length ? EMPTY_FAINT_VALUES[idx] : CONTENT_VALUE;
-      patterns.push({ i, j, x, y, w: CELL_W, h: CELL_H });
-      idx += 1;
-    }
-  }
-  return { frame: { width, height, pixels }, patterns };
+  const width = CELL * 3 + GAP * 2;
+  const height = CELL;
+  const pixels = new Uint8Array(width * height).fill(30);
+  const cellX = CELL + GAP;
+  const speckX = cellX + CELL + GAP;
+  paintBlock(pixels, width, cellX + 4, 4, 8, 220);
+  pixels[4 * width + (speckX + 8)] = 255;
+  return {
+    frame: { width, height, pixels },
+    patterns: [
+      { i: 0, j: 0, x: 0, y: 0, w: CELL, h: CELL },
+      { i: 1, j: 0, x: cellX, y: 0, w: CELL, h: CELL },
+      { i: 2, j: 0, x: speckX, y: 0, w: CELL, h: CELL },
+    ],
+  };
 }
 
 describe("maxEntropyThresholdOnHistogram", () => {
@@ -62,34 +58,26 @@ describe("maxEntropyThresholdOnHistogram", () => {
   });
 });
 
-describe("computeVariationExcludePreview (bin-edge fix on a constructed half-bin case)", () => {
+describe("computeVariationExcludePreview log-std foreground fraction", () => {
   const { frame, patterns } = buildFixtureFrame();
 
-  it("returns the bin-edge threshold, not the bin center", () => {
+  it("ranks an empty pattern below a speck and a speck below a cell-sized block", () => {
     const preview = computeVariationExcludePreview(frame, patterns);
-    // Kapur's argmax puts bin [1.0, 2.0) in the background class, so the
-    // threshold is the bin edge 2.0 — not the bin center 1.5 that kept the
-    // upper-half empty patterns. It must also separate the two score modes.
-    expect(preview.threshold).toBe(2);
-    expect(preview.threshold).toBeGreaterThan(preview.scoreMin);
-    expect(preview.threshold).toBeLessThan(preview.scoreMax);
+    const byColumn = new Map(preview.patternScores.map((pattern) => [pattern.i, pattern.score]));
+    const empty = byColumn.get(0) ?? 1;
+    const cell = byColumn.get(1) ?? 0;
+    const speck = byColumn.get(2) ?? 1;
+    expect(empty).toBe(0);
+    expect(speck).toBeGreaterThan(empty);
+    expect(speck).toBeLessThan(cell);
+    expect(cell).toBeGreaterThan(0.2);
+    expect(cell).toBeLessThanOrEqual(1);
   });
 
-  it("excludes all background-bin patterns and keeps all foreground-bin patterns under `score <= threshold`", () => {
+  it("excludes the empty pattern and keeps the cell under score <= threshold", () => {
     const preview = computeVariationExcludePreview(frame, patterns);
-    const emptyScoreSet = new Set(EMPTY_SCORES);
-    let emptyKept = 0;
-    let contentExcluded = 0;
-    // The exact predicate used by patternsBelowVariationThreshold (align-session.ts).
-    for (const pattern of preview.patternScores) {
-      const isEmpty = emptyScoreSet.has(pattern.score);
-      if (pattern.score <= preview.threshold) {
-        if (!isEmpty) contentExcluded += 1;
-      } else if (isEmpty) {
-        emptyKept += 1;
-      }
-    }
-    expect(emptyKept).toBe(0);
-    expect(contentExcluded).toBe(0);
+    const byColumn = new Map(preview.patternScores.map((pattern) => [pattern.i, pattern.score]));
+    expect((byColumn.get(0) ?? 1) <= preview.threshold).toBe(true);
+    expect((byColumn.get(1) ?? 0) <= preview.threshold).toBe(false);
   });
 });

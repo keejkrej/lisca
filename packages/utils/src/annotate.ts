@@ -30,14 +30,38 @@ export function maskHasPixels(mask: Uint8Array) {
   return mask.some((value) => value !== 0);
 }
 
+/** Dark ink on light fills, white ink on dark fills. Threshold is where the two contrasts meet. */
+function contrastingInk(rgb: RgbColor) {
+  const channel = (value: number) => {
+    const srgb = value / 255;
+    return srgb <= 0.03928 ? srgb / 12.92 : ((srgb + 0.055) / 1.055) ** 2.4;
+  };
+  const luminance = 0.2126 * channel(rgb.r) + 0.7152 * channel(rgb.g) + 0.0722 * channel(rgb.b);
+  return luminance > 0.179 ? "rgb(10, 10, 10)" : "rgb(255, 255, 255)";
+}
+
+/**
+ * Inline style string for a label chip.
+ * Selected chips are solid, the same pattern as a choice chip. Unselected chips stay outlined.
+ * Solid applies a dynamic style object through `CSSStyleDeclaration.setProperty`,
+ * which ignores camelCase names such as `borderColor`.
+ */
 export function labelColorStyle(label: { color: string }, selected: boolean) {
   const rgb = hexToRgb(label.color);
   if (!rgb) return undefined;
-  return {
-    borderColor: `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${selected ? 0.95 : 0.35})`,
-    backgroundColor: `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${selected ? 0.18 : 0.1})`,
-    color: `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`,
-  };
+  const rgbCss = `${rgb.r}, ${rgb.g}, ${rgb.b}`;
+  if (selected) {
+    return [
+      `border-color: rgb(${rgbCss})`,
+      `background-color: rgb(${rgbCss})`,
+      `color: ${contrastingInk(rgb)}`,
+    ].join("; ");
+  }
+  return [
+    `border-color: rgba(${rgbCss}, 0.45)`,
+    `background-color: rgba(${rgbCss}, 0.08)`,
+    `color: rgb(${rgbCss})`,
+  ].join("; ");
 }
 
 export function hexToRgb(color: string): RgbColor | null {

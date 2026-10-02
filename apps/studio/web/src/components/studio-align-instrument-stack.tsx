@@ -3,6 +3,11 @@ import { Button } from "@lisca/ui/components";
 import { PanelSection, RailControlStack, RailSectionStack } from "@lisca/ui/shell";
 import { Show, createMemo } from "solid-js";
 
+import {
+  CommandShortcutHint,
+  commandShortcutKeys,
+  useStudioCommandShortcut,
+} from "../navigation/use-studio-command-shortcut";
 import { useStudioAlignPage } from "../state/studio-align-page-context";
 import { StudioAlignNav } from "./studio-align-nav";
 
@@ -15,8 +20,8 @@ const RAIL_CLASS =
 
 /**
  * Shared Studio Align instrument stack for basic and expert modes.
- * Flattened order (after Instruction): Navigation → Contrast → Tool → Grid → Geometry → Selection → Action.
- * Navigation, Contrast, Grid, and Geometry are expert-only; basic keeps Tool, Selection, and Action.
+ * Expert sections stack above the normal rail: Navigation → Contrast → Geometry,
+ * then Grid → Tool → Selection → Action.
  * Action follows the rail vocabulary: Save → Back → Next → Crop (primary, last).
  */
 export function StudioAlignInstrumentStack(props: { expert?: boolean }) {
@@ -31,12 +36,44 @@ export function StudioAlignInstrumentStack(props: { expert?: boolean }) {
   const disabled = () => !state.frame;
   const busy = createMemo(() => state.saving || state.preparingCrop || state.cropping);
   const frameReady = createMemo(() => Boolean(state.frame));
+  useStudioCommandShortcut(
+    "save",
+    () => !busy() && frameReady(),
+    () => void state.saveCurrentPosition(),
+  );
+  useStudioCommandShortcut(
+    "back",
+    () => !busy() && state.canGoBack,
+    () => state.goBack(),
+  );
+  useStudioCommandShortcut(
+    "next",
+    () => !busy() && state.canGoNext,
+    () => state.goNext(),
+  );
+  useStudioCommandShortcut(
+    "crop",
+    () => !busy() && frameReady(),
+    () => void state.requestCrop(),
+  );
+
+  const gridRail = (railPart: "grid" | "geometry") => (
+    <AlignGridRail
+      disabled={disabled()}
+      grid={state.grid}
+      railPart={railPart}
+      sectionAppearance="rail"
+      onGridChange={state.setGrid}
+    />
+  );
 
   return (
     <RailSectionStack class={RAIL_CLASS}>
       <Show when={props.expert}>
         <StudioAlignNav />
+        {gridRail("geometry")}
       </Show>
+      {gridRail("grid")}
       <AlignToolSection
         mode={state.toolMode}
         spacingZoomLocked={state.spacingZoomLocked}
@@ -47,14 +84,6 @@ export function StudioAlignInstrumentStack(props: { expert?: boolean }) {
         onSpacingZoomLockedChange={state.setSpacingZoomLocked}
         onPatternZoomLockedChange={state.setPatternZoomLocked}
       />
-      <Show when={props.expert}>
-        <AlignGridRail
-          disabled={disabled()}
-          grid={state.grid}
-          sectionAppearance="rail"
-          onGridChange={state.setGrid}
-        />
-      </Show>
       <AlignSelectionRail
         disabled={disabled()}
         excludedPatterns={state.currentExcludedPatterns}
@@ -82,17 +111,20 @@ export function StudioAlignInstrumentStack(props: { expert?: boolean }) {
       <PanelSection appearance="rail" title="Action">
         <RailControlStack>
           <Button
-            class="w-full justify-center"
+            aria-keyshortcuts={commandShortcutKeys("save")}
+            class="relative w-full justify-center"
             disabled={busy() || !frameReady()}
             size="sm"
             type="button"
             variant="outline"
             onClick={() => void state.saveCurrentPosition()}
           >
-            {state.saving ? "Saving…" : "Save"}
+            Save
+            <CommandShortcutHint command="save" />
           </Button>
           <Button
-            class="w-full justify-center"
+            aria-keyshortcuts={commandShortcutKeys("back")}
+            class="relative w-full justify-center"
             data-rail-nav
             disabled={busy() || !state.canGoBack}
             size="sm"
@@ -101,9 +133,11 @@ export function StudioAlignInstrumentStack(props: { expert?: boolean }) {
             onClick={state.goBack}
           >
             Back
+            <CommandShortcutHint command="back" />
           </Button>
           <Button
-            class="w-full justify-center"
+            aria-keyshortcuts={commandShortcutKeys("next")}
+            class="relative w-full justify-center"
             data-rail-nav
             disabled={busy() || !state.canGoNext}
             size="sm"
@@ -112,15 +146,18 @@ export function StudioAlignInstrumentStack(props: { expert?: boolean }) {
             onClick={state.goNext}
           >
             Next
+            <CommandShortcutHint command="next" />
           </Button>
           <Button
-            class="w-full justify-center"
+            aria-keyshortcuts={commandShortcutKeys("crop")}
+            class="relative w-full justify-center"
             disabled={busy() || !frameReady()}
             size="sm"
             type="button"
             onClick={() => void state.requestCrop()}
           >
             Crop
+            <CommandShortcutHint command="crop" />
           </Button>
         </RailControlStack>
       </PanelSection>

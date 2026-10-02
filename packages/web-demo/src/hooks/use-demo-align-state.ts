@@ -144,12 +144,12 @@ export function useDemoAlignState(): Accessor<DemoAlignState> {
       variationExcludeLoading,
       variationExclude: async () => {
         if (!frame) return;
-        demoAlignUiActions.setStatus(setState, "Var exclude preview");
+        demoAlignUiActions.setStatus(setState, "Log-std exclude preview");
         demoAlignUiActions.setVariationExcludeLoading(setState, true);
         try {
           const preview = previewVariationExclude();
           if (!preview) {
-            demoAlignUiActions.setStatus(setState, "No visible patterns for var exclude");
+            demoAlignUiActions.setStatus(setState, "No visible patterns for log-std exclude");
             return;
           }
           demoAlignUiActions.setVariationExcludePreview(setState, {
@@ -175,7 +175,7 @@ export function useDemoAlignState(): Accessor<DemoAlignState> {
       },
       cancelVariationExclude: () => {
         demoAlignUiActions.setVariationExcludePreview(setState, null);
-        demoAlignUiActions.setStatus(setState, "Var exclude cancelled");
+        demoAlignUiActions.setStatus(setState, "Log-std exclude cancelled");
       },
       applyVariationExclude: () => {
         if (!variationExcludePreview || !frame) return;
@@ -191,7 +191,7 @@ export function useDemoAlignState(): Accessor<DemoAlignState> {
         demoAlignUiActions.setVariationExcludePreview(setState, null);
         demoAlignUiActions.setStatus(
           setState,
-          `Var excluded ${variationPatterns.length} of ${variationExcludePreview.preview.eligiblePatternCount} patterns`,
+          `Log-std excluded ${variationPatterns.length} of ${variationExcludePreview.preview.eligiblePatternCount} patterns`,
         );
       },
       applySmartExclusion: (modelPatterns) => {

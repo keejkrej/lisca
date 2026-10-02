@@ -1,11 +1,25 @@
 import { ConnectionStatus, ShellThemeToggle, useShellServer } from "@lisca/ui/shell";
+import { useAtomSet, useAtomValue } from "@effect/atom-solid";
 import { Show } from "solid-js";
 
+import { setStudioExpertMode, studioExpertModeAtom } from "../atoms/studio-expert-atoms";
+import { useStudioCommandShortcut } from "../navigation/use-studio-command-shortcut";
 import { StudioExpertToggle } from "./studio-expert-toggle";
 import { StudioPageTaskCenter } from "./studio-task-center";
 
 export function StudioTopBar(props: { showExpert?: boolean }) {
   const server = useShellServer();
+  const expertMode = useAtomValue(() => studioExpertModeAtom);
+  const setExpertMode = useAtomSet(() => studioExpertModeAtom);
+  useStudioCommandShortcut(
+    "expert",
+    () => true,
+    () => {
+      const next = !expertMode();
+      setExpertMode(next);
+      setStudioExpertMode(next);
+    },
+  );
 
   return (
     <div
@@ -22,7 +36,7 @@ export function StudioTopBar(props: { showExpert?: boolean }) {
       </div>
       <span
         aria-hidden="true"
-        class="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-xs font-semibold uppercase tracking-[0.2em] text-foreground/60"
+        class="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-xs font-semibold uppercase tracking-[0.2em] text-foreground"
       >
         Studio
       </span>

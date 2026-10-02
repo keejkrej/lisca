@@ -33,7 +33,7 @@ export function LabelCreationDialog(props: LabelCreationDialogProps) {
 
   onMount(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && props.open && !props.saving) props.onOpenChange(false);
+      if (event.key === "Escape" && props.open) props.onOpenChange(false);
     };
     window.addEventListener("keydown", onKeyDown);
     onCleanup(() => window.removeEventListener("keydown", onKeyDown));
@@ -53,7 +53,7 @@ export function LabelCreationDialog(props: LabelCreationDialogProps) {
     <Show when={props.open}>
       <ModalScrim
         onMouseDown={(event) => {
-          if (!props.saving && event.target === event.currentTarget) props.onOpenChange(false);
+          if (event.target === event.currentTarget) props.onOpenChange(false);
         }}
       >
         <DialogSurface
@@ -74,7 +74,6 @@ export function LabelCreationDialog(props: LabelCreationDialogProps) {
             <Button
               aria-label="Close label dialog"
               class="shrink-0"
-              disabled={props.saving}
               size="icon-sm"
               type="button"
               variant="ghost"
@@ -157,12 +156,7 @@ export function LabelCreationDialog(props: LabelCreationDialogProps) {
           </ScrollArea>
 
           <div class="flex justify-end gap-2 border-t border-border px-5 py-4">
-            <Button
-              disabled={props.saving}
-              type="button"
-              variant="outline"
-              onClick={() => props.onOpenChange(false)}
-            >
+            <Button type="button" variant="outline" onClick={() => props.onOpenChange(false)}>
               Cancel
             </Button>
             <Button
@@ -172,7 +166,7 @@ export function LabelCreationDialog(props: LabelCreationDialogProps) {
               type="button"
               onClick={submit}
             >
-              {props.saving ? "Saving…" : (props.saveLabel ?? "Save labels")}
+              {props.saveLabel ?? "Save"}
             </Button>
           </div>
         </DialogSurface>

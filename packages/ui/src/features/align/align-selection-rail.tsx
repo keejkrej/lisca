@@ -122,7 +122,7 @@ export function AlignSelectionRail(props: AlignSelectionRailProps) {
       variant="outline"
       onClick={() => void props.onVariationExclude()}
     >
-      Var exclude
+      Log-std exclude
     </Button>
   );
   const SmartExcludeControl = () => (

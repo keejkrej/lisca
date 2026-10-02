@@ -17,10 +17,10 @@ import {
   Select,
   SelectContent,
   SelectItem,
+  RadioGroup,
+  RadioGroupItem,
   SelectTrigger,
   SelectValue,
-  ToggleGroup,
-  ToggleGroupItem,
 } from "@lisca/ui/components";
 import {
   FolderSourceParseModal,
@@ -34,7 +34,7 @@ import {
   defaultMaxOnsetMinutesForAssay,
 } from "@lisca/client/studio-assay-json";
 import { useAtomSet, useAtomValue } from "@effect/atom-solid";
-import { createMemo, createSignal, Show } from "solid-js";
+import { createMemo, createSignal, For, Show } from "solid-js";
 
 import { useStudioMemoryRecent } from "../hooks/use-studio-memory-recent";
 import { type TimelapseUnit, studioWizardActions, studioWizardAtom } from "../state/studio-store";
@@ -47,8 +47,8 @@ const TIMELAPSE_UNITS: { value: TimelapseUnit; label: string }[] = [
 ];
 
 const SEGMENTATION_MODES: { value: AssaySegmentationMode; label: string }[] = [
-  { value: "logstd", label: "Log-std" },
-  { value: "smart", label: "Smart" },
+  { value: "logstd", label: "Log-std segmentation" },
+  { value: "smart", label: "Smart segmentation" },
 ];
 
 type StudioPathPickerState = null | { kind: "save" } | { kind: "source"; mode: HostFilePickerMode };
@@ -276,33 +276,43 @@ export function MetadataFields(props: { hostPort: HostFilePickerOperations }) {
               />
               <span>Skip segmentation</span>
             </label>
-            <Field class="gap-2">
-              <FieldLabel
-                class="text-[13px] leading-[18px] text-muted-foreground"
-                id="studio-segmentation-mode-label"
+            <div class="flex flex-col gap-2 ps-[calc(1rem+0.625rem)]">
+              <span
+                class="text-[13px] leading-[18px]"
+                classList={{ "text-muted-foreground": wizard().analysis?.skipSegment ?? false }}
+                id="studio-segmentation-method-label"
               >
-                Segmentation mode
-              </FieldLabel>
-              <ToggleGroup
-                aria-labelledby="studio-segmentation-mode-label"
-                class="w-fit!"
+                Segmentation method
+              </span>
+              <RadioGroup
+                aria-labelledby="studio-segmentation-method-label"
+                class="w-fit gap-2"
                 disabled={wizard().analysis?.skipSegment ?? false}
+                name="segmentation-method"
                 value={wizard().analysis?.segmentationMode ?? "logstd"}
-                variant="outline"
                 onChange={(mode) => {
                   if (mode === "logstd" || mode === "smart") {
                     setAnalysis({ segmentationMode: mode });
                   }
                 }}
               >
-                <ToggleGroupItem class="px-3 text-[13px]" value="logstd">
-                  Log-std
-                </ToggleGroupItem>
-                <ToggleGroupItem class="px-3 text-[13px]" value="smart">
-                  Smart
-                </ToggleGroupItem>
-              </ToggleGroup>
-            </Field>
+                <For each={SEGMENTATION_MODES}>
+                  {(mode) => (
+                    <label
+                      class="flex w-fit items-center gap-2.5 text-[13px] leading-[18px]"
+                      classList={{
+                        "cursor-pointer": !(wizard().analysis?.skipSegment ?? false),
+                        "cursor-not-allowed text-muted-foreground":
+                          wizard().analysis?.skipSegment ?? false,
+                      }}
+                    >
+                      <RadioGroupItem value={mode.value} />
+                      <span>{mode.label}</span>
+                    </label>
+                  )}
+                </For>
+              </RadioGroup>
+            </div>
           </Field>
         </Show>
       </div>

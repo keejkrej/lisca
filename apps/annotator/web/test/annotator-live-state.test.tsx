@@ -225,6 +225,6 @@ describe("Annotator live component state", () => {
     expect(screen.queryByText(/annotations\/roi/)).toBeNull();
 
     setSaving(true);
-    expect(screen.getByRole("button", { name: "Saving…" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Save" })).toBeTruthy();
   });
 });

@@ -188,6 +188,28 @@ describe("useAnnotateSessionCore — scan-error effect (Effect 5)", () => {
     }
   });
 
+  it("does not replace a later status when the scan is already loaded", async () => {
+    const handles = mountSession({
+      scan: scanSuccess(),
+      labels: labelsSuccess(),
+      frame: makeFrame(7),
+    });
+    try {
+      await flush();
+      expect(handles.state().status).toBe("ROI workspace loaded");
+
+      handles.commitFrame(makeFrame(9));
+      handles.actions.setSelection(handles.setUi, { timeIndex: 0 });
+      handles.actions.setStatus(handles.setUi, "Saved ROI annotation");
+      await flush();
+
+      expect(handles.state().status).toBe("Saved ROI annotation");
+      expect(handles.state().frame).toEqual(makeFrame(9));
+    } finally {
+      handles.dispose();
+    }
+  });
+
   it("still wipes the frame and sets scanError on a genuine scan failure", async () => {
     const handles = mountSession({
       scan: scanSuccess(),

@@ -48,7 +48,7 @@ export function StudioAlignUnsavedChangesModal() {
                 type="button"
                 onClick={() => void state.resolveUnsavedChanges("save")}
               >
-                {state.saving ? "Saving…" : "Save"}
+                Save
               </Button>
             </div>
           </div>

@@ -39,11 +39,8 @@ function AnnotatePageContent() {
           </AppShell.Main>
         </AppShell.MainColumn>
         <AppShell.Right widthClass="w-64">
-          <StudioRightPanel
-            expert={() => <StudioAnnotateInstrumentStack showShuffle />}
-            instruction={instructionForAnnotate}
-          >
-            <StudioAnnotateInstrumentStack showShuffle={false} />
+          <StudioRightPanel instruction={instructionForAnnotate}>
+            <StudioAnnotateInstrumentStack />
           </StudioRightPanel>
         </AppShell.Right>
       </AppShell.Body>

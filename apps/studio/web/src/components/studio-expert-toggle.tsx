@@ -3,6 +3,10 @@ import { AlignStateToggleIndicator } from "@lisca/ui/features";
 import { useAtomSet, useAtomValue } from "@effect/atom-solid";
 
 import { setStudioExpertMode, studioExpertModeAtom } from "../atoms/studio-expert-atoms";
+import {
+  CommandShortcutHint,
+  commandShortcutKeys,
+} from "../navigation/use-studio-command-shortcut";
 
 export function StudioExpertToggle() {
   const expertMode = useAtomValue(() => studioExpertModeAtom);
@@ -15,9 +19,10 @@ export function StudioExpertToggle() {
 
   return (
     <Toggle
+      aria-keyshortcuts={commandShortcutKeys("expert")}
       aria-label="Expert mode"
       aria-pressed={expertMode()}
-      class="h-7 justify-center px-2.5 text-xs"
+      class="h-7 gap-2 px-2.5 text-xs"
       data-instrument-state-toggle=""
       pressed={expertMode()}
       size="sm"
@@ -26,6 +31,7 @@ export function StudioExpertToggle() {
     >
       <AlignStateToggleIndicator pressed={expertMode()} />
       <span>Expert</span>
+      <CommandShortcutHint command="expert" placement="inline" />
     </Toggle>
   );
 }

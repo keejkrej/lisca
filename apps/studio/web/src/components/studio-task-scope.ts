@@ -1,8 +1,11 @@
 export type StudioTaskScope = "crop" | "analysis";
 
-/** Align lists crop tasks. Analysis lists analysis tasks. */
+/**
+ * Crop tasks sit on Annotate, the step that waits for cropping.
+ * Analysis tasks sit on Analysis, the step that waits for analysis.
+ */
 export function studioTaskScopeForPath(pathname: string): StudioTaskScope | null {
-  if (pathname === "/align") return "crop";
+  if (pathname === "/annotate") return "crop";
   if (pathname === "/analysis") return "analysis";
   return null;
 }

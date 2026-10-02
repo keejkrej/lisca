@@ -27,6 +27,7 @@ vi.mock("@lisca/client/session/work-session", async (importOriginal) => {
 });
 
 import { StudioMetadataActions } from "../src/components/studio-metadata-actions";
+import { studioPageShortcutPlatform } from "../src/navigation/studio-page-shortcuts";
 
 type WizardState = ReturnType<typeof createInitialStudioWizardState>;
 
@@ -83,5 +84,19 @@ describe("StudioMetadataActions", () => {
     fireEvent.click(screen.getByRole("button", { name: "Overwrite" }));
     await waitFor(() => expect(save.writeStudioAssayJson).toHaveBeenCalledOnce());
     expect(save.writeStudioAssayJson.mock.calls[0]![1]).toMatchObject({ name: "TF84 renamed" });
+  });
+
+  it("saves on the platform save chord", async () => {
+    const base = wizard();
+    renderActions({ ...base, basicInfoSavedSnapshot: serializeBasicInfoSnapshot(base) });
+    const platform = studioPageShortcutPlatform();
+    fireEvent.keyDown(window, {
+      key: "s",
+      metaKey: platform === "mac",
+      ctrlKey: platform !== "mac",
+      bubbles: true,
+      cancelable: true,
+    });
+    await waitFor(() => expect(save.writeStudioAssayJson).toHaveBeenCalledOnce());
   });
 });

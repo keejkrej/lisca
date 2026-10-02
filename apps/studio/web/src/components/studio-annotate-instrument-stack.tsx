@@ -3,10 +3,17 @@ import {
   AnnotationToolGrid,
   buildAnnotationToolActions,
 } from "@lisca/ui/features";
+import { useAtomValue } from "@effect/atom-solid";
 import { Button } from "@lisca/ui/components";
 import { PanelSection, RailControlStack } from "@lisca/ui/shell";
 import { Show } from "solid-js";
 
+import { studioExpertModeAtom } from "../atoms/studio-expert-atoms";
+import {
+  CommandShortcutHint,
+  commandShortcutKeys,
+  useStudioCommandShortcut,
+} from "../navigation/use-studio-command-shortcut";
 import { useStudioAnnotatePage } from "../state/studio-annotate-page-context";
 import {
   useStudioAnnotateCanvas,
@@ -17,12 +24,13 @@ import { StudioAnnotateNav } from "./studio-annotate-nav";
 
 /**
  * Shared Studio Annotate instrument stack for basic and expert modes.
- * Flattened order (after Instruction): Navigation → Contrast → Tool → Mode → Labels → Edit → Brush → Action.
- * Expert may add Shuffle in Action; Nav/Contrast/Tool stay in both modes.
- * Action follows the rail vocabulary: Save → Back → Next → (Shuffle) → Analyze (primary, last).
+ * Expert sections stack above the normal rail: Navigation → Contrast,
+ * then Mode → Tool → Labels → Edit → Brush → Action.
+ * Action follows the rail vocabulary: Save → Back → Next → Analyze (primary, last).
  */
-export function StudioAnnotateInstrumentStack(props: { showShuffle?: boolean }) {
+export function StudioAnnotateInstrumentStack() {
   const { state } = useStudioAnnotatePage();
+  const expertMode = useAtomValue(() => studioExpertModeAtom);
 
   return (
     <Show
@@ -36,10 +44,11 @@ export function StudioAnnotateInstrumentStack(props: { showShuffle?: boolean }) 
       }
     >
       <>
-        <StudioAnnotateNav />
-        <StudioAnnotateToolSection />
+        <Show when={expertMode()}>
+          <StudioAnnotateNav />
+        </Show>
         <StudioAnnotateControlSections />
-        <StudioAnnotateActionSection showShuffle={props.showShuffle ?? false} />
+        <StudioAnnotateActionSection />
       </>
     </Show>
   );
@@ -73,6 +82,7 @@ function StudioAnnotateControlSections() {
 
   return (
     <AnnotationControlRail
+      insertAfterMode={<StudioAnnotateToolSection />}
       activeLabelId={labels.activeLabelId}
       annotation={labels.annotation}
       annotationError={labels.annotationError}
@@ -99,27 +109,50 @@ function StudioAnnotateControlSections() {
   );
 }
 
-function StudioAnnotateActionSection(props: { showShuffle: boolean }) {
+function StudioAnnotateActionSection() {
   const dock = useStudioAnnotateDock();
-  const disableShuffle = () => dock.scanLoading || dock.scan === null || dock.workspaceMissing;
+  useStudioCommandShortcut(
+    "save",
+    () => dock.canSave && !dock.saving,
+    () => void dock.handleSave(),
+  );
+  useStudioCommandShortcut(
+    "back",
+    () => dock.canGoToPreviousSite,
+    () => dock.goToPreviousSite(),
+  );
+  useStudioCommandShortcut(
+    "next",
+    () => dock.canGoToNextSite,
+    () => dock.goToNextSite(),
+  );
   const disableContinue = () =>
     dock.frameLoading || !dock.request || dock.analysisBusy || dock.workspaceMissing;
+  useStudioCommandShortcut(
+    "analyze",
+    () => !disableContinue(),
+    () => dock.requestContinueToAnalysis(),
+  );
 
   return (
     <PanelSection appearance="rail" title="Action">
       <RailControlStack>
         <Button
-          class="w-full justify-center"
+          aria-keyshortcuts={commandShortcutKeys("save")}
+          class="relative w-full justify-center"
           disabled={!dock.canSave}
           size="sm"
           type="button"
           variant="outline"
           onClick={() => void dock.handleSave()}
         >
-          {dock.saving ? "Saving…" : "Save"}
+          Save
+          <CommandShortcutHint command="save" />
         </Button>
         <Button
-          class="w-full justify-center"
+          aria-keyshortcuts={commandShortcutKeys("back")}
+          class="relative w-full justify-center"
+          data-rail-nav
           disabled={!dock.canGoToPreviousSite}
           size="sm"
           type="button"
@@ -127,9 +160,12 @@ function StudioAnnotateActionSection(props: { showShuffle: boolean }) {
           onClick={dock.goToPreviousSite}
         >
           Back
+          <CommandShortcutHint command="back" />
         </Button>
         <Button
-          class="w-full justify-center"
+          aria-keyshortcuts={commandShortcutKeys("next")}
+          class="relative w-full justify-center"
+          data-rail-nav
           disabled={!dock.canGoToNextSite}
           size="sm"
           type="button"
@@ -137,27 +173,18 @@ function StudioAnnotateActionSection(props: { showShuffle: boolean }) {
           onClick={dock.goToNextSite}
         >
           Next
+          <CommandShortcutHint command="next" />
         </Button>
-        <Show when={props.showShuffle}>
-          <Button
-            class="w-full justify-center"
-            disabled={disableShuffle()}
-            size="sm"
-            type="button"
-            variant="outline"
-            onClick={dock.shuffleSelection}
-          >
-            Shuffle
-          </Button>
-        </Show>
         <Button
-          class="w-full justify-center"
+          aria-keyshortcuts={commandShortcutKeys("analyze")}
+          class="relative w-full justify-center"
           size="sm"
           type="button"
           onClick={dock.requestContinueToAnalysis}
           disabled={disableContinue()}
         >
           Analyze
+          <CommandShortcutHint command="analyze" />
         </Button>
       </RailControlStack>
     </PanelSection>

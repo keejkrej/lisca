@@ -124,6 +124,8 @@ export type AlignGridProps = {
   sectionClassName?: string;
   sectionContentClassName?: string;
   sectionAppearance?: "framed" | "rail";
+  /** Rail placement can show Grid, Geometry, or both. Framed placement ignores this. */
+  railPart?: "all" | "grid" | "geometry";
 };
 
 /**
@@ -407,27 +409,31 @@ export function AlignGrid(props: AlignGridProps) {
       }
     >
       <>
-        <PanelSection
-          appearance="rail"
-          class={props.sectionClassName}
-          contentClassName={props.sectionContentClassName}
-          description={props.sectionDescription}
-          title={props.sectionTitle ?? "Grid"}
-        >
-          <RailControlStack>
-            <GridControls rail />
-          </RailControlStack>
-        </PanelSection>
-        <PanelSection
-          appearance="rail"
-          class={props.sectionClassName}
-          contentClassName={props.sectionContentClassName}
-          title="Geometry"
-        >
-          <RailControlStack>
-            <GeometryControls rail toolOrder />
-          </RailControlStack>
-        </PanelSection>
+        <Show when={(props.railPart ?? "all") !== "geometry"}>
+          <PanelSection
+            appearance="rail"
+            class={props.sectionClassName}
+            contentClassName={props.sectionContentClassName}
+            description={props.sectionDescription}
+            title={props.sectionTitle ?? "Grid"}
+          >
+            <RailControlStack>
+              <GridControls rail />
+            </RailControlStack>
+          </PanelSection>
+        </Show>
+        <Show when={(props.railPart ?? "all") !== "grid"}>
+          <PanelSection
+            appearance="rail"
+            class={props.sectionClassName}
+            contentClassName={props.sectionContentClassName}
+            title="Geometry"
+          >
+            <RailControlStack>
+              <GeometryControls rail toolOrder />
+            </RailControlStack>
+          </PanelSection>
+        </Show>
       </>
     </Show>
   );

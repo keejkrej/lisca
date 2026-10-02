@@ -49,7 +49,7 @@ export function AssaySaveConfirmModal(props: {
                 {props.skipLabel ?? "Skip Save"}
               </Button>
               <Button disabled={props.saving} type="button" onClick={props.onSave}>
-                {props.saving ? "Saving…" : "Save"}
+                Save
               </Button>
             </div>
           </div>

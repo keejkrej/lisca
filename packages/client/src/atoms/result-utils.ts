@@ -15,6 +15,14 @@ export function resultLoading(
   return AsyncResult.isInitial(result) || AsyncResult.isWaiting(result);
 }
 
+/** True only while a request is in flight. An idle Initial result has not started. */
+export function resultInFlight(
+  result: AsyncResult.AsyncResult<unknown, unknown> | undefined,
+): boolean {
+  if (!result) return false;
+  return AsyncResult.isWaiting(result);
+}
+
 export function resultFailureMessage(
   result: AsyncResult.AsyncResult<unknown, unknown> | undefined,
 ): string | undefined {

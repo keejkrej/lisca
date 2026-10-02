@@ -1,7 +1,8 @@
 import type { AnnotationLabel } from "@lisca/contracts";
 import type { AnnotationMode } from "@lisca/ui-headless/types";
 import { createEmptyMask, labelColorStyle, type FrameResult } from "@lisca/utils";
-import { For, Show } from "solid-js";
+import { CheckIcon } from "lucide-solid";
+import { For, onCleanup, onMount, Show, type JSX } from "solid-js";
 
 import { Button } from "../../components/ui/button";
 import { cn } from "../../lib/utils";
@@ -10,6 +11,25 @@ import { RailActionPair, RailControlStack } from "../../shell/regions/rail-contr
 
 import { AnnotationModeToggle } from "./annotation-mode-toggle";
 import { AnnotationToolSlider } from "./annotation-tool-slider";
+
+const LABEL_SHORTCUT_LIMIT = 9;
+
+/** Digit-row code. Shift+1 reports key "!" on a US layout, so the code is the stable signal. */
+function labelShortcutDigit(event: KeyboardEvent): number | null {
+  if (!event.shiftKey || event.metaKey || event.ctrlKey || event.altKey || event.repeat) {
+    return null;
+  }
+  const match = /^Digit([1-9])$/.exec(event.code);
+  return match ? Number(match[1]) : null;
+}
+
+function labelShortcutBlocked(target: EventTarget | null): boolean {
+  if (target instanceof Element) {
+    if (target.closest("input, textarea, select, [contenteditable='true']")) return true;
+    if (target.closest("[role='dialog'], dialog")) return true;
+  }
+  return Boolean(document.querySelector("[role='dialog'], dialog[open]"));
+}
 
 export type AnnotationControlValue = {
   classificationLabelId: string | null;
@@ -50,11 +70,39 @@ export type AnnotationControlRailProps = {
   setActiveLabelId: (id: string) => void;
   openLabelDialog: () => void;
   sectionAppearance?: "framed" | "rail";
+  /** Rendered after Mode and before Labels. Studio uses this for the Tool list. */
+  insertAfterMode?: JSX.Element;
 };
 
 export function AnnotationControlRail(props: AnnotationControlRailProps) {
   const loading = () => props.scanLoading || props.frameLoading || props.annotationLoading;
   const isRail = () => props.sectionAppearance === "rail";
+
+  const chooseLabel = (label: AnnotationLabel) => {
+    if (props.mode === "classification") {
+      const selected = props.annotation.current.classificationLabelId === label.id;
+      props.annotation.commit({
+        classificationLabelId: selected ? null : label.id,
+        mask: props.annotation.current.mask,
+      });
+      return;
+    }
+    props.setActiveLabelId(label.id);
+  };
+
+  onMount(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (!props.canEdit) return;
+      const digit = labelShortcutDigit(event);
+      if (digit == null || labelShortcutBlocked(event.target)) return;
+      const label = props.labels[digit - 1];
+      if (!label) return;
+      event.preventDefault();
+      chooseLabel(label);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    onCleanup(() => window.removeEventListener("keydown", onKeyDown));
+  });
 
   const ModeControl = () => (
     <AnnotationModeToggle class="w-full" mode={props.mode} onModeChange={props.setMode} />
@@ -63,60 +111,53 @@ export function AnnotationControlRail(props: AnnotationControlRailProps) {
   const LabelControls = () => (
     <>
       <For each={props.labels}>
-        {(label) => {
-          const selected =
+        {(label, index) => {
+          // The For callback runs once per label. Selection has to be read
+          // inside the button so the highlight follows later clicks.
+          const selected = () =>
             props.mode === "classification"
               ? props.annotation.current.classificationLabelId === label.id
               : props.activeLabelId === label.id;
+          const shortcut = () => (index() < LABEL_SHORTCUT_LIMIT ? index() + 1 : null);
           return (
             <button
-              class="h-8 min-w-0 w-full truncate border px-2 text-center text-xs font-medium disabled:cursor-not-allowed disabled:opacity-50"
+              aria-keyshortcuts={shortcut() ? `Shift+${shortcut()}` : undefined}
+              aria-pressed={selected()}
+              class="relative flex h-8 w-full min-w-0 items-center justify-center border pr-9 pl-7 text-xs font-medium disabled:cursor-not-allowed disabled:opacity-50"
               disabled={!props.canEdit}
-              style={labelColorStyle(label, selected)}
+              style={labelColorStyle(label, selected())}
               type="button"
               title={label.name}
-              onClick={() => {
-                if (props.mode === "classification") {
-                  props.annotation.commit({
-                    classificationLabelId: selected ? null : label.id,
-                    mask: props.annotation.current.mask,
-                  });
-                } else {
-                  props.setActiveLabelId(label.id);
-                }
-              }}
+              onClick={() => chooseLabel(label)}
             >
-              {label.name}
+              <Show when={selected()}>
+                <CheckIcon class="absolute left-2 size-3.5" />
+              </Show>
+              <span class="truncate">{label.name}</span>
+              <Show when={shortcut()}>
+                {(digit) => (
+                  <kbd
+                    aria-hidden="true"
+                    class="pointer-events-none absolute right-1.5 flex h-4 items-center font-[inherit] text-[10px] font-medium leading-none text-current"
+                  >
+                    ⇧{digit()}
+                  </kbd>
+                )}
+              </Show>
             </button>
           );
         }}
       </For>
-      <Show
-        when={props.labels.length === 0}
-        fallback={
-          <Button
-            class="col-span-full w-full"
-            disabled={!props.workspacePath}
-            size="sm"
-            type="button"
-            variant="outline"
-            onClick={props.openLabelDialog}
-          >
-            Edit labels
-          </Button>
-        }
+      <Button
+        class="col-span-full w-full"
+        disabled={!props.workspacePath}
+        size="sm"
+        type="button"
+        variant="outline"
+        onClick={props.openLabelDialog}
       >
-        <Button
-          class="col-span-full w-full"
-          disabled={!props.workspacePath}
-          size="sm"
-          type="button"
-          variant="outline"
-          onClick={props.openLabelDialog}
-        >
-          Add
-        </Button>
-      </Show>
+        Edit labels
+      </Button>
       <Show when={loading()}>
         <p class="col-span-full text-xs text-muted-foreground">Loading…</p>
       </Show>
@@ -183,6 +224,7 @@ export function AnnotationControlRail(props: AnnotationControlRailProps) {
           </RailControlStack>
         </Show>
       </PanelSection>
+      {props.insertAfterMode}
       <PanelSection
         appearance={props.sectionAppearance}
         contentClassName={isRail() ? undefined : "grid grid-cols-2 gap-2"}

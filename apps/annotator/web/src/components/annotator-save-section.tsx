@@ -17,7 +17,7 @@ export function AnnotatorSaveSection() {
           variant="outline"
           onClick={() => void dock.handleSave()}
         >
-          {dock.saving ? "Saving…" : "Save"}
+          Save
         </Button>
       </RailControlStack>
     </PanelSection>

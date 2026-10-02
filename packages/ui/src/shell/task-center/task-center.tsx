@@ -16,7 +16,7 @@ import IconArrowsClockwiseRegular from "phosphor-icons-solid/IconArrowsClockwise
 import IconQueueRegular from "phosphor-icons-solid/IconQueueRegular";
 import IconWarningCircleRegular from "phosphor-icons-solid/IconWarningCircleRegular";
 import IconXRegular from "phosphor-icons-solid/IconXRegular";
-import { For, Show, createMemo, createSignal, onCleanup, onMount } from "solid-js";
+import { For, Show, createMemo, createSignal, onCleanup, onMount, type JSX } from "solid-js";
 
 import { Button, buttonVariants } from "../../components/ui/button";
 import { ScrollArea } from "../../components/ui/scroll-area";
@@ -37,6 +37,13 @@ export type TaskCenterProps = {
   label?: string;
   /** Dialog title. Defaults to "Task Center". */
   title?: string;
+  /** When set, the dialog open state is controlled by the caller. */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  /** Accessible chord for the trigger, such as `Meta+T`. */
+  shortcutKeys?: string;
+  /** Visual chord hint rendered inside the trigger. */
+  shortcutHint?: JSX.Element;
   subscribe: (handlers: {
     onSnapshot: (snapshot: Awaited<ReturnType<TaskCenterGateway["listTasks"]>>) => void;
     onError: (error: unknown) => void;
@@ -170,7 +177,8 @@ function StepRow(props: { step: StepDetail; busy: boolean; onRetry: () => void }
 }
 
 export function TaskCenter(props: TaskCenterProps) {
-  const [open, setOpen] = createSignal(false);
+  const [uncontrolledOpen, setUncontrolledOpen] = createSignal(false);
+  const open = () => props.open ?? uncontrolledOpen();
   const [state, setState] = createSignal(initialTaskCenterState);
   const [expandedTaskId, setExpandedTaskId] = createSignal<string | null>(null);
   const [loadingDetail, setLoadingDetail] = createSignal<string | null>(null);
@@ -198,7 +206,8 @@ export function TaskCenter(props: TaskCenterProps) {
     taskRequests.get(taskId)?.generation === generation;
 
   const setDialogOpen = (nextOpen: boolean) => {
-    setOpen(nextOpen);
+    if (props.open === undefined) setUncontrolledOpen(nextOpen);
+    props.onOpenChange?.(nextOpen);
     if (!nextOpen) queueMicrotask(() => triggerButton?.focus());
   };
 
@@ -293,24 +302,23 @@ export function TaskCenter(props: TaskCenterProps) {
       <Dialog.Trigger
         as={Button}
         ref={(element) => (triggerButton = element)}
+        aria-keyshortcuts={props.shortcutKeys}
         aria-label={
           indicator().tone === "attention"
             ? `${label()}, ${indicator().attentionCount} need attention`
             : `${label()}, ${indicator().activeCount} active`
         }
-        class={cn(
-          "relative",
-          statusLink() && "h-7 gap-2 px-2 text-xs font-normal text-muted-foreground",
-        )}
+        class={cn("relative", statusLink() && "h-7 gap-2 px-2.5 text-xs text-foreground")}
         data-task-center-appearance={props.appearance ?? "button"}
         size="sm"
         type="button"
-        variant="ghost"
+        variant={statusLink() ? "outline" : "ghost"}
       >
         <Show when={!statusLink()}>
           <IconQueueRegular class="size-4" />
         </Show>
         <span class={statusLink() ? undefined : "hidden sm:inline"}>{label()}</span>
+        {props.shortcutHint}
         <Show when={statusLink() ? indicator().activeCount > 0 : indicator().tone !== "idle"}>
           <span
             aria-hidden="true"
