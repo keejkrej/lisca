@@ -418,13 +418,37 @@ fn create_window<R: tauri::Runtime, M: Manager<R>>(
 
     let url = window_url(app, config.product);
 
-    WebviewWindowBuilder::new(app, MAIN_WINDOW_LABEL, url)
+    let mut builder = WebviewWindowBuilder::new(app, MAIN_WINDOW_LABEL, url)
         .title(config.product_name)
         .inner_size(1280.0, 800.0)
-        .initialization_script(&init_script)
-        .build()?;
+        .initialization_script(&init_script);
+    if let Some(args) = webview_browser_args() {
+        builder = builder.additional_browser_args(args);
+    }
+    builder.build()?;
 
     Ok(())
+}
+
+/// WebView2 arguments for every desktop shell on Windows.
+///
+/// `None` on other platforms leaves the system webview alone. On Windows this
+/// replaces wry's defaults, so the mini-menu and SmartScreen switches stay in
+/// the string. `--force-color-profile=srgb` stops WebView2 from adopting the
+/// display's advanced-color profile, which otherwise shifts the hue of the
+/// whole screen. Studio, Aligner, and Annotator all present frame canvases
+/// through this window.
+fn webview_browser_args() -> Option<&'static str> {
+    #[cfg(windows)]
+    {
+        Some(
+            "--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection --force-color-profile=srgb",
+        )
+    }
+    #[cfg(not(windows))]
+    {
+        None
+    }
 }
 
 /// Pick the URL the desktop window loads.
@@ -505,6 +529,20 @@ mod tests {
 
         assert!(response.body.is_none());
         assert_eq!(response.body_base64.as_deref(), Some("AJ+Slg=="));
+    }
+
+    #[test]
+    fn windows_shells_force_srgb_and_keep_wry_defaults() {
+        let args = webview_browser_args();
+        if cfg!(windows) {
+            let args = args.expect("desktop shells set WebView2 arguments on Windows");
+            assert!(args.contains("--force-color-profile=srgb"));
+            assert!(args.contains("msWebOOUI"));
+            assert!(args.contains("msPdfOOUI"));
+            assert!(args.contains("msSmartScreenProtection"));
+        } else {
+            assert!(args.is_none());
+        }
     }
 
     #[test]
