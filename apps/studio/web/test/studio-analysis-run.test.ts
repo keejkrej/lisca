@@ -17,10 +17,7 @@ function stageFor(status: AnalysisProgress["status"]): AnalysisProgress["stage"]
   return status;
 }
 
-function progress(
-  requestId: string,
-  status: AnalysisProgress["status"],
-): AnalysisProgress {
+function progress(requestId: string, status: AnalysisProgress["status"]): AnalysisProgress {
   return {
     requestId,
     status,
