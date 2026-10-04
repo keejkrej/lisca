@@ -99,10 +99,6 @@ export function createDefaultAlignGrid(): AlignGridState {
   };
 }
 
-export function minimumAlignGridSpacing(patternWidth: number, patternHeight: number): number {
-  return Math.max(1, Math.min(patternWidth, patternHeight));
-}
-
 function normalizeAlignGridShape(shape: AlignGridShape | undefined): AlignGridShape {
   if (shape == null) return "rect";
   if (shape === "square") return "rect";
@@ -114,7 +110,6 @@ export function normalizeAlignGridState(input?: Partial<AlignGridState>): AlignG
   if (!input) return base;
   const patternWidth = Math.max(1, input.patternWidth ?? base.patternWidth);
   const patternHeight = Math.max(1, input.patternHeight ?? base.patternHeight);
-  const minSpacing = minimumAlignGridSpacing(patternWidth, patternHeight);
 
   return {
     enabled: input.enabled ?? base.enabled,
@@ -122,8 +117,10 @@ export function normalizeAlignGridState(input?: Partial<AlignGridState>): AlignG
     tx: input.tx ?? base.tx,
     ty: input.ty ?? base.ty,
     rotation: normalizeRadians(input.rotation ?? base.rotation),
-    spacingA: Math.max(minSpacing, input.spacingA ?? base.spacingA),
-    spacingB: Math.max(minSpacing, input.spacingB ?? base.spacingB),
+    // Pitch stays independent of pattern size so overlapping patterns do not
+    // drag spacing along when the frame is already covered.
+    spacingA: Math.max(1, input.spacingA ?? base.spacingA),
+    spacingB: Math.max(1, input.spacingB ?? base.spacingB),
     patternWidth,
     patternHeight,
     opacity: clamp(input.opacity ?? base.opacity, 0, 1),
