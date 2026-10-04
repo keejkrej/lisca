@@ -25,7 +25,7 @@ export function AlignSelectionControls() {
   const varExclude = useVarExclude({
     provider: createLocalVarExcludeProvider(),
     frame: () => state().frame,
-    grid: () => state().grid,
+    grid: () => state().effectiveGrid,
     currentExcludedPatterns: () => state().currentExcludedPatterns,
     enabled: () => !disabled(),
     onPreview: (preview) => state().showVariationExcludePreview(preview),
@@ -34,7 +34,7 @@ export function AlignSelectionControls() {
   const smartExclude = useSmartExclude({
     provider: smartExcludeProvider,
     frame: () => state().frame,
-    grid: () => state().grid,
+    grid: () => state().effectiveGrid,
     currentExcludedPatterns: () => state().currentExcludedPatterns,
     enabled: () => !disabled(),
     onComplete: (patterns) => state().applySmartExclusion(patterns),
@@ -47,7 +47,7 @@ export function AlignSelectionControls() {
         disabled={disabled()}
         excludedPatterns={state().currentExcludedPatterns}
         frame={state().frame}
-        grid={state().grid}
+        grid={state().effectiveGrid}
         manualExclusionEnabled={state().manualExclusionEnabled}
         sectionAppearance="rail"
         smartExcludeLoading={smartExclude.active()}

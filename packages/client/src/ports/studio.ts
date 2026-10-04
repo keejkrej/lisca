@@ -1,5 +1,3 @@
-import { Effect } from "effect";
-
 import { createApiClient, toClientEffect } from "../infra/api-client";
 import { createAlignerPort, type AlignerPortDeps } from "./aligner";
 import { createAnalysisPort } from "./analysis";
@@ -21,11 +19,6 @@ export function createStudioPort(deps: StudioPortDeps = {}): StudioDataPort {
     ...aligner,
     ...annotator,
     ...analysis,
-    readTextFile(path) {
-      return toClientEffect(
-        client.fs.readTextFile({ query: { path } }).pipe(Effect.map((r) => r.contents)),
-      );
-    },
     saveAssayJson(saveTo, contents) {
       return toClientEffect(client.studio.saveAssayJson({ payload: { saveTo, contents } }));
     },

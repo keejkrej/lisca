@@ -9,7 +9,7 @@ export function useStudioAlignCanvas() {
       return state.frame;
     },
     get grid() {
-      return state.grid;
+      return state.effectiveGrid;
     },
     get toolMode() {
       return state.toolMode;
@@ -44,7 +44,7 @@ export function useStudioAlignCanvas() {
     get status() {
       return state.status;
     },
-    setGrid: state.setGrid,
+    commitCanvas: state.commitCanvas,
     setToolMode: state.setToolMode,
     setSpacingZoomLocked: state.setSpacingZoomLocked,
     setPatternZoomLocked: state.setPatternZoomLocked,

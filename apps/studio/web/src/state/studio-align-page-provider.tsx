@@ -20,7 +20,7 @@ export function StudioAlignPageProvider(props: { children?: JSX.Element }) {
   const smartExclude = useSmartExclude({
     provider: smartExcludeProvider,
     frame: () => state.frame,
-    grid: () => state.grid,
+    grid: () => state.effectiveGrid,
     currentExcludedPatterns: () => state.currentExcludedPatterns,
     enabled: () => Boolean(state.frame) && !state.saving,
     onComplete: state.applySmartExclusion,
@@ -29,7 +29,7 @@ export function StudioAlignPageProvider(props: { children?: JSX.Element }) {
   const varExclude = useVarExclude({
     provider: createStudioVarExcludeProvider(),
     frame: () => state.frame,
-    grid: () => state.grid,
+    grid: () => state.effectiveGrid,
     currentExcludedPatterns: () => state.currentExcludedPatterns,
     enabled: () => Boolean(state.frame) && !state.saving,
     onPreview: state.showVariationExcludePreview,
@@ -51,7 +51,7 @@ export function StudioAlignPageProvider(props: { children?: JSX.Element }) {
     const frame = state.frame;
     if (!frame) return;
     state.setExcludedPatternsForCurrentPosition(
-      mergeAlignGridEdgeExclusion(state.currentExcludedPatterns, frame, state.grid),
+      mergeAlignGridEdgeExclusion(state.currentExcludedPatterns, frame, state.effectiveGrid),
     );
   };
 

@@ -1,7 +1,13 @@
 import { studioAlignPositionNav } from "@lisca/client/studio/source";
-import { AlignGridRail, AlignSelectionRail, AlignToolSection } from "@lisca/ui/features";
+import {
+  AlignDriftRail,
+  AlignGridRail,
+  AlignSelectionRail,
+  AlignToolSection,
+} from "@lisca/ui/features";
 import { Button } from "@lisca/ui/components";
 import { PanelSection, RailControlStack, RailSectionStack } from "@lisca/ui/shell";
+import { isAlignDriftTranslationEditable } from "@lisca/utils";
 import { Show, createMemo } from "solid-js";
 
 import {
@@ -22,7 +28,7 @@ const RAIL_CLASS =
 /**
  * Shared Studio Align instrument stack for basic and expert modes.
  * Expert sections stack above the normal rail: Navigation → Contrast → Geometry,
- * then Grid → Tool → Selection → Action.
+ * then Grid → Drift → Tool → Selection → Action.
  * Action follows the rail vocabulary: Save → Back → Next → Crop (primary, last).
  */
 export function StudioAlignInstrumentStack(props: { expert?: boolean }) {
@@ -67,7 +73,13 @@ export function StudioAlignInstrumentStack(props: { expert?: boolean }) {
       grid={state.grid}
       railPart={railPart}
       sectionAppearance="rail"
+      shownTranslation={{ tx: state.effectiveGrid.tx, ty: state.effectiveGrid.ty }}
+      translationEditable={isAlignDriftTranslationEditable(
+        state.drift ?? null,
+        state.selection.time,
+      )}
       onGridChange={state.setGrid}
+      onTranslationDelta={state.adjustTranslation}
     />
   );
 
@@ -81,6 +93,19 @@ export function StudioAlignInstrumentStack(props: { expert?: boolean }) {
         {gridRail("geometry")}
       </Show>
       {gridRail("grid")}
+      <AlignDriftRail
+        assayDefaultTime={state.assayDefaultTime ?? null}
+        disabled={disabled()}
+        drift={state.drift ?? null}
+        frame={state.frame}
+        time={state.selection.time}
+        timeLabels={state.scan?.timeLabels}
+        times={state.scan?.times}
+        onClearDrift={state.clearDrift}
+        onClearKeyframe={state.clearKeyframe}
+        onSetKeyframe={state.setKeyframe}
+        onSetReference={state.setReference}
+      />
       <AlignToolSection
         mode={state.toolMode}
         spacingZoomLocked={state.spacingZoomLocked}
@@ -95,7 +120,7 @@ export function StudioAlignInstrumentStack(props: { expert?: boolean }) {
         disabled={disabled()}
         excludedPatterns={state.currentExcludedPatterns}
         frame={state.frame}
-        grid={state.grid}
+        grid={state.effectiveGrid}
         manualExclusionEnabled={state.manualExclusionEnabled}
         sectionAppearance="rail"
         smartExcludeLoading={smartExclude.active()}

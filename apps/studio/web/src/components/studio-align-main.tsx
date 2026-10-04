@@ -41,7 +41,7 @@ export function StudioAlignMain() {
   const nav = useStudioAlignNav();
   const pointer = useAlignCanvasPointerHandlers(() => ({
     grid: canvas.grid,
-    setGrid: canvas.setGrid,
+    onCommit: canvas.commitCanvas,
     toolMode: canvas.toolMode,
     spacingZoomLocked: canvas.spacingZoomLocked,
     patternZoomLocked: canvas.patternZoomLocked,

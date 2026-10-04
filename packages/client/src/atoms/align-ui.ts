@@ -316,6 +316,25 @@ export function createAlignUiActions(persist: AlignUiPersist, behavior: AlignUiB
         grid: normalizeAlignGridState(resolveNextValue(state.grid, next)),
       }));
     },
+    setLattice(
+      set: (update: StateUpdater<AlignUiState>) => void,
+      next: { grid?: AlignGridState; drift?: AlignDrift | null },
+    ) {
+      patchAlignUi(set, persist, (state) => {
+        const grid =
+          next.grid === undefined || next.grid === state.grid
+            ? state.grid
+            : normalizeAlignGridState(next.grid);
+        const drift =
+          next.drift === undefined || next.drift === state.drift
+            ? state.drift
+            : next.drift === null
+              ? null
+              : normalizeAlignDrift(next.drift);
+        if (grid === state.grid && drift === state.drift) return state;
+        return { ...state, grid, drift };
+      });
+    },
     setToolMode(set: (update: StateUpdater<AlignUiState>) => void, toolMode: AlignGridToolMode) {
       patchAlignUi(set, persist, (state) => ({ ...state, toolMode }));
     },

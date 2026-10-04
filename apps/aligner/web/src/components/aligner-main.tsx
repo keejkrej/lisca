@@ -14,8 +14,8 @@ export function AlignerMain() {
   const canvas = useAlignCanvas();
   const nav = useAlignNav();
   const pointer = useAlignCanvasPointerHandlers(() => ({
-    grid: canvas.grid,
-    setGrid: canvas.setGrid,
+    grid: canvas.effectiveGrid,
+    onCommit: canvas.commitCanvas,
     toolMode: canvas.toolMode,
     spacingZoomLocked: canvas.spacingZoomLocked,
     patternZoomLocked: canvas.patternZoomLocked,
@@ -82,7 +82,7 @@ export function AlignerMain() {
             emptyText={emptyText()}
             excludedPatterns={canvas.displayedExcludedPatterns}
             frame={canvas.frame}
-            grid={canvas.grid}
+            grid={canvas.effectiveGrid}
             toolMode={canvas.toolMode}
             previewGridRef={pointer.previewGridRef}
             previewRedrawRef={pointer.previewRedrawRef}

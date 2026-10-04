@@ -1,4 +1,5 @@
 import type {
+  AlignDrift,
   AlignGridPatternCoord,
   AlignGridState,
   AlignerSource,
@@ -8,7 +9,11 @@ import type {
   FrameRequest,
   WorkspaceScan,
 } from "@lisca/contracts";
-import type { FrameResult } from "@lisca/utils";
+import {
+  type AlignGridPointerIntent,
+  type AlignGridToolMode,
+  type FrameResult,
+} from "@lisca/utils";
 import { type CropConfirmState, type VariationExcludePreview } from "../session/align-session";
 import {
   useAlignSessionCore,
@@ -16,7 +21,6 @@ import {
   type AlignSessionBackend,
   type AlignSessionStore,
 } from "../session/use-align-session";
-import { type AlignGridToolMode } from "@lisca/utils";
 import { createMemo, type Accessor } from "solid-js";
 import type { ExcludedByPosition, StateUpdater } from "../atoms/align-ui";
 import type { CanvasResourceTransactionOptions } from "../canvas-resource-transaction";
@@ -37,7 +41,20 @@ export type AlignState = {
   setContrast: (contrast: ContrastWindow | null) => void;
   frame: FrameResult | null;
   grid: AlignGridState;
+  drift: AlignDrift | null;
+  effectiveGrid: AlignGridState;
+  assayDefaultTime: number | null;
   setGrid: (next: AlignGridState | ((current: AlignGridState) => AlignGridState)) => void;
+  adjustTranslation: (dx: number, dy: number) => void;
+  commitCanvas: (
+    preview: AlignGridState,
+    intent: AlignGridPointerIntent,
+    startGrid: AlignGridState,
+  ) => void;
+  setKeyframe: () => void;
+  clearKeyframe: () => void;
+  clearDrift: () => void;
+  setReference: () => void;
   toolMode: AlignGridToolMode;
   setToolMode: (mode: AlignGridToolMode) => void;
   spacingZoomLocked: boolean;
@@ -93,6 +110,7 @@ export type UseAlignStateCoreDeps = {
   };
   /** Default true. Standalone Aligner sets false (light shell — no crop tasks). */
   enableCrop?: boolean;
+  assayDefaultTime: () => number | null;
 };
 
 export function useAlignStateCore(deps: UseAlignStateCoreDeps): Accessor<AlignState> {
@@ -113,6 +131,7 @@ export function useAlignStateCore(deps: UseAlignStateCoreDeps): Accessor<AlignSt
     policy: {
       enableCrop: deps.enableCrop,
     },
+    assayDefaultTime: deps.assayDefaultTime,
   });
   const ui = session.state;
   const variation = session.variation;
@@ -147,7 +166,16 @@ export function useAlignStateCore(deps: UseAlignStateCoreDeps): Accessor<AlignSt
       setContrast,
       frame: currentUi.frame,
       grid: currentUi.grid,
+      drift: currentUi.drift,
+      effectiveGrid: derived.effectiveGrid,
+      assayDefaultTime: deps.assayDefaultTime(),
       setGrid,
+      adjustTranslation: session.adjustTranslation,
+      commitCanvas: session.commitCanvas,
+      setKeyframe: session.setKeyframe,
+      clearKeyframe: session.clearKeyframe,
+      clearDrift: session.clearDrift,
+      setReference: session.setReference,
       toolMode: currentUi.toolMode,
       setSpacingZoomLocked,
       spacingZoomLocked: currentUi.spacingZoomLocked,

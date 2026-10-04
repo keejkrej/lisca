@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen, within } from "@solidjs/testing-library";
 import { createDefaultAlignGrid } from "@lisca/utils";
-import { afterEach, describe, expect, it } from "vite-plus/test";
+import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
 import { AlignGridRail } from "../src/features/align/align-grid-rail";
 
@@ -94,6 +94,56 @@ describe("AlignGrid section placement", () => {
         input.hasAttribute("disabled"),
       ),
     ).toBe(true);
+  });
+
+  it("keeps spacing editable when offset fields are read-only", () => {
+    render(() => (
+      <AlignGridRail
+        grid={createDefaultAlignGrid()}
+        onGridChange={() => undefined}
+        sectionAppearance="rail"
+        translationEditable={false}
+      />
+    ));
+
+    const geometryElement = sectionFor("Geometry");
+    expect(
+      within(geometryElement)
+        .getByRole("spinbutton", { name: "Offset X" })
+        .hasAttribute("disabled"),
+    ).toBe(true);
+    expect(
+      within(geometryElement)
+        .getByRole("spinbutton", { name: "Offset Y" })
+        .hasAttribute("disabled"),
+    ).toBe(true);
+    expect(
+      within(geometryElement)
+        .getByRole("spinbutton", { name: "Spacing X" })
+        .hasAttribute("disabled"),
+    ).toBe(false);
+  });
+
+  it("commits an offset delta from the shown translation", () => {
+    const onGridChange = vi.fn();
+    const onTranslationDelta = vi.fn();
+    const grid = { ...createDefaultAlignGrid(), tx: 1, ty: 2 };
+    render(() => (
+      <AlignGridRail
+        grid={grid}
+        onGridChange={onGridChange}
+        onTranslationDelta={onTranslationDelta}
+        sectionAppearance="rail"
+        shownTranslation={{ tx: 5, ty: 2 }}
+      />
+    ));
+
+    const input = within(sectionFor("Geometry")).getByRole("spinbutton", { name: "Offset X" });
+    fireEvent.input(input, { target: { value: "8" } });
+    fireEvent.blur(input);
+
+    expect(onTranslationDelta).toHaveBeenCalledWith(3, 0);
+    expect(onGridChange).not.toHaveBeenCalled();
   });
 
   it("preserves the established combined framed section", () => {

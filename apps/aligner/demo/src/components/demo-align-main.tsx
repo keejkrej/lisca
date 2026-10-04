@@ -7,6 +7,7 @@ import {
 } from "@lisca/ui/features";
 import { frameWithContrast, stemName } from "@lisca/web-demo/browser";
 import type { DemoAlignState } from "@lisca/web-demo";
+import { applyDisplayedAlignGridCommit } from "@lisca/utils";
 import { Show, type Accessor } from "solid-js";
 
 export function DemoAlignMain(props: { state: Accessor<DemoAlignState>; embedded?: boolean }) {
@@ -14,7 +15,13 @@ export function DemoAlignMain(props: { state: Accessor<DemoAlignState>; embedded
     const state = props.state();
     return {
       grid: state.grid,
-      setGrid: state.setGrid,
+      onCommit: (preview, intent, startGrid) => {
+        const current = props.state();
+        // No drift, so the acquisition time is unused and offset edits the reference grid.
+        current.setGrid(
+          applyDisplayedAlignGridCommit(current.grid, null, 0, preview, intent, startGrid).grid,
+        );
+      },
       toolMode: state.toolMode,
       spacingZoomLocked: state.spacingZoomLocked,
       patternZoomLocked: state.patternZoomLocked,

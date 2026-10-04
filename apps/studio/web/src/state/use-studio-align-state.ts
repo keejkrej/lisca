@@ -1,4 +1,5 @@
 import type {
+  AlignDrift,
   AlignGridPatternCoord,
   AlignGridState,
   AlignerSource,
@@ -8,7 +9,7 @@ import type {
   FrameRequest,
   WorkspaceScan,
 } from "@lisca/contracts";
-import type { FrameResult } from "@lisca/utils";
+import type { AlignGridPointerIntent, FrameResult } from "@lisca/utils";
 import {
   alignSnapshotKey,
   nextAlignPosition,
@@ -28,6 +29,7 @@ import { scanIdleAtom, scanSourceAtom } from "../atoms/studio-query-atoms";
 import { effectErrorMessage, loadFrameEffect } from "../effects/frame-loader";
 import { runClientEffect } from "@lisca/client/runtime";
 import {
+  defaultStudioAlignTime,
   lockedStudioSelection,
   recallStudioAlignFrame,
   rememberStudioAlignFrame,
@@ -59,7 +61,20 @@ export type StudioAlignState = {
   setContrast: (contrast: ContrastWindow | null) => void;
   frame: FrameResult | null;
   grid: AlignGridState;
+  drift: AlignDrift | null;
+  effectiveGrid: AlignGridState;
+  assayDefaultTime: number | null;
   setGrid: (next: AlignGridState | ((current: AlignGridState) => AlignGridState)) => void;
+  adjustTranslation: (dx: number, dy: number) => void;
+  commitCanvas: (
+    preview: AlignGridState,
+    intent: AlignGridPointerIntent,
+    startGrid: AlignGridState,
+  ) => void;
+  setKeyframe: () => void;
+  clearKeyframe: () => void;
+  clearDrift: () => void;
+  setReference: () => void;
   toolMode: AlignGridToolMode;
   setToolMode: (mode: AlignGridToolMode) => void;
   spacingZoomLocked: boolean;
@@ -119,6 +134,7 @@ export type AlignPositionSaveState = "saved" | "unsaved" | "changed";
 type AlignBaseline = {
   pos: number;
   grid: AlignGridState;
+  drift: AlignDrift | null;
   patterns: AlignGridPatternCoord[];
   key: string;
 };
@@ -164,6 +180,9 @@ export function useStudioAlignState(): StudioAlignState {
       source: activeSource(),
       assayId: assayId(),
     });
+  let scanTimes: (() => readonly number[] | undefined) | null = null;
+  const assayDefaultTime = () =>
+    defaultStudioAlignTime(scanTimes?.(), studioAlignFrameDefault(assayId()));
   const session = useAlignSessionCore({
     store: {
       atom: studioAlignUiAtom,
@@ -208,8 +227,10 @@ export function useStudioAlignState(): StudioAlignState {
         studioNavigate(navigate, "/annotate");
       },
     },
+    assayDefaultTime,
   });
   const ui = session.state;
+  scanTimes = () => ui().scan?.times;
   const alignPositions = createMemo(() => alignPositionsForScan(ui().scan));
   const lockedSelection = () => session.derived().selection;
   const {
@@ -237,11 +258,12 @@ export function useStudioAlignState(): StudioAlignState {
   const applySmartExclusion = session.applySmartExclusion;
   const positionIndex = () => alignPositions().indexOf(lockedSelection().pos);
   const currentSnapshot = () =>
-    alignSnapshotKey(ui().grid, session.derived().currentExcludedPatterns);
+    alignSnapshotKey(ui().grid, session.derived().currentExcludedPatterns, ui().drift);
   const captureBaseline = (pos: number) => {
     const patterns = session.derived().currentExcludedPatterns;
     const grid = ui().grid;
-    setBaseline({ pos, grid, patterns, key: alignSnapshotKey(grid, patterns) });
+    const drift = ui().drift;
+    setBaseline({ pos, grid, drift, patterns, key: alignSnapshotKey(grid, patterns, drift) });
   };
   // Snapshot each position once its frame (and any saved grid/exclusions) has loaded.
   createEffect(() => {
@@ -366,6 +388,7 @@ export function useStudioAlignState(): StudioAlignState {
         session.variation.cancel();
         setManualExclusionEnabled(false);
         setGrid(base.grid);
+        session.replaceDrift(base.drift);
         setExcludedPatternsForCurrentPosition(base.patterns);
       }
     }
@@ -432,7 +455,22 @@ export function useStudioAlignState(): StudioAlignState {
     get grid() {
       return ui().grid;
     },
+    get drift() {
+      return ui().drift;
+    },
+    get effectiveGrid() {
+      return session.derived().effectiveGrid;
+    },
+    get assayDefaultTime() {
+      return assayDefaultTime();
+    },
     setGrid,
+    adjustTranslation: session.adjustTranslation,
+    commitCanvas: session.commitCanvas,
+    setKeyframe: session.setKeyframe,
+    clearKeyframe: session.clearKeyframe,
+    clearDrift: session.clearDrift,
+    setReference: session.setReference,
     get toolMode() {
       return ui().toolMode;
     },

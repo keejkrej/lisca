@@ -97,3 +97,115 @@ export function effectiveAlignGrid(
   if (dx === 0 && dy === 0) return grid;
   return { ...grid, tx: grid.tx + dx, ty: grid.ty + dy };
 }
+
+/** Pan and Offset edit the pin at this time, or the reference only when no pins exist. */
+export function isAlignDriftTranslationEditable(
+  drift: AlignDrift | null | undefined,
+  time: number,
+): boolean {
+  const keyframes = drift?.keyframes;
+  if (keyframes == null || keyframes.length === 0) return true;
+  return keyframes.some((keyframe) => keyframe.time === time);
+}
+
+export function adjustAlignDriftTranslation(
+  grid: AlignGridState,
+  drift: AlignDrift | null,
+  time: number,
+  dx: number,
+  dy: number,
+): { grid: AlignGridState; drift: AlignDrift | null } {
+  if (dx === 0 && dy === 0) return { grid, drift };
+  const keyframes = drift?.keyframes;
+  if (keyframes == null || keyframes.length === 0) {
+    return { grid: { ...grid, tx: grid.tx + dx, ty: grid.ty + dy }, drift };
+  }
+  const index = keyframes.findIndex((keyframe) => keyframe.time === time);
+  if (index < 0) return { grid, drift };
+  const pin = keyframes[index]!;
+  const nextKeyframes = keyframes.slice();
+  nextKeyframes[index] = { time: pin.time, dx: pin.dx + dx, dy: pin.dy + dy };
+  return { grid, drift: { ...drift!, keyframes: nextKeyframes } };
+}
+
+export function upsertAlignDriftKeyframe(
+  drift: AlignDrift | null,
+  time: number,
+  assayDefaultTime: number | null,
+): AlignDrift | null {
+  if (!isAcquisitionTime(time)) return drift;
+  const referenceTime = drift?.referenceTime ?? assayDefaultTime;
+  if (referenceTime == null || !isAcquisitionTime(referenceTime)) return drift;
+  const base: AlignDrift = drift ?? {
+    referenceTime,
+    interpolation: "linear",
+    keyframes: [],
+  };
+  const anchored = base.referenceTime === referenceTime ? base : { ...base, referenceTime };
+  const delta = interpolateAlignDrift(anchored, time);
+  const existing = anchored.keyframes.find((keyframe) => keyframe.time === time);
+  if (
+    existing != null &&
+    existing.dx === delta.dx &&
+    existing.dy === delta.dy &&
+    anchored.referenceTime === drift?.referenceTime
+  ) {
+    return drift;
+  }
+  const keyframes = anchored.keyframes.filter((keyframe) => keyframe.time !== time);
+  keyframes.push({ time, dx: delta.dx, dy: delta.dy });
+  return normalizeAlignDrift({ ...anchored, keyframes });
+}
+
+export function clearAlignDriftKeyframe(drift: AlignDrift | null, time: number): AlignDrift | null {
+  if (drift == null || !drift.keyframes.some((keyframe) => keyframe.time === time)) return drift;
+  return { ...drift, keyframes: drift.keyframes.filter((keyframe) => keyframe.time !== time) };
+}
+
+/** Drops every pin. A user-set referenceTime stays. */
+export function clearAlignDriftPins(drift: AlignDrift | null): AlignDrift | null {
+  if (drift == null || drift.keyframes.length === 0) return drift;
+  return { ...drift, keyframes: [] };
+}
+
+export function rebaseAlignDriftReference(
+  grid: AlignGridState,
+  drift: AlignDrift | null,
+  time: number,
+): { grid: AlignGridState; drift: AlignDrift | null } {
+  if (!isAcquisitionTime(time) || drift?.referenceTime === time) return { grid, drift };
+  const delta = interpolateAlignDrift(drift, time);
+  const nextGrid =
+    delta.dx === 0 && delta.dy === 0
+      ? grid
+      : { ...grid, tx: grid.tx + delta.dx, ty: grid.ty + delta.dy };
+  const keyframes = (drift?.keyframes ?? []).map((keyframe) => ({
+    time: keyframe.time,
+    dx: keyframe.dx - delta.dx,
+    dy: keyframe.dy - delta.dy,
+  }));
+  // The implicit zero moves with the reference. Keep the old anchor, including (0, 0),
+  // or hold-before-first uses the earliest remaining sample and the pose jumps.
+  if (drift != null && !drift.keyframes.some((keyframe) => keyframe.time === drift.referenceTime)) {
+    keyframes.push({
+      time: drift.referenceTime,
+      dx: delta.dx === 0 ? 0 : -delta.dx,
+      dy: delta.dy === 0 ? 0 : -delta.dy,
+    });
+  }
+  const kept = keyframes.filter(
+    (keyframe) => keyframe.time !== time || keyframe.dx !== 0 || keyframe.dy !== 0,
+  );
+  return {
+    grid: nextGrid,
+    drift: normalizeAlignDrift({
+      referenceTime: time,
+      interpolation: "linear",
+      keyframes: kept,
+    }),
+  };
+}
+
+function isAcquisitionTime(time: number): boolean {
+  return isU32(time);
+}

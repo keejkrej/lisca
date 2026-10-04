@@ -1,4 +1,5 @@
 import type {
+  AlignDrift,
   AlignGridPatternCoord,
   AlignGridState,
   AlignerSource,
@@ -11,13 +12,21 @@ import type {
 } from "@lisca/contracts";
 import type { FrameResult } from "@lisca/utils";
 import {
+  adjustAlignDriftTranslation,
   alignStateFromCurrent,
+  applyDisplayedAlignGridCommit,
   buildBboxCsv,
+  clearAlignDriftKeyframe,
+  clearAlignDriftPins,
   collectAlignGridEdgePatterns,
   computeVariationExcludePreview,
   countVisibleAlignGridPatterns,
+  effectiveAlignGrid,
   enumerateVisibleAlignGridPatterns,
   mergeExcludedAlignGridPatterns,
+  rebaseAlignDriftReference,
+  upsertAlignDriftKeyframe,
+  type AlignGridPointerIntent,
   type AlignGridToolMode,
 } from "@lisca/utils";
 import type { AsyncResult, Atom } from "effect/unstable/reactivity";
@@ -143,6 +152,8 @@ export type UseAlignSessionCoreOptions = {
   scan: AlignScanSource;
   workspace?: AlignWorkspaceSync;
   policy?: AlignSessionPolicy;
+  /** Acquisition time the assay already treats as the align frame. Null disables the implicit reference. */
+  assayDefaultTime: () => number | null;
 };
 
 export type { VariationExcludePreview } from "./align-session";
@@ -348,9 +359,10 @@ export function useAlignSessionCore(options: UseAlignSessionCoreOptions) {
       currentUi.loadedFrameSelection?.pos,
       selection.pos,
     );
+    const visibleGrid = effectiveAlignGrid(currentUi.grid, currentUi.drift, selection.time);
     const visibleCounts = deriveVisibleCounts(
       currentUi.frame,
-      currentUi.grid,
+      visibleGrid,
       displayedExcludedPatterns,
     );
     const cropping = isCropping(currentUi.cropProgress);
@@ -364,6 +376,7 @@ export function useAlignSessionCore(options: UseAlignSessionCoreOptions) {
       currentExcludedPatterns,
       displayedExcludedPatterns,
       visibleCounts,
+      effectiveGrid: visibleGrid,
       selection,
       meta,
     };
@@ -377,7 +390,9 @@ export function useAlignSessionCore(options: UseAlignSessionCoreOptions) {
     const patterns = excludedPatterns
       ? Array.from(excludedPatterns)
       : deriveCurrentExcludedPatterns(currentUi.excludedPatternsByPosition, selection.pos);
-    const { included } = countVisibleAlignGridPatterns(frame, grid, patterns);
+    const poseTime = currentUi.drift?.referenceTime ?? selection.time;
+    const poseGrid = effectiveAlignGrid(grid, currentUi.drift, poseTime);
+    const { included } = countVisibleAlignGridPatterns(frame, poseGrid, patterns);
     if (included === 0) {
       actions.setError(setUi, "All grid patterns are excluded — adjust exclusions before saving.");
       return false;
@@ -390,8 +405,8 @@ export function useAlignSessionCore(options: UseAlignSessionCoreOptions) {
         backend.client.saveBbox(
           workspacePath,
           selection.pos,
-          buildBboxCsv(frame, grid, patterns),
-          alignStateFromCurrent(grid, patterns, currentUi.drift),
+          buildBboxCsv(frame, poseGrid, patterns),
+          alignStateFromCurrent(grid, patterns, currentUi.drift, options.assayDefaultTime()),
         ),
       );
       if (!result.ok) throw new Error(result.error ?? "Save failed");
@@ -413,7 +428,10 @@ export function useAlignSessionCore(options: UseAlignSessionCoreOptions) {
       navSelection().pos,
     );
     return mergeExcludedAlignGridPatterns(current, [
-      ...collectAlignGridEdgePatterns(currentUi.frame, currentUi.grid),
+      ...collectAlignGridEdgePatterns(
+        currentUi.frame,
+        effectiveAlignGrid(currentUi.grid, currentUi.drift, navSelection().time),
+      ),
       ...modelPatterns,
     ]);
   };
@@ -433,9 +451,12 @@ export function useAlignSessionCore(options: UseAlignSessionCoreOptions) {
 
   const previewVariationExclude = async () => {
     const currentUi = ui();
-    const { frame, grid } = currentUi;
+    const { frame } = currentUi;
     if (!frame) return null;
-    const patterns = enumerateVisibleAlignGridPatterns(frame, grid);
+    const patterns = enumerateVisibleAlignGridPatterns(
+      frame,
+      effectiveAlignGrid(currentUi.grid, currentUi.drift, navSelection().time),
+    );
     if (patterns.length === 0) return null;
     setVariationExcludeLoading(true);
     try {
@@ -482,10 +503,15 @@ export function useAlignSessionCore(options: UseAlignSessionCoreOptions) {
   const applyVariationExclude = () => {
     const preview = variationExcludePreview();
     const currentUi = ui();
-    const { frame, grid } = currentUi;
+    const { frame } = currentUi;
     if (!preview || !frame) return;
     const currentExcludedPatterns = derived().currentExcludedPatterns;
-    const applied = applyVariationExcludeWithEdge(currentExcludedPatterns, frame, grid, preview);
+    const applied = applyVariationExcludeWithEdge(
+      currentExcludedPatterns,
+      frame,
+      effectiveAlignGrid(currentUi.grid, currentUi.drift, navSelection().time),
+      preview,
+    );
     sessionActions.setExcludedPatternsForCurrentPosition(applied.patterns);
     setVariationExcludePreview(null);
     sessionActions.reportStatus(
@@ -495,7 +521,7 @@ export function useAlignSessionCore(options: UseAlignSessionCoreOptions) {
 
   const excludeEdgeAndVariation = async () => {
     const currentUi = ui();
-    const { source, frame, grid } = currentUi;
+    const { source, frame } = currentUi;
     const currentExcludedPatterns = derived().currentExcludedPatterns;
     if (!source || !frame) return;
     sessionActions.reportStatus("Edge and log-std exclude");
@@ -504,7 +530,7 @@ export function useAlignSessionCore(options: UseAlignSessionCoreOptions) {
       const finalExcludedPatterns = mergeEdgeAndVariationExcludedPatterns(
         currentExcludedPatterns,
         frame,
-        grid,
+        effectiveAlignGrid(currentUi.grid, currentUi.drift, navSelection().time),
         preview,
         preview?.threshold,
       );
@@ -649,6 +675,70 @@ export function useAlignSessionCore(options: UseAlignSessionCoreOptions) {
     actions.setCropProgress(setUi, await runClientEffect(backend.client.cancelCropRoi(requestId)));
   };
 
+  const writeLattice = (next: { grid?: AlignGridState; drift?: AlignDrift | null }) => {
+    actions.setLattice(setUi, next);
+  };
+  const adjustTranslation = (dx: number, dy: number) => {
+    const current = ui();
+    const next = adjustAlignDriftTranslation(
+      current.grid,
+      current.drift,
+      navSelection().time,
+      dx,
+      dy,
+    );
+    if (next.grid === current.grid && next.drift === current.drift) return;
+    writeLattice(next);
+  };
+  const replaceDrift = (drift: AlignDrift | null) => {
+    writeLattice({ drift });
+  };
+  const setKeyframe = () => {
+    const current = ui();
+    const next = upsertAlignDriftKeyframe(
+      current.drift,
+      navSelection().time,
+      options.assayDefaultTime(),
+    );
+    if (next === current.drift) return;
+    writeLattice({ drift: next });
+  };
+  const clearKeyframe = () => {
+    const current = ui();
+    const next = clearAlignDriftKeyframe(current.drift, navSelection().time);
+    if (next === current.drift) return;
+    writeLattice({ drift: next });
+  };
+  const clearDrift = () => {
+    const current = ui();
+    const next = clearAlignDriftPins(current.drift);
+    if (next === current.drift) return;
+    writeLattice({ drift: next });
+  };
+  const setReference = () => {
+    const current = ui();
+    const next = rebaseAlignDriftReference(current.grid, current.drift, navSelection().time);
+    if (next.grid === current.grid && next.drift === current.drift) return;
+    writeLattice(next);
+  };
+  const commitCanvas = (
+    preview: AlignGridState,
+    intent: AlignGridPointerIntent,
+    startGrid: AlignGridState,
+  ) => {
+    const current = ui();
+    const next = applyDisplayedAlignGridCommit(
+      current.grid,
+      current.drift,
+      navSelection().time,
+      preview,
+      intent,
+      startGrid,
+    );
+    if (next.grid === current.grid && next.drift === current.drift) return;
+    writeLattice(next);
+  };
+
   return {
     state: ui,
     actions: sessionActions,
@@ -660,6 +750,13 @@ export function useAlignSessionCore(options: UseAlignSessionCoreOptions) {
     saveCurrent,
     saveWithSmartExclusion,
     applySmartExclusion,
+    adjustTranslation,
+    replaceDrift,
+    setKeyframe,
+    clearKeyframe,
+    clearDrift,
+    setReference,
+    commitCanvas,
     crop: {
       confirm: cropConfirm,
       checkOverwrite: checkCropOverwrite,

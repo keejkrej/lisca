@@ -1,5 +1,5 @@
 import type { AlignGridPatternCoord, AlignGridState } from "@lisca/contracts";
-import type { AlignGridFrameBounds, AlignGridToolMode } from "@lisca/utils";
+import type { AlignGridFrameBounds, AlignGridPointerIntent, AlignGridToolMode } from "@lisca/utils";
 import { createMemo, type Accessor } from "solid-js";
 
 import {
@@ -11,7 +11,11 @@ import { useAlignCanvasSelectionHandlers } from "./align-selection-handlers";
 
 export type UseAlignCanvasPointerHandlersOptions = {
   grid: AlignGridState;
-  setGrid: (grid: AlignGridState) => void;
+  onCommit: (
+    preview: AlignGridState,
+    intent: AlignGridPointerIntent,
+    startGrid: AlignGridState,
+  ) => void;
   toolMode: AlignGridToolMode;
   spacingZoomLocked?: boolean;
   patternZoomLocked?: boolean;
@@ -31,7 +35,7 @@ export function useAlignCanvasPointerHandlers(options: () => UseAlignCanvasPoint
       grid,
       spacingZoomLocked,
       patternZoomLocked,
-      setGrid,
+      onCommit,
       toolMode,
       onPreviewGridChange,
     } = options();
@@ -40,7 +44,7 @@ export function useAlignCanvasPointerHandlers(options: () => UseAlignCanvasPoint
       grid,
       spacingZoomLocked,
       patternZoomLocked,
-      setGrid,
+      onCommit,
       toolMode,
       onPreviewGridChange: () => {
         onPreviewGridChange?.();
