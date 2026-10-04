@@ -186,10 +186,7 @@ export function rebaseAlignDriftReference(
   }));
   // The implicit zero moves with the reference. Keep the old anchor, including (0, 0),
   // or hold-before-first uses the earliest remaining sample and the pose jumps.
-  if (
-    drift != null &&
-    !drift.keyframes.some((keyframe) => keyframe.time === drift.referenceTime)
-  ) {
+  if (drift != null && !drift.keyframes.some((keyframe) => keyframe.time === drift.referenceTime)) {
     keyframes.push({
       time: drift.referenceTime,
       dx: delta.dx === 0 ? 0 : -delta.dx,
