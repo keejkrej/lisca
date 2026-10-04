@@ -1,8 +1,9 @@
 import type { AnalysisProgress, StudioAnalysisCsvFile } from "@lisca/contracts";
 import { useAnnotateStateCore } from "@lisca/client/use-annotate-state-core";
+import { logClientEvent } from "@lisca/client/client-log";
 import { useCanvasResourceTransaction, useCanvasTransientStatus } from "@lisca/ui/features";
 import { useAtom, useAtomSet } from "@effect/atom-solid";
-import { createEffect, onCleanup } from "solid-js";
+import { createEffect } from "solid-js";
 import { useNavigate } from "@tanstack/solid-router";
 import { runClientEffect } from "@lisca/client/runtime";
 
@@ -26,8 +27,13 @@ import {
 } from "./studio-store";
 import { setStudioAnnotateDirty } from "./studio-annotate-guard";
 import { nextStudioAnnotateRoi, previousStudioAnnotateRoi } from "./studio-annotate-navigation";
-
-const noop = () => {};
+import {
+  claimStudioAnalysisRun,
+  releaseStudioAnalysisRun,
+  runStudioAnalysis,
+  scheduleStudioAnalysis,
+  studioAnalysisRunActive,
+} from "./studio-analysis-run";
 
 function useStudioWorkspaceSync(activeWorkspacePath: () => string | null) {
   const [ui, setUi] = useAtom(() => studioAnnotateUiAtom);
@@ -89,6 +95,7 @@ export function useStudioAnnotateState(): StudioAnnotateState {
       if (!dirty || selectionChanging) return true;
       return window.confirm("Discard unsaved annotation changes?");
     },
+    initialTimeIndex: "last",
   });
   const setAnalysisStartConfirm = (value: boolean) =>
     studioAnnotateUiActions.setAnalysisStartConfirm(setUi, value);
@@ -99,12 +106,11 @@ export function useStudioAnnotateState(): StudioAnnotateState {
   const setAnalysisResultFiles = (files: StudioAnalysisCsvFile[]) =>
     studioAnnotateUiActions.setAnalysisResultFiles(setUi, files);
   const setStatus = (status: string | null) => studioAnnotateUiActions.setStatus(setUi, status);
-  let analysisGeneration = 0;
-  let stopAnalysisProgress = noop;
-  onCleanup(() => {
-    analysisGeneration += 1;
-    stopAnalysisProgress();
-  });
+  const analysisInFlight = () => {
+    if (studioAnalysisRunActive()) return true;
+    const progress = ui().analysisProgress;
+    return progress != null && (progress.status === "queued" || progress.status === "running");
+  };
   const nextSite = () => {
     const current = annotate();
     return nextStudioAnnotateRoi(current.scan, current.selection);
@@ -128,98 +134,42 @@ export function useStudioAnnotateState(): StudioAnnotateState {
   const startAnalysis = () => {
     const current = annotate();
     const workspacePath = current.workspacePath;
-    if (!workspacePath) return;
-    setAnalysisStartConfirm(false);
-    openStudioTaskCenter("analysis");
-    studioNavigate(navigate, "/analysis");
-    setStatus("Saving assay.json");
-    const requestId = `studio-analysis-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    const generation = analysisGeneration + 1;
-    analysisGeneration = generation;
-    stopAnalysisProgress();
-    stopAnalysisProgress = noop;
-    setAnalysisRequestId(requestId);
-    setAnalysisResultFiles([]);
-    setAnalysisProgress({
-      requestId,
-      status: "queued",
-      stage: "queued",
-      progress: 0,
-      message: "Saving assay.json",
-      resultFiles: [],
-      error: null,
-    });
-    const isCurrentRun = () => analysisGeneration === generation;
-    const onProgress = (progress: AnalysisProgress) => {
-      if (!isCurrentRun()) return;
-      setAnalysisProgress(progress);
-      if (progress.resultFiles?.length) {
-        setAnalysisResultFiles(progress.resultFiles);
-      }
-      if (progress.status === "completed") {
-        analysisGeneration += 1;
-        stopAnalysisProgress();
-        stopAnalysisProgress = noop;
-        setStatus("Analysis completed");
-        studioNavigate(navigate, "/analysis");
-      }
-      if (progress.status === "error") {
-        analysisGeneration += 1;
-        stopAnalysisProgress();
-        stopAnalysisProgress = noop;
-        setStatus(progress.error ?? "Analysis failed");
-      }
-    };
-    void (async () => {
-      try {
-        const assayJson = buildStudioAssayJsonFromWizard(wizard());
-        await runClientEffect(
-          studioClient.saveAssayJson(workspacePath, JSON.stringify(assayJson, null, 2)),
-        );
-        if (!isCurrentRun()) return;
-        setBasicInfoSavedSnapshot()(serializeBasicInfoSnapshot(wizard()));
-        setStatus("Starting analysis");
-        setAnalysisProgress({
-          requestId,
-          status: "queued",
-          stage: "queued",
-          progress: 0,
-          message: "Queued analysis",
-          resultFiles: [],
-          error: null,
-        });
-        const initialProgress = await runStartAnalysis({
+    if (!workspacePath || analysisInFlight()) return;
+    const token = claimStudioAnalysisRun();
+    if (token == null) return;
+    const assayJson = buildStudioAssayJsonFromWizard(wizard());
+    const savedSnapshot = serializeBasicInfoSnapshot(wizard());
+    const markSaved = setBasicInfoSavedSnapshot();
+    const scheduled = scheduleStudioAnalysis({
+      navigate: () => navigate({ to: "/analysis" }),
+      start: () => {
+        setAnalysisStartConfirm(false);
+        openStudioTaskCenter("analysis");
+        void runStudioAnalysis({
+          token,
           workspacePath,
-          requestId,
+          assayJson,
+          saveAssayJson: async (path, body) => {
+            await runClientEffect(studioClient.saveAssayJson(path, body));
+          },
+          startAnalysis: (input) => runStartAnalysis(input),
+          subscribe: (requestId, onProgress) => studioClient.onAnalysisProgress(requestId, onProgress),
+          setAnalysisProgress,
+          setAnalysisRequestId,
+          setAnalysisResultFiles,
+          setStatus,
+          markAssaySaved: () => markSaved(savedSnapshot),
+          toErrorMessage,
+          onCompleted: () => studioNavigate(navigate, "/analysis"),
         });
-        if (!isCurrentRun()) return;
-        setAnalysisProgress(initialProgress);
-        const stop = studioClient.onAnalysisProgress(requestId, onProgress);
-        if (isCurrentRun()) {
-          stopAnalysisProgress = stop;
-        } else {
-          stop();
-        }
-      } catch (cause) {
-        if (!isCurrentRun()) return;
-        stopAnalysisProgress();
-        stopAnalysisProgress = noop;
-        setAnalysisProgress({
-          requestId,
-          status: "error",
-          stage: "queued",
-          progress: 0,
-          message: "Analysis failed to start",
-          resultFiles: [],
-          error: toErrorMessage(cause, "Analysis failed"),
-        });
-        setStatus(toErrorMessage(cause, "Analysis failed"));
-      }
-    })();
-  };
-  const analysisInFlight = () => {
-    const progress = ui().analysisProgress;
-    return progress != null && (progress.status === "queued" || progress.status === "running");
+      },
+      onNavigateError: (cause) => {
+        const message = toErrorMessage(cause, "Could not open Analysis");
+        logClientEvent(`analysis navigate failed ${message}`);
+        setStatus(message);
+      },
+    });
+    if (!scheduled) releaseStudioAnalysisRun(token);
   };
   const requestContinueToAnalysis = () => {
     const current = annotate();

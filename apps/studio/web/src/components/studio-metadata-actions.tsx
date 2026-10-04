@@ -1,5 +1,5 @@
 import { Button } from "@lisca/ui/components";
-import { CanvasToastStack } from "@lisca/ui/features";
+import { CanvasToastStack, useCanvasTransientStatus } from "@lisca/ui/features";
 import { PanelSection, RailControlStack } from "@lisca/ui/shell";
 import { Show } from "solid-js";
 
@@ -13,6 +13,14 @@ import { AssayOverwriteConfirmModal } from "./assay-overwrite-confirm-modal";
 
 export function StudioMetadataActions() {
   const save = useStudioAssaySave();
+  const savedNotice = useCanvasTransientStatus(save.saveNotice);
+  const toast = () => {
+    const error = save.saveError();
+    if (error) return { text: error, tone: "error" as const };
+    const saved = savedNotice();
+    if (saved) return { text: saved, tone: "success" as const };
+    return null;
+  };
   useStudioCommandShortcut(
     "save",
     () => !save.saving() && !save.overwriteOpen(),
@@ -32,8 +40,8 @@ export function StudioMetadataActions() {
           Save
           <CommandShortcutHint command="save" />
         </Button>
-        <Show when={save.saveError()}>
-          {(message) => <CanvasToastStack messages={[{ text: message(), tone: "error" }]} />}
+        <Show when={toast()}>
+          {(message) => <CanvasToastStack messages={[message()]} />}
         </Show>
       </RailControlStack>
       <AssayOverwriteConfirmModal

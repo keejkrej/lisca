@@ -131,6 +131,7 @@ export type AlignSessionPolicy = {
    */
   enableCrop?: boolean;
   cropRequestPrefix?: string;
+  onCropStarted?: (event: { requestId: string; workspacePath: string }) => void;
   onCropCompleted?: (progress: CropRoiProgress) => void;
   onCropSkippedAll?: () => void;
 };
@@ -543,6 +544,9 @@ export function useAlignSessionCore(options: UseAlignSessionCoreOptions) {
       },
       onProgress: (progress) => actions.setCropProgress(setUi, progress),
       onError: (message) => actions.setError(setUi, message),
+      onStarted: (requestId) => {
+        policy.onCropStarted?.({ requestId, workspacePath });
+      },
       onCompleted: (progress) => {
         actions.setStatus(setUi, progress.message ?? "Crop completed");
         policy.onCropCompleted?.(progress);

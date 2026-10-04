@@ -22,6 +22,10 @@
       "types": "./src/infra/client-error.ts",
       "import": "./src/infra/client-error.ts"
     },
+    "./client-log": {
+      "types": "./src/infra/client-log.ts",
+      "import": "./src/infra/client-log.ts"
+    },
     "./desktop": {
       "types": "./src/infra/desktop.ts",
       "import": "./src/infra/desktop.ts"

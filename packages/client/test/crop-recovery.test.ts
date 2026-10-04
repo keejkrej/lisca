@@ -57,6 +57,7 @@ describe("crop recovery", () => {
   it("polls the authoritative existing request when submission attaches", async () => {
     let subscribedRequestId: string | null = null;
     const onProgress = vi.fn();
+    const onStarted = vi.fn();
 
     await runCropRoi({
       client: {
@@ -75,9 +76,11 @@ describe("crop recovery", () => {
       onProgress,
       onError: vi.fn(),
       onCompleted: vi.fn(),
+      onStarted,
       toErrorMessage: String,
     });
 
+    expect(onStarted).toHaveBeenCalledWith("existing");
     expect(subscribedRequestId).toBe("existing");
     expect(onProgress).toHaveBeenLastCalledWith(expect.objectContaining({ requestId: "existing" }));
     expect(readCropRecovery(request.workspacePath)).toEqual({

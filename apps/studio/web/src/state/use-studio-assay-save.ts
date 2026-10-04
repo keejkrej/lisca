@@ -1,3 +1,4 @@
+import { logClientEvent } from "@lisca/client/client-log";
 import {
   studioAssayJsonPathForSaveTo,
   touchStudioWorkSessionFromAssayPath,
@@ -28,6 +29,7 @@ export function useStudioAssaySave() {
 
   const [saving, setSaving] = createSignal(false);
   const [saveError, setSaveError] = createSignal<string | null>(null);
+  const [saveNotice, setSaveNotice] = createSignal<string | null>(null);
   const [overwriteOpen, setOverwriteOpen] = createSignal(false);
 
   const dirty = createMemo(() => isBasicInfoDirty(wizard()));
@@ -43,6 +45,7 @@ export function useStudioAssaySave() {
     if (!current.assayId || saving()) return false;
     setSaving(true);
     setSaveError(null);
+    setSaveNotice(null);
     try {
       if (!overwrite && (await assayJsonExists(workspacePath()))) {
         setOverwriteOpen(true);
@@ -55,6 +58,8 @@ export function useStudioAssaySave() {
       touchStudioWorkSessionFromAssayPath(assayJsonPath, label);
       recordStudioAssayMemory(assayJsonPath, assayJson);
       studioWizardActions.setBasicInfoSavedSnapshot(setWizard, serializeBasicInfoSnapshot(current));
+      setSaveNotice("Saved assay");
+      logClientEvent(`saved assay ${workspacePath()}`);
       return true;
     } catch (cause) {
       setSaveError(
@@ -73,6 +78,7 @@ export function useStudioAssaySave() {
     workspacePath,
     saving,
     saveError,
+    saveNotice,
     setSaveError,
     overwriteOpen,
     setOverwriteOpen,

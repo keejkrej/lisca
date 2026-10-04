@@ -75,6 +75,7 @@ type SessionHandles = {
   state: Accessor<AnnotatorUiState>;
   setUi: (update: StateUpdater<AnnotatorUiState>) => void;
   actions: ReturnType<typeof createAnnotatorUiActions>;
+  chooseTime: (timeIndex: number) => void;
   commitFrame: (frame: FrameResult) => void;
   setScanResult: (next: AsyncResult.AsyncResult<RoiWorkspaceScan, unknown>) => void;
   setLabelsResult: (next: AsyncResult.AsyncResult<readonly AnnotationLabel[], unknown>) => void;
@@ -85,6 +86,7 @@ type MountConfig = {
   scan: AsyncResult.AsyncResult<RoiWorkspaceScan, unknown>;
   labels: AsyncResult.AsyncResult<readonly AnnotationLabel[], unknown>;
   frame?: FrameResult | null;
+  initialTimeIndex?: "first" | "last";
 };
 
 function mountSession(config: MountConfig): SessionHandles {
@@ -103,6 +105,7 @@ function mountSession(config: MountConfig): SessionHandles {
   const scan: AnnotateScanAtoms = { scanResult, labelsResult, shellWorkspacePath };
 
   let state!: Accessor<AnnotatorUiState>;
+  let chooseTime: (timeIndex: number) => void = () => {};
   const dispose = createRoot((rootDispose) => {
     const session = useAnnotateSessionCore({
       ui,
@@ -112,8 +115,10 @@ function mountSession(config: MountConfig): SessionHandles {
       scan,
       toErrorMessage: (cause) =>
         typeof cause === "string" ? cause : ((cause as Error)?.message ?? String(cause)),
+      initialTimeIndex: config.initialTimeIndex,
     });
     state = session.state;
+    chooseTime = (timeIndex) => session.actions.setSelection({ timeIndex });
     return rootDispose;
   });
 
@@ -126,7 +131,7 @@ function mountSession(config: MountConfig): SessionHandles {
     actions.setStatus(setUi, `Loaded Pos1 Roi1`);
   };
 
-  return { state, setUi, actions, commitFrame, setScanResult, setLabelsResult, dispose };
+  return { state, setUi, actions, chooseTime, commitFrame, setScanResult, setLabelsResult, dispose };
 }
 
 describe("useAnnotateSessionCore — scan-error effect (Effect 5)", () => {
@@ -229,6 +234,37 @@ describe("useAnnotateSessionCore — scan-error effect (Effect 5)", () => {
       await flush();
       expect(handles.state().frame).toBeNull();
       expect(handles.state().scanError).toContain("scan boom");
+    } finally {
+      handles.dispose();
+    }
+  });
+});
+
+describe("useAnnotateSessionCore — initial time", () => {
+  const timedScan: RoiWorkspaceScan = {
+    positions: [
+      {
+        pos: 1,
+        channels: [0],
+        times: [10, 20, 30],
+        zSlices: [0],
+        rois: [{ roi: 1, fileName: "roi.tif", bbox: { roi: 1, x: 0, y: 0, w: 64, h: 64 } }],
+      },
+    ],
+  };
+
+  it("opens on the last frame when asked and keeps an explicit frame 0", async () => {
+    const handles = mountSession({
+      scan: AsyncResult.success(timedScan),
+      labels: labelsSuccess(),
+      initialTimeIndex: "last",
+    });
+    try {
+      await flush();
+      expect(handles.state().selection.timeIndex).toBe(2);
+      handles.chooseTime(0);
+      await flush();
+      expect(handles.state().selection.timeIndex).toBe(0);
     } finally {
       handles.dispose();
     }

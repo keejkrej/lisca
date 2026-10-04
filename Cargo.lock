@@ -47,7 +47,7 @@ dependencies = [
 
 [[package]]
 name = "aligner-tauri"
-version = "0.4.3"
+version = "0.4.4"
 dependencies = [
  "aligner-server",
  "lisca-tauri",
@@ -91,7 +91,7 @@ dependencies = [
 
 [[package]]
 name = "annotator-tauri"
-version = "0.4.3"
+version = "0.4.4"
 dependencies = [
  "annotator-server",
  "lisca-tauri",
@@ -2346,6 +2346,7 @@ version = "0.1.0"
 dependencies = [
  "axum",
  "base64 0.22.1",
+ "lisca",
  "serde",
  "serde_json",
  "tauri",
@@ -4366,7 +4367,7 @@ dependencies = [
 
 [[package]]
 name = "studio-tauri"
-version = "0.4.3"
+version = "0.4.4"
 dependencies = [
  "lisca-tauri",
  "studio-server",

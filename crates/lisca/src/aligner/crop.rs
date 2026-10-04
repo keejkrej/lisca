@@ -1028,6 +1028,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(unix)]
     fn raise_nofile_soft_limit_never_lowers_limit() {
         let before = rlimit_nofile_soft().unwrap();
         raise_nofile_soft_limit();
