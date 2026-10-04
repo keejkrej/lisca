@@ -2,12 +2,13 @@ from __future__ import annotations
 
 import csv
 import json
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from datetime import UTC, datetime
 from pathlib import Path
 
 import numpy as np
 
+from lisca.core.align_drift import interpolate_align_drift
 from lisca.core.align_grid import (
     FrameBounds,
     enumerate_visible_align_grid_patterns,
@@ -117,6 +118,13 @@ def create_smart_exclusion_dataset(options: CreateSmartExclusionDatasetOptions) 
         position_index = load_position_index(options.workspace, position)
         roi_by_id = {entry.roi: entry for entry in position_index.rois}
 
+        try:
+            page = position_index.time_indices.index(options.time)
+        except ValueError as error:
+            raise ValueError(
+                f"Pos{position}: acquisition time {options.time} is not in timeIndices"
+            ) from error
+
         frame_path = find_source_frame_path(
             options.source,
             SourceFrameRequest(
@@ -130,11 +138,13 @@ def create_smart_exclusion_dataset(options: CreateSmartExclusionDatasetOptions) 
         frame_height, frame_width = source_frame.shape[:2]
         frame = FrameBounds(width=frame_width, height=frame_height)
 
+        dx, dy = interpolate_align_drift(align_state.drift, options.time)
+        grid = align_state.grid
+        if dx != 0.0 or dy != 0.0:
+            grid = replace(grid, tx=grid.tx + dx, ty=grid.ty + dy)
         pattern_boxes = {
             (pattern.i, pattern.j): pattern
-            for pattern in enumerate_visible_align_grid_patterns(
-                frame, align_state.grid
-            )
+            for pattern in enumerate_visible_align_grid_patterns(frame, grid)
         }
         full_width = max(1, round(align_state.grid.pattern_width))
         full_height = max(1, round(align_state.grid.pattern_height))
@@ -163,7 +173,7 @@ def create_smart_exclusion_dataset(options: CreateSmartExclusionDatasetOptions) 
             frame_2d = roi_frame_2d(
                 stack,
                 position_index.axis_order,
-                options.time,
+                page,
                 options.channel,
                 options.z,
             )
