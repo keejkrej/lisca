@@ -184,12 +184,17 @@ export function rebaseAlignDriftReference(
     dx: keyframe.dx - delta.dx,
     dy: keyframe.dy - delta.dy,
   }));
+  // The implicit zero moves with the reference. Keep the old anchor, including (0, 0),
+  // or hold-before-first uses the earliest remaining sample and the pose jumps.
   if (
     drift != null &&
-    !drift.keyframes.some((keyframe) => keyframe.time === drift.referenceTime) &&
-    (delta.dx !== 0 || delta.dy !== 0)
+    !drift.keyframes.some((keyframe) => keyframe.time === drift.referenceTime)
   ) {
-    keyframes.push({ time: drift.referenceTime, dx: -delta.dx, dy: -delta.dy });
+    keyframes.push({
+      time: drift.referenceTime,
+      dx: delta.dx === 0 ? 0 : -delta.dx,
+      dy: delta.dy === 0 ? 0 : -delta.dy,
+    });
   }
   const kept = keyframes.filter(
     (keyframe) => keyframe.time !== time || keyframe.dx !== 0 || keyframe.dy !== 0,

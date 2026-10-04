@@ -1,13 +1,13 @@
 import { Panel, StageCanvas, ViewportCard } from "@lisca/ui/shell";
 import {
   AlignCanvas,
-  applyAlignGridReferenceCommit,
   CanvasToastStack,
   useAlignCanvasPointerHandlers,
   useCanvasTransientStatus,
 } from "@lisca/ui/features";
 import { frameWithContrast, stemName } from "@lisca/web-demo/browser";
 import type { DemoAlignState } from "@lisca/web-demo";
+import { applyDisplayedAlignGridCommit } from "@lisca/utils";
 import { Show, type Accessor } from "solid-js";
 
 export function DemoAlignMain(props: { state: Accessor<DemoAlignState>; embedded?: boolean }) {
@@ -17,7 +17,10 @@ export function DemoAlignMain(props: { state: Accessor<DemoAlignState>; embedded
       grid: state.grid,
       onCommit: (preview, intent, startGrid) => {
         const current = props.state();
-        current.setGrid(applyAlignGridReferenceCommit(current.grid, preview, intent, startGrid));
+        // No drift, so the acquisition time is unused and offset edits the reference grid.
+        current.setGrid(
+          applyDisplayedAlignGridCommit(current.grid, null, 0, preview, intent, startGrid).grid,
+        );
       },
       toolMode: state.toolMode,
       spacingZoomLocked: state.spacingZoomLocked,

@@ -4,7 +4,6 @@ export {
   type AlignCanvasWheelEvent,
 } from "./align/align-canvas";
 export {
-  applyAlignGridReferenceCommit,
   cursorForAlignTool,
   useAlignCanvasGridHandlers,
   type AlignCanvasFramePoint,

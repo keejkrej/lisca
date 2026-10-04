@@ -230,4 +230,54 @@ describe("align drift", () => {
       keyframes: [],
     });
   });
+
+  test("set reference on a zero crossing keeps the old anchor so the pose does not jump", () => {
+    const grid = normalizeAlignGridState({ tx: 10, ty: 0, enabled: true });
+    const pinnedZero = normalizeAlignDrift({
+      referenceTime: 0,
+      interpolation: "linear",
+      keyframes: [
+        { time: 100, dx: 10, dy: 0 },
+        { time: 200, dx: 0, dy: 0 },
+      ],
+    });
+    const beforePin = [0, 50].map((time) => effectiveAlignGrid(grid, pinnedZero, time));
+    const movedPin = rebaseAlignDriftReference(grid, pinnedZero, 200);
+    expect(movedPin.drift?.referenceTime).toBe(200);
+    expect(movedPin.drift?.keyframes.find((pin) => pin.time === 200)).toBeUndefined();
+    expect(movedPin.drift?.keyframes.find((pin) => pin.time === 0)).toEqual({
+      time: 0,
+      dx: 0,
+      dy: 0,
+    });
+    [0, 50].forEach((time, index) => {
+      const after = effectiveAlignGrid(movedPin.grid, movedPin.drift, time);
+      expect(after.tx).toBeCloseTo(beforePin[index]!.tx);
+      expect(after.ty).toBeCloseTo(beforePin[index]!.ty);
+    });
+    expect(effectiveAlignGrid(movedPin.grid, movedPin.drift, 0).tx).toBeCloseTo(10);
+    expect(effectiveAlignGrid(movedPin.grid, movedPin.drift, 50).tx).toBeCloseTo(15);
+
+    const crossing = normalizeAlignDrift({
+      referenceTime: 0,
+      interpolation: "linear",
+      keyframes: [
+        { time: 100, dx: 10, dy: 0 },
+        { time: 200, dx: -10, dy: 0 },
+      ],
+    });
+    expect(interpolateAlignDrift(crossing, 150)).toEqual({ dx: 0, dy: 0 });
+    const beforeCross = [0, 50].map((time) => effectiveAlignGrid(grid, crossing, time));
+    const movedCross = rebaseAlignDriftReference(grid, crossing, 150);
+    expect(movedCross.drift?.keyframes.find((pin) => pin.time === 0)).toEqual({
+      time: 0,
+      dx: 0,
+      dy: 0,
+    });
+    [0, 50].forEach((time, index) => {
+      const after = effectiveAlignGrid(movedCross.grid, movedCross.drift, time);
+      expect(after.tx).toBeCloseTo(beforeCross[index]!.tx);
+      expect(after.ty).toBeCloseTo(beforeCross[index]!.ty);
+    });
+  });
 });

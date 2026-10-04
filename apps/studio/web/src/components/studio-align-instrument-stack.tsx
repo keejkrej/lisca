@@ -7,7 +7,7 @@ import {
 } from "@lisca/ui/features";
 import { Button } from "@lisca/ui/components";
 import { PanelSection, RailControlStack, RailSectionStack } from "@lisca/ui/shell";
-import { effectiveAlignGrid, isAlignDriftTranslationEditable } from "@lisca/utils";
+import { isAlignDriftTranslationEditable } from "@lisca/utils";
 import { Show, createMemo } from "solid-js";
 
 import {
@@ -67,14 +67,13 @@ export function StudioAlignInstrumentStack(props: { expert?: boolean }) {
     () => void state.requestCrop(),
   );
 
-  const shownGrid = () => effectiveAlignGrid(state.grid, state.drift ?? null, state.selection.time);
   const gridRail = (railPart: "grid" | "geometry") => (
     <AlignGridRail
       disabled={disabled()}
       grid={state.grid}
       railPart={railPart}
       sectionAppearance="rail"
-      shownTranslation={{ tx: shownGrid().tx, ty: shownGrid().ty }}
+      shownTranslation={{ tx: state.effectiveGrid.tx, ty: state.effectiveGrid.ty }}
       translationEditable={isAlignDriftTranslationEditable(
         state.drift ?? null,
         state.selection.time,
@@ -121,7 +120,7 @@ export function StudioAlignInstrumentStack(props: { expert?: boolean }) {
         disabled={disabled()}
         excludedPatterns={state.currentExcludedPatterns}
         frame={state.frame}
-        grid={shownGrid()}
+        grid={state.effectiveGrid}
         manualExclusionEnabled={state.manualExclusionEnabled}
         sectionAppearance="rail"
         smartExcludeLoading={smartExclude.active()}

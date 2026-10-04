@@ -125,30 +125,6 @@ export function useAlignCanvasGridHandlers(
   };
 }
 
-/** No-drift hosts: offset adds the pixel delta to the reference; other intents copy geometry only. */
-export function applyAlignGridReferenceCommit(
-  grid: AlignGridState,
-  preview: AlignGridState,
-  intent: AlignGridPointerIntent,
-  startGrid: AlignGridState,
-): AlignGridState {
-  if (intent === "offset") {
-    return {
-      ...grid,
-      tx: grid.tx + (preview.tx - startGrid.tx),
-      ty: grid.ty + (preview.ty - startGrid.ty),
-    };
-  }
-  return {
-    ...grid,
-    rotation: preview.rotation,
-    spacingA: preview.spacingA,
-    spacingB: preview.spacingB,
-    patternWidth: preview.patternWidth,
-    patternHeight: preview.patternHeight,
-  };
-}
-
 export function cursorForAlignTool(
   toolMode: AlignGridToolMode,
   gridEnabled: boolean,

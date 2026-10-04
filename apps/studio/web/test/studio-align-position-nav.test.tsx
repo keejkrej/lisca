@@ -37,6 +37,9 @@ function pageValue(pos: Accessor<number>): StudioAlignPageContextValue {
     get grid() {
       return createDefaultAlignGrid();
     },
+    get effectiveGrid() {
+      return createDefaultAlignGrid();
+    },
     get toolMode() {
       return "pan" as const;
     },

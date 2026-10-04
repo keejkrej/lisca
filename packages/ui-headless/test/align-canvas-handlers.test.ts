@@ -1,9 +1,8 @@
-import { createDefaultAlignGrid } from "@lisca/utils";
+import { applyDisplayedAlignGridCommit, createDefaultAlignGrid } from "@lisca/utils";
 import { render } from "@solidjs/testing-library";
 import { describe, expect, it, vi } from "vite-plus/test";
 
 import {
-  applyAlignGridReferenceCommit,
   cursorForAlignTool,
   useAlignCanvasGridHandlers,
 } from "../src/align-canvas-handlers";
@@ -227,12 +226,16 @@ describe("useAlignCanvasGridHandlers", () => {
     const grid = { ...createDefaultAlignGrid(), tx: 10, ty: 4 };
     const startGrid = { ...grid, tx: 30, ty: 9 };
     const preview = { ...startGrid, tx: 33, ty: 7, rotation: 0.5 };
-    expect(applyAlignGridReferenceCommit(grid, preview, "offset", startGrid)).toMatchObject({
+    expect(
+      applyDisplayedAlignGridCommit(grid, null, 0, preview, "offset", startGrid).grid,
+    ).toMatchObject({
       tx: 13,
       ty: 2,
       rotation: grid.rotation,
     });
-    expect(applyAlignGridReferenceCommit(grid, preview, "rotation", startGrid)).toMatchObject({
+    expect(
+      applyDisplayedAlignGridCommit(grid, null, 0, preview, "rotation", startGrid).grid,
+    ).toMatchObject({
       tx: 10,
       ty: 4,
       rotation: 0.5,
