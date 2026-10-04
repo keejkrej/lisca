@@ -23,13 +23,6 @@ class AlignDrift:
     keyframes: tuple[DriftKeyframe, ...]
 
 
-class _Unset:
-    pass
-
-
-_UNSET = _Unset()
-
-
 def align_drift_from_json(data: object) -> AlignDrift:
     if not isinstance(data, dict):
         raise ValueError("align drift must be an object")
@@ -61,23 +54,6 @@ def align_drift_from_json(data: object) -> AlignDrift:
         interpolation="linear",
         keyframes=tuple(keyframes),
     )
-
-
-def align_drift_to_save(
-    drift: AlignDrift | None,
-    assay_default_time: int | None | _Unset = _UNSET,
-) -> AlignDrift | None:
-    if drift is None:
-        return None
-    if (
-        not drift.keyframes
-        and not isinstance(assay_default_time, _Unset)
-        and isinstance(assay_default_time, int)
-        and not isinstance(assay_default_time, bool)
-        and drift.reference_time == assay_default_time
-    ):
-        return None
-    return drift
 
 
 def interpolate_align_drift(

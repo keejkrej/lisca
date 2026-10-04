@@ -10,7 +10,6 @@ from lisca.core.align_drift import (
     AlignDrift,
     DriftKeyframe,
     align_drift_from_json,
-    align_drift_to_save,
     interpolate_align_drift,
 )
 from lisca.core.paths import align_json_path
@@ -112,18 +111,6 @@ def test_parse_keeps_empty_keyframes_and_rejects_bad_samples() -> None:
                 "keyframes": [{"time": 1, "dx": math.nan, "dy": 0}],
             }
         )
-
-
-def test_omit_empty_reference_only_when_it_matches_a_passed_default() -> None:
-    empty_zero = AlignDrift(reference_time=0, interpolation="linear", keyframes=())
-    empty_end = AlignDrift(reference_time=875, interpolation="linear", keyframes=())
-    assert align_drift_to_save(empty_zero, 0) is None
-    assert align_drift_to_save(empty_end, 0) == empty_end
-    assert align_drift_to_save(empty_zero) == empty_zero
-    assert align_drift_to_save(empty_end) == empty_end
-    assert align_drift_to_save(empty_zero, None) == empty_zero
-    assert align_drift_to_save(None) is None
-    assert align_drift_to_save(_pins(), 0) == _pins()
 
 
 def test_interpolate_matches_the_reference_line() -> None:
