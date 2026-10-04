@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import errno
 import json
+import math
 import os
 import shutil
 import threading
@@ -16,6 +17,7 @@ from uuid import uuid4
 import numpy as np
 import tifffile
 
+from lisca.core.align_drift import AlignDrift, interpolate_align_drift
 from lisca.core.bbox import (
     RoiBbox,
     discover_bbox_positions,
@@ -24,7 +26,8 @@ from lisca.core.bbox import (
     workspace_bbox_csv_path,
     workspace_roi_pos_dir,
 )
-from lisca.core.paths import INDEX_JSON
+from lisca.core.paths import INDEX_JSON, align_json_path
+from lisca.core.workspace import load_saved_align_state
 from lisca.migrations import migrate_workspace
 from lisca.readers import ImageInfo, open_reader
 
@@ -120,6 +123,65 @@ def _crop_frame(frame: np.ndarray, bbox: RoiBbox) -> np.ndarray:
     return np.ascontiguousarray(
         array[bbox.y : bbox.y + bbox.h, bbox.x : bbox.x + bbox.w]
     )
+
+
+def _crop_frame_padded(frame: np.ndarray, x: int, y: int, w: int, h: int) -> np.ndarray:
+    """Zero-fill a ``w``×``h`` page and copy the overlap of a signed window.
+
+    Page size stays the stored rectangle. The ≤1 px rounding bound holds only
+    when ``w`` and ``h`` are the full rounded pattern size; a clipped row,
+    including ``x = 0, w = 1``, stays that size after the shift.
+    """
+    array = np.asarray(frame)
+    if array.ndim != 2:
+        raise ValueError(f"Expected 2D frame for crop, got shape {array.shape}")
+    page = np.zeros((h, w), dtype=array.dtype)
+    if w <= 0 or h <= 0:
+        return page
+    height, width = array.shape[:2]
+    x0 = max(x, 0)
+    y0 = max(y, 0)
+    x1 = min(x + w, int(width))
+    y1 = min(y + h, int(height))
+    if x0 >= x1 or y0 >= y1:
+        return page
+    page[y0 - y : y1 - y, x0 - x : x1 - x] = array[y0:y1, x0:x1]
+    return np.ascontiguousarray(page)
+
+
+def _js_round(value: float) -> int:
+    """Match JavaScript ``Math.round`` (half toward +∞), not Python ``round``."""
+    if not math.isfinite(value):
+        return 0
+    truncated = math.trunc(value)
+    fraction = value - truncated
+    if fraction >= 0.5:
+        return truncated + 1
+    if fraction < -0.5:
+        return truncated - 1
+    return truncated
+
+
+def _crop_shift(drift: AlignDrift | None, time: int) -> tuple[int, int]:
+    if drift is None:
+        return (0, 0)
+    # grid.tx/ty cancel; the window moves by the drift delta from referenceTime.
+    dx_t, dy_t = interpolate_align_drift(drift, time)
+    dx_ref, dy_ref = interpolate_align_drift(drift, drift.reference_time)
+    return (_js_round(dx_t - dx_ref), _js_round(dy_t - dy_ref))
+
+
+def _crop_window(frame: np.ndarray, bbox: RoiBbox, dx: int, dy: int) -> np.ndarray:
+    if dx == 0 and dy == 0:
+        return _crop_frame(frame, bbox)
+    return _crop_frame_padded(frame, bbox.x + dx, bbox.y + dy, bbox.w, bbox.h)
+
+
+def _load_crop_drift(workspace: Path, pos: int) -> AlignDrift | None:
+    path = align_json_path(workspace, pos)
+    if not path.is_file():
+        return None
+    return load_saved_align_state(workspace, pos).drift
 
 
 def _write_index(
@@ -278,7 +340,7 @@ def _iter_source_planes(
     z_indices: list[int],
     frame_shape: tuple[int, int],
     dtype: np.dtype,
-) -> Iterator[np.ndarray]:
+) -> Iterator[tuple[int, np.ndarray]]:
     for time_index in time_indices:
         for channel_index in channel_indices:
             for z_index in z_indices:
@@ -290,7 +352,7 @@ def _iter_source_planes(
                     )
                 if frame.dtype != dtype:
                     frame = frame.astype(dtype, copy=False)
-                yield frame
+                yield time_index, frame
 
 
 def _write_roi_tiffs_frame_major(
@@ -306,6 +368,7 @@ def _write_roi_tiffs_frame_major(
     dtype: np.dtype,
     on_frame_done: Callable[[], None] | None,
     fd_budget: int | None = None,
+    drift: AlignDrift | None = None,
 ) -> None:
     """Read each full frame once and append a TIFF page for every ROI.
 
@@ -346,17 +409,19 @@ def _write_roi_tiffs_frame_major(
                     raise
                 max_open = max(1, opened) if opened else max(1, max_open // 2)
             else:
-                for frame in _iter_source_planes(**plane_kwargs):
+                for time_index, frame in _iter_source_planes(**plane_kwargs):
+                    dx, dy = _crop_shift(drift, time_index)
                     for bbox, writer in writers:
-                        writer.write(_crop_frame(frame, bbox), contiguous=True)
+                        writer.write(_crop_window(frame, bbox, dx, dy), contiguous=True)
                     if on_frame_done is not None:
                         on_frame_done()
                 return
     finally:
         _close_tiff_writers(writers)
 
-    for frame in _iter_source_planes(**plane_kwargs):
-        crops = [_crop_frame(frame, bbox) for bbox in bboxes]
+    for time_index, frame in _iter_source_planes(**plane_kwargs):
+        dx, dy = _crop_shift(drift, time_index)
+        crops = [_crop_window(frame, bbox, dx, dy) for bbox in bboxes]
         max_open = _write_frame_crops_in_batches(
             bboxes=bboxes,
             crops=crops,
@@ -396,6 +461,19 @@ def _crop_position_with_reader(
         raise ValueError(f"Expected 2D frame for Pos{pos}, got shape {first.shape}")
     height, width = int(first.shape[0]), int(first.shape[1])
     validate_bboxes(bboxes, width, height)
+    drift = _load_crop_drift(workspace, pos)
+    if drift is not None and on_progress is not None:
+        max_shift = 0
+        cropped_times = set(time_indices)
+        for time_index in time_indices:
+            dx, dy = _crop_shift(drift, time_index)
+            max_shift = max(max_shift, abs(dx), abs(dy))
+        on_progress(
+            f"Pos{pos}: drift {len(drift.keyframes)} keyframes, "
+            f"max shift {max_shift} px"
+        )
+        if any(keyframe.time not in cropped_times for keyframe in drift.keyframes):
+            on_progress(f"Pos{pos}: drift keyframe time is not in the cropped times")
     frame_shape = (height, width)
     dtype = first.dtype
 
@@ -444,6 +522,7 @@ def _crop_position_with_reader(
             dtype=dtype,
             on_frame_done=on_frame_done,
             fd_budget=fd_budget,
+            drift=drift,
         )
 
         _write_index(
