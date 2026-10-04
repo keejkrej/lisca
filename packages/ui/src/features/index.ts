@@ -4,6 +4,7 @@ export {
   type AlignCanvasWheelEvent,
 } from "./align/align-canvas";
 export {
+  applyAlignGridReferenceCommit,
   cursorForAlignTool,
   useAlignCanvasGridHandlers,
   type AlignCanvasFramePoint,
@@ -20,6 +21,7 @@ export {
 } from "@lisca/ui-headless/align-pointer-handlers";
 export { AlignGrid, type AlignGridProps } from "./align/align-grid";
 export { AlignGridRail } from "./align/align-grid-rail";
+export { AlignDriftRail, type AlignDriftRailProps } from "./align/align-drift-rail";
 export { AlignSelectionRail, type AlignSelectionRailProps } from "./align/align-selection-rail";
 export {
   SmartExcludeModelDialog,

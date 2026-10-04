@@ -4,7 +4,7 @@ import type {
   AlignerSource,
   ContrastWindow,
 } from "@lisca/contracts";
-import type { AlignGridToolMode } from "@lisca/utils";
+import type { AlignGridPointerIntent, AlignGridToolMode } from "@lisca/utils";
 
 import type { AlignState } from "./use-align-state";
 import { useAlignPage } from "./align-page-context";
@@ -17,6 +17,21 @@ export function useAlignCanvas() {
     },
     get grid() {
       return state().grid;
+    },
+    get effectiveGrid() {
+      return state().effectiveGrid;
+    },
+    get drift() {
+      return state().drift;
+    },
+    get assayDefaultTime() {
+      return state().assayDefaultTime;
+    },
+    get selection() {
+      return state().selection;
+    },
+    get scan() {
+      return state().scan;
     },
     get toolMode() {
       return state().toolMode;
@@ -62,6 +77,16 @@ export function useAlignCanvas() {
     },
     setGrid: (next: AlignGridState | ((current: AlignGridState) => AlignGridState)) =>
       state().setGrid(next),
+    adjustTranslation: (dx: number, dy: number) => state().adjustTranslation(dx, dy),
+    commitCanvas: (
+      preview: AlignGridState,
+      intent: AlignGridPointerIntent,
+      startGrid: AlignGridState,
+    ) => state().commitCanvas(preview, intent, startGrid),
+    setKeyframe: () => state().setKeyframe(),
+    clearKeyframe: () => state().clearKeyframe(),
+    clearDrift: () => state().clearDrift(),
+    setReference: () => state().setReference(),
     setToolMode: (mode: AlignGridToolMode) => state().setToolMode(mode),
     setSpacingZoomLocked: (locked: boolean) => state().setSpacingZoomLocked(locked),
     setPatternZoomLocked: (locked: boolean) => state().setPatternZoomLocked(locked),

@@ -110,6 +110,8 @@ export type AlignGridProps = {
   offsetY: number;
   onOffsetXChange: (value: number) => void;
   onOffsetYChange: (value: number) => void;
+  /** Offset fields only. Geometry stays editable when this is set. */
+  offsetDisabled?: boolean;
 
   overlayOpacity: number;
   onOverlayOpacityChange: (opacity: number) => void;
@@ -243,7 +245,7 @@ export function AlignGrid(props: AlignGridProps) {
         <FieldLabel>Offset X</FieldLabel>
         <AlignNumberInput
           label="Offset X"
-          disabled={props.disabled}
+          disabled={props.offsetDisabled ?? props.disabled}
           step="0.1"
           value={props.offsetX}
           onCommit={props.onOffsetXChange}
@@ -253,7 +255,7 @@ export function AlignGrid(props: AlignGridProps) {
         <FieldLabel>Offset Y</FieldLabel>
         <AlignNumberInput
           label="Offset Y"
-          disabled={props.disabled}
+          disabled={props.offsetDisabled ?? props.disabled}
           step="0.1"
           value={props.offsetY}
           onCommit={props.onOffsetYChange}

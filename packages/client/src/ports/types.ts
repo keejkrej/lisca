@@ -85,6 +85,7 @@ export type AnalysisDataPort = {
 
 export type AlignerDataPort = HostPort &
   TaskDataPort & {
+    readTextFile(path: string): ClientEffect<string>;
     scanSource(source: AlignerSource): ClientEffect<WorkspaceScan>;
     loadFrame(
       source: AlignerSource,

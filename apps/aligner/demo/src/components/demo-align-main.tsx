@@ -1,6 +1,7 @@
 import { Panel, StageCanvas, ViewportCard } from "@lisca/ui/shell";
 import {
   AlignCanvas,
+  applyAlignGridReferenceCommit,
   CanvasToastStack,
   useAlignCanvasPointerHandlers,
   useCanvasTransientStatus,
@@ -14,7 +15,10 @@ export function DemoAlignMain(props: { state: Accessor<DemoAlignState>; embedded
     const state = props.state();
     return {
       grid: state.grid,
-      setGrid: state.setGrid,
+      onCommit: (preview, intent, startGrid) => {
+        const current = props.state();
+        current.setGrid(applyAlignGridReferenceCommit(current.grid, preview, intent, startGrid));
+      },
       toolMode: state.toolMode,
       spacingZoomLocked: state.spacingZoomLocked,
       patternZoomLocked: state.patternZoomLocked,

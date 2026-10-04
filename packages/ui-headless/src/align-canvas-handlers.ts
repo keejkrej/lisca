@@ -3,6 +3,7 @@ import {
   applyAlignGridPointerGesture,
   beginAlignGridPointerGesture,
   type AlignGridPointerGestureSession,
+  type AlignGridPointerIntent,
   type AlignGridToolMode,
   type AlignGridWheelViewport,
 } from "@lisca/utils";
@@ -30,7 +31,11 @@ export type AlignCanvasPointerEvent = {
 
 export type UseAlignCanvasGridHandlersOptions = {
   grid: AlignGridState;
-  setGrid: (grid: AlignGridState) => void;
+  onCommit: (
+    preview: AlignGridState,
+    intent: AlignGridPointerIntent,
+    startGrid: AlignGridState,
+  ) => void;
   toolMode: AlignGridToolMode;
   spacingZoomLocked?: boolean;
   patternZoomLocked?: boolean;
@@ -89,11 +94,14 @@ export function useAlignCanvasGridHandlers(
     notifyPreviewChange();
   };
   const handlePointerEnd = (event: AlignCanvasPointerEvent) => {
-    const { setGrid } = options();
-    if (gestureRef.current?.pointerId !== event.pointerId) return;
+    const gesture = gestureRef.current;
+    if (gesture?.pointerId !== event.pointerId) return;
+    // The session is cleared below. Intent and the gesture's start grid have to be copied first.
+    const { intent, startGrid } = gesture;
+    const { onCommit } = options();
     gestureRef.current = null;
     const committedPreviewGrid = previewGridRef.current;
-    if (committedPreviewGrid) setGrid(committedPreviewGrid);
+    if (committedPreviewGrid) onCommit(committedPreviewGrid, intent, startGrid);
     previewGridRef.current = null;
     setDragging(false);
     notifyPreviewChange();
@@ -114,6 +122,30 @@ export function useAlignCanvasGridHandlers(
     handlePointerMove,
     handlePointerEnd,
     handlePointerCancel,
+  };
+}
+
+/** No-drift hosts: offset adds the pixel delta to the reference; other intents copy geometry only. */
+export function applyAlignGridReferenceCommit(
+  grid: AlignGridState,
+  preview: AlignGridState,
+  intent: AlignGridPointerIntent,
+  startGrid: AlignGridState,
+): AlignGridState {
+  if (intent === "offset") {
+    return {
+      ...grid,
+      tx: grid.tx + (preview.tx - startGrid.tx),
+      ty: grid.ty + (preview.ty - startGrid.ty),
+    };
+  }
+  return {
+    ...grid,
+    rotation: preview.rotation,
+    spacingA: preview.spacingA,
+    spacingB: preview.spacingB,
+    patternWidth: preview.patternWidth,
+    patternHeight: preview.patternHeight,
   };
 }
 

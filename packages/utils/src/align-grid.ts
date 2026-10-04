@@ -1,11 +1,16 @@
 import type {
+  AlignDrift,
   AlignGridPatternBox,
   AlignGridPatternCoord,
   AlignGridShape,
   AlignGridState,
   SavedAlignState,
 } from "@lisca/contracts";
-import { normalizeAlignDrift, type AlignDriftInput } from "./align-drift";
+import {
+  adjustAlignDriftTranslation,
+  normalizeAlignDrift,
+  type AlignDriftInput,
+} from "./align-drift";
 import { clamp } from "./frame";
 
 export type AlignGridFrameBounds = {
@@ -60,6 +65,37 @@ const LINE_DELTA_PX = 16;
 const PAGE_DELTA_PX = 320;
 const EXP_SCALE_FACTOR = 0.0015;
 const GRID_BOUNDS_EPSILON = 1e-6;
+
+/** Offset is a pixel delta. Other intents must not store the on-screen translation. */
+export function applyDisplayedAlignGridCommit(
+  grid: AlignGridState,
+  drift: AlignDrift | null,
+  time: number,
+  preview: AlignGridState,
+  intent: AlignGridPointerIntent,
+  startGrid: AlignGridState,
+): { grid: AlignGridState; drift: AlignDrift | null } {
+  if (intent === "offset") {
+    return adjustAlignDriftTranslation(
+      grid,
+      drift,
+      time,
+      preview.tx - startGrid.tx,
+      preview.ty - startGrid.ty,
+    );
+  }
+  return {
+    grid: normalizeAlignGridState({
+      ...grid,
+      rotation: preview.rotation,
+      spacingA: preview.spacingA,
+      spacingB: preview.spacingB,
+      patternWidth: preview.patternWidth,
+      patternHeight: preview.patternHeight,
+    }),
+    drift,
+  };
+}
 
 export function alignStateFromCurrent(
   grid: AlignGridState,

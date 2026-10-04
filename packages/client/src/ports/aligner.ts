@@ -24,6 +24,11 @@ export function createAlignerPort(
   return {
     ...host,
     ...tasks,
+    readTextFile(path) {
+      return toClientEffect(
+        client.fs.readTextFile({ query: { path } }).pipe(Effect.map((result) => result.contents)),
+      );
+    },
     scanSource(source) {
       return toClientEffect(client.align.scanSource({ payload: { source } }));
     },

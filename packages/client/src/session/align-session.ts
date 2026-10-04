@@ -1,4 +1,5 @@
 import type {
+  AlignDrift,
   AlignGridPatternCoord,
   AlignGridState,
   VariationExcludePreviewResponse,
@@ -12,6 +13,7 @@ import {
   collectAlignGridEdgePatterns,
   countVisibleAlignGridPatterns,
   mergeExcludedAlignGridPatterns,
+  normalizeAlignDrift,
 } from "@lisca/utils";
 
 import type { AlignerDataPort } from "../ports/types";
@@ -230,15 +232,20 @@ export function nextUnsavedAlignPosition(
   return null;
 }
 
-/** Order-independent key for a position's grid + exclusions, used to detect unsaved changes. */
+/** Order-independent key for a position's grid, exclusions, and drift. */
 export function alignSnapshotKey(
   grid: AlignGridState,
   excludedPatterns: AlignGridPatternCoord[],
+  drift: AlignDrift | null,
 ): string {
   const patterns = excludedPatterns
     .map((pattern) => [pattern.i, pattern.j] as const)
     .sort((a, b) => a[0] - b[0] || a[1] - b[1]);
-  return JSON.stringify({ grid, patterns });
+  return JSON.stringify({
+    grid,
+    patterns,
+    drift: drift == null ? null : normalizeAlignDrift(drift),
+  });
 }
 
 export function nextAlignPosition(positions: number[], currentPosition: number): number | null {

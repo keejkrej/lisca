@@ -2,7 +2,11 @@ import { createDefaultAlignGrid } from "@lisca/utils";
 import { render } from "@solidjs/testing-library";
 import { describe, expect, it, vi } from "vite-plus/test";
 
-import { cursorForAlignTool, useAlignCanvasGridHandlers } from "../src/align-canvas-handlers";
+import {
+  applyAlignGridReferenceCommit,
+  cursorForAlignTool,
+  useAlignCanvasGridHandlers,
+} from "../src/align-canvas-handlers";
 import { useAlignCanvasPointerHandlers } from "../src/align-pointer-handlers";
 
 describe("cursorForAlignTool", () => {
@@ -23,7 +27,7 @@ describe("cursorForAlignTool", () => {
 
 describe("useAlignCanvasGridHandlers", () => {
   it("updates preview in a ref during drag and commits on release", () => {
-    const setGrid = vi.fn();
+    const onCommit = vi.fn();
     const onPreviewGridChange = vi.fn();
     const grid = { ...createDefaultAlignGrid(), enabled: true, tx: 0, ty: 0 };
     const viewport = {
@@ -50,7 +54,7 @@ describe("useAlignCanvasGridHandlers", () => {
     render(() => {
       handlers = useAlignCanvasGridHandlers(() => ({
         grid,
-        setGrid,
+        onCommit,
         toolMode: "pan",
         onPreviewGridChange,
       }));
@@ -68,21 +72,25 @@ describe("useAlignCanvasGridHandlers", () => {
     });
     const previewTx = handlers.previewGridRef.current?.tx;
     expect(previewTx).toBeGreaterThan(0);
-    expect(setGrid).not.toHaveBeenCalled();
+    expect(onCommit).not.toHaveBeenCalled();
     expect(onPreviewGridChange).toHaveBeenCalled();
 
     handlers.handlePointerEnd(pointer);
     expect(handlers.dragging()).toBe(false);
-    expect(setGrid).toHaveBeenCalledWith(expect.objectContaining({ tx: previewTx }));
+    expect(onCommit).toHaveBeenCalledWith(
+      expect.objectContaining({ tx: previewTx }),
+      "offset",
+      grid,
+    );
     expect(handlers.previewGridRef.current).toBeNull();
   });
 
   it("blocks spacing and pattern zoom gestures only behind their matching locks", () => {
-    const setGrid = vi.fn();
+    const onCommit = vi.fn();
     const grid = { ...createDefaultAlignGrid(), enabled: true };
     const options = {
       grid,
-      setGrid,
+      onCommit,
       toolMode: "zoom-spacing" as const,
       spacingZoomLocked: true,
       patternZoomLocked: false,
@@ -135,7 +143,7 @@ describe("useAlignCanvasGridHandlers", () => {
   });
 
   it("never starts or commits a grid gesture in magnifier mode", () => {
-    const setGrid = vi.fn();
+    const onCommit = vi.fn();
     const pointer = {
       pointerId: 1,
       pointerType: "mouse",
@@ -158,7 +166,7 @@ describe("useAlignCanvasGridHandlers", () => {
     render(() => {
       handlers = useAlignCanvasGridHandlers(() => ({
         grid: { ...createDefaultAlignGrid(), enabled: true },
-        setGrid,
+        onCommit,
         toolMode: "magnifier",
       }));
       return null;
@@ -170,14 +178,14 @@ describe("useAlignCanvasGridHandlers", () => {
 
     expect(pointer.capturePointer).not.toHaveBeenCalled();
     expect(pointer.preventDefault).not.toHaveBeenCalled();
-    expect(setGrid).not.toHaveBeenCalled();
+    expect(onCommit).not.toHaveBeenCalled();
     expect(handlers.previewGridRef.current).toBeNull();
   });
 
   it("discards a captured preview when Magnifier is selected mid-gesture", () => {
-    const setGrid = vi.fn();
+    const onCommit = vi.fn();
     const grid = { ...createDefaultAlignGrid(), enabled: true };
-    const options = { grid, setGrid, toolMode: "pan" as "pan" | "magnifier" };
+    const options = { grid, onCommit, toolMode: "pan" as "pan" | "magnifier" };
     const pointer = {
       pointerId: 1,
       pointerType: "mouse",
@@ -209,10 +217,26 @@ describe("useAlignCanvasGridHandlers", () => {
     options.toolMode = "magnifier";
     handlers.handlePointerCancel(pointer);
 
-    expect(setGrid).not.toHaveBeenCalled();
+    expect(onCommit).not.toHaveBeenCalled();
     expect(handlers.dragging()).toBe(false);
     expect(handlers.previewGridRef.current).toBeNull();
     expect(pointer.releasePointer).toHaveBeenCalledOnce();
+  });
+
+  it("adds an offset delta to the reference and leaves translation on other intents", () => {
+    const grid = { ...createDefaultAlignGrid(), tx: 10, ty: 4 };
+    const startGrid = { ...grid, tx: 30, ty: 9 };
+    const preview = { ...startGrid, tx: 33, ty: 7, rotation: 0.5 };
+    expect(applyAlignGridReferenceCommit(grid, preview, "offset", startGrid)).toMatchObject({
+      tx: 13,
+      ty: 2,
+      rotation: grid.rotation,
+    });
+    expect(applyAlignGridReferenceCommit(grid, preview, "rotation", startGrid)).toMatchObject({
+      tx: 10,
+      ty: 4,
+      rotation: 0.5,
+    });
   });
 });
 
@@ -238,12 +262,12 @@ describe("useAlignCanvasPointerHandlers", () => {
   };
 
   it("starts a grid gesture when manual exclusion is off", () => {
-    const setGrid = vi.fn();
+    const onCommit = vi.fn();
     let handlers!: ReturnType<typeof useAlignCanvasPointerHandlers>;
     render(() => {
       handlers = useAlignCanvasPointerHandlers(() => ({
         grid: { ...createDefaultAlignGrid(), enabled: true },
-        setGrid,
+        onCommit,
         toolMode: "pan",
         manualExclusionEnabled: false,
         excludedPatterns: [],
@@ -260,12 +284,12 @@ describe("useAlignCanvasPointerHandlers", () => {
   });
 
   it("does not start a grid gesture when manual exclusion is on", () => {
-    const setGrid = vi.fn();
+    const onCommit = vi.fn();
     let handlers!: ReturnType<typeof useAlignCanvasPointerHandlers>;
     render(() => {
       handlers = useAlignCanvasPointerHandlers(() => ({
         grid: { ...createDefaultAlignGrid(), enabled: true },
-        setGrid,
+        onCommit,
         toolMode: "pan",
         manualExclusionEnabled: true,
         excludedPatterns: [],

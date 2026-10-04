@@ -119,7 +119,7 @@ describe("useAlignCanvasSelectionHandlers via useAlignCanvasPointerHandlers", ()
     render(() => {
       handlers = useAlignCanvasPointerHandlers(() => ({
         grid,
-        setGrid: vi.fn(),
+        onCommit: vi.fn(),
         toolMode: "pan",
         manualExclusionEnabled: true,
         excludedPatterns: latest,

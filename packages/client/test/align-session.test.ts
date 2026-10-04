@@ -221,21 +221,33 @@ describe("Studio Continue helpers", () => {
 
   it("alignSnapshotKey ignores exclusion order but tracks grid and pattern changes", () => {
     const grid = createDefaultAlignGrid();
-    const a = alignSnapshotKey(grid, [
+    const patterns = [
       { i: 1, j: 2 },
       { i: 0, j: 5 },
-    ]);
-    const b = alignSnapshotKey(grid, [
-      { i: 0, j: 5 },
-      { i: 1, j: 2 },
-    ]);
-    expect(a).toBe(b);
-    expect(alignSnapshotKey(grid, [{ i: 0, j: 5 }])).not.toBe(a);
-    expect(
-      alignSnapshotKey({ ...grid, rotation: grid.rotation + 1 }, [
-        { i: 1, j: 2 },
+    ];
+    const a = alignSnapshotKey(grid, patterns, null);
+    const b = alignSnapshotKey(
+      grid,
+      [
         { i: 0, j: 5 },
-      ]),
-    ).not.toBe(a);
+        { i: 1, j: 2 },
+      ],
+      null,
+    );
+    expect(a).toBe(b);
+    expect(alignSnapshotKey(grid, [{ i: 0, j: 5 }], null)).not.toBe(a);
+    expect(alignSnapshotKey({ ...grid, rotation: grid.rotation + 1 }, patterns, null)).not.toBe(a);
+    const drift = {
+      referenceTime: 0,
+      interpolation: "linear" as const,
+      keyframes: [{ time: 10, dx: 1, dy: 2 }],
+    };
+    expect(alignSnapshotKey(grid, patterns, drift)).not.toBe(a);
+    expect(
+      alignSnapshotKey(grid, patterns, {
+        ...drift,
+        keyframes: [{ time: 10, dx: 1, dy: 2 }],
+      }),
+    ).toBe(alignSnapshotKey(grid, patterns, drift));
   });
 });
