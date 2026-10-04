@@ -4,6 +4,8 @@ use std::{
     path::{Path, PathBuf},
 };
 
+use uuid::Uuid;
+
 use lisca_workspace::{bbox_csv_name, ALIGN_DIR, BBOX_DIR, POS_PREFIX, ROI_DIR};
 
 use crate::{
@@ -45,7 +47,7 @@ pub fn save_bbox(
         fs::create_dir_all(parent).map_err(|error| error.to_string())?;
     }
     let bytes = serde_json::to_vec_pretty(align_state).map_err(|error| error.to_string())?;
-    fs::write(&align_target, bytes).map_err(|error| error.to_string())?;
+    atomic_write(&align_target, &bytes)?;
 
     Ok(SaveBboxResponse {
         ok: true,
@@ -131,6 +133,27 @@ fn bbox_csv_header_has_crop(csv: &str) -> bool {
 
 fn align_json_path(root: &str, pos: u32) -> PathBuf {
     lisca_workspace::align_json_path(root, pos)
+}
+
+/// Replace `path` with `contents` via a sibling temp file and rename.
+fn atomic_write(path: &Path, contents: &[u8]) -> Result<(), String> {
+    let parent = path
+        .parent()
+        .ok_or_else(|| format!("{} has no parent directory", path.display()))?;
+    let file_name = path
+        .file_name()
+        .and_then(|name| name.to_str())
+        .ok_or_else(|| format!("{} has a non-utf8 name", path.display()))?;
+    let tmp = parent.join(format!(".{file_name}.{}.tmp", Uuid::new_v4().simple()));
+    if let Err(error) = fs::write(&tmp, contents) {
+        let _ = fs::remove_file(&tmp);
+        return Err(error.to_string());
+    }
+    if let Err(error) = fs::rename(&tmp, path) {
+        let _ = fs::remove_file(&tmp);
+        return Err(error.to_string());
+    }
+    Ok(())
 }
 
 fn parse_pos_csv_name(name: &str) -> Option<u32> {
@@ -248,6 +271,108 @@ mod tests {
         assert!(loaded.is_none());
         let text = fs::read_to_string(workspace.join("bbox/Pos1.csv")).expect("read");
         assert!(text.starts_with("roi,x,y,w,h"));
+    }
+
+    fn align_state_with_drift(drift: serde_json::Value) -> SavedAlignState {
+        let mut value = serde_json::to_value(dummy_align_state()).expect("value");
+        value
+            .as_object_mut()
+            .expect("object")
+            .insert("drift".to_string(), drift);
+        serde_json::from_value(value).expect("align state with drift")
+    }
+
+    #[test]
+    fn saved_align_state_drift_defaults_to_none_when_the_key_is_absent() {
+        let mut value = serde_json::to_value(dummy_align_state()).expect("value");
+        value.as_object_mut().expect("object").remove("drift");
+        let parsed: SavedAlignState = serde_json::from_value(value).expect("decode");
+        assert!(parsed.drift.is_none());
+    }
+
+    #[test]
+    fn load_align_state_reads_drift_and_a_file_without_the_key() {
+        let root = tempfile::tempdir().expect("tempdir");
+        let workspace = root.path();
+        fs::create_dir_all(workspace.join("align")).expect("align dir");
+        let with_drift = align_state_with_drift(serde_json::json!({
+            "referenceTime": 0,
+            "interpolation": "linear",
+            "keyframes": [
+                { "time": 400, "dx": 6.0, "dy": -2.5 },
+                { "time": 875, "dx": 14.0, "dy": -4.0 }
+            ]
+        }));
+        fs::write(
+            workspace.join("align/Pos61.json"),
+            serde_json::to_vec_pretty(&with_drift).expect("json"),
+        )
+        .expect("write");
+
+        let loaded = load_align_state(&workspace.to_string_lossy(), 61)
+            .expect("load")
+            .expect("align state");
+        let drift = loaded.drift.expect("drift");
+        assert_eq!(drift.reference_time, 0);
+        assert_eq!(drift.keyframes.len(), 2);
+        assert_eq!(drift.keyframes[0].time, 400);
+        assert_eq!(drift.keyframes[0].dx, 6.0);
+        assert_eq!(drift.keyframes[0].dy, -2.5);
+        assert_eq!(drift.keyframes[1].time, 875);
+        assert_eq!(drift.keyframes[1].dx, 14.0);
+        assert_eq!(drift.keyframes[1].dy, -4.0);
+
+        let mut bare = serde_json::to_value(dummy_align_state()).expect("value");
+        bare.as_object_mut().expect("object").remove("drift");
+        fs::write(
+            workspace.join("align/Pos71.json"),
+            serde_json::to_vec_pretty(&bare).expect("json"),
+        )
+        .expect("write");
+        let without = load_align_state(&workspace.to_string_lossy(), 71)
+            .expect("load")
+            .expect("align state");
+        assert!(without.drift.is_none());
+    }
+
+    #[test]
+    fn save_bbox_round_trips_reference_time_without_pins() {
+        let root = tempfile::tempdir().expect("tempdir");
+        let workspace = root.path().to_string_lossy().into_owned();
+        let state = align_state_with_drift(serde_json::json!({
+            "referenceTime": 875,
+            "interpolation": "linear",
+            "keyframes": []
+        }));
+        save_bbox(&workspace, 61, "roi,x,y,w,h\n0,1,2,3,4\n", &state).expect("save");
+        let loaded = load_align_state(&workspace, 61)
+            .expect("load")
+            .expect("align state");
+        let drift = loaded.drift.as_ref().expect("drift");
+        assert_eq!(drift.reference_time, 875);
+        assert!(drift.keyframes.is_empty());
+        let value = serde_json::to_value(&loaded).expect("value");
+        assert_eq!(value["drift"]["referenceTime"], 875);
+        assert_eq!(value["drift"]["interpolation"], "linear");
+        assert_eq!(value["drift"]["keyframes"], serde_json::json!([]));
+
+        let replaced = align_state_with_drift(serde_json::json!({
+            "referenceTime": 400,
+            "interpolation": "linear",
+            "keyframes": []
+        }));
+        save_bbox(&workspace, 61, "roi,x,y,w,h\n0,1,2,3,4\n", &replaced).expect("replace");
+        let again = load_align_state(&workspace, 61)
+            .expect("reload")
+            .expect("align state");
+        assert_eq!(again.drift.expect("drift").reference_time, 400);
+
+        let align_dir = Path::new(&workspace).join("align");
+        let names: Vec<_> = fs::read_dir(&align_dir)
+            .expect("align dir")
+            .map(|entry| entry.expect("entry").file_name())
+            .collect();
+        assert_eq!(names, vec![std::ffi::OsString::from("Pos61.json")]);
     }
 
     #[test]

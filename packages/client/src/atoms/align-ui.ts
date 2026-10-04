@@ -1,4 +1,5 @@
 import type {
+  AlignDrift,
   AlignGridPatternCoord,
   AlignGridState,
   AlignerSource,
@@ -11,6 +12,7 @@ import type {
 import type { FrameResult } from "@lisca/utils";
 import {
   createDefaultAlignGrid,
+  normalizeAlignDrift,
   normalizeAlignGridState,
   resolveAxisSelection,
   setExcludedAlignGridPatternsForPosition,
@@ -41,6 +43,7 @@ export type AlignUiState = {
   frame: FrameResult | null;
   contrast: ContrastWindow | null;
   grid: AlignGridState;
+  drift: AlignDrift | null;
   toolMode: AlignGridToolMode;
   spacingZoomLocked: boolean;
   patternZoomLocked: boolean;
@@ -87,6 +90,7 @@ export function createInitialAlignUiState(): AlignUiState {
     frame: null,
     contrast: null,
     grid: normalizeAlignGridState(createDefaultAlignGrid()),
+    drift: null,
     toolMode: "pan",
     spacingZoomLocked: true,
     patternZoomLocked: true,
@@ -191,6 +195,7 @@ export function createAlignUiActions(persist: AlignUiPersist, behavior: AlignUiB
           frame: null,
           contrast: null,
           grid: normalizeAlignGridState(createDefaultAlignGrid()),
+          drift: null,
           excludedPatternsByPosition: {},
           error: null,
           status: source ? "Scanning source" : null,
@@ -227,6 +232,7 @@ export function createAlignUiActions(persist: AlignUiPersist, behavior: AlignUiB
           frame: null,
           contrast: null,
           grid: createVisibleDefaultAlignGrid(),
+          drift: null,
           excludedPatternsByPosition: {},
           error: null,
           status: "Source loaded",
@@ -257,6 +263,7 @@ export function createAlignUiActions(persist: AlignUiPersist, behavior: AlignUiB
           grid: savedAlignState.saved
             ? normalizeAlignGridState(savedAlignState.saved.grid)
             : state.grid,
+          drift: normalizeAlignDrift(savedAlignState.saved?.drift) ?? null,
           excludedPatternsByPosition: nextExcluded,
         };
       });
@@ -404,6 +411,7 @@ export function createAlignUiActions(persist: AlignUiPersist, behavior: AlignUiB
               ...state,
               appliedAlignStateKey: stateKey,
               grid: saved ? normalizeAlignGridState(saved.grid) : state.grid,
+              drift: normalizeAlignDrift(saved?.drift) ?? null,
               excludedPatternsByPosition: nextExcluded,
               status: saved ? null : state.status,
             };

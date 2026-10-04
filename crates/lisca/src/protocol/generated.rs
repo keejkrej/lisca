@@ -29,6 +29,119 @@ pub mod error {
         }
     }
 }
+#[doc = "`AlignDrift`"]
+#[doc = r""]
+#[doc = r" <details><summary>JSON schema</summary>"]
+#[doc = r""]
+#[doc = r" ```json"]
+#[doc = "{"]
+#[doc = "  \"type\": \"object\","]
+#[doc = "  \"required\": ["]
+#[doc = "    \"interpolation\","]
+#[doc = "    \"keyframes\","]
+#[doc = "    \"referenceTime\""]
+#[doc = "  ],"]
+#[doc = "  \"properties\": {"]
+#[doc = "    \"interpolation\": {"]
+#[doc = "      \"type\": \"string\","]
+#[doc = "      \"enum\": ["]
+#[doc = "        \"linear\""]
+#[doc = "      ]"]
+#[doc = "    },"]
+#[doc = "    \"keyframes\": {"]
+#[doc = "      \"type\": \"array\","]
+#[doc = "      \"items\": {"]
+#[doc = "        \"$ref\": \"#/definitions/DriftKeyframe\""]
+#[doc = "      }"]
+#[doc = "    },"]
+#[doc = "    \"referenceTime\": {"]
+#[doc = "      \"type\": \"integer\","]
+#[doc = "      \"format\": \"uint32\","]
+#[doc = "      \"minimum\": 0.0"]
+#[doc = "    }"]
+#[doc = "  }"]
+#[doc = "}"]
+#[doc = r" ```"]
+#[doc = r" </details>"]
+#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
+pub struct AlignDrift {
+    pub interpolation: AlignDriftInterpolation,
+    pub keyframes: ::std::vec::Vec<DriftKeyframe>,
+    #[serde(rename = "referenceTime")]
+    pub reference_time: u32,
+}
+impl AlignDrift {
+    pub fn builder() -> builder::AlignDrift {
+        Default::default()
+    }
+}
+#[doc = "`AlignDriftInterpolation`"]
+#[doc = r""]
+#[doc = r" <details><summary>JSON schema</summary>"]
+#[doc = r""]
+#[doc = r" ```json"]
+#[doc = "{"]
+#[doc = "  \"type\": \"string\","]
+#[doc = "  \"enum\": ["]
+#[doc = "    \"linear\""]
+#[doc = "  ]"]
+#[doc = "}"]
+#[doc = r" ```"]
+#[doc = r" </details>"]
+#[derive(
+    :: serde :: Deserialize,
+    :: serde :: Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum AlignDriftInterpolation {
+    #[serde(rename = "linear")]
+    Linear,
+}
+impl ::std::fmt::Display for AlignDriftInterpolation {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::Linear => f.write_str("linear"),
+        }
+    }
+}
+impl ::std::str::FromStr for AlignDriftInterpolation {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "linear" => Ok(Self::Linear),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for AlignDriftInterpolation {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<&::std::string::String> for AlignDriftInterpolation {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: &::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for AlignDriftInterpolation {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
 #[doc = "`AlignGridPatternBox`"]
 #[doc = r""]
 #[doc = r" <details><summary>JSON schema</summary>"]
@@ -2520,6 +2633,47 @@ impl ::std::convert::TryFrom<::std::string::String> for CropRoiStatus {
         value.parse()
     }
 }
+#[doc = "`DriftKeyframe`"]
+#[doc = r""]
+#[doc = r" <details><summary>JSON schema</summary>"]
+#[doc = r""]
+#[doc = r" ```json"]
+#[doc = "{"]
+#[doc = "  \"type\": \"object\","]
+#[doc = "  \"required\": ["]
+#[doc = "    \"dx\","]
+#[doc = "    \"dy\","]
+#[doc = "    \"time\""]
+#[doc = "  ],"]
+#[doc = "  \"properties\": {"]
+#[doc = "    \"dx\": {"]
+#[doc = "      \"type\": \"number\","]
+#[doc = "      \"format\": \"double\""]
+#[doc = "    },"]
+#[doc = "    \"dy\": {"]
+#[doc = "      \"type\": \"number\","]
+#[doc = "      \"format\": \"double\""]
+#[doc = "    },"]
+#[doc = "    \"time\": {"]
+#[doc = "      \"type\": \"integer\","]
+#[doc = "      \"format\": \"uint32\","]
+#[doc = "      \"minimum\": 0.0"]
+#[doc = "    }"]
+#[doc = "  }"]
+#[doc = "}"]
+#[doc = r" ```"]
+#[doc = r" </details>"]
+#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
+pub struct DriftKeyframe {
+    pub dx: f64,
+    pub dy: f64,
+    pub time: u32,
+}
+impl DriftKeyframe {
+    pub fn builder() -> builder::DriftKeyframe {
+        Default::default()
+    }
+}
 #[doc = "`FolderSource`"]
 #[doc = r""]
 #[doc = r" <details><summary>JSON schema</summary>"]
@@ -4938,6 +5092,9 @@ impl SaveRoiFrameAnnotationRequest {
 #[doc = "    \"grid\""]
 #[doc = "  ],"]
 #[doc = "  \"properties\": {"]
+#[doc = "    \"drift\": {"]
+#[doc = "      \"$ref\": \"#/definitions/AlignDrift\""]
+#[doc = "    },"]
 #[doc = "    \"excludedPatterns\": {"]
 #[doc = "      \"type\": \"array\","]
 #[doc = "      \"items\": {"]
@@ -4953,6 +5110,8 @@ impl SaveRoiFrameAnnotationRequest {
 #[doc = r" </details>"]
 #[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
 pub struct SavedAlignState {
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub drift: ::std::option::Option<AlignDrift>,
     #[serde(rename = "excludedPatterns")]
     pub excluded_patterns: ::std::vec::Vec<AlignGridPatternCoord>,
     pub grid: AlignGridState,
@@ -6825,6 +6984,75 @@ impl WorkspaceScan {
 }
 #[doc = r" Types for composing complex structures."]
 pub mod builder {
+    #[derive(Clone, Debug)]
+    pub struct AlignDrift {
+        interpolation: ::std::result::Result<super::AlignDriftInterpolation, ::std::string::String>,
+        keyframes:
+            ::std::result::Result<::std::vec::Vec<super::DriftKeyframe>, ::std::string::String>,
+        reference_time: ::std::result::Result<u32, ::std::string::String>,
+    }
+    impl ::std::default::Default for AlignDrift {
+        fn default() -> Self {
+            Self {
+                interpolation: Err("no value supplied for interpolation".to_string()),
+                keyframes: Err("no value supplied for keyframes".to_string()),
+                reference_time: Err("no value supplied for reference_time".to_string()),
+            }
+        }
+    }
+    impl AlignDrift {
+        pub fn interpolation<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<super::AlignDriftInterpolation>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.interpolation = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for interpolation: {e}"));
+            self
+        }
+        pub fn keyframes<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::vec::Vec<super::DriftKeyframe>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.keyframes = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for keyframes: {e}"));
+            self
+        }
+        pub fn reference_time<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<u32>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.reference_time = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for reference_time: {e}"));
+            self
+        }
+    }
+    impl ::std::convert::TryFrom<AlignDrift> for super::AlignDrift {
+        type Error = super::error::ConversionError;
+        fn try_from(
+            value: AlignDrift,
+        ) -> ::std::result::Result<Self, super::error::ConversionError> {
+            Ok(Self {
+                interpolation: value.interpolation?,
+                keyframes: value.keyframes?,
+                reference_time: value.reference_time?,
+            })
+        }
+    }
+    impl ::std::convert::From<super::AlignDrift> for AlignDrift {
+        fn from(value: super::AlignDrift) -> Self {
+            Self {
+                interpolation: Ok(value.interpolation),
+                keyframes: Ok(value.keyframes),
+                reference_time: Ok(value.reference_time),
+            }
+        }
+    }
     #[derive(Clone, Debug)]
     pub struct AlignGridPatternBox {
         h: ::std::result::Result<u32, ::std::string::String>,
@@ -8904,6 +9132,74 @@ pub mod builder {
                 disposition: Ok(value.disposition),
                 request_id: Ok(value.request_id),
                 status: Ok(value.status),
+            }
+        }
+    }
+    #[derive(Clone, Debug)]
+    pub struct DriftKeyframe {
+        dx: ::std::result::Result<f64, ::std::string::String>,
+        dy: ::std::result::Result<f64, ::std::string::String>,
+        time: ::std::result::Result<u32, ::std::string::String>,
+    }
+    impl ::std::default::Default for DriftKeyframe {
+        fn default() -> Self {
+            Self {
+                dx: Err("no value supplied for dx".to_string()),
+                dy: Err("no value supplied for dy".to_string()),
+                time: Err("no value supplied for time".to_string()),
+            }
+        }
+    }
+    impl DriftKeyframe {
+        pub fn dx<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<f64>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.dx = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for dx: {e}"));
+            self
+        }
+        pub fn dy<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<f64>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.dy = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for dy: {e}"));
+            self
+        }
+        pub fn time<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<u32>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.time = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for time: {e}"));
+            self
+        }
+    }
+    impl ::std::convert::TryFrom<DriftKeyframe> for super::DriftKeyframe {
+        type Error = super::error::ConversionError;
+        fn try_from(
+            value: DriftKeyframe,
+        ) -> ::std::result::Result<Self, super::error::ConversionError> {
+            Ok(Self {
+                dx: value.dx?,
+                dy: value.dy?,
+                time: value.time?,
+            })
+        }
+    }
+    impl ::std::convert::From<super::DriftKeyframe> for DriftKeyframe {
+        fn from(value: super::DriftKeyframe) -> Self {
+            Self {
+                dx: Ok(value.dx),
+                dy: Ok(value.dy),
+                time: Ok(value.time),
             }
         }
     }
@@ -11813,6 +12109,8 @@ pub mod builder {
     }
     #[derive(Clone, Debug)]
     pub struct SavedAlignState {
+        drift:
+            ::std::result::Result<::std::option::Option<super::AlignDrift>, ::std::string::String>,
         excluded_patterns: ::std::result::Result<
             ::std::vec::Vec<super::AlignGridPatternCoord>,
             ::std::string::String,
@@ -11822,12 +12120,23 @@ pub mod builder {
     impl ::std::default::Default for SavedAlignState {
         fn default() -> Self {
             Self {
+                drift: Ok(Default::default()),
                 excluded_patterns: Err("no value supplied for excluded_patterns".to_string()),
                 grid: Err("no value supplied for grid".to_string()),
             }
         }
     }
     impl SavedAlignState {
+        pub fn drift<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::option::Option<super::AlignDrift>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.drift = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for drift: {e}"));
+            self
+        }
         pub fn excluded_patterns<T>(mut self, value: T) -> Self
         where
             T: ::std::convert::TryInto<::std::vec::Vec<super::AlignGridPatternCoord>>,
@@ -11855,6 +12164,7 @@ pub mod builder {
             value: SavedAlignState,
         ) -> ::std::result::Result<Self, super::error::ConversionError> {
             Ok(Self {
+                drift: value.drift?,
                 excluded_patterns: value.excluded_patterns?,
                 grid: value.grid?,
             })
@@ -11863,6 +12173,7 @@ pub mod builder {
     impl ::std::convert::From<super::SavedAlignState> for SavedAlignState {
         fn from(value: super::SavedAlignState) -> Self {
             Self {
+                drift: Ok(value.drift),
                 excluded_patterns: Ok(value.excluded_patterns),
                 grid: Ok(value.grid),
             }

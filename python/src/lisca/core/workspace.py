@@ -4,6 +4,7 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 
+from lisca.core.align_drift import AlignDrift, align_drift_from_json
 from lisca.core.align_grid import (
     AlignGridState,
     PatternCoord,
@@ -51,6 +52,7 @@ __all__ = [
     "POS_PREFIX",
     "RESULTS_DIR",
     "ROI_DIR",
+    "AlignDrift",
     "PositionIndex",
     "RoiEntry",
     "SavedAlignState",
@@ -79,6 +81,7 @@ __all__ = [
 class SavedAlignState:
     grid: AlignGridState
     excluded_patterns: list[PatternCoord]
+    drift: AlignDrift | None = None
 
 
 @dataclass(frozen=True)
@@ -123,9 +126,11 @@ def load_saved_align_state(workspace: Path, position: int) -> SavedAlignState:
         PatternCoord(i=int(pattern["i"]), j=int(pattern["j"]))
         for pattern in raw.get("excludedPatterns", [])
     ]
+    drift = align_drift_from_json(raw["drift"]) if "drift" in raw else None
     return SavedAlignState(
         grid=align_grid_state_from_json(raw["grid"]),
         excluded_patterns=excluded,
+        drift=drift,
     )
 
 

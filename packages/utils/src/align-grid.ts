@@ -5,6 +5,7 @@ import type {
   AlignGridState,
   SavedAlignState,
 } from "@lisca/contracts";
+import { normalizeAlignDrift, type AlignDriftInput } from "./align-drift";
 import { clamp } from "./frame";
 
 export type AlignGridFrameBounds = {
@@ -63,11 +64,26 @@ const GRID_BOUNDS_EPSILON = 1e-6;
 export function alignStateFromCurrent(
   grid: AlignGridState,
   currentExcludedPatterns: AlignGridPatternCoord[],
+  drift?: AlignDriftInput | null,
+  assayDefaultTime?: number | null,
 ): SavedAlignState {
-  return {
+  const saved: SavedAlignState = {
     grid,
     excludedPatterns: currentExcludedPatterns,
   };
+  if (drift == null) return saved;
+  const keyframes = drift.keyframes ?? [];
+  if (keyframes.length === 0 && drift.referenceTime == null) return saved;
+  const normalized = normalizeAlignDrift(drift);
+  if (normalized == null) return saved;
+  if (
+    normalized.keyframes.length === 0 &&
+    typeof assayDefaultTime === "number" &&
+    normalized.referenceTime === assayDefaultTime
+  ) {
+    return saved;
+  }
+  return { ...saved, drift: normalized };
 }
 
 export function radiansToDegrees(value: number): number {

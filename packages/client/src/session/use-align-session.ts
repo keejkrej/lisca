@@ -391,7 +391,7 @@ export function useAlignSessionCore(options: UseAlignSessionCoreOptions) {
           workspacePath,
           selection.pos,
           buildBboxCsv(frame, grid, patterns),
-          alignStateFromCurrent(grid, patterns),
+          alignStateFromCurrent(grid, patterns, currentUi.drift),
         ),
       );
       if (!result.ok) throw new Error(result.error ?? "Save failed");
