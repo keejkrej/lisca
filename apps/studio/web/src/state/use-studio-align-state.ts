@@ -29,6 +29,11 @@ import { effectErrorMessage, loadFrameEffect } from "../effects/frame-loader";
 import { runClientEffect } from "@lisca/client/runtime";
 import {
   lockedStudioSelection,
+  recallStudioAlignFrame,
+  rememberStudioAlignFrame,
+  studioAlignFrameDefault,
+  studioAlignFrameMemoryKey,
+  studioAlignPositionNav,
   studioSegmentationChannel,
   toStudioSource,
 } from "@lisca/client/studio/source";
@@ -123,6 +128,11 @@ export type CropStartConfirmState = {
   unaligned: number[];
 };
 export type { CropConfirmState };
+
+function clampedAlignPosition(positions: readonly number[], pos: number): number {
+  return positions.includes(pos) ? pos : (positions[0] ?? pos);
+}
+
 export function useStudioAlignState(): StudioAlignState {
   const navigate = useNavigate();
   const dataPath = useStudioStore((state) => state.dataPath);
@@ -130,6 +140,7 @@ export function useStudioAlignState(): StudioAlignState {
   const workspacePath = useStudioStore((state) => state.workspacePath);
   const samples = useStudioStore((state) => state.samples);
   const dataSourceKind = useStudioStore((state) => state.dataSourceKind);
+  const assayId = useStudioStore((state) => state.assayId);
   const [preparingCrop, setPreparingCrop] = createSignal(false);
   const [savedPositions, setSavedPositions] = createSignal<ReadonlySet<number>>(new Set());
   const [baseline, setBaseline] = createSignal<AlignBaseline | null>(null);
@@ -147,6 +158,12 @@ export function useStudioAlignState(): StudioAlignState {
   const assayPositions = createMemo(() => collectAssayPositions({ samples: samples() }));
   const alignPositionsForScan = (scan: WorkspaceScan | null) =>
     scan ? filterScanPositionsForAssay(scan.positions, assayPositions()) : [];
+  const frameMemoryKey = () =>
+    studioAlignFrameMemoryKey({
+      workspacePath: activeWorkspacePath(),
+      source: activeSource(),
+      assayId: assayId(),
+    });
   const session = useAlignSessionCore({
     store: {
       atom: studioAlignUiAtom,
@@ -168,15 +185,15 @@ export function useStudioAlignState(): StudioAlignState {
     policy: {
       workspacePath: activeWorkspacePath,
       source: activeSource,
-      selection: (state) =>
-        state.scan
-          ? lockedStudioSelection(
-              state.scan,
-              state.selection,
-              brightfieldChannel(),
-              alignPositionsForScan(state.scan),
-            )
-          : state.selection,
+      selection: (state) => {
+        if (!state.scan) return state.selection;
+        const positions = alignPositionsForScan(state.scan);
+        const position = clampedAlignPosition(positions, state.selection.pos);
+        return lockedStudioSelection(state.scan, state.selection, brightfieldChannel(), positions, {
+          frameDefault: studioAlignFrameDefault(assayId()),
+          rememberedTime: recallStudioAlignFrame(frameMemoryKey(), position),
+        });
+      },
       canLoadFrame: (state) => alignPositionsForScan(state.scan).length > 0,
       preserveFrameOnContrastFailure: true,
       cropRequestPrefix: "studio-crop",
@@ -202,9 +219,19 @@ export function useStudioAlignState(): StudioAlignState {
     setManualExclusionEnabled,
     setSpacingZoomLocked,
     setPatternZoomLocked,
-    setSelection,
+    setSelection: setStoredSelection,
     setToolMode,
   } = session.actions;
+  // Write the chosen frame before the lock policy runs. Otherwise the policy
+  // puts the assay default back over the slider.
+  const setSelection = (patch: Partial<FrameRequest>) => {
+    if (typeof patch.time === "number") {
+      const positions = alignPositions();
+      const position = clampedAlignPosition(positions, patch.pos ?? lockedSelection().pos);
+      rememberStudioAlignFrame(frameMemoryKey(), position, patch.time);
+    }
+    setStoredSelection(patch);
+  };
   const setError = session.actions.reportError;
   const setStatus = session.actions.reportStatus;
   const applySmartExclusion = session.applySmartExclusion;
@@ -267,12 +294,15 @@ export function useStudioAlignState(): StudioAlignState {
     if (pos === lockedSelection().pos) return;
     guardNavigation(() => setSelection({ pos }));
   };
-  const canGoBack = () => positionIndex() > 0;
+  const positionNav = createMemo(() =>
+    studioAlignPositionNav(alignPositions(), lockedSelection().pos),
+  );
+  const canGoBack = () => positionNav().canGoBack;
   const goBack = () => {
     if (positionIndex() <= 0) return;
     changePosition(alignPositions()[positionIndex() - 1]!);
   };
-  const canGoNext = () => nextAlignPosition(alignPositions(), lockedSelection().pos) != null;
+  const canGoNext = () => positionNav().canGoNext;
   const goNext = () => {
     const nextPos = nextAlignPosition(alignPositions(), lockedSelection().pos);
     if (nextPos != null) changePosition(nextPos);

@@ -95,7 +95,6 @@ export function useStudioAnnotateState(): StudioAnnotateState {
       if (!dirty || selectionChanging) return true;
       return window.confirm("Discard unsaved annotation changes?");
     },
-    initialTimeIndex: "last",
   });
   const setAnalysisStartConfirm = (value: boolean) =>
     studioAnnotateUiActions.setAnalysisStartConfirm(setUi, value);

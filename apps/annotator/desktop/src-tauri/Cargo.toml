@@ -1,6 +1,6 @@
 [package]
 name = "annotator-tauri"
-version = "0.4.4"
+version = "0.4.5"
 publish = false
 edition = "2021"
 license = "MIT OR Apache-2.0"

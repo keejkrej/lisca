@@ -10,7 +10,6 @@ function renderField(overrides: Partial<Parameters<typeof SourcePickerField>[0]>
     onOpenFolder: vi.fn(),
     onOpenNd2: vi.fn(),
     onOpenCzi: vi.fn(),
-    onPickRecentSource: vi.fn(),
   };
   render(() => (
     <SourcePickerField
@@ -41,14 +40,13 @@ describe("SourcePickerField", () => {
     expect(handlers.onOpenCzi).not.toHaveBeenCalled();
   });
 
-  it("lists recent sources below the formats", async () => {
-    const source = { kind: "nd2", path: "/data/run.nd2" } as const;
-    const handlers = renderField({ recentSources: [{ source }] });
+  it("offers only source formats, with no recent list", async () => {
+    renderField();
     openMenu();
 
-    fireEvent.keyDown(await screen.findByRole("menuitem", { name: /\/data\/run\.nd2/ }), {
-      key: "Enter",
-    });
-    expect(handlers.onPickRecentSource).toHaveBeenCalledWith(source);
+    expect(await screen.findByRole("menuitem", { name: /Folder/ })).toBeTruthy();
+    expect(screen.getByRole("menuitem", { name: /ND2/ })).toBeTruthy();
+    expect(screen.getByRole("menuitem", { name: /CZI/ })).toBeTruthy();
+    expect(screen.queryByText("Recent")).toBeNull();
   });
 });

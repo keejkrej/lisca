@@ -3,7 +3,7 @@ import { Show } from "solid-js";
 
 import { useStudioAnnotateNav } from "../state/studio-annotate-page-selectors";
 
-export function StudioAnnotateNav() {
+export function StudioAnnotateNav(props: { frameOnly?: boolean }) {
   const nav = useStudioAnnotateNav();
 
   return (
@@ -18,23 +18,26 @@ export function StudioAnnotateNav() {
       <>
         <RoiFrameNavigation
           changeSelection={nav.changeSelection}
+          frameOnly={props.frameOnly}
           position={nav.position}
           scan={nav.scan}
           sectionAppearance="rail"
           selection={nav.selection}
           setSelection={nav.setSelection}
         />
-        <ContrastControl
-          aria-label="Contrast"
-          contrast={nav.contrast}
-          disabled={!nav.frame}
-          frame={nav.frame}
-          role="region"
-          sectionAppearance="rail"
-          sectionClassName="min-h-0 shrink-0"
-          sectionContentClassName="flex min-h-0 flex-col"
-          onContrastChange={nav.setContrast}
-        />
+        <Show when={!props.frameOnly}>
+          <ContrastControl
+            aria-label="Contrast"
+            contrast={nav.contrast}
+            disabled={!nav.frame}
+            frame={nav.frame}
+            role="region"
+            sectionAppearance="rail"
+            sectionClassName="min-h-0 shrink-0"
+            sectionContentClassName="flex min-h-0 flex-col"
+            onContrastChange={nav.setContrast}
+          />
+        </Show>
       </>
     </Show>
   );

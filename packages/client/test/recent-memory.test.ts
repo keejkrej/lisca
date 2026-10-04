@@ -1,7 +1,12 @@
 import { configureLiscaStorage, type LiscaStorageAdapter } from "@lisca/utils";
 import { beforeEach, describe, expect, it } from "vite-plus/test";
 
-import { readRecentMemory, touchRecentMemory } from "../src/session/recent-memory";
+import {
+  readRecentMemory,
+  recentSourceByPath,
+  recentSourcePickerItems,
+  touchRecentMemory,
+} from "../src/session/recent-memory";
 import { writeWorkSessions } from "../src/session/work-session";
 import { readStudioWizardMemoryRecent } from "../src/studio/wizard-memory";
 
@@ -16,6 +21,12 @@ function createMemoryStorage(): LiscaStorageAdapter {
 
 const nd2 = { kind: "nd2" as const, path: "/data/run.nd2" };
 const czi = { kind: "czi" as const, path: "/data/run.czi" };
+const folder = {
+  kind: "folder" as const,
+  path: "/data/jb4_portable",
+  subfolderTemplate: "{p}",
+  filenameTemplate: "img_{t}.tif",
+};
 
 describe("recent memory", () => {
   let storage: LiscaStorageAdapter;
@@ -51,6 +62,24 @@ describe("recent memory", () => {
     expect(readStudioWizardMemoryRecent("workspace").workspaces).toEqual([
       { path: "/ws/s", label: "TF84" },
     ]);
+  });
+
+  it("lists recent sources for the picker that matches their kind", () => {
+    const sources = [
+      { source: folder, label: "JB4" },
+      { source: nd2 },
+      { source: czi, label: "Run" },
+    ];
+    expect(recentSourcePickerItems(sources, "folder")).toEqual([
+      { path: "/data/jb4_portable", label: "JB4" },
+    ]);
+    expect(recentSourcePickerItems(sources, "nd2_file")).toEqual([{ path: "/data/run.nd2" }]);
+    expect(recentSourcePickerItems(sources, "czi_file")).toEqual([
+      { path: "/data/run.czi", label: "Run" },
+    ]);
+    expect(recentSourcePickerItems(sources, "workspace")).toEqual([]);
+    expect(recentSourceByPath(sources, "folder", "/data/jb4_portable")).toEqual(folder);
+    expect(recentSourceByPath(sources, "nd2_file", "/data/jb4_portable")).toBeUndefined();
   });
 
   it("seeds Aligner recents from the saved sessions the resume dialog used", () => {

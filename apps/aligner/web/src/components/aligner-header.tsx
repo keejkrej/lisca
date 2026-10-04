@@ -4,7 +4,12 @@ import {
   SourcePickerModal,
 } from "@lisca/ui/features";
 import type { AlignerSource } from "@lisca/contracts";
-import { readRecentMemory, touchRecentMemory } from "@lisca/client/session/recent-memory";
+import {
+  readRecentMemory,
+  recentSourceByPath,
+  recentSourcePickerItems,
+  touchRecentMemory,
+} from "@lisca/client/session/recent-memory";
 import { ShellNavbar, useShellWorkspace } from "@lisca/ui/shell";
 import type { HostFilePickerMode } from "@lisca/ui/features";
 import { createSignal } from "solid-js";
@@ -81,8 +86,6 @@ export function AlignerHeader() {
         onOpenCzi={() => openFilePicker("czi_file")}
         onOpenFolder={() => openFilePicker("folder")}
         onOpenNd2={() => openFilePicker("nd2_file")}
-        recentSources={sourcePickerOpen() ? readRecentMemory("aligner").sources : undefined}
-        onPickRecentSource={applySource}
       />
 
       <FolderSourceParseModal
@@ -107,14 +110,25 @@ export function AlignerHeader() {
         onPickDirectory={applyPickDirectory}
         onPickFile={applyPickFile}
         recentItems={
-          filePicker().open && filePicker().mode === "workspace"
-            ? readRecentMemory("aligner").workspaces
+          filePicker().open
+            ? filePicker().mode === "workspace"
+              ? readRecentMemory("aligner").workspaces
+              : recentSourcePickerItems(readRecentMemory("aligner").sources, filePicker().mode)
             : undefined
         }
         onPickRecent={(path) => {
+          const mode = filePicker().mode;
           setFilePicker((current) => ({ ...current, open: false }));
           pickerMode = null;
-          applyWorkspace(path);
+          if (mode === "workspace") {
+            applyWorkspace(path);
+            return;
+          }
+          const source = recentSourceByPath(readRecentMemory("aligner").sources, mode, path);
+          if (source) applySource(source);
+          else if (mode === "folder") setFolderSourcePath(path);
+          else if (mode === "nd2_file") applySource({ kind: "nd2", path });
+          else if (mode === "czi_file") applySource({ kind: "czi", path });
         }}
       />
     </>
