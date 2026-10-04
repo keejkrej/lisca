@@ -99,7 +99,7 @@ export type UseAnnotateStateCoreDeps<State extends AnnotatorUiState = AnnotatorU
   ) => () => void;
   useCanvasTransientStatus: (status: Accessor<string | null>) => Accessor<string | null>;
   guardDirtySelection: DirtySelectionGuard;
-  /** Defaults to the first frame. Studio passes "last". */
+  /** Defaults to the first stored index. Pass "last" to snap an untouched 0. */
   initialTimeIndex?: "first" | "last";
 };
 

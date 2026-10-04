@@ -24,6 +24,8 @@ export type RoiFrameNavigationProps = {
   selection: RoiFrameSelection;
   changeSelection: (apply: () => void) => void;
   setSelection: (patch: Partial<RoiFrameSelection>) => void;
+  /** Standard mode shows the frame slider. Expert mode keeps position, ROI, channel, and Z. */
+  frameOnly?: boolean;
 } & Pick<
   FrameNavigationProps<number>,
   | "class"
@@ -80,36 +82,53 @@ export function RoiFrameNavigation(props: RoiFrameNavigationProps) {
       sectionClassName={props.sectionClassName}
       sectionContentClassName={props.sectionContentClassName}
       sectionDescription={props.sectionDescription}
-      sectionTitle={props.sectionTitle}
-      channel={buildSelectStepperControl({
-        value: channelValue(),
-        options: channelOptions(),
-        changeSelection: props.changeSelection,
-        onChange: (channel) => props.setSelection({ channel }),
-      })}
-      position={buildSelectStepperControl({
-        value: posValue(),
-        options: positionOptions(),
-        changeSelection: props.changeSelection,
-        onChange: (pos) => props.setSelection({ pos, roi: null }),
-      })}
-      roi={buildSelectStepperControl({
-        value: roiValue(),
-        options: roiOptions(),
-        changeSelection: props.changeSelection,
-        onChange: (roi) => props.setSelection({ roi }),
-      })}
+      sectionTitle={props.frameOnly ? "Frame" : props.sectionTitle}
+      channel={
+        props.frameOnly
+          ? undefined
+          : buildSelectStepperControl({
+              value: channelValue(),
+              options: channelOptions(),
+              changeSelection: props.changeSelection,
+              onChange: (channel) => props.setSelection({ channel }),
+            })
+      }
+      position={
+        props.frameOnly
+          ? undefined
+          : buildSelectStepperControl({
+              value: posValue(),
+              options: positionOptions(),
+              changeSelection: props.changeSelection,
+              onChange: (pos) => props.setSelection({ pos, roi: null }),
+            })
+      }
+      roi={
+        props.frameOnly
+          ? undefined
+          : buildSelectStepperControl({
+              value: roiValue(),
+              options: roiOptions(),
+              changeSelection: props.changeSelection,
+              onChange: (roi) => props.setSelection({ roi }),
+            })
+      }
       frame={createAxisIndexSliderControl({
         axisValues: props.position?.times,
         index: props.selection.timeIndex,
         onIndexChange: (timeIndex) =>
           props.changeSelection(() => props.setSelection({ timeIndex })),
       })}
-      zPlane={createAxisIndexSliderControl({
-        axisValues: props.position?.zSlices,
-        index: props.selection.zIndex,
-        onIndexChange: (zIndex) => props.changeSelection(() => props.setSelection({ zIndex })),
-      })}
+      zPlane={
+        props.frameOnly
+          ? undefined
+          : createAxisIndexSliderControl({
+              axisValues: props.position?.zSlices,
+              index: props.selection.zIndex,
+              onIndexChange: (zIndex) =>
+                props.changeSelection(() => props.setSelection({ zIndex })),
+            })
+      }
     />
   );
 }

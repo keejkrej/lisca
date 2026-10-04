@@ -1,3 +1,4 @@
+import { studioAlignPositionNav } from "@lisca/client/studio/source";
 import { AlignGridRail, AlignSelectionRail, AlignToolSection } from "@lisca/ui/features";
 import { Button } from "@lisca/ui/components";
 import { PanelSection, RailControlStack, RailSectionStack } from "@lisca/ui/shell";
@@ -36,6 +37,9 @@ export function StudioAlignInstrumentStack(props: { expert?: boolean }) {
   const disabled = () => !state.frame;
   const busy = createMemo(() => state.saving || state.preparingCrop || state.cropping);
   const frameReady = createMemo(() => Boolean(state.frame));
+  const positionNav = createMemo(() =>
+    studioAlignPositionNav(state.alignPositions, state.selection.pos),
+  );
   useStudioCommandShortcut(
     "save",
     () => !busy() && frameReady(),
@@ -43,12 +47,12 @@ export function StudioAlignInstrumentStack(props: { expert?: boolean }) {
   );
   useStudioCommandShortcut(
     "back",
-    () => !busy() && state.canGoBack,
+    () => !busy() && positionNav().canGoBack,
     () => state.goBack(),
   );
   useStudioCommandShortcut(
     "next",
-    () => !busy() && state.canGoNext,
+    () => !busy() && positionNav().canGoNext,
     () => state.goNext(),
   );
   useStudioCommandShortcut(
@@ -69,6 +73,9 @@ export function StudioAlignInstrumentStack(props: { expert?: boolean }) {
 
   return (
     <RailSectionStack class={RAIL_CLASS}>
+      <Show when={!props.expert}>
+        <StudioAlignNav frameOnly />
+      </Show>
       <Show when={props.expert}>
         <StudioAlignNav />
         {gridRail("geometry")}
@@ -126,7 +133,7 @@ export function StudioAlignInstrumentStack(props: { expert?: boolean }) {
             aria-keyshortcuts={commandShortcutKeys("back")}
             class="relative w-full justify-center"
             data-rail-nav
-            disabled={busy() || !state.canGoBack}
+            disabled={busy() || !positionNav().canGoBack}
             size="sm"
             type="button"
             variant="outline"
@@ -139,7 +146,7 @@ export function StudioAlignInstrumentStack(props: { expert?: boolean }) {
             aria-keyshortcuts={commandShortcutKeys("next")}
             class="relative w-full justify-center"
             data-rail-nav
-            disabled={busy() || !state.canGoNext}
+            disabled={busy() || !positionNav().canGoNext}
             size="sm"
             type="button"
             variant="outline"

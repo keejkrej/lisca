@@ -7,11 +7,11 @@ import {
   toAxisNavigationOptions,
 } from "@lisca/ui/features";
 import { clamp } from "@lisca/utils";
-import { createMemo } from "solid-js";
+import { Show, createMemo } from "solid-js";
 
 import { useStudioAlignNav } from "../state/studio-align-page-selectors";
 
-export function StudioAlignNav() {
+export function StudioAlignNav(props: { frameOnly?: boolean }) {
   const nav = useStudioAlignNav();
   const disabled = createMemo(() => !nav.scan);
   const positionOptions = createMemo(() =>
@@ -33,58 +33,67 @@ export function StudioAlignNav() {
     <>
       <FrameNavigation
         sectionAppearance="rail"
-        position={{
-          get value() {
-            return nav.selection.pos;
-          },
-          get options() {
-            return positionOptions();
-          },
-          get disabled() {
-            return disabled();
-          },
-          onChange: (pos) => nav.changePosition(pos),
-          get previousDisabled() {
-            return disabled() || posIndex() <= 0;
-          },
-          get nextDisabled() {
-            return disabled() || posIndex() >= positionOptions().length - 1;
-          },
-          onPrevious: () => {
-            const next = stepNavigationValue(positionOptions(), nav.selection.pos, -1);
-            if (next != null) nav.changePosition(next);
-          },
-          onNext: () => {
-            const next = stepNavigationValue(positionOptions(), nav.selection.pos, 1);
-            if (next != null) nav.changePosition(next);
-          },
-        }}
-        channel={{
-          get value() {
-            return nav.selection.channel;
-          },
-          get options() {
-            return channelOptions();
-          },
-          get disabled() {
-            return disabled();
-          },
-          onChange: (channel) => nav.setSelection({ channel }),
-          get previousDisabled() {
-            return disabled() || chIndex() <= 0;
-          },
-          get nextDisabled() {
-            return disabled() || chIndex() >= channelOptions().length - 1;
-          },
-          onPrevious: () => {
-            const next = stepNavigationValue(channelOptions(), nav.selection.channel, -1);
-            if (next != null) nav.setSelection({ channel: next });
-          },
-          onNext: () => {
-            const next = stepNavigationValue(channelOptions(), nav.selection.channel, 1);
-            if (next != null) nav.setSelection({ channel: next });
-          },
-        }}
+        sectionTitle={props.frameOnly ? "Frame" : undefined}
+        position={
+          props.frameOnly
+            ? undefined
+            : {
+                get value() {
+                  return nav.selection.pos;
+                },
+                get options() {
+                  return positionOptions();
+                },
+                get disabled() {
+                  return disabled();
+                },
+                onChange: (pos) => nav.changePosition(pos),
+                get previousDisabled() {
+                  return disabled() || posIndex() <= 0;
+                },
+                get nextDisabled() {
+                  return disabled() || posIndex() >= positionOptions().length - 1;
+                },
+                onPrevious: () => {
+                  const next = stepNavigationValue(positionOptions(), nav.selection.pos, -1);
+                  if (next != null) nav.changePosition(next);
+                },
+                onNext: () => {
+                  const next = stepNavigationValue(positionOptions(), nav.selection.pos, 1);
+                  if (next != null) nav.changePosition(next);
+                },
+              }
+        }
+        channel={
+          props.frameOnly
+            ? undefined
+            : {
+                get value() {
+                  return nav.selection.channel;
+                },
+                get options() {
+                  return channelOptions();
+                },
+                get disabled() {
+                  return disabled();
+                },
+                onChange: (channel) => nav.setSelection({ channel }),
+                get previousDisabled() {
+                  return disabled() || chIndex() <= 0;
+                },
+                get nextDisabled() {
+                  return disabled() || chIndex() >= channelOptions().length - 1;
+                },
+                onPrevious: () => {
+                  const next = stepNavigationValue(channelOptions(), nav.selection.channel, -1);
+                  if (next != null) nav.setSelection({ channel: next });
+                },
+                onNext: () => {
+                  const next = stepNavigationValue(channelOptions(), nav.selection.channel, 1);
+                  if (next != null) nav.setSelection({ channel: next });
+                },
+              }
+        }
         frame={{
           get value() {
             return clamp(timeIndex(), 0, Math.max(0, (nav.scan?.times?.length ?? 1) - 1));
@@ -148,79 +157,88 @@ export function StudioAlignNav() {
             });
           },
         }}
-        zPlane={{
-          get value() {
-            return clamp(zIndex(), 0, Math.max(0, (nav.scan?.zSlices?.length ?? 1) - 1));
-          },
-          get min() {
-            return 0;
-          },
-          get max() {
-            return Math.max(0, (nav.scan?.zSlices?.length ?? 1) - 1);
-          },
-          step: 1,
-          get valueLabel() {
-            const axisValues = nav.scan?.zSlices;
-            if (!axisValues || axisValues.length === 0) return undefined;
-            const max = axisValues.length - 1;
-            const clamped = clamp(zIndex(), 0, max);
-            const frame = clamped + 1;
-            const total = axisValues.length;
-            const displayValue = nav.scan?.zSliceLabels?.[clamped] ?? String(axisValues[clamped]);
-            return `${displayValue} (${frame}/${total})`;
-          },
-          get axisValues() {
-            return nav.scan?.zSlices;
-          },
-          get axisLabels() {
-            return nav.scan?.zSliceLabels;
-          },
-          get disabled() {
-            const baseDisabled = disabled();
-            const max = Math.max(0, (nav.scan?.zSlices?.length ?? 1) - 1);
-            return baseDisabled || max <= 0;
-          },
-          get previousDisabled() {
-            const baseDisabled = disabled();
-            const max = Math.max(0, (nav.scan?.zSlices?.length ?? 1) - 1);
-            const idx = clamp(zIndex(), 0, max);
-            return baseDisabled || idx <= 0;
-          },
-          get nextDisabled() {
-            const baseDisabled = disabled();
-            const max = Math.max(0, (nav.scan?.zSlices?.length ?? 1) - 1);
-            const idx = clamp(zIndex(), 0, max);
-            return baseDisabled || idx >= max;
-          },
-          onCommit: (nextValue) => {
-            const max = Math.max(0, (nav.scan?.zSlices?.length ?? 1) - 1);
-            nav.setSelection({ z: nav.scan?.zSlices?.[clamp(Math.round(nextValue), 0, max)] ?? 0 });
-          },
-          onPrevious: () => {
-            const max = Math.max(0, (nav.scan?.zSlices?.length ?? 1) - 1);
-            nav.setSelection({
-              z: nav.scan?.zSlices?.[Math.max(0, clamp(zIndex(), 0, max) - 1)] ?? 0,
-            });
-          },
-          onNext: () => {
-            const max = Math.max(0, (nav.scan?.zSlices?.length ?? 1) - 1);
-            nav.setSelection({
-              z: nav.scan?.zSlices?.[Math.min(max, clamp(zIndex(), 0, max) + 1)] ?? 0,
-            });
-          },
-        }}
+        zPlane={
+          props.frameOnly
+            ? undefined
+            : {
+                get value() {
+                  return clamp(zIndex(), 0, Math.max(0, (nav.scan?.zSlices?.length ?? 1) - 1));
+                },
+                get min() {
+                  return 0;
+                },
+                get max() {
+                  return Math.max(0, (nav.scan?.zSlices?.length ?? 1) - 1);
+                },
+                step: 1,
+                get valueLabel() {
+                  const axisValues = nav.scan?.zSlices;
+                  if (!axisValues || axisValues.length === 0) return undefined;
+                  const max = axisValues.length - 1;
+                  const clamped = clamp(zIndex(), 0, max);
+                  const frame = clamped + 1;
+                  const total = axisValues.length;
+                  const displayValue =
+                    nav.scan?.zSliceLabels?.[clamped] ?? String(axisValues[clamped]);
+                  return `${displayValue} (${frame}/${total})`;
+                },
+                get axisValues() {
+                  return nav.scan?.zSlices;
+                },
+                get axisLabels() {
+                  return nav.scan?.zSliceLabels;
+                },
+                get disabled() {
+                  const baseDisabled = disabled();
+                  const max = Math.max(0, (nav.scan?.zSlices?.length ?? 1) - 1);
+                  return baseDisabled || max <= 0;
+                },
+                get previousDisabled() {
+                  const baseDisabled = disabled();
+                  const max = Math.max(0, (nav.scan?.zSlices?.length ?? 1) - 1);
+                  const idx = clamp(zIndex(), 0, max);
+                  return baseDisabled || idx <= 0;
+                },
+                get nextDisabled() {
+                  const baseDisabled = disabled();
+                  const max = Math.max(0, (nav.scan?.zSlices?.length ?? 1) - 1);
+                  const idx = clamp(zIndex(), 0, max);
+                  return baseDisabled || idx >= max;
+                },
+                onCommit: (nextValue) => {
+                  const max = Math.max(0, (nav.scan?.zSlices?.length ?? 1) - 1);
+                  nav.setSelection({
+                    z: nav.scan?.zSlices?.[clamp(Math.round(nextValue), 0, max)] ?? 0,
+                  });
+                },
+                onPrevious: () => {
+                  const max = Math.max(0, (nav.scan?.zSlices?.length ?? 1) - 1);
+                  nav.setSelection({
+                    z: nav.scan?.zSlices?.[Math.max(0, clamp(zIndex(), 0, max) - 1)] ?? 0,
+                  });
+                },
+                onNext: () => {
+                  const max = Math.max(0, (nav.scan?.zSlices?.length ?? 1) - 1);
+                  nav.setSelection({
+                    z: nav.scan?.zSlices?.[Math.min(max, clamp(zIndex(), 0, max) + 1)] ?? 0,
+                  });
+                },
+              }
+        }
       />
-      <ContrastControl
-        aria-label="Contrast"
-        contrast={nav.contrast}
-        disabled={!nav.frame}
-        frame={nav.frame}
-        role="region"
-        sectionAppearance="rail"
-        sectionClassName="min-h-0 shrink-0"
-        sectionContentClassName="flex min-h-0 flex-col"
-        onContrastChange={nav.setContrast}
-      />
+      <Show when={!props.frameOnly}>
+        <ContrastControl
+          aria-label="Contrast"
+          contrast={nav.contrast}
+          disabled={!nav.frame}
+          frame={nav.frame}
+          role="region"
+          sectionAppearance="rail"
+          sectionClassName="min-h-0 shrink-0"
+          sectionContentClassName="flex min-h-0 flex-col"
+          onContrastChange={nav.setContrast}
+        />
+      </Show>
     </>
   );
 }

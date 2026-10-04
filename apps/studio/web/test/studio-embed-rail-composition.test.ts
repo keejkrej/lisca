@@ -57,6 +57,7 @@ describe("Studio Align instrument stack composition", () => {
       navSource.indexOf("<ContrastControl"),
     );
 
+    expect(stackSource).toMatch(/<StudioAlignNav\s+frameOnly\s*\/>/);
     expect(stackSource).toMatch(/<StudioAlignNav\s*\/>/);
     expect(stackSource).toMatch(/<AlignToolSection\b/);
     expect(stackSource).toMatch(/<AlignGridRail\b/);
@@ -78,13 +79,14 @@ describe("Studio Annotate instrument stack composition", () => {
   const navSource = readSource("../src/components/studio-annotate-nav.tsx");
   const routeSource = readSource("../src/routes/annotate.tsx");
 
-  it("mounts one shared stack and gates Navigation and Contrast behind expert", () => {
+  it("shows the frame slider in standard mode and full navigation in expert mode", () => {
     expect(routeSource).toMatch(/<StudioAnnotateInstrumentStack\s*\/>/);
     expect(routeSource).not.toMatch(/expert=\{\(\) => <StudioAnnotateInstrumentStack/);
     expect(routeSource).not.toMatch(/showShuffle|Shuffle/);
     expect(routeSource).not.toMatch(
       /StudioAnnotateRight|StudioAnnotateExpertRight|studio-annotate-dock/,
     );
+    expect(stackSource).toMatch(/<StudioAnnotateNav\s+frameOnly\s*\/>/);
     const expertBlock =
       stackSource.match(/<Show when=\{expertMode\(\)\}>([\s\S]*?)<\/Show>/)?.[1] ?? "";
     expect(expertBlock).toMatch(/<StudioAnnotateNav\s*\/>/);

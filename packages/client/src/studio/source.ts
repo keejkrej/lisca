@@ -1,6 +1,6 @@
 import type { AlignerSource, FrameRequest, WorkspaceScan } from "@lisca/contracts";
 import type { StudioAssaySampleRow } from "@lisca/contracts/assay";
-import { DEFAULT_FOLDER_SOURCE_TEMPLATE } from "@lisca/contracts/assay";
+import { ASSAY_TYPE, DEFAULT_FOLDER_SOURCE_TEMPLATE } from "@lisca/contracts/assay";
 
 export function toStudioSource(input: {
   kind: AlignerSource["kind"] | null;
@@ -35,27 +35,100 @@ export function studioSegmentationChannel(samples: StudioAssaySampleRow[]): numb
   return 0;
 }
 
-function lastOrZero(values: number[] | undefined): number {
+function lastOrZero(values: readonly number[] | undefined): number {
   return values?.[Math.max(0, values.length - 1)] ?? 0;
 }
 
-function firstOrZero(values: number[] | undefined): number {
+function firstOrZero(values: readonly number[] | undefined): number {
   return values?.[0] ?? 0;
 }
 
+export type StudioAlignFrameDefault = "first" | "last";
+
+/** Killing starts on the first frame. Every other assay starts on the last. */
+export function studioAlignFrameDefault(
+  assayId: string | null | undefined,
+): StudioAlignFrameDefault {
+  return assayId === ASSAY_TYPE.KILLING ? "first" : "last";
+}
+
+export function defaultStudioAlignTime(
+  times: readonly number[] | undefined,
+  frameDefault: StudioAlignFrameDefault,
+): number {
+  return frameDefault === "first" ? firstOrZero(times) : lastOrZero(times);
+}
+
+export type StudioAlignTimeOptions = {
+  frameDefault?: StudioAlignFrameDefault;
+  /** Frame the user already chose for this position. Absent means the position is new. */
+  rememberedTime?: number;
+};
+
+/**
+ * Channel and z stay locked to the segmentation channel and plane 0.
+ * Time is the remembered frame for this position, or the assay default
+ * the first time that position is shown.
+ */
 export function lockedStudioSelection(
   scan: WorkspaceScan,
   current: FrameRequest,
   brightfieldChannel: number,
   positionOptions: number[] = scan.positions,
+  timeOptions?: StudioAlignTimeOptions,
 ): FrameRequest {
   const position = positionOptions.includes(current.pos)
     ? current.pos
     : firstOrZero(positionOptions);
+  const times = scan.times ?? [];
+  const remembered = timeOptions?.rememberedTime;
+  const time =
+    remembered != null && (times.length === 0 || times.includes(remembered))
+      ? remembered
+      : defaultStudioAlignTime(times, timeOptions?.frameDefault ?? "last");
   return {
     pos: position,
     channel: brightfieldChannel,
-    time: lastOrZero(scan.times),
+    time,
     z: 0,
+  };
+}
+
+const alignFrameMemory = new Map<string, Map<number, number>>();
+
+export function studioAlignFrameMemoryKey(input: {
+  workspacePath: string | null;
+  source: AlignerSource | null;
+  assayId: string | null;
+}): string {
+  return JSON.stringify([input.workspacePath ?? "", input.source, input.assayId ?? ""]);
+}
+
+export function recallStudioAlignFrame(key: string, position: number): number | undefined {
+  return alignFrameMemory.get(key)?.get(position);
+}
+
+export function rememberStudioAlignFrame(key: string, position: number, time: number): void {
+  let frames = alignFrameMemory.get(key);
+  if (!frames) {
+    frames = new Map();
+    alignFrameMemory.set(key, frames);
+  }
+  frames.set(position, time);
+}
+
+export function clearStudioAlignFrameMemory(): void {
+  alignFrameMemory.clear();
+}
+
+/** Back is off on the first assay position. Next is off on the last. A position outside the list disables both. */
+export function studioAlignPositionNav(
+  positions: readonly number[],
+  currentPosition: number,
+): { canGoBack: boolean; canGoNext: boolean } {
+  const index = positions.indexOf(currentPosition);
+  return {
+    canGoBack: index > 0,
+    canGoNext: index >= 0 && index < positions.length - 1,
   };
 }

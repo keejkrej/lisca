@@ -33,6 +33,7 @@ import {
   defaultIntervalMinutesForAssay,
   defaultMaxOnsetMinutesForAssay,
 } from "@lisca/client/studio-assay-json";
+import { recentSourceByPath, recentSourcePickerItems } from "@lisca/client/session/recent-memory";
 import { useAtomSet, useAtomValue } from "@effect/atom-solid";
 import { createMemo, createSignal, For, Show } from "solid-js";
 
@@ -88,14 +89,23 @@ export function MetadataFields(props: { hostPort: HostFilePickerOperations }) {
     const defaultMinutes = defaultIntervalMinutesForAssay(wizard().assayId);
     return defaultMinutes != null ? `e.g. ${defaultMinutes}…` : "Enter interval…";
   };
-  const [sourceMenuOpen, setSourceMenuOpen] = createSignal(false);
   const [pathPicker, setPathPicker] = createSignal<StudioPathPickerState>(null);
   const [folderSourcePath, setFolderSourcePath] = createSignal<string | null>(null);
 
-  const sourceRecent = createMemo(() => useStudioMemoryRecent("source", sourceMenuOpen()));
+  const sourceRecent = createMemo(() =>
+    useStudioMemoryRecent("source", pathPicker()?.kind === "source"),
+  );
   const workspaceRecent = createMemo(() =>
     useStudioMemoryRecent("workspace", pathPicker()?.kind === "save"),
   );
+  const pickerRecentItems = () => {
+    const picker = pathPicker();
+    if (picker?.kind === "save") return workspaceRecent().workspaces;
+    if (picker?.kind === "source") {
+      return recentSourcePickerItems(sourceRecent().sources, picker.mode);
+    }
+    return undefined;
+  };
 
   const openSourceBrowser = (mode: HostFilePickerMode) => {
     setPathPicker({ kind: "source", mode });
@@ -157,13 +167,10 @@ export function MetadataFields(props: { hostPort: HostFilePickerOperations }) {
           id="studio-source"
           label="Source"
           placeholder="Click to choose source…"
-          recentSources={sourceRecent().sources}
           value={wizard().dataPath}
-          onMenuOpenChange={setSourceMenuOpen}
           onOpenCzi={() => openSourceBrowser("czi_file")}
           onOpenFolder={() => openSourceBrowser("folder")}
           onOpenNd2={() => openSourceBrowser("nd2_file")}
-          onPickRecentSource={applyRecentSource}
         />
         <PathPickerField
           id="studio-workspace"
@@ -321,7 +328,7 @@ export function MetadataFields(props: { hostPort: HostFilePickerOperations }) {
         hostPort={props.hostPort}
         mode={pickerMode(pathPicker())}
         open={pathPicker() !== null}
-        recentItems={pathPicker()?.kind === "save" ? workspaceRecent().workspaces : undefined}
+        recentItems={pickerRecentItems()}
         title={pickerTitle(pathPicker())}
         onOpenChange={(open) => {
           if (!open) setPathPicker(null);
@@ -343,11 +350,19 @@ export function MetadataFields(props: { hostPort: HostFilePickerOperations }) {
           setPathPicker(null);
         }}
         onPickRecent={(path) => {
-          if (pathPicker()?.kind === "save") {
+          const picker = pathPicker();
+          if (picker?.kind === "save") {
             patch({ workspacePath: path });
             recordStudioWorkspaceMemory(path, wizard().name.trim() || undefined);
             setPathPicker(null);
+            return;
           }
+          if (picker?.kind !== "source") return;
+          const source = recentSourceByPath(sourceRecent().sources, picker.mode, path);
+          if (source) applyRecentSource(source);
+          else if (picker.mode === "folder") setFolderSourcePath(path);
+          else applySourcePath(path, picker.mode);
+          setPathPicker(null);
         }}
       />
       <FolderSourceParseModal

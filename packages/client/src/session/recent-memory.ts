@@ -8,6 +8,7 @@ import {
   liscaLocalStorage,
   readStorageJson,
   writeStorageJson,
+  type HostFilePickerMode,
   type LiscaAppId,
 } from "@lisca/utils";
 
@@ -81,6 +82,47 @@ export function readRecentMemory(appId: LiscaAppId): RecentMemory {
 
 function sourcesEqual(a: AlignerSource, b: AlignerSource): boolean {
   return JSON.stringify(a) === JSON.stringify(b);
+}
+
+type RecentSourceRef = {
+  source: AlignerSource;
+  label?: string;
+};
+
+const SOURCE_KIND_BY_PICKER_MODE = {
+  folder: "folder",
+  nd2_file: "nd2",
+  czi_file: "czi",
+} as const;
+
+function sourceKindForPickerMode(mode: HostFilePickerMode) {
+  if (mode === "folder" || mode === "nd2_file" || mode === "czi_file") {
+    return SOURCE_KIND_BY_PICKER_MODE[mode];
+  }
+  return null;
+}
+
+/** Recent chips for one source picker. A folder picker lists folders; an ND2 picker lists ND2 files. */
+export function recentSourcePickerItems(
+  sources: readonly RecentSourceRef[],
+  mode: HostFilePickerMode,
+): Array<{ path: string; label?: string }> {
+  const kind = sourceKindForPickerMode(mode);
+  if (!kind) return [];
+  return sources
+    .filter((entry) => entry.source.kind === kind)
+    .map((entry) => ({ path: entry.source.path, label: entry.label }));
+}
+
+/** The stored source behind a recent chip, including a folder's filename template. */
+export function recentSourceByPath(
+  sources: readonly RecentSourceRef[],
+  mode: HostFilePickerMode,
+  path: string,
+): AlignerSource | undefined {
+  const kind = sourceKindForPickerMode(mode);
+  if (!kind) return undefined;
+  return sources.find((entry) => entry.source.kind === kind && entry.source.path === path)?.source;
 }
 
 export function touchRecentMemory(appId: LiscaAppId, touch: RecentMemoryTouch): void {

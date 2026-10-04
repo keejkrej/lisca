@@ -42,9 +42,9 @@ export type AnnotateTimePreference = "first" | "last";
 
 /**
  * Frame to show before the user picks one.
- * Studio passes "last" because Align locks the grid to the final timepoint.
- * An explicit pick, including frame 0, is left alone. A stored 0 with no pick
- * still snaps to the last frame, since the default selection is also 0.
+ * "first" leaves the stored index alone, clamped into the scan. "last" snaps
+ * an untouched 0 to the final frame. Studio leaves this unset: Annotate walks
+ * every frame and does not inherit Align's first or last frame.
  */
 export function resolveAnnotateTimeIndex(input: {
   current: number;
@@ -66,7 +66,7 @@ export type UseAnnotateSessionCoreOptions<State extends AnnotatorUiState = Annot
   workspace: AnnotateWorkspaceSync;
   scan: AnnotateScanAtoms;
   toErrorMessage: (cause: unknown, fallback: string) => string;
-  /** Defaults to the first frame. Studio asks for the last. */
+  /** Defaults to the first stored index. Pass "last" to snap an untouched 0. */
   initialTimeIndex?: AnnotateTimePreference;
 };
 

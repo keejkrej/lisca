@@ -1,5 +1,4 @@
-import type { AlignerSource } from "@lisca/contracts";
-import { For, Show } from "solid-js";
+import { For } from "solid-js";
 
 import { buttonVariants } from "../../components/ui/button";
 import {
@@ -7,14 +6,11 @@ import {
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "../../components/ui/dropdown-menu";
 import { Field, FieldLabel } from "../../components/ui/field";
 import { cn } from "../../lib/utils";
 import { PathPickerTriggerContent, pathPickerTriggerClass } from "./path-picker-field";
-import type { SourcePickerRecentItem } from "./source-picker-modal";
 
 export type SourcePickerFieldProps = {
   id: string;
@@ -22,13 +18,9 @@ export type SourcePickerFieldProps = {
   placeholder: string;
   value: string;
   actionLabel?: string;
-  recentSources?: readonly SourcePickerRecentItem[];
   onOpenFolder: () => void;
   onOpenNd2: () => void;
   onOpenCzi: () => void;
-  onPickRecentSource?: (source: AlignerSource) => void;
-  /** Lets callers load recent sources lazily when the menu opens. */
-  onMenuOpenChange?: (open: boolean) => void;
 };
 
 const SOURCE_FORMATS = [
@@ -54,18 +46,12 @@ export function SourcePickerField(props: SourcePickerFieldProps) {
     const rect = anchor?.getBoundingClientRect();
     return rect && { x: rect.x, y: rect.y, width: 0, height: rect.height };
   };
-  const recent = () => (props.onPickRecentSource ? (props.recentSources ?? []) : []);
-
   return (
     <Field class="w-full gap-2">
       <FieldLabel class="text-sm font-medium leading-[18px]" for={props.id}>
         {props.label}
       </FieldLabel>
-      <DropdownMenu
-        getAnchorRect={anchorRect}
-        placement="bottom-start"
-        onOpenChange={props.onMenuOpenChange}
-      >
+      <DropdownMenu getAnchorRect={anchorRect} placement="bottom-start">
         <DropdownMenuTrigger
           aria-label={`${props.label}: ${displayValue()}. ${actionLabel()}`}
           class={cn(buttonVariants({ variant: "outline", size: "sm" }), pathPickerTriggerClass)}
@@ -96,26 +82,6 @@ export function SourcePickerField(props: SourcePickerFieldProps) {
               )}
             </For>
           </DropdownMenuGroup>
-          <Show when={recent().length > 0}>
-            <DropdownMenuSeparator />
-            <DropdownMenuGroup>
-              <DropdownMenuLabel>Recent</DropdownMenuLabel>
-              <For each={recent()}>
-                {(item) => (
-                  <DropdownMenuItem
-                    class="flex-col items-stretch gap-0.5"
-                    title={item.source.path}
-                    onSelect={() => props.onPickRecentSource!(item.source)}
-                  >
-                    <span class="font-medium text-[13px]">
-                      {item.label ?? item.source.kind.toUpperCase()}
-                    </span>
-                    <span class="truncate font-mono text-muted-foreground">{item.source.path}</span>
-                  </DropdownMenuItem>
-                )}
-              </For>
-            </DropdownMenuGroup>
-          </Show>
         </DropdownMenuContent>
       </DropdownMenu>
     </Field>
