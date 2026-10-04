@@ -111,7 +111,9 @@ describe("align drift", () => {
     expect(alignStateFromCurrent(grid, [], emptyAt(875)).drift).toEqual(emptyAt(875));
     expect(alignStateFromCurrent(grid, [], emptyAt(0), null).drift).toEqual(emptyAt(0));
     expect(alignStateFromCurrent(grid, []).drift).toBeUndefined();
-    expect(alignStateFromCurrent(grid, [], { interpolation: "linear", keyframes: [] }).drift).toBeUndefined();
+    expect(
+      alignStateFromCurrent(grid, [], { interpolation: "linear", keyframes: [] }).drift,
+    ).toBeUndefined();
     expect(alignStateFromCurrent(grid, [], worked, 0).drift).toEqual(worked);
   });
 
