@@ -38,8 +38,10 @@ describe("align grid utils", () => {
 
     expect(grid.enabled).toBe(true);
     expect(grid.shape).toBe("rect");
-    expect(grid.spacingA).toBe(12);
-    expect(grid.spacingB).toBe(12);
+    expect(grid.spacingA).toBe(1);
+    expect(grid.spacingB).toBe(10);
+    expect(grid.patternWidth).toBe(12);
+    expect(grid.patternHeight).toBe(20);
     expect(grid.opacity).toBe(1);
   });
 
@@ -245,6 +247,16 @@ describe("align grid utils", () => {
     expect(patternZoomed.patternHeight).toBeGreaterThan(grid.patternHeight);
     expect(patternZoomed.spacingA).toBe(grid.spacingA);
     expect(patternZoomed.spacingB).toBe(grid.spacingB);
+
+    const covered = applyAlignGridPointerGesture(
+      patternSession!,
+      { ...input, clientX: 220, clientY: 100 },
+      viewport,
+    );
+    expect(covered.patternWidth).toBeGreaterThan(covered.spacingA);
+    expect(covered.patternHeight).toBeGreaterThan(covered.spacingB);
+    expect(covered.spacingA).toBe(grid.spacingA);
+    expect(covered.spacingB).toBe(grid.spacingB);
 
     const verticalOnlyPattern = applyAlignGridPointerGesture(
       patternSession!,
