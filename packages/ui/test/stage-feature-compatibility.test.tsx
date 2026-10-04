@@ -244,6 +244,8 @@ describe("PathButton stage compatibility", () => {
       name: "Source: /workspaces/plate-01/source-image.nd2",
     });
     expect(stage.textContent).toBe("Source");
+    expect(stage.className).toContain("z-button-variant-outline");
+    expect(stage.className).not.toContain("z-button-variant-ghost");
     expect(stage.textContent).not.toContain("source-image");
     expect(stage.textContent).not.toContain(".nd2");
     expect(stage.querySelector("span")?.className).toContain("text-foreground");

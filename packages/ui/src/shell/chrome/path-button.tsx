@@ -70,7 +70,7 @@ function StagePathButton(props: {
       <TooltipTrigger
         as={Button}
         type="button"
-        variant="ghost"
+        variant="outline"
         size="sm"
         disabled={props.disabled}
         aria-label={props.value ? `${props.label}: ${props.value}` : `${props.label}: not set`}
@@ -82,7 +82,7 @@ function StagePathButton(props: {
           event.preventDefault();
           void copyPath();
         }}
-        class="h-8 border-0 px-2.5 font-normal shadow-none"
+        class="px-2.5 font-normal"
       >
         <span class="shrink-0 text-[10px] font-normal uppercase tracking-[0.12em] text-foreground">
           {props.label}
