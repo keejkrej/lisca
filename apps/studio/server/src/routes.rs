@@ -344,20 +344,68 @@ fn build_killing_task(
 
     let mut predict_ids = Vec::new();
     let mut shard_paths = Vec::new();
+    // A predict step owns an ONNX session and a decoded batch. Weight equal to
+    // the scheduler capacity keeps the next position queued until this one
+    // drops both. Running one position per core stalled an 8 GB machine.
+    let predict_weight = scheduler.capacity();
     for position in mapping.positions() {
         let shard_mapping = Arc::new(mapping.for_position(position));
         let shard_path = staging_root.join(format!("Pos{position}"));
         shard_paths.push(shard_path.clone());
         let step_workspace = workspace.clone();
         let step_shard = shard_path;
-        let step = analysis_step(
+        let step = StepSpec::new(
             format!("analysis/killing/predict/Pos{position}"),
-            vec![prepare_id.clone()],
-            Arc::new(move || {
-                let model = killing::resolve_model_path(&step_workspace)?;
-                killing::run_predict_shard(&step_workspace, &step_shard, &shard_mapping, &model)
-            }),
-        );
+            predict_weight,
+            move |context| {
+                let step_workspace = step_workspace.clone();
+                let step_shard = step_shard.clone();
+                let shard_mapping = shard_mapping.clone();
+                async move {
+                    context.checkpoint()?;
+                    let cancel_context = context.clone();
+                    let progress_context = context.clone();
+                    let outcome = tokio::task::spawn_blocking(move || {
+                        // spawn_blocking keeps running after the task is cancelled,
+                        // so the batch loop has to observe the flag and return.
+                        let is_cancelled = || cancel_context.is_cancellation_requested();
+                        let on_frames = |completed, total| {
+                            let _ = progress_context.report_work_progress(
+                                "frame",
+                                completed,
+                                total,
+                                Some("predict".to_string()),
+                                None,
+                            );
+                        };
+                        let model = killing::resolve_model_path(&step_workspace)?;
+                        killing::run_predict_shard_controlled(
+                            &step_workspace,
+                            &step_shard,
+                            &shard_mapping,
+                            &model,
+                            &killing::PredictControl {
+                                is_cancelled: &is_cancelled,
+                                on_frames: &on_frames,
+                            },
+                        )
+                    })
+                    .await
+                    .map_err(|error| {
+                        StepFailure::new("analysis_worker_failed", error.to_string())
+                    })?;
+                    match outcome {
+                        Err(killing::PredictFailure::Cancelled) => Err(StepFailure::cancelled()),
+                        Err(killing::PredictFailure::Failed(message)) => {
+                            context.checkpoint()?;
+                            Err(StepFailure::new("analysis_stage_failed", message))
+                        }
+                        Ok(()) => context.checkpoint(),
+                    }
+                }
+            },
+        )
+        .with_dependencies([prepare_id.clone()]);
         predict_ids.push(step.step_id().to_string());
         steps.push(step);
     }

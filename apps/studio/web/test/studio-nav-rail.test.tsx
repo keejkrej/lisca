@@ -234,7 +234,7 @@ describe("StudioNavRail Task Center", () => {
     expect(dialog.textContent).toContain("Background crop computations");
 
     fireEvent.click(screen.getByRole("button", { name: /Expand Crop ROI/ }));
-    await screen.findByText("Current step");
+    await screen.findByText("Crop Position 7");
     expect(mocks.getTask).toHaveBeenCalledWith("crop-task", expect.any(AbortSignal));
     expectStudioState(router.state.location.href, edit, routeState, workspaceState);
 

@@ -167,6 +167,24 @@ export function taskKindLabel(kind: string): string {
     .join(" ");
 }
 
+/** Row label for one scheduler step. Position steps stay `PosN`; other stages use their name. */
+export function stepKindLabel(kind: string): string {
+  const position = kind.match(/Pos\d+/)?.[0];
+  if (position) return position;
+  const tail = kind.split("/").filter(Boolean).at(-1) ?? kind;
+  const words = tail.split(/[-_]+/g).filter(Boolean);
+  if (words.length === 0) return "Current step";
+  return words.map((word) => (word.toLowerCase() === "roi" ? "ROI" : labelWord(word))).join(" ");
+}
+
+export function taskProgressNoun(kind: string): string {
+  return kind === "crop-roi" ? "Positions" : "Steps";
+}
+
+function labelWord(word: string): string {
+  return /^\d+$/.test(word) ? word : sentenceCase(word);
+}
+
 function sentenceCase(value: string): string {
   return value.length === 0 ? value : `${value[0]!.toUpperCase()}${value.slice(1)}`;
 }
