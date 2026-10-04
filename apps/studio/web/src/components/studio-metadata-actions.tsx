@@ -40,9 +40,7 @@ export function StudioMetadataActions() {
           Save
           <CommandShortcutHint command="save" />
         </Button>
-        <Show when={toast()}>
-          {(message) => <CanvasToastStack messages={[message()]} />}
-        </Show>
+        <Show when={toast()}>{(message) => <CanvasToastStack messages={[message()]} />}</Show>
       </RailControlStack>
       <AssayOverwriteConfirmModal
         open={save.overwriteOpen()}

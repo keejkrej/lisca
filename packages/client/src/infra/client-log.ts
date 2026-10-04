@@ -25,7 +25,10 @@ function formatCause(value: unknown): string {
 }
 
 function oneLine(value: string): string {
-  return value.replace(/[\r\n]+/g, " ").slice(0, maxLineLength).trim();
+  return value
+    .replace(/[\r\n]+/g, " ")
+    .slice(0, maxLineLength)
+    .trim();
 }
 
 function enqueue(message: string): void {

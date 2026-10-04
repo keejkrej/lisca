@@ -131,7 +131,16 @@ function mountSession(config: MountConfig): SessionHandles {
     actions.setStatus(setUi, `Loaded Pos1 Roi1`);
   };
 
-  return { state, setUi, actions, chooseTime, commitFrame, setScanResult, setLabelsResult, dispose };
+  return {
+    state,
+    setUi,
+    actions,
+    chooseTime,
+    commitFrame,
+    setScanResult,
+    setLabelsResult,
+    dispose,
+  };
 }
 
 describe("useAnnotateSessionCore — scan-error effect (Effect 5)", () => {

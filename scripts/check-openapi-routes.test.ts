@@ -8,12 +8,7 @@ describe("openapi route checker", () => {
 
   it("accepts the allowed state: matching JSON routes, /fs/file only in Rust", () => {
     const openapiPaths = new Set(["/align/load-frame", "/fs/read-text"]);
-    const rustPaths = new Set([
-      "/align/load-frame",
-      "/fs/read-text",
-      "/fs/file",
-      "/fs/client-log",
-    ]);
+    const rustPaths = new Set(["/align/load-frame", "/fs/read-text", "/fs/file", "/fs/client-log"]);
     const mismatch = findRouteMismatch(openapiPaths, rustPaths);
     expect(mismatch).toEqual({
       missingInRust: [],

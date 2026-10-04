@@ -153,7 +153,8 @@ export function useStudioAnnotateState(): StudioAnnotateState {
             await runClientEffect(studioClient.saveAssayJson(path, body));
           },
           startAnalysis: (input) => runStartAnalysis(input),
-          subscribe: (requestId, onProgress) => studioClient.onAnalysisProgress(requestId, onProgress),
+          subscribe: (requestId, onProgress) =>
+            studioClient.onAnalysisProgress(requestId, onProgress),
           setAnalysisProgress,
           setAnalysisRequestId,
           setAnalysisResultFiles,
