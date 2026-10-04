@@ -25,9 +25,22 @@ export const AlignGridPatternCoordSchema = Schema.Struct({
   j: I32,
 }).annotate({ identifier: "AlignGridPatternCoord" });
 
+export const DriftKeyframeSchema = Schema.Struct({
+  time: U32,
+  dx: F64,
+  dy: F64,
+}).annotate({ identifier: "DriftKeyframe" });
+
+export const AlignDriftSchema = Schema.Struct({
+  referenceTime: U32,
+  interpolation: Schema.Literal("linear"),
+  keyframes: Schema.mutable(Schema.Array(DriftKeyframeSchema)),
+}).annotate({ identifier: "AlignDrift" });
+
 export const SavedAlignStateSchema = Schema.Struct({
   grid: AlignGridStateSchema,
   excludedPatterns: Schema.mutable(Schema.Array(AlignGridPatternCoordSchema)),
+  drift: Schema.optional(AlignDriftSchema),
 }).annotate({ identifier: "SavedAlignState" });
 
 export const NullableSavedAlignStateSchema = Schema.NullOr(SavedAlignStateSchema);
@@ -180,6 +193,8 @@ export const LatestCropQuerySchema = Schema.Struct({
 export type AlignGridShape = typeof AlignGridShapeSchema.Type;
 export type AlignGridState = typeof AlignGridStateSchema.Type;
 export type AlignGridPatternCoord = typeof AlignGridPatternCoordSchema.Type;
+export type DriftKeyframe = typeof DriftKeyframeSchema.Type;
+export type AlignDrift = typeof AlignDriftSchema.Type;
 export type SavedAlignState = typeof SavedAlignStateSchema.Type;
 export type AlignGridPatternBox = typeof AlignGridPatternBoxSchema.Type;
 export type VariationExcludePatternScore = typeof VariationExcludePatternScoreSchema.Type;

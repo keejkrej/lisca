@@ -2751,6 +2751,74 @@
         ],
         "additionalProperties": false
       },
+      "DriftKeyframe": {
+        "type": "object",
+        "properties": {
+          "time": {
+            "type": "integer",
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          },
+          "dx": {
+            "type": "number",
+            "allOf": [
+              {
+                "format": "double"
+              }
+            ]
+          },
+          "dy": {
+            "type": "number",
+            "allOf": [
+              {
+                "format": "double"
+              }
+            ]
+          }
+        },
+        "required": [
+          "time",
+          "dx",
+          "dy"
+        ],
+        "additionalProperties": false
+      },
+      "AlignDrift": {
+        "type": "object",
+        "properties": {
+          "referenceTime": {
+            "type": "integer",
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          },
+          "interpolation": {
+            "type": "string",
+            "enum": [
+              "linear"
+            ]
+          },
+          "keyframes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DriftKeyframe"
+            }
+          }
+        },
+        "required": [
+          "referenceTime",
+          "interpolation",
+          "keyframes"
+        ],
+        "additionalProperties": false
+      },
       "SavedAlignState": {
         "type": "object",
         "properties": {
@@ -2762,6 +2830,16 @@
             "items": {
               "$ref": "#/components/schemas/AlignGridPatternCoord"
             }
+          },
+          "drift": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AlignDrift"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [

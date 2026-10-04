@@ -55,6 +55,18 @@ error).
   Writers emit only the five live columns.
 - Duplicate `roi` values are rejected.
 
+## `align/Pos{n}.json` drift
+
+`drift` is optional and does not replace `grid`.
+
+| Key             | Shape                                                                                                        |
+| --------------- | ------------------------------------------------------------------------------------------------------------ |
+| `referenceTime` | acquisition-time `u32` (`WorkspaceScan.times`)                                                               |
+| `interpolation` | `"linear"`                                                                                                   |
+| `keyframes[]`   | `{ time, dx, dy }` — `time` is that acquisition time; `dx` and `dy` are image pixels added to `grid.tx`/`ty` |
+
+A file with no `drift` key is unchanged. Writers omit `drift` when `keyframes` is empty and `referenceTime` is absent, and when `keyframes` is empty and `referenceTime` equals an assay default the caller passed. A missing assay default keeps a present `referenceTime`, including `keyframes: []`. There is no migration and no version field.
+
 ## `assay.json` Samples and channels
 
 Contract source: `packages/contracts/src/assay.schema.ts`. A Sample is

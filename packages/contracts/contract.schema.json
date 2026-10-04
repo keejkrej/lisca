@@ -481,6 +481,56 @@
         "j"
       ]
     },
+    "DriftKeyframe": {
+      "type": "object",
+      "properties": {
+        "time": {
+          "type": "integer",
+          "minimum": 0,
+          "format": "uint32"
+        },
+        "dx": {
+          "type": "number",
+          "format": "double"
+        },
+        "dy": {
+          "type": "number",
+          "format": "double"
+        }
+      },
+      "required": [
+        "time",
+        "dx",
+        "dy"
+      ]
+    },
+    "AlignDrift": {
+      "type": "object",
+      "properties": {
+        "referenceTime": {
+          "type": "integer",
+          "minimum": 0,
+          "format": "uint32"
+        },
+        "interpolation": {
+          "type": "string",
+          "enum": [
+            "linear"
+          ]
+        },
+        "keyframes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/DriftKeyframe"
+          }
+        }
+      },
+      "required": [
+        "referenceTime",
+        "interpolation",
+        "keyframes"
+      ]
+    },
     "SavedAlignState": {
       "type": "object",
       "properties": {
@@ -492,6 +542,9 @@
           "items": {
             "$ref": "#/definitions/AlignGridPatternCoord"
           }
+        },
+        "drift": {
+          "$ref": "#/definitions/AlignDrift"
         }
       },
       "required": [

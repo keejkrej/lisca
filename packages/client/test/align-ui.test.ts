@@ -115,10 +115,16 @@ describe("align-ui actions", () => {
 
   it("applyLoadedFrame skips saved state when key already applied", () => {
     const initialGrid = normalizeAlignGridState({ opacity: 0.2 });
+    const unsavedDrift = {
+      referenceTime: 0,
+      interpolation: "linear" as const,
+      keyframes: [{ time: 200, dx: 1, dy: 1 }],
+    };
     const initial = {
       ...createInitialAlignUiState(),
       appliedAlignStateKey: "pos:1",
       grid: initialGrid,
+      drift: unsavedDrift,
     };
     const frame = {
       width: 1,
@@ -137,6 +143,116 @@ describe("align-ui actions", () => {
       }),
     );
     expect(next.grid.opacity).toBe(0.2);
+    expect(next.drift).toEqual(unsavedDrift);
+  });
+
+  it("replaces drift from the loaded file and clears it when the next file has no drift key", () => {
+    const frame = {
+      width: 1,
+      height: 1,
+      pixels: new Uint8Array([0]),
+      contrastDomain: { min: 0, max: 255 },
+    };
+    const pins = {
+      referenceTime: 0,
+      interpolation: "linear" as const,
+      keyframes: [
+        { time: 400, dx: 6, dy: -2.5 },
+        { time: 875, dx: 14, dy: -4 },
+      ],
+    };
+    const pos61 = runReducer(createInitialAlignUiState(), (set) =>
+      actions.applyLoadedFrame(set, { pos: 61, channel: 0, time: 0, z: 0 }, frame, {
+        stateKey: "ws:pos:61",
+        pos: 61,
+        saved: {
+          grid: normalizeAlignGridState({ tx: -14.24, ty: -3.56 }),
+          excludedPatterns: [],
+          drift: pins,
+        },
+      }),
+    );
+    expect(pos61.drift).toEqual(pins);
+
+    const pos71 = runReducer(pos61, (set) =>
+      actions.applyLoadedFrame(set, { pos: 71, channel: 0, time: 0, z: 0 }, frame, {
+        stateKey: "ws:pos:71",
+        pos: 71,
+        saved: {
+          grid: normalizeAlignGridState({ tx: 96.13, ty: -1.78 }),
+          excludedPatterns: [],
+        },
+      }),
+    );
+    expect(pos71.drift).toBeNull();
+
+    const missingFile = runReducer(pos61, (set) =>
+      actions.applyLoadedFrame(set, { pos: 81, channel: 0, time: 0, z: 0 }, frame, {
+        stateKey: "ws:pos:81",
+        pos: 81,
+        saved: null,
+      }),
+    );
+    expect(missingFile.drift).toBeNull();
+  });
+
+  it("applySavedAlignState clears drift when the file has no drift key", () => {
+    const pins = {
+      referenceTime: 0,
+      interpolation: "linear" as const,
+      keyframes: [
+        { time: 400, dx: 6, dy: -2.5 },
+        { time: 875, dx: 14, dy: -4 },
+      ],
+    };
+    const loaded = runReducer(createInitialAlignUiState(), (set) =>
+      studioActions.applySavedAlignState!(set, "ws:pos:61", 61, {
+        grid: normalizeAlignGridState({ tx: -14.24, ty: -3.56 }),
+        excludedPatterns: [],
+        drift: pins,
+      }),
+    );
+    expect(loaded.drift).toEqual(pins);
+
+    const next = runReducer(loaded, (set) =>
+      studioActions.applySavedAlignState!(set, "ws:pos:71", 71, {
+        grid: normalizeAlignGridState({ tx: 96.13, ty: -1.78 }),
+        excludedPatterns: [],
+      }),
+    );
+    expect(next.drift).toBeNull();
+  });
+
+  it("setSource and applySourceScan clear drift", () => {
+    const drift = {
+      referenceTime: 875,
+      interpolation: "linear" as const,
+      keyframes: [{ time: 875, dx: 14, dy: -4 }],
+    };
+    const withDrift = {
+      ...createInitialAlignUiState(),
+      drift,
+      source: {
+        kind: "folder" as const,
+        path: "/data",
+        subfolderTemplate: "Pos{pos}",
+        filenameTemplate: "img.tif",
+      },
+    };
+    const nextSource = runReducer(withDrift, (set) =>
+      actions.setSource(set, { kind: "nd2", path: "/other.nd2" }),
+    );
+    expect(nextSource.drift).toBeNull();
+
+    const scanned = runReducer(withDrift, (set) =>
+      actions.applySourceScan(set, "source-key", {
+        positions: [61],
+        channels: [0],
+        times: [0],
+        zSlices: [0],
+      }),
+    );
+    expect(scanned.drift).toBeNull();
   });
 
   it("applySavedAlignState clears loading status and skips an already-applied key", () => {
@@ -270,6 +386,11 @@ describe("align session persistence", () => {
       source,
       spacingZoomLocked: false,
       patternZoomLocked: false,
+      drift: {
+        referenceTime: 875,
+        interpolation: "linear" as const,
+        keyframes: [{ time: 875, dx: 14, dy: -4 }],
+      },
     };
     persist.write(state);
     expect(persist.read()).toEqual({
