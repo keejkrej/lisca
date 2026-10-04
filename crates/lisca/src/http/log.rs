@@ -65,11 +65,11 @@ fn create_session_log(dir: &Path, stamp: &str) -> io::Result<(PathBuf, File)> {
 fn local_date_parts() -> DateParts {
     #[cfg(unix)]
     {
-        return unix_local_date_parts();
+        unix_local_date_parts()
     }
     #[cfg(windows)]
     {
-        return windows_local_date_parts();
+        windows_local_date_parts()
     }
     #[cfg(not(any(unix, windows)))]
     {
