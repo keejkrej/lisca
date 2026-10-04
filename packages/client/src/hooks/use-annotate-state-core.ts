@@ -99,6 +99,8 @@ export type UseAnnotateStateCoreDeps<State extends AnnotatorUiState = AnnotatorU
   ) => () => void;
   useCanvasTransientStatus: (status: Accessor<string | null>) => Accessor<string | null>;
   guardDirtySelection: DirtySelectionGuard;
+  /** Defaults to the first frame. Studio passes "last". */
+  initialTimeIndex?: "first" | "last";
 };
 
 export function useAnnotateStateCore<State extends AnnotatorUiState>(
@@ -135,6 +137,7 @@ export function useAnnotateStateCore<State extends AnnotatorUiState>(
       shellWorkspacePath,
     },
     toErrorMessage: deps.toErrorMessage,
+    initialTimeIndex: deps.initialTimeIndex,
   });
 
   const annotation = useAnnotationHistory();

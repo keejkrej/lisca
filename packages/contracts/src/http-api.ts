@@ -101,6 +101,7 @@ export class TaskCommandError extends Schema.TaggedError<TaskCommandError>()(
 
 // --- fs group (shared host filesystem) ---------------------------------------
 // GET /fs/file returns raw bytes from the Axum router and is absent here. See ADR-0002.
+// POST /fs/client-log is a local debug sink and is also absent here.
 const fsGroup = HttpApiGroup.make("fs")
   .add(
     HttpApiEndpoint.get("listDirectory", "/fs/list", {

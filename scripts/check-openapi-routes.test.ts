@@ -8,13 +8,20 @@ describe("openapi route checker", () => {
 
   it("accepts the allowed state: matching JSON routes, /fs/file only in Rust", () => {
     const openapiPaths = new Set(["/align/load-frame", "/fs/read-text"]);
-    const rustPaths = new Set(["/align/load-frame", "/fs/read-text", "/fs/file"]);
+    const rustPaths = new Set([
+      "/align/load-frame",
+      "/fs/read-text",
+      "/fs/file",
+      "/fs/client-log",
+    ]);
     const mismatch = findRouteMismatch(openapiPaths, rustPaths);
     expect(mismatch).toEqual({
       missingInRust: [],
       missingInOpenApi: [],
       missingRawRoutes: [],
       rawRoutesInOpenApi: [],
+      missingDebugRoutes: [],
+      debugRoutesInOpenApi: [],
     });
     expect(hasRouteMismatch(mismatch)).toBe(false);
   });
@@ -32,6 +39,23 @@ describe("openapi route checker", () => {
     const rustPaths = new Set(["/align/load-frame", "/fs/file"]);
     const mismatch = findRouteMismatch(openapiPaths, rustPaths);
     expect(mismatch.rawRoutesInOpenApi).toEqual(["/fs/file"]);
+    expect(hasRouteMismatch(mismatch)).toBe(true);
+  });
+
+  it("accepts /fs/client-log only as a Rust debug sink", () => {
+    const openapiPaths = new Set(["/align/load-frame"]);
+    const rustPaths = new Set(["/align/load-frame", "/fs/file", "/fs/client-log"]);
+    const mismatch = findRouteMismatch(openapiPaths, rustPaths);
+    expect(mismatch.missingInOpenApi).toEqual([]);
+    expect(mismatch.missingDebugRoutes).toEqual([]);
+    expect(hasRouteMismatch(mismatch)).toBe(false);
+  });
+
+  it("fails when /fs/client-log disappears from Rust routes", () => {
+    const openapiPaths = new Set(["/align/load-frame"]);
+    const rustPaths = new Set(["/align/load-frame", "/fs/file"]);
+    const mismatch = findRouteMismatch(openapiPaths, rustPaths);
+    expect(mismatch.missingDebugRoutes).toEqual(["/fs/client-log"]);
     expect(hasRouteMismatch(mismatch)).toBe(true);
   });
 

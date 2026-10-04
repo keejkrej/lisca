@@ -180,6 +180,12 @@ pub fn run<F>(config: ProductConfig, mut context: tauri::Context, backend_factor
 where
     F: FnOnce() -> Router + Send + 'static,
 {
+    // Desktop embeds the server and never calls `run_server`, so tracing has to
+    // start here or installed builds write no log file.
+    if let Some(app_id) = lisca::protocol::AppId::from_product(config.product) {
+        lisca::http::init_tracing(app_id);
+    }
+
     // The shell's bridge commands forward to the embedded router; they carry
     // no plugin scope of their own, so grant them on Local and on loopback dev
     // URLs explicitly. Without this, the IPC gate rejects them the moment the

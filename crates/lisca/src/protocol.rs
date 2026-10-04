@@ -22,6 +22,15 @@ impl AppId {
             AppId::Studio => "studio",
         }
     }
+
+    pub fn from_product(product: &str) -> Option<Self> {
+        match product {
+            "aligner" => Some(Self::Aligner),
+            "annotator" => Some(Self::Annotator),
+            "studio" => Some(Self::Studio),
+            _ => None,
+        }
+    }
 }
 
 impl AssayIntervalUnit {

@@ -60,6 +60,8 @@ export type RunCropRoiOptions = {
   onError: (message: string) => void;
   /** Called once with the terminal progress when the task completes. */
   onCompleted: (progress: CropRoiProgress) => void;
+  /** Called with the server request id once the crop has been accepted. */
+  onStarted?: (requestId: string) => void;
   /** Format a thrown cause into a user-facing message. */
   toErrorMessage: (cause: unknown, fallback: string) => string;
 };
@@ -280,6 +282,7 @@ export async function runCropRoi(options: RunCropRoiOptions): Promise<() => void
       status: response.status,
       message: response.disposition === "attached" ? "Attached to active crop" : "Queued crop",
     });
+    options.onStarted?.(authoritativeId);
     stop = client.onCropRoiProgress(authoritativeId, (progress) => {
       onProgress(progress);
       if (!isDoneCropStatus(progress.status)) return;

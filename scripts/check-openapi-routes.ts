@@ -10,6 +10,12 @@ import { fileURLToPath } from "node:url";
  */
 export const RAW_BYTE_ROUTES = new Set(["/fs/file"]);
 
+/**
+ * Local debug sinks outside the JSON HttpApi. Not product routes, so they stay
+ * out of openapi.json the same way raw byte routes do.
+ */
+export const LOCAL_DEBUG_ROUTES = new Set(["/fs/client-log"]);
+
 export interface RouteMismatch {
   /** In openapi.json but missing from Rust routes. */
   missingInRust: string[];
@@ -19,6 +25,10 @@ export interface RouteMismatch {
   missingRawRoutes: string[];
   /** Raw byte routes that leaked back into the JSON HttpApi. */
   rawRoutesInOpenApi: string[];
+  /** Debug sinks no longer served by Rust. */
+  missingDebugRoutes: string[];
+  /** Debug sinks that leaked back into the JSON HttpApi. */
+  debugRoutesInOpenApi: string[];
 }
 
 export function findRouteMismatch(
@@ -28,10 +38,17 @@ export function findRouteMismatch(
   return {
     missingInRust: [...openapiPaths].filter((path) => !rustPaths.has(path)).toSorted(),
     missingInOpenApi: [...rustPaths]
-      .filter((path) => !openapiPaths.has(path) && !RAW_BYTE_ROUTES.has(path))
+      .filter(
+        (path) =>
+          !openapiPaths.has(path) && !RAW_BYTE_ROUTES.has(path) && !LOCAL_DEBUG_ROUTES.has(path),
+      )
       .toSorted(),
     missingRawRoutes: [...RAW_BYTE_ROUTES].filter((path) => !rustPaths.has(path)).toSorted(),
     rawRoutesInOpenApi: [...RAW_BYTE_ROUTES].filter((path) => openapiPaths.has(path)).toSorted(),
+    missingDebugRoutes: [...LOCAL_DEBUG_ROUTES].filter((path) => !rustPaths.has(path)).toSorted(),
+    debugRoutesInOpenApi: [...LOCAL_DEBUG_ROUTES]
+      .filter((path) => openapiPaths.has(path))
+      .toSorted(),
   };
 }
 
@@ -40,7 +57,9 @@ export function hasRouteMismatch(mismatch: RouteMismatch): boolean {
     mismatch.missingInRust.length > 0 ||
     mismatch.missingInOpenApi.length > 0 ||
     mismatch.missingRawRoutes.length > 0 ||
-    mismatch.rawRoutesInOpenApi.length > 0
+    mismatch.rawRoutesInOpenApi.length > 0 ||
+    mismatch.missingDebugRoutes.length > 0 ||
+    mismatch.debugRoutesInOpenApi.length > 0
   );
 }
 
@@ -107,6 +126,20 @@ function reportRouteMismatch(
   if (mismatch.rawRoutesInOpenApi.length > 0) {
     console.error("Raw byte routes must stay out of the JSON HttpApi (ADR-0002):");
     for (const path of mismatch.rawRoutesInOpenApi) {
+      console.error(`  - ${path}`);
+    }
+    console.error("");
+  }
+  if (mismatch.missingDebugRoutes.length > 0) {
+    console.error("Debug routes missing from Rust routes:");
+    for (const path of mismatch.missingDebugRoutes) {
+      console.error(`  - ${path}`);
+    }
+    console.error("");
+  }
+  if (mismatch.debugRoutesInOpenApi.length > 0) {
+    console.error("Debug routes must stay out of the JSON HttpApi:");
+    for (const path of mismatch.debugRoutesInOpenApi) {
       console.error(`  - ${path}`);
     }
     console.error("");

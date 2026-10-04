@@ -44,6 +44,20 @@ rasterize() {
   magick -background none -density 384 "$svg" -resize "${size}x${size}" -alpha on "$png"
 }
 
+# Windows draws ICO pixels as-is. macOS masks icns in write_icns. Use the same
+# 22.37% corner so a Windows shortcut matches the Dock icon.
+mask_rounded_icon() {
+  local src="$1"
+  local dest="$2"
+  local size="$3"
+  local radius inset
+  radius="$(awk -v size="$size" 'BEGIN { printf "%.0f", size * 0.2237 }')"
+  inset="$((size - 1))"
+  magick "$src" -alpha set \
+    \( -size "${size}x${size}" xc:none -fill white -draw "roundrectangle 0,0 ${inset},${inset} ${radius},${radius}" \) \
+    -compose DstIn -composite -type TrueColorAlpha -define png:color-type=6 PNG32:"$dest"
+}
+
 write_ico() {
   local png="$1"
   local ico="$2"
@@ -161,16 +175,22 @@ for product in "${products[@]}"; do
   fi
 
   rasterize "$svg" "$app/icon-1024.png" 1024
-  write_png "$app/icon-1024.png" "$app/icon.png" 512
+  round_dir="$(mktemp -d)"
+  rounded="$round_dir/rounded.png"
+  mask_rounded_icon "$app/icon-1024.png" "$rounded" 1024
+  write_png "$rounded" "$app/icon.png" 512
+  # Browser favicons stay square; the desktop shortcut uses the rounded plate.
   write_png "$app/icon-1024.png" "$app/favicon.png" 48
-  write_ico "$app/icon-1024.png" "$app/icon.ico" 256 128 64 48 32 16
+  write_ico "$rounded" "$app/icon.ico" 256 128 64 48 32 16
   write_ico "$app/favicon.png" "$app/favicon.ico" 48 32 16
 
   icons="$root/apps/$product/desktop/src-tauri/icons"
   mkdir -p "$icons"
-  write_tauri_pngs "$app/icon-1024.png" "$icons"
-  write_ico "$app/icon-1024.png" "$icons/icon.ico" 256 128 64 48 32 16
+  write_tauri_pngs "$rounded" "$icons"
+  write_ico "$rounded" "$icons/icon.ico" 256 128 64 48 32 16
+  # icns applies the Swift mask itself, so it starts from the square master.
   write_icns "$app/icon-1024.png" "$icons/icon.icns"
+  rm -rf "$round_dir"
 
   echo "generated $product icons"
 done

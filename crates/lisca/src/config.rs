@@ -18,11 +18,34 @@ pub fn config_dir() -> PathBuf {
     PathBuf::from("/var/lisca/config")
 }
 
+/// Home directory for `~/.lisca`.
+///
+/// Windows desktop processes set `USERPROFILE` (or `HOMEDRIVE`+`HOMEPATH`) and
+/// often leave `HOME` unset. The directory does not have to exist yet: callers
+/// create `.lisca` underneath it.
 fn user_home() -> Option<PathBuf> {
-    std::env::var("HOME")
+    if let Some(home) = env_nonempty("HOME") {
+        return Some(PathBuf::from(home));
+    }
+    if let Some(home) = env_nonempty("USERPROFILE") {
+        return Some(PathBuf::from(home));
+    }
+    let drive = std::env::var("HOMEDRIVE").unwrap_or_default();
+    let path = std::env::var("HOMEPATH").unwrap_or_default();
+    let combined = format!("{drive}{path}");
+    let trimmed = combined.trim();
+    if trimmed.is_empty() {
+        None
+    } else {
+        Some(PathBuf::from(trimmed))
+    }
+}
+
+fn env_nonempty(key: &str) -> Option<String> {
+    std::env::var(key)
         .ok()
+        .map(|value| value.trim().to_string())
         .filter(|value| !value.is_empty())
-        .map(PathBuf::from)
 }
 
 pub fn profiles_index_path(config: &Path) -> PathBuf {
@@ -61,8 +84,61 @@ mod tests {
     fn config_dir_prefers_env() {
         let _guard = TEST_CONFIG_LOCK.lock().unwrap();
         let temp = std::env::temp_dir().join(format!("lisca-config-test-{}", uuid::Uuid::new_v4()));
-        std::env::set_var("LISCA_CONFIG_DIR", temp.to_string_lossy().to_string());
+        let _restore = RestoreVar::set("LISCA_CONFIG_DIR", Some(temp.to_string_lossy().as_ref()));
         assert_eq!(config_dir(), temp);
-        std::env::remove_var("LISCA_CONFIG_DIR");
+    }
+
+    #[test]
+    fn config_dir_uses_userprofile_when_home_is_unset() {
+        let _guard = TEST_CONFIG_LOCK.lock().unwrap();
+        let missing =
+            std::env::temp_dir().join(format!("lisca-missing-home-{}", uuid::Uuid::new_v4()));
+        let _config = RestoreVar::set("LISCA_CONFIG_DIR", None);
+        let _home = RestoreVar::set("HOME", None);
+        let _profile = RestoreVar::set("USERPROFILE", Some(missing.to_string_lossy().as_ref()));
+        assert!(!missing.exists());
+        assert_eq!(config_dir(), missing.join(".lisca"));
+    }
+
+    #[test]
+    fn config_dir_uses_home_drive_and_path_when_profile_vars_are_unset() {
+        let _guard = TEST_CONFIG_LOCK.lock().unwrap();
+        let _config = RestoreVar::set("LISCA_CONFIG_DIR", None);
+        let _home = RestoreVar::set("HOME", None);
+        let _profile = RestoreVar::set("USERPROFILE", None);
+        let _drive = RestoreVar::set("HOMEDRIVE", Some("C:"));
+        let _path = RestoreVar::set("HOMEPATH", Some(r"\Users\lisca"));
+        assert_eq!(
+            config_dir(),
+            PathBuf::from(r"C:\Users\lisca").join(".lisca")
+        );
+    }
+}
+
+#[cfg(test)]
+struct RestoreVar {
+    key: &'static str,
+    previous: Option<String>,
+}
+
+#[cfg(test)]
+impl RestoreVar {
+    fn set(key: &'static str, value: Option<&str>) -> Self {
+        let previous = std::env::var(key).ok();
+        match value {
+            Some(value) => std::env::set_var(key, value),
+            None => std::env::remove_var(key),
+        }
+        Self { key, previous }
+    }
+}
+
+#[cfg(test)]
+impl Drop for RestoreVar {
+    fn drop(&mut self) {
+        match &self.previous {
+            Some(value) => std::env::set_var(self.key, value),
+            None => std::env::remove_var(self.key),
+        }
     }
 }

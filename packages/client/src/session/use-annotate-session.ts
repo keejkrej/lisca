@@ -38,6 +38,27 @@ export type AnnotateSessionActions = {
   setLabelError: (error: string | null) => void;
 };
 
+export type AnnotateTimePreference = "first" | "last";
+
+/**
+ * Frame to show before the user picks one.
+ * Studio passes "last" because Align locks the grid to the final timepoint.
+ * An explicit pick, including frame 0, is left alone. A stored 0 with no pick
+ * still snaps to the last frame, since the default selection is also 0.
+ */
+export function resolveAnnotateTimeIndex(input: {
+  current: number;
+  timeCount: number;
+  preference: AnnotateTimePreference;
+  timeChosen: boolean;
+}): number {
+  const max = Math.max(0, input.timeCount - 1);
+  if (input.preference === "last" && !input.timeChosen && input.current === 0 && max > 0) {
+    return max;
+  }
+  return clamp(input.current, 0, max);
+}
+
 export type UseAnnotateSessionCoreOptions<State extends AnnotatorUiState = AnnotatorUiState> = {
   ui: Accessor<State>;
   setUi: (update: StateUpdater<State>) => void;
@@ -45,15 +66,22 @@ export type UseAnnotateSessionCoreOptions<State extends AnnotatorUiState = Annot
   workspace: AnnotateWorkspaceSync;
   scan: AnnotateScanAtoms;
   toErrorMessage: (cause: unknown, fallback: string) => string;
+  /** Defaults to the first frame. Studio asks for the last. */
+  initialTimeIndex?: AnnotateTimePreference;
 };
 
 export function useAnnotateSessionCore<State extends AnnotatorUiState>(
   options: UseAnnotateSessionCoreOptions<State>,
 ) {
   const { ui, setUi, actions, workspace, scan, toErrorMessage } = options;
+  const timePreference = options.initialTimeIndex ?? "first";
+  let timeChosen = false;
 
   const sessionActions: AnnotateSessionActions = {
-    setSelection: (patch) => actions.setSelection(setUi, patch),
+    setSelection: (patch) => {
+      if ("timeIndex" in patch) timeChosen = true;
+      actions.setSelection(setUi, patch);
+    },
     setContrast: (contrast) => actions.setContrast(setUi, contrast),
     setMode: (mode) => actions.setMode(setUi, mode),
     setTool: (tool) => actions.setTool(setUi, tool),
@@ -64,7 +92,13 @@ export function useAnnotateSessionCore<State extends AnnotatorUiState>(
     setLabelError: (error) => actions.setLabelError(setUi, error),
   };
 
-  const { setSelection } = sessionActions;
+  let trackedWorkspace = untrack(() => ui().workspacePath);
+  createEffect(() => {
+    const path = ui().workspacePath;
+    if (path === trackedWorkspace) return;
+    trackedWorkspace = path;
+    timeChosen = false;
+  });
 
   createEffect(() => {
     const currentUi = ui();
@@ -154,7 +188,7 @@ export function useAnnotateSessionCore<State extends AnnotatorUiState>(
         currentUi.selection.timeIndex !== 0 ||
         currentUi.selection.zIndex !== 0
       ) {
-        setSelection({
+        actions.setSelection(setUi, {
           pos: null,
           roi: null,
           channel: null,
@@ -165,7 +199,7 @@ export function useAnnotateSessionCore<State extends AnnotatorUiState>(
       return;
     }
     if (!scanData?.positions.some((entry) => entry.pos === currentUi.selection.pos)) {
-      setSelection({
+      actions.setSelection(setUi, {
         pos: firstPosition.pos,
       });
     }
@@ -182,7 +216,12 @@ export function useAnnotateSessionCore<State extends AnnotatorUiState>(
       roi: position.rois.some((entry) => entry.roi === currentUi.selection.roi)
         ? currentUi.selection.roi
         : (position.rois[0]?.roi ?? null),
-      timeIndex: clamp(currentUi.selection.timeIndex, 0, Math.max(0, position.times.length - 1)),
+      timeIndex: resolveAnnotateTimeIndex({
+        current: currentUi.selection.timeIndex,
+        timeCount: position.times.length,
+        preference: timePreference,
+        timeChosen,
+      }),
       zIndex: clamp(currentUi.selection.zIndex, 0, Math.max(0, position.zSlices.length - 1)),
     };
     if (
@@ -191,7 +230,7 @@ export function useAnnotateSessionCore<State extends AnnotatorUiState>(
       patch.timeIndex !== currentUi.selection.timeIndex ||
       patch.zIndex !== currentUi.selection.zIndex
     ) {
-      setSelection(patch);
+      actions.setSelection(setUi, patch);
     }
   });
 

@@ -1,3 +1,4 @@
+import { installClientLog } from "@lisca/client/client-log";
 import { ShellServerProvider, ShellThemeProvider, ShellWorkspaceProvider } from "@lisca/ui/shell";
 import { type JSX, type Component } from "solid-js";
 import { render } from "solid-js/web";
@@ -63,6 +64,7 @@ export function createLiscaWebApp(config: LiscaWebAppConfig): void {
   }
 
   installOverlayScrollbarState();
+  installClientLog(appId);
 
   render(
     () => (

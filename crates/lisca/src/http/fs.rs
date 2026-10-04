@@ -19,6 +19,7 @@ use crate::protocol::{
 };
 
 use super::error::FsError;
+use super::log::record_client_log;
 
 #[derive(Debug, Deserialize)]
 struct ListDirectoryQuery {
@@ -28,6 +29,11 @@ struct ListDirectoryQuery {
 #[derive(Debug, Deserialize)]
 struct ReadTextFileQuery {
     path: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct ClientLogBody {
+    lines: Vec<String>,
 }
 
 pub fn router<S>() -> Router<S>
@@ -41,6 +47,8 @@ where
         // Raw bytes, outside the JSON HttpApi. See ADR-0002.
         .route("/fs/file", get(read_file_handler))
         .route("/fs/create-directory", post(create_directory_handler))
+        // Debug sink for the webview. Outside the JSON HttpApi; appended to the process log.
+        .route("/fs/client-log", post(client_log_handler))
 }
 
 async fn run_blocking<T>(
@@ -74,6 +82,11 @@ async fn read_text_file_handler(
     run_blocking("text file read", move || read_text_file(&query.path))
         .await
         .map(Json)
+}
+
+async fn client_log_handler(Json(body): Json<ClientLogBody>) -> StatusCode {
+    record_client_log(&body.lines);
+    StatusCode::NO_CONTENT
 }
 
 async fn create_directory_handler(

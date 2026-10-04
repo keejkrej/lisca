@@ -66,6 +66,7 @@ describe("StudioMetadataActions", () => {
     await waitFor(() => expect(save.writeStudioAssayJson).toHaveBeenCalledOnce());
     expect(save.writeStudioAssayJson.mock.calls[0]![0]).toBe("/data/ws");
     expect(screen.getByRole("button", { name: "Save" })).toBe(button);
+    expect(await screen.findByText("Saved assay")).not.toBeNull();
   });
 
   it("asks before overwriting an existing assay.json, including a loaded one", async () => {
