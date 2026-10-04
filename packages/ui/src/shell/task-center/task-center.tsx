@@ -6,7 +6,9 @@ import {
   deriveTaskProgress,
   deriveTaskCenterIndicator,
   initialTaskCenterState,
+  stepKindLabel,
   taskKindLabel,
+  taskProgressNoun,
   taskStatusLabel,
   reconcileTaskCenterDetail,
   reconcileTaskCenterSnapshot,
@@ -107,7 +109,8 @@ function TaskProgressRail(props: { task: TaskSummary }) {
 }
 
 function positionLabel(stepKind: string | null | undefined): string {
-  return stepKind?.match(/Pos\d+/)?.[0] ?? "Current step";
+  if (!stepKind) return "Current step";
+  return stepKindLabel(stepKind);
 }
 
 function WorkProgressRail(props: { label: string; work: NonNullable<StepDetail["workProgress"]> }) {
@@ -135,6 +138,42 @@ function WorkProgressRail(props: { label: string; work: NonNullable<StepDetail["
   );
 }
 
+function statusTrack(status: StepDetail["status"]): {
+  width: string;
+  className: string;
+  value: number | null;
+} {
+  if (status === "completed") {
+    return { width: "100%", className: "bg-primary", value: 1 };
+  }
+  if (status === "running" || status === "cancellation-requested") {
+    return { width: "35%", className: "bg-primary/70 motion-safe:animate-pulse", value: null };
+  }
+  if (status === "failed") {
+    return { width: "100%", className: "bg-destructive", value: 1 };
+  }
+  return { width: "0%", className: "bg-primary", value: 0 };
+}
+
+function StatusTrack(props: { label: string; status: StepDetail["status"] }) {
+  const track = () => statusTrack(props.status);
+  return (
+    <div class="space-y-1">
+      <span class="block truncate text-muted-foreground text-xs">{props.label}</span>
+      <div
+        aria-label={`${props.label} progress`}
+        aria-valuemax={1}
+        aria-valuemin={0}
+        aria-valuenow={track().value ?? undefined}
+        class="h-1.5 overflow-hidden rounded-none bg-muted"
+        role="progressbar"
+      >
+        <div class={cn("h-full", track().className)} style={{ width: track().width }} />
+      </div>
+    </div>
+  );
+}
+
 function StepRow(props: { step: StepDetail; busy: boolean; onRetry: () => void }) {
   const latestError = () => props.step.attempts.at(-1)?.error;
   const label = () => positionLabel(props.step.stepKind);
@@ -149,7 +188,7 @@ function StepRow(props: { step: StepDetail; busy: boolean; onRetry: () => void }
         <div class="min-w-0 flex-1 space-y-1 text-left">
           <Show
             when={props.step.workProgress}
-            fallback={<span class="block truncate text-muted-foreground text-xs">{label()}</span>}
+            fallback={<StatusTrack label={label()} status={props.step.status} />}
           >
             {(work) => <WorkProgressRail label={label()} work={work()} />}
           </Show>
@@ -465,7 +504,8 @@ export function TaskCenter(props: TaskCenterProps) {
                                     </span>
                                   </Show>
                                   <span>
-                                    {task.progress.completed}/{task.progress.total} Positions
+                                    {task.progress.completed}/{task.progress.total}{" "}
+                                    {taskProgressNoun(task.kind)}
                                   </span>
                                 </span>
                               </span>

@@ -11,6 +11,8 @@ use crate::analysis::output::collect_csv_outputs;
 use crate::analysis::progress::{analysis_progress, run_blocking};
 use crate::analysis::sample::{build_sample_mapping, parse_interval_minutes, SampleMapping};
 
+pub use predict::{PredictControl, PredictFailure};
+
 pub fn resolve_model_path(workspace: &Path) -> Result<PathBuf, String> {
     // Killing-assay brain (HF keejkrej/killing-assay-resnet18). This repo
     // curls the ONNX at Studio package time; do not grow a third weights tree.
@@ -62,6 +64,23 @@ pub fn run_predict_shard(
         mapping,
         model_dir,
         predict::PredictOptions::default(),
+    )
+}
+
+pub fn run_predict_shard_controlled(
+    workspace: &Path,
+    output_workspace: &Path,
+    mapping: &SampleMapping,
+    model_dir: &Path,
+    control: &PredictControl<'_>,
+) -> Result<(), PredictFailure> {
+    predict::run_predict_to_controlled(
+        workspace,
+        output_workspace,
+        mapping,
+        model_dir,
+        predict::PredictOptions::default(),
+        control,
     )
 }
 

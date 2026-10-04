@@ -280,6 +280,72 @@ describe("Task Center dialog", () => {
     ).toBeTruthy();
   });
 
+  it("labels killing stages and shows a frame bar on the running position", async () => {
+    const base = detail("running", 1);
+    const killing: TaskDetail = {
+      task: {
+        ...base.task,
+        kind: "analysis/killing",
+        progress: {
+          ...base.task.progress,
+          total: 3,
+          completed: 1,
+          running: 1,
+          queued: 1,
+        },
+      },
+      steps: [
+        {
+          ...step("completed"),
+          stepId: "prepare",
+          stepKind: "analysis/killing/prepare",
+          workProgress: null,
+        },
+        {
+          ...step("running", [attempt("running")], runningWorkProgress(1)),
+          stepId: "predict",
+          stepKind: "analysis/killing/predict/Pos26",
+          workProgress: {
+            unit: "frame",
+            completed: 400,
+            total: 1600,
+            phase: "predict",
+            message: null,
+            updatedAtMs: 1,
+          },
+        },
+        {
+          ...step("queued"),
+          stepId: "merge",
+          stepKind: "analysis/killing/merge-predictions",
+          workProgress: null,
+        },
+      ],
+    };
+    const view = renderTaskCenter({ getTask: async () => killing });
+    view.snapshot([killing.task]);
+    fireEvent.click(view.getByRole("button", { name: "Tasks, 1 active" }));
+    expect(screen.getByText("1/3 Steps")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: /Expand Analysis\/killing/ }));
+    expect(await screen.findByText("Prepare")).toBeTruthy();
+    expect(screen.getByText("Pos26")).toBeTruthy();
+    expect(screen.getByText("Merge Predictions")).toBeTruthy();
+    expect(screen.queryByText("Current step")).toBeNull();
+    expect(
+      screen
+        .getByRole("progressbar", { name: "Pos26 frame progress" })
+        .getAttribute("aria-valuenow"),
+    ).toBe("400");
+    expect(
+      screen.getByRole("progressbar", { name: "Prepare progress" }).getAttribute("aria-valuenow"),
+    ).toBe("1");
+    expect(
+      screen
+        .getByRole("progressbar", { name: "Merge Predictions progress" })
+        .getAttribute("aria-valuenow"),
+    ).toBe("0");
+  });
+
   it("hides per-position progress when collapsed and shows it on each step when expanded", async () => {
     const first = deferred<TaskDetail>();
     const second = deferred<TaskDetail>();

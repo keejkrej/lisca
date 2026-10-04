@@ -401,6 +401,11 @@ impl TaskScheduler {
         Ok(scheduler)
     }
 
+    /// Weight budget shared by every running step. A step of this weight runs alone.
+    pub fn capacity(&self) -> u32 {
+        self.inner.config.capacity
+    }
+
     pub fn submit(&self, spec: TaskSpec) -> Result<TaskDetail, SchedulerError> {
         let task_kind = spec.kind.trim().to_string();
         if task_kind.is_empty() {

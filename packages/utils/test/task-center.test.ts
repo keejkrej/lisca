@@ -10,6 +10,8 @@ import {
   initialTaskCenterState,
   reconcileTaskCenterDetail,
   reconcileTaskCenterSnapshot,
+  stepKindLabel,
+  taskProgressNoun,
 } from "../src/task-center";
 
 function summary(
@@ -91,6 +93,17 @@ describe("Task Center headless state", () => {
     ["cancelled", false],
   ] as const)("derives task cancel for %s", (status, expected) => {
     expect(canCancelTask(summary("task-1", status, 1))).toBe(expected);
+  });
+
+  it("labels killing stages by name and position steps as PosN", () => {
+    expect(stepKindLabel("analysis/killing/prepare")).toBe("Prepare");
+    expect(stepKindLabel("analysis/killing/predict/Pos26")).toBe("Pos26");
+    expect(stepKindLabel("analysis/killing/merge-predictions")).toBe("Merge Predictions");
+    expect(stepKindLabel("analysis/killing/plot-death-times")).toBe("Plot Death Times");
+    expect(stepKindLabel("crop-roi/Pos4")).toBe("Pos4");
+    expect(stepKindLabel("crop-position-7")).toBe("Crop Position 7");
+    expect(taskProgressNoun("crop-roi")).toBe("Positions");
+    expect(taskProgressNoun("analysis/killing")).toBe("Steps");
   });
 
   it("derives step cancel and dependency-safe retry actions", () => {
