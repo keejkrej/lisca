@@ -29,7 +29,6 @@ czi-rs = { git = "https://github.com/keejkrej/czi-rs" }
 image = { version = "0.25", default-features = false, features = ["jpeg", "png"] }
 ndarray = { version = "0.17", features = ["std"] }
 ndarray-stats = "0.7"
-noisy_float = "0.2"
 ort = { version = "=2.0.0-rc.11", default-features = false, features = [
   "std",
   "ndarray",
@@ -58,7 +57,7 @@ lisca-server = { path = "crates/lisca-server" }
 # Transfection analysis (Otsu segment, traces, AUC, fit, plots).
 # ndarray 0.16 / imageproc 0.25 in that crate; this workspace stays on 0.17 / 0.27.
 # Call workspace-path APIs so ndarray types are not unified across the boundary.
-lisca-transfection = { git = "https://github.com/keejkrej/lisca-transfection-assay", rev = "d560156fe7520efe7c7796b792d21902cc6fed63" }
+lisca-transfection = { git = "https://github.com/keejkrej/lisca-transfection-assay", rev = "9eda2a7dd62c73cc8fd36071762a043f436462db" }
 tauri = "2"
 tauri-build = "2"
 tauri-plugin-dialog = "2"
