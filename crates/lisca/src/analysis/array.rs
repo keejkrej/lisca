@@ -5,8 +5,6 @@
 //! Studio ONNX segment.
 
 use ndarray::{s, Array1, ArrayView2};
-use ndarray_stats::{interpolate::Linear, Quantile1dExt};
-use noisy_float::types::{n64, N64};
 
 #[derive(Debug, Clone)]
 pub struct Frame2D {
@@ -129,7 +127,13 @@ pub fn quantile(values: &[f64], q: f64) -> f64 {
     quantile_linear(values, q)
 }
 
-/// Linear interpolation quantile on unsorted `f64` values via `ndarray-stats`.
+/// Linear interpolation quantile on unsorted `f64` values (`numpy.quantile` linear).
+///
+/// Non-finite values are dropped. A single input is returned as-is, including
+/// non-finite values. `q` outside `[0, 1]` is clamped; a non-finite `q` yields `0.0`.
+///
+/// This sorts on the heap. `ndarray-stats` quickselect recurses once per tied
+/// value and overflowed the Studio analyze worker on transfection trace plots.
 pub fn quantile_linear(values: &[f64], q: f64) -> f64 {
     if values.is_empty() {
         return 0.0;
@@ -137,27 +141,48 @@ pub fn quantile_linear(values: &[f64], q: f64) -> f64 {
     if values.len() == 1 {
         return values[0];
     }
-    let mut arr = Array1::from_iter(
-        values
-            .iter()
-            .copied()
-            .filter(|value| value.is_finite())
-            .map(N64::new),
-    );
-    if arr.is_empty() {
+    let Some(q) = finite_quantile_fraction(q) else {
+        return 0.0;
+    };
+    let mut finite: Vec<f64> = values
+        .iter()
+        .copied()
+        .filter(|value| value.is_finite())
+        .collect();
+    if finite.is_empty() {
         return 0.0;
     }
-    if arr.len() == 1 {
-        return arr[0].raw();
+    if finite.len() == 1 {
+        return finite[0];
     }
-    arr.quantile_mut(n64(q.clamp(0.0, 1.0)), &Linear)
-        .map(|value| value.raw())
-        .unwrap_or(0.0)
+    finite.sort_unstable_by(f64::total_cmp);
+    quantile_linear_sorted(&finite, q)
 }
 
-/// Linear interpolation quantile on a pre-sorted slice (`q` in `[0, 1]`).
+/// Linear interpolation quantile on a pre-sorted finite slice (`q` in `[0, 1]`).
+///
+/// Index is `q * (n - 1)`, matching `numpy.quantile(..., method="linear")`.
 pub fn quantile_linear_sorted(sorted: &[f64], q: f64) -> f64 {
-    quantile_linear(sorted, q)
+    if sorted.is_empty() {
+        return 0.0;
+    }
+    if sorted.len() == 1 {
+        return sorted[0];
+    }
+    let Some(q) = finite_quantile_fraction(q) else {
+        return 0.0;
+    };
+    let index = q * (sorted.len() - 1) as f64;
+    let lower_index = (index.floor() as usize).min(sorted.len() - 1);
+    let upper_index = (index.ceil() as usize).min(sorted.len() - 1);
+    let fraction = index - lower_index as f64;
+    let lower = sorted[lower_index];
+    let upper = sorted[upper_index];
+    lower + fraction * (upper - lower)
+}
+
+fn finite_quantile_fraction(q: f64) -> Option<f64> {
+    q.is_finite().then_some(q.clamp(0.0, 1.0))
 }
 
 /// Percentile on unsorted `f64` values (`pct` in `[0, 100]`, linear interpolation).
@@ -335,6 +360,34 @@ mod tests {
     fn percentile_matches_quantile_scale() {
         let values = [1.0, 2.0, 3.0, 4.0];
         assert!((percentile(&values, 50.0) - quantile(&values, 0.5)).abs() < 1e-9);
+    }
+
+    #[test]
+    fn quantile_linear_matches_numpy_linear() {
+        // np.quantile([1, 4, 2, 3], q, method="linear")
+        let values = [1.0, 4.0, 2.0, 3.0];
+        assert!((quantile_linear(&values, 0.1) - 1.3).abs() < 1e-12);
+        assert!((quantile_linear(&values, 0.5) - 2.5).abs() < 1e-12);
+        assert!((quantile_linear(&values, 0.0) - 1.0).abs() < 1e-12);
+        assert!((quantile_linear(&values, 1.0) - 4.0).abs() < 1e-12);
+    }
+
+    #[test]
+    fn quantile_linear_skips_non_finite_values() {
+        let values = [1.0, f64::NAN, 3.0, f64::INFINITY];
+        assert!((quantile_linear(&values, 0.5) - 2.0).abs() < 1e-12);
+        assert!(quantile_linear(&[f64::NAN], 0.5).is_nan());
+        assert_eq!(quantile_linear(&[], 0.5), 0.0);
+        assert_eq!(quantile_linear(&[1.0, 2.0], f64::NAN), 0.0);
+    }
+
+    #[test]
+    fn quantile_linear_tied_plate_does_not_recurse() {
+        // ndarray-stats quickselect removed one tied pivot per frame and
+        // overflowed the analyze worker at ~10k identical trace points.
+        let values = vec![3.5_f64; 50_000];
+        assert!((quantile_linear(&values, 0.01) - 3.5).abs() < 1e-12);
+        assert!((quantile_linear(&values, 0.99) - 3.5).abs() < 1e-12);
     }
 
     #[test]

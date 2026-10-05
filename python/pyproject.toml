@@ -65,6 +65,6 @@ default-groups = ["dev"]
 override-dependencies = ["lisca"]
 
 [tool.uv.sources]
-transfection = { git = "https://github.com/keejkrej/lisca-transfection-assay", rev = "d560156fe7520efe7c7796b792d21902cc6fed63" }
+transfection = { git = "https://github.com/keejkrej/lisca-transfection-assay", rev = "9eda2a7dd62c73cc8fd36071762a043f436462db" }
 # Transfection git-depends on this package; analysis extra must use the workspace member.
 lisca = { workspace = true }
