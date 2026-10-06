@@ -143,6 +143,15 @@ curl -fL --retry 3 --retry-delay 2 \
   -o ./models/killing-assay-resnet18/model.onnx
 ```
 
+### Remote label-free viability
+
+The Analysis page can also call the frozen-encoder viability service. That
+service, its reference sets, and the Fig. 6 embedding comparison live in
+[`lisca-killing-assay`](https://github.com/keejkrej/lisca-killing-assay). Studio
+sends movies on a separate private connection. See
+[ADR-0007](../adr/0007-remote-embedding-service.md). The ResNet pipeline above
+is unchanged.
+
 ### Killing outputs
 
 | Path                                                | Role                                                                    |

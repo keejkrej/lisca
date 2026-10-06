@@ -1,6 +1,7 @@
 export { cn } from "../../lib/utils";
 export { Button, buttonVariants, type ButtonProps } from "./button";
 export { Input, type InputProps } from "./input";
+export { NativeSelect, NativeSelectOption, NativeSelectOptGroup } from "./native-select";
 export {
   Field,
   FieldContent,
