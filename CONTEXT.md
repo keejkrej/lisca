@@ -157,3 +157,23 @@ The additive background level of a Trace; not a kinetic rate.
 
 **AUC**:
 The integrated protein output of a Trace.
+
+### Killing
+
+**Death reporter**:
+The killing kind whose Signal channel is a fluorescent reporter of a death event.
+_Avoid_: membrane integrity, death label, PI assay
+
+**Label-free**:
+The killing kind that judges death from brightfield or phase-contrast morphology, with no death reporter.
+_Avoid_: phase-contrast model, ResNet killing
+
+### Batch comparison
+
+**Control**:
+The Sample repeated in each Workspace being compared. Its Cells carry the same reporter, so their baseline intensity and expression rate hold that Workspace's intensity scale.
+_Avoid_: blank, untreated
+
+**Bridge**:
+The gain and offset that put one Workspace's Traces onto another's intensity scale, taken from the two Controls' baseline intensity and expression rate.
+_Avoid_: normalization, batch correction

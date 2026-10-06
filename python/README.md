@@ -25,6 +25,16 @@ uv sync --group label
 
 CLI entry point: `uv run lisca …`
 
+Comparing two finished transfection workspaces is not a `lisca` command and not an
+analysis stage. When you want it:
+
+```sh
+uv run python scripts/compare_transfection_batches.py WORKSPACE_A WORKSPACE_B --out comparison
+```
+
+Pass `--control-a` and `--control-b` only when both workspaces contain the same
+expressing sample. See [`docs/analysis/batch-harmonization.md`](../docs/analysis/batch-harmonization.md).
+
 ## Commands
 
 ### Crop (ND2/CZI)
