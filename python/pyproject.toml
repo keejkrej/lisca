@@ -12,7 +12,7 @@ license = { text = "MIT" }
 authors = [{ name = "Lisca contributors" }]
 dependencies = [
   "numpy>=2.2,<3",
-  "pillow>=11.1,<12",
+  "pillow>=11.1,<13",
   "pydantic>=2.10,<3",
   "tifffile>=2025.1.10,<2026",
   "typer>=0.15,<1",

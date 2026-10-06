@@ -1,6 +1,7 @@
 # ADR-0007: Studio calls label-free viability on a separate service
 
-- **Status:** accepted
+- **Status:** superseded
+- **Superseded by:** ADR-0008
 - **Date:** 2026-10-06
 
 ## Decision

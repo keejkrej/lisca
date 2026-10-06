@@ -1178,7 +1178,7 @@ train = [
 requires-dist = [
     { name = "nd2", marker = "extra == 'crop'", specifier = ">=0.10" },
     { name = "numpy", specifier = ">=2.2,<3" },
-    { name = "pillow", specifier = ">=11.1,<12" },
+    { name = "pillow", specifier = ">=11.1,<13" },
     { name = "pydantic", specifier = ">=2.10,<3" },
     { name = "pylibczirw", marker = "extra == 'crop'", specifier = ">=4.1" },
     { name = "tifffile", specifier = ">=2025.1.10,<2026" },

@@ -1,0 +1,18 @@
+[Unit]
+Description=LiSCA inference host
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/workspace/lisca/python
+EnvironmentFile=%h/.config/lisca/inference.env
+ExecStart=%h/workspace/lisca/python/.venv-inference/bin/python -m lisca.inference.server
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=60
+UMask=0077
+NoNewPrivileges=true
+
+[Install]
+WantedBy=default.target

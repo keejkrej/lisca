@@ -54,5 +54,5 @@ The script reads `analysis/Pos{n}/fit.csv` and `analysis/Pos{n}/ch{c}.csv`. It w
 
 ## Sources
 
-- Waters JC. Accuracy and precision in quantitative fluorescence microscopy. *J Cell Biol.* 2009;185(7):1135-1148. doi:10.1083/jcb.200903097
-- Halter M, Bier E, DeRose PC, Cooksey GA, Choquette SJ, Plant AL, Elliott JT. An automated protocol for performance benchmarking a widefield fluorescence microscope. *Cytometry A.* 2014;85(11):978-985. doi:10.1002/cyto.a.22519
+- Waters JC. Accuracy and precision in quantitative fluorescence microscopy. _J Cell Biol._ 2009;185(7):1135-1148. doi:10.1083/jcb.200903097
+- Halter M, Bier E, DeRose PC, Cooksey GA, Choquette SJ, Plant AL, Elliott JT. An automated protocol for performance benchmarking a widefield fluorescence microscope. _Cytometry A._ 2014;85(11):978-985. doi:10.1002/cyto.a.22519
