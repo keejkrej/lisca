@@ -2,6 +2,7 @@ import { Button } from "@lisca/ui/components";
 import { CanvasToastStack, useCanvasTransientStatus } from "@lisca/ui/features";
 import { AppShell } from "@lisca/ui/shell";
 import { AnalysisPlotGallery } from "./analysis-plot-gallery";
+import { RemoteViability } from "./remote-viability";
 import { createMemo, createResource, createSignal } from "solid-js";
 import {
   liscaDesktopBridge,
@@ -160,6 +161,7 @@ export default function AnalysisPage() {
             <CanvasToastStack messages={saveToast()} />
             <AppShell.MainScroll contentClass="relative max-w-[1200px] px-6 py-8">
               <div class="relative flex min-h-full w-full flex-1 flex-col">
+                <RemoteViability />
                 <AnalysisPlotGallery
                   emptyTitle={
                     !analysisPage.workspacePath?.trim()

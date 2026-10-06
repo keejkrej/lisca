@@ -17,3 +17,4 @@ Why a shipped choice looks the way it does. Agents write these during the change
 | [0003](0003-same-origin-web-no-remote-server.md) | accepted | Web builds are same-origin only; there is no remote-server mode           |
 | [0004](0004-killing-predict-memory.md)           | accepted | Killing predict runs one position at a time and keeps one batch of frames |
 | [0005](0005-transfection-control-bridge.md)      | accepted | Transfection batch comparison is an offline script                        |
+| [0007](0007-remote-embedding-service.md)         | accepted | Studio calls label-free viability on the killing-assay service            |
