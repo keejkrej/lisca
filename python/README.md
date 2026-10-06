@@ -105,6 +105,14 @@ export LISCA_PATTERN_SEG_MODEL=/tmp/single-cell-pattern-unet/onnx
 See `../models/single-cell-pattern-unet/README.md` and
 `../docs/analysis/analysis.md`.
 
+## Inference host
+
+`python -m lisca.inference.server` batches frozen image embeddings. Assay
+packages register the encoders. Label-free viability's EmbeddingGemma model and
+viable/dead classifier come from `lisca-killing-assay`. Install that process
+from `requirements-inference.txt` in its own virtual environment. See
+`../docs/analysis/inference-server.md`.
+
 ## Tests
 
 ```sh
