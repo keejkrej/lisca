@@ -1,6 +1,7 @@
 import type { AlignerSource } from "@lisca/contracts";
 import {
   ASSAY_TYPE,
+  assayUsesSkipSegment,
   type AssaySegmentationMode,
   type StudioDataSourceKind,
 } from "@lisca/contracts/assay";
@@ -17,6 +18,7 @@ import {
   Select,
   SelectContent,
   SelectItem,
+  ComingSoonTooltip,
   RadioGroup,
   RadioGroupItem,
   SelectTrigger,
@@ -29,10 +31,7 @@ import {
   SourcePickerField,
 } from "@lisca/ui/features";
 import type { HostFilePickerOperations } from "@lisca/ui/features";
-import {
-  defaultIntervalMinutesForAssay,
-  defaultMaxOnsetMinutesForAssay,
-} from "@lisca/client/studio-assay-json";
+import { defaultMaxOnsetMinutesForAssay } from "@lisca/client/studio-assay-json";
 import { recentSourceByPath, recentSourcePickerItems } from "@lisca/client/session/recent-memory";
 import { useAtomSet, useAtomValue } from "@effect/atom-solid";
 import { createMemo, createSignal, For, Show } from "solid-js";
@@ -85,10 +84,6 @@ export function MetadataFields(props: { hostPort: HostFilePickerOperations }) {
     studioWizardActions.setAnalysis(setWizard, p);
   const setDataSourceKind = (kind: StudioDataSourceKind) =>
     studioWizardActions.setDataSourceKind(setWizard, kind);
-  const intervalPlaceholder = () => {
-    const defaultMinutes = defaultIntervalMinutesForAssay(wizard().assayId);
-    return defaultMinutes != null ? `e.g. ${defaultMinutes}…` : "Enter interval…";
-  };
   const [pathPicker, setPathPicker] = createSignal<StudioPathPickerState>(null);
   const [folderSourcePath, setFolderSourcePath] = createSignal<string | null>(null);
 
@@ -158,7 +153,6 @@ export function MetadataFields(props: { hostPort: HostFilePickerOperations }) {
             class="h-8 w-full px-3 text-[13px]"
             id="studio-name"
             name="assay-name"
-            placeholder="e.g. My assay…"
             value={wizard().name}
             onChange={(event) => patch({ name: event.target.value })}
           />
@@ -166,7 +160,7 @@ export function MetadataFields(props: { hostPort: HostFilePickerOperations }) {
         <SourcePickerField
           id="studio-source"
           label="Source"
-          placeholder="Click to choose source…"
+          placeholder=""
           value={wizard().dataPath}
           onOpenCzi={() => openSourceBrowser("czi_file")}
           onOpenFolder={() => openSourceBrowser("folder")}
@@ -175,101 +169,97 @@ export function MetadataFields(props: { hostPort: HostFilePickerOperations }) {
         <PathPickerField
           id="studio-workspace"
           label="Workspace"
-          placeholder="Click to choose folder…"
+          placeholder=""
           value={wizard().workspacePath}
           onOpen={() => setPathPicker({ kind: "save" })}
         />
-        <div class="flex w-full flex-col gap-4 sm:flex-row">
-          <Field class="min-w-0 flex-1 gap-2">
-            <FieldLabel class="text-sm font-medium leading-[18px]" id="studio-timelapse-label">
-              Interval
+        <Field class="w-full gap-2">
+          <FieldLabel class="text-sm font-medium leading-[18px]" id="studio-timelapse-label">
+            Interval
+          </FieldLabel>
+          <InputGroup>
+            <InputGroupInput
+              autocomplete="off"
+              aria-labelledby="studio-timelapse-label"
+              class="h-8 px-3 font-mono text-[13px]"
+              min={1}
+              name="timelapse-interval"
+              step={1}
+              type="number"
+              value={wizard().intervalValue ?? ""}
+              onChange={(event) => {
+                const raw = event.currentTarget.value;
+                const value = raw.trim() === "" ? null : Number(raw);
+                patch({ intervalValue: value == null || Number.isNaN(value) ? null : value });
+              }}
+            />
+            <InputGroupAddon align="inline-end" class="pr-1">
+              <Select<TimelapseUnit>
+                options={TIMELAPSE_UNITS.map((unit) => unit.value)}
+                placement="bottom-end"
+                sameWidth={false}
+                value={wizard().intervalUnit}
+                onChange={(unit) => unit != null && patch({ intervalUnit: unit })}
+                itemComponent={(props) => (
+                  <SelectItem item={props.item}>
+                    {TIMELAPSE_UNITS.find((unit) => unit.value === props.item.rawValue)?.label ??
+                      props.item.rawValue}
+                  </SelectItem>
+                )}
+              >
+                <SelectTrigger
+                  aria-label="Interval unit"
+                  class="h-7 border-0 bg-transparent px-2 text-[13px] shadow-none focus-visible:ring-0 dark:bg-transparent"
+                  size="sm"
+                >
+                  <SelectValue<TimelapseUnit>>
+                    {(state) =>
+                      TIMELAPSE_UNITS.find((unit) => unit.value === state.selectedOption())?.label
+                    }
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent />
+              </Select>
+            </InputGroupAddon>
+          </InputGroup>
+        </Field>
+        <Show when={wizard().assayId === ASSAY_TYPE.TRANSFECTION}>
+          <Field class="w-full gap-2">
+            <FieldLabel class="text-sm font-medium leading-[18px]" id="studio-max-onset-label">
+              Max onset time t0
             </FieldLabel>
             <InputGroup>
               <InputGroupInput
                 autocomplete="off"
-                aria-labelledby="studio-timelapse-label"
+                aria-labelledby="studio-max-onset-label"
                 class="h-8 px-3 font-mono text-[13px]"
-                min={1}
-                name="timelapse-interval"
-                placeholder={intervalPlaceholder()}
+                min={0}
+                name="max-onset-minutes"
                 step={1}
+                title="Cap on onset time t0 after acquisition start. 0 fixes onset at 0."
                 type="number"
-                value={wizard().intervalValue ?? ""}
+                value={wizard().analysis?.maxOnsetMinutes ?? ""}
                 onChange={(event) => {
                   const raw = event.currentTarget.value;
-                  const value = raw.trim() === "" ? null : Number(raw);
-                  patch({ intervalValue: value == null || Number.isNaN(value) ? null : value });
+                  if (raw.trim() === "") {
+                    setAnalysis({
+                      maxOnsetMinutes:
+                        defaultMaxOnsetMinutesForAssay(ASSAY_TYPE.TRANSFECTION) ?? 120,
+                    });
+                    return;
+                  }
+                  const value = Number(raw);
+                  if (Number.isNaN(value) || value < 0) return;
+                  setAnalysis({ maxOnsetMinutes: value });
                 }}
               />
-              <InputGroupAddon align="inline-end" class="pr-1">
-                <Select<TimelapseUnit>
-                  options={TIMELAPSE_UNITS.map((unit) => unit.value)}
-                  placement="bottom-end"
-                  sameWidth={false}
-                  value={wizard().intervalUnit}
-                  onChange={(unit) => unit != null && patch({ intervalUnit: unit })}
-                  itemComponent={(props) => (
-                    <SelectItem item={props.item}>
-                      {TIMELAPSE_UNITS.find((unit) => unit.value === props.item.rawValue)?.label ??
-                        props.item.rawValue}
-                    </SelectItem>
-                  )}
-                >
-                  <SelectTrigger
-                    aria-label="Interval unit"
-                    class="h-7 border-0 bg-transparent px-2 text-[13px] shadow-none focus-visible:ring-0 dark:bg-transparent"
-                    size="sm"
-                  >
-                    <SelectValue<TimelapseUnit>>
-                      {(state) =>
-                        TIMELAPSE_UNITS.find((unit) => unit.value === state.selectedOption())?.label
-                      }
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent />
-                </Select>
+              <InputGroupAddon align="inline-end">
+                <InputGroupText class="text-[13px]">min</InputGroupText>
               </InputGroupAddon>
             </InputGroup>
           </Field>
-          <Show when={wizard().assayId === ASSAY_TYPE.TRANSFECTION}>
-            <Field class="min-w-0 flex-1 gap-2">
-              <FieldLabel class="text-sm font-medium leading-[18px]" id="studio-max-onset-label">
-                Max onset time t0
-              </FieldLabel>
-              <InputGroup>
-                <InputGroupInput
-                  autocomplete="off"
-                  aria-labelledby="studio-max-onset-label"
-                  class="h-8 px-3 font-mono text-[13px]"
-                  min={0}
-                  name="max-onset-minutes"
-                  placeholder={`e.g. ${defaultMaxOnsetMinutesForAssay(ASSAY_TYPE.TRANSFECTION) ?? 120}…`}
-                  step={1}
-                  title="Cap on onset time t0 after acquisition start. 0 fixes onset at 0."
-                  type="number"
-                  value={wizard().analysis?.maxOnsetMinutes ?? ""}
-                  onChange={(event) => {
-                    const raw = event.currentTarget.value;
-                    if (raw.trim() === "") {
-                      setAnalysis({
-                        maxOnsetMinutes:
-                          defaultMaxOnsetMinutesForAssay(ASSAY_TYPE.TRANSFECTION) ?? 120,
-                      });
-                      return;
-                    }
-                    const value = Number(raw);
-                    if (Number.isNaN(value) || value < 0) return;
-                    setAnalysis({ maxOnsetMinutes: value });
-                  }}
-                />
-                <InputGroupAddon align="inline-end">
-                  <InputGroupText class="text-[13px]">min</InputGroupText>
-                </InputGroupAddon>
-              </InputGroup>
-            </Field>
-          </Show>
-        </div>
-        <Show when={wizard().assayId === ASSAY_TYPE.TRANSFECTION}>
+        </Show>
+        <Show when={assayUsesSkipSegment(wizard().assayId)}>
           <Field class="w-full gap-2">
             <FieldTitle class="text-sm font-medium leading-[18px]">Misc</FieldTitle>
             <label class="flex cursor-pointer items-center gap-2.5 text-[13px] leading-[18px]">
@@ -298,25 +288,34 @@ export function MetadataFields(props: { hostPort: HostFilePickerOperations }) {
                 name="segmentation-method"
                 value={wizard().analysis?.segmentationMode ?? "logstd"}
                 onChange={(mode) => {
-                  if (mode === "logstd" || mode === "smart") {
+                  if (mode === "logstd") {
                     setAnalysis({ segmentationMode: mode });
                   }
                 }}
               >
                 <For each={SEGMENTATION_MODES}>
-                  {(mode) => (
-                    <label
-                      class="flex w-fit items-center gap-2.5 text-[13px] leading-[18px]"
-                      classList={{
-                        "cursor-pointer": !(wizard().analysis?.skipSegment ?? false),
-                        "cursor-not-allowed text-muted-foreground":
-                          wizard().analysis?.skipSegment ?? false,
-                      }}
-                    >
-                      <RadioGroupItem value={mode.value} />
-                      <span>{mode.label}</span>
-                    </label>
-                  )}
+                  {(mode) => {
+                    const skipped = () => wizard().analysis?.skipSegment ?? false;
+                    const deferred = () => mode.value === "smart";
+                    const unavailable = () => skipped() || deferred();
+                    const option = (
+                      <label
+                        class="flex w-fit items-center gap-2.5 text-[13px] leading-[18px]"
+                        classList={{
+                          "cursor-pointer": !unavailable(),
+                          "cursor-not-allowed text-muted-foreground": unavailable(),
+                        }}
+                      >
+                        <RadioGroupItem disabled={unavailable()} value={mode.value} />
+                        <span>{mode.label}</span>
+                      </label>
+                    );
+                    return (
+                      <Show when={deferred()} fallback={option}>
+                        <ComingSoonTooltip>{option}</ComingSoonTooltip>
+                      </Show>
+                    );
+                  }}
                 </For>
               </RadioGroup>
             </div>

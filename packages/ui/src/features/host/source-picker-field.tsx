@@ -10,7 +10,11 @@ import {
 } from "../../components/ui/dropdown-menu";
 import { Field, FieldLabel } from "../../components/ui/field";
 import { cn } from "../../lib/utils";
-import { PathPickerTriggerContent, pathPickerTriggerClass } from "./path-picker-field";
+import {
+  PathPickerTriggerContent,
+  pathPickerAccessibleName,
+  pathPickerTriggerClass,
+} from "./path-picker-field";
 
 export type SourcePickerFieldProps = {
   id: string;
@@ -32,7 +36,6 @@ const SOURCE_FORMATS = [
 /** A read-only source path whose surface opens a format menu; each format opens a picker. */
 export function SourcePickerField(props: SourcePickerFieldProps) {
   const actionLabel = () => props.actionLabel ?? "Browse";
-  const displayValue = () => props.value.trim() || props.placeholder;
   const openFormat = (key: (typeof SOURCE_FORMATS)[number]["key"]) => {
     if (key === "folder") props.onOpenFolder();
     else if (key === "nd2") props.onOpenNd2();
@@ -53,10 +56,15 @@ export function SourcePickerField(props: SourcePickerFieldProps) {
       </FieldLabel>
       <DropdownMenu getAnchorRect={anchorRect} placement="bottom-start">
         <DropdownMenuTrigger
-          aria-label={`${props.label}: ${displayValue()}. ${actionLabel()}`}
+          aria-label={pathPickerAccessibleName(
+            props.label,
+            props.value,
+            props.placeholder,
+            actionLabel(),
+          )}
           class={cn(buttonVariants({ variant: "outline", size: "sm" }), pathPickerTriggerClass)}
           id={props.id}
-          title={props.value.trim() || props.placeholder}
+          title={props.value.trim() || props.placeholder.trim() || undefined}
           type="button"
           onKeyDown={() => {
             pointer = null;

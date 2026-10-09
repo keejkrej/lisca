@@ -1,10 +1,16 @@
 import type { AssayAnalysisConfig, AssaySampleRow } from "@lisca/contracts";
 import type { StudioAssaySampleRow, StudioAssaySamples } from "@lisca/contracts/assay";
 
-export type SamplePositionRange = {
-  positionStart: string;
-  positionFinish: string;
+/** Inclusive 0-based position span, as stored in assay.json. */
+export type StoredPositionRange = {
+  start: number;
+  end: number;
 };
+
+const DISPLAY_RANGE = /^(\d+)\s*[-:–—]\s*(\d+)$/;
+const DISPLAY_SINGLE = /^(\d+)$/;
+const PARTIAL_RANGE = /^\d+\s*[-:–—]\s*$/;
+const STORED_RANGE = /^(\d+)\s*:\s*(\d+)$/;
 
 function parseNonNegativeInteger(raw: string): number | null {
   const trimmed = raw.trim();
@@ -13,61 +19,162 @@ function parseNonNegativeInteger(raw: string): number | null {
   return Number.isInteger(value) && value >= 0 ? value : null;
 }
 
+/** One inclusive 0-based span, written the way assay.json stores a single range. */
 export function formatSamplePositions(positionStart: string, positionFinish: string): string {
   const start = parseNonNegativeInteger(positionStart);
   const finish = parseNonNegativeInteger(positionFinish);
   if (start == null || finish == null) return "";
-  const low = Math.min(start, finish);
-  const high = Math.max(start, finish);
-  return low === high ? String(low) : `${low}:${high}`;
+  return formatStoredPositions([{ start: Math.min(start, finish), end: Math.max(start, finish) }]);
 }
 
-/** Parse assay.json `positions` strings into start/finish for the UI editor. */
-export function parseSamplePositions(positions: string): SamplePositionRange {
-  const trimmed = positions.trim();
-  if (!trimmed) {
-    return { positionStart: "", positionFinish: "" };
+/** Merge overlaps and adjacent spans. A gap stays a separate range. */
+export function mergePositionRanges(ranges: readonly StoredPositionRange[]): StoredPositionRange[] {
+  const sorted = ranges
+    .filter((range) => range.end >= range.start)
+    .map((range) => ({ start: range.start, end: range.end }))
+    .sort((left, right) => left.start - right.start || left.end - right.end);
+  const merged: StoredPositionRange[] = [];
+  for (const range of sorted) {
+    const last = merged[merged.length - 1];
+    if (!last || range.start > last.end + 1) {
+      merged.push(range);
+      continue;
+    }
+    last.end = Math.max(last.end, range.end);
   }
+  return merged;
+}
 
-  const tokens = trimmed
+/** assay.json `positions` grammar: `3` or `0:4,20:24`. */
+export function formatStoredPositions(ranges: readonly StoredPositionRange[]): string {
+  return mergePositionRanges(ranges)
+    .map((range) =>
+      range.start === range.end ? String(range.start) : `${range.start}:${range.end}`,
+    )
+    .join(",");
+}
+
+/** 1-based chip label. A span uses an en dash. */
+export function formatPositionChip(range: StoredPositionRange): string {
+  const start = range.start + 1;
+  const end = range.end + 1;
+  return start === end ? String(start) : `${start}–${end}`;
+}
+
+/** Read assay.json `positions` into inclusive ranges. Invalid tokens are dropped. */
+export function storedPositionRanges(positions: string): StoredPositionRange[] {
+  const ranges: StoredPositionRange[] = [];
+  for (const token of positions.split(",")) {
+    const trimmed = token.trim();
+    if (!trimmed) continue;
+    const range = STORED_RANGE.exec(trimmed);
+    if (range) {
+      const start = Number(range[1]);
+      const end = Number(range[2]);
+      if (end >= start) ranges.push({ start, end });
+      continue;
+    }
+    const single = parseNonNegativeInteger(trimmed);
+    if (single != null) ranges.push({ start: single, end: single });
+  }
+  return mergePositionRanges(ranges);
+}
+
+export function normalizeStoredPositions(positions: string): string {
+  return formatStoredPositions(storedPositionRanges(positions));
+}
+
+/** True when every token is a 0-based index or an inclusive `start:end` range. */
+export function isValidStoredPositions(positions: string): boolean {
+  const tokens = positions
     .split(",")
     .map((token) => token.trim())
     .filter(Boolean);
-
-  let min: number | null = null;
-  let max: number | null = null;
-
-  for (const token of tokens) {
-    const rangeParts = token.split(":").map((part) => part.trim());
-    if (rangeParts.length === 1) {
-      const value = parseNonNegativeInteger(rangeParts[0] ?? "");
-      if (value == null) continue;
-      min = min == null ? value : Math.min(min, value);
-      max = max == null ? value : Math.max(max, value);
-      continue;
-    }
-
-    if (rangeParts.length >= 2) {
-      const start = parseNonNegativeInteger(rangeParts[0] ?? "");
-      const stop = parseNonNegativeInteger(rangeParts[1] ?? "");
-      if (start == null || stop == null) continue;
-      min = min == null ? Math.min(start, stop) : Math.min(min, start, stop);
-      max = max == null ? Math.max(start, stop) : Math.max(max, start, stop);
-    }
-  }
-
-  if (min == null || max == null) {
-    return { positionStart: "", positionFinish: "" };
-  }
-
-  return {
-    positionStart: String(min),
-    positionFinish: String(max),
-  };
+  if (tokens.length === 0) return false;
+  return tokens.every((token) => {
+    if (DISPLAY_SINGLE.test(token)) return true;
+    const range = STORED_RANGE.exec(token);
+    return range != null && Number(range[2]) >= Number(range[1]);
+  });
 }
 
-/** @deprecated Use parseSamplePositions */
-export const parseLegacySamplePositions = parseSamplePositions;
+function parseDisplayToken(token: string): StoredPositionRange | null {
+  const trimmed = token.trim();
+  const range = DISPLAY_RANGE.exec(trimmed);
+  if (range) {
+    const left = Number(range[1]);
+    const right = Number(range[2]);
+    if (left < 1 || right < 1) return null;
+    return { start: Math.min(left, right) - 1, end: Math.max(left, right) - 1 };
+  }
+  if (!DISPLAY_SINGLE.test(trimmed)) return null;
+  const value = Number(trimmed);
+  if (value < 1) return null;
+  return { start: value - 1, end: value - 1 };
+}
+
+export type DisplayPositionParse = {
+  ranges: StoredPositionRange[];
+  invalid: string;
+};
+
+/** Parse 1-based text (`1-5, 21-25` or `8`). Hyphen and colon both count. */
+export function parseDisplayPositionList(raw: string): DisplayPositionParse {
+  const ranges: StoredPositionRange[] = [];
+  const invalid: string[] = [];
+  for (const token of raw.split(",")) {
+    if (!token.trim()) continue;
+    const range = parseDisplayToken(token);
+    if (range) ranges.push(range);
+    else invalid.push(token.trim());
+  }
+  return { ranges: mergePositionRanges(ranges), invalid: invalid.join(", ") };
+}
+
+function isPartialRange(token: string): boolean {
+  return PARTIAL_RANGE.test(token.trim());
+}
+
+/**
+ * Tokens before a comma are ready to save. The trailing token stays in the field
+ * until blur, Enter, or paste, so `21` can still become `21-25`.
+ */
+export function splitDisplayDraft(
+  raw: string,
+  commitTrailing: boolean,
+): { ready: string; pending: string } {
+  const endsWithComma = /,\s*$/.test(raw);
+  const tokens = raw.split(",");
+  const last = endsWithComma ? "" : (tokens[tokens.length - 1] ?? "");
+  const readyTokens = endsWithComma ? tokens : tokens.slice(0, -1);
+  if (commitTrailing && !isPartialRange(last)) {
+    readyTokens.push(last);
+    return { ready: readyTokens.join(","), pending: "" };
+  }
+  return { ready: readyTokens.join(","), pending: last };
+}
+
+/** Apply typed 1-based text onto the stored 0-based positions string. */
+export function commitDisplayPositionDraft(
+  stored: string,
+  draft: string,
+  commitTrailing: boolean,
+): { positions: string; draft: string; invalid: boolean } {
+  const split = splitDisplayDraft(draft, commitTrailing);
+  const parsed = parseDisplayPositionList(split.ready);
+  const positions =
+    parsed.ranges.length === 0
+      ? normalizeStoredPositions(stored)
+      : formatStoredPositions(
+          mergePositionRanges([...storedPositionRanges(stored), ...parsed.ranges]),
+        );
+  const leftover = [parsed.invalid, split.pending.trim()].filter(Boolean).join(", ");
+  return {
+    positions,
+    draft: leftover,
+    invalid: commitTrailing ? leftover.length > 0 : parsed.invalid.length > 0,
+  };
+}
 
 /** Parse comma-separated non-negative ints (`"1"` / `"1,2"`). Empty → null. */
 export function parseSignalChannels(raw: string): [number, ...number[]] | null {
@@ -143,40 +250,29 @@ export function analysisChannelsFromSamples(
   };
 }
 
-export function sampleRowToDisk(row: {
-  positionStart: string;
-  positionFinish: string;
-  name: string;
-}): AssaySampleRow {
+export function sampleRowToDisk(row: { positions: string; name: string }): AssaySampleRow {
   return {
     name: row.name.trim(),
-    positions: formatSamplePositions(row.positionStart, row.positionFinish),
+    positions: normalizeStoredPositions(row.positions),
   };
 }
 
 export function sampleRowFromDisk(
   record: AssaySampleRow,
   analysis?: AssayAnalysisConfig | null,
-): SamplePositionRange & {
+): {
   name: string;
+  positions: string;
   segmentation: string;
   signal: string;
 } {
-  const range = parseSamplePositions(record.positions);
   const channels = resolveSampleChannels(analysis, record.name);
   return {
     name: record.name,
+    positions: normalizeStoredPositions(record.positions),
     segmentation: channels != null ? String(channels.segmentation) : "",
     signal: channels != null ? formatSignalChannels(channels.signal) : "",
-    positionStart: range.positionStart,
-    positionFinish: range.positionFinish,
   };
-}
-
-export function isValidSamplePositionRange(positionStart: string, positionFinish: string): boolean {
-  const start = parseNonNegativeInteger(positionStart);
-  const finish = parseNonNegativeInteger(positionFinish);
-  return start != null && finish != null && finish >= start;
 }
 
 /**
@@ -210,14 +306,21 @@ export function expandPositionRange(positionStart: string, positionFinish: strin
   return positions;
 }
 
+/** Expand a stored positions string into individual 0-based indexes. */
+export function expandStoredPositions(positions: string): number[] {
+  const values: number[] = [];
+  for (const range of storedPositionRanges(positions)) {
+    for (let pos = range.start; pos <= range.end; pos += 1) values.push(pos);
+  }
+  return values;
+}
+
 /** Union of all sample-row position ranges, sorted unique. */
 export function collectAssayPositions(samples: StudioAssaySamples): number[] {
   const rows = samples.samples ?? [];
   const seen = new Set<number>();
   for (const row of rows) {
-    for (const pos of expandPositionRange(row.positionStart, row.positionFinish)) {
-      seen.add(pos);
-    }
+    for (const pos of expandStoredPositions(row.positions)) seen.add(pos);
   }
   return [...seen].toSorted((a, b) => a - b);
 }

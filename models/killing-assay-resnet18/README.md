@@ -2,16 +2,15 @@
 
 **Ownership:** killing assay / Hugging Face
 [`keejkrej/killing-assay-resnet18`](https://huggingface.co/keejkrej/killing-assay-resnet18),
-not a lisca-owned analysis brain. This directory is a **package-time cache**
-so Studio installers can curl the ONNX (see `.github/workflows/release.yml`).
-Keep that curl-at-package-time path; do not grow a third copy of training or
-weights logic here. When a killing sidecar exists, it owns the brain.
+not a lisca-owned analysis brain. This directory is a **local cache** for
+developers. Studio installers do not ship the ONNX. Do not grow a second
+training tree here. When a killing sidecar exists, it owns the brain.
 
-Studio killing analysis expects `model.onnx` in this **package-time cache**
-(or `LISCA_KILL_MODEL` pointing elsewhere). Do not treat this as a second
-training tree.
+Studio killing analysis resolves `model.onnx` from `LISCA_KILL_MODEL` or from
+this cache when it is present. A packaged app has neither until someone places
+the file.
 
-The published ONNX (what release.yml curls):
+Download the published ONNX for a local run:
 
 ```sh
 curl -sL "https://huggingface.co/keejkrej/killing-assay-resnet18/resolve/main/model.onnx" \

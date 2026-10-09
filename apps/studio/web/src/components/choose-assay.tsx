@@ -1,27 +1,28 @@
 import { ENABLED_STUDIO_ASSAY_IDS } from "@lisca/contracts/assay";
-import { Button } from "@lisca/ui/components";
+import { Button, ComingSoonTooltip } from "@lisca/ui/components";
 import { useAtomSet, useAtomValue } from "@effect/atom-solid";
 import { For } from "solid-js";
 
-import {
-  ASSAY_CHOICE_LABEL,
-  type AssayId,
-  studioWizardActions,
-  studioWizardAtom,
-} from "../state/studio-store";
+import { type AssayId, studioWizardActions, studioWizardAtom } from "../state/studio-store";
 
 const ASSAY_ORDER = ENABLED_STUDIO_ASSAY_IDS as readonly AssayId[];
 
-const ASSAY_CHOICE_DETAIL: Record<AssayId, { description: string; readout: string }> = {
+const ASSAY_CHOICE_DETAIL: Record<
+  AssayId,
+  { title: string; description: string; readout: string }
+> = {
   transfection: {
-    description: "Expression over time",
+    title: "Transfection",
+    description: "Gene expression timeseries",
     readout: "Fluorescence",
   },
   killing: {
-    description: "Cytotoxicity over time",
-    readout: "Brightfield",
+    title: "Killing (death reporter)",
+    description: "Cytotoxicity timeseries",
+    readout: "Fluorescence",
   },
   "lnp-binding": {
+    title: "LNP binding",
     description: "Nanoparticle binding over time",
     readout: "Fluorescence",
   },
@@ -53,7 +54,9 @@ export function ChooseAssay() {
                 onClick={() => setAssayId(id)}
               >
                 <span class="flex min-w-0 flex-1 flex-col items-start gap-1">
-                  <span class="text-base font-medium leading-5">{ASSAY_CHOICE_LABEL[id]}</span>
+                  <span class="text-base font-medium leading-5">
+                    {ASSAY_CHOICE_DETAIL[id].title}
+                  </span>
                   <span
                     class={
                       selected()
@@ -77,6 +80,25 @@ export function ChooseAssay() {
             );
           }}
         </For>
+        <ComingSoonTooltip class="flex w-full">
+          <Button
+            aria-disabled="true"
+            class="pointer-events-none h-auto w-full items-center justify-start gap-3 rounded-none px-5 py-[18px] text-left"
+            disabled
+            type="button"
+            variant="secondary"
+          >
+            <span class="flex min-w-0 flex-1 flex-col items-start gap-1">
+              <span class="text-base font-medium leading-5">Killing (label-free)</span>
+              <span class="text-sm font-normal leading-5 text-muted-foreground">
+                Cytotoxicity timeseries
+              </span>
+            </span>
+            <span class="shrink-0 text-[11px] font-medium uppercase leading-[14px] tracking-[0.14em] text-muted-foreground">
+              Brightfield
+            </span>
+          </Button>
+        </ComingSoonTooltip>
       </div>
     </div>
   );

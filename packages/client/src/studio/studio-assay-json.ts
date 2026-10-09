@@ -49,20 +49,20 @@ export function analysisConfigForAssay(
   assayId: StudioAssayType | null,
   analysis: AssayAnalysisConfig | null | undefined,
 ): AssayAnalysisConfig | undefined {
-  const transfectionBits =
-    assayUsesMaxOnsetMinutes(assayId) || assayUsesSkipSegment(assayId)
-      ? {
-          maxOnsetMinutes: analysis?.maxOnsetMinutes ?? TRANSFECTION_DEFAULT_MAX_ONSET_MINUTES,
-          skipSegment: analysis?.skipSegment ?? false,
-          segmentationMode: analysis?.segmentationMode ?? "logstd",
-        }
-      : {};
+  const bits: AssayAnalysisConfig = {};
+  if (assayUsesMaxOnsetMinutes(assayId)) {
+    bits.maxOnsetMinutes = analysis?.maxOnsetMinutes ?? TRANSFECTION_DEFAULT_MAX_ONSET_MINUTES;
+  }
+  if (assayUsesSkipSegment(assayId)) {
+    bits.skipSegment = analysis?.skipSegment ?? false;
+    bits.segmentationMode = analysis?.segmentationMode ?? "logstd";
+  }
 
   const channels = analysis?.channels;
   const sampleChannels = analysis?.sampleChannels;
 
   if (
-    Object.keys(transfectionBits).length === 0 &&
+    Object.keys(bits).length === 0 &&
     channels == null &&
     (sampleChannels == null || sampleChannels.length === 0)
   ) {
@@ -70,7 +70,7 @@ export function analysisConfigForAssay(
   }
 
   return {
-    ...transfectionBits,
+    ...bits,
     ...(channels != null ? { channels } : {}),
     ...(sampleChannels != null && sampleChannels.length > 0 ? { sampleChannels } : {}),
   };

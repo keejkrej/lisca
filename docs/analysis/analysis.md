@@ -68,7 +68,7 @@ depends on `assay.json` → root `type`:
 
 Numeric stages and PNG plots for transfection run in the imported
 [`lisca-transfection`](https://github.com/keejkrej/lisca-transfection-assay) crate
-via [**mplot-rs**](https://github.com/keejkrej/mplot-rs). Killing inference uses ONNX Runtime (`ort`) with Hugging Face `keejkrej/killing-assay-resnet18` (curl at Studio package time; not a product `models/` brain).
+via [**mplot-rs**](https://github.com/keejkrej/mplot-rs). Killing inference uses ONNX Runtime (`ort`) with Hugging Face `keejkrej/killing-assay-resnet18` (local cache or `LISCA_KILL_MODEL`; not shipped in the installer, and not a product `models/` brain).
 
 **Python-first → imported crate process, tolerances, and assay map:** [`parity.md`](./parity.md). Transfection Python+Rust parity lives in the sidecar (`docs/parity.md` there). Agent workflow: `/lisca-parity`.
 
@@ -85,7 +85,8 @@ Rust in this crate should stay idiomatic:
   the sidecar un-stubs it; resolve `keejkrej/single-cell-pattern-unet` via
   `LISCA_PATTERN_SEG_MODEL`, not as a lisca-owned assay brain.
 - Killing: per-assay code under `assays/killing/`. Weights: HF
-  `keejkrej/killing-assay-resnet18`, curl at package time.
+  `keejkrej/killing-assay-resnet18`, local cache or `LISCA_KILL_MODEL`. Desktop
+  installers do not bundle the ONNX.
 - Parity for transfection is judged in the sidecar; this repo’s wrapper tests check the dispatch still writes the workspace contract.
 
 ## Transfection pipeline
@@ -130,12 +131,11 @@ Progress reuses the same HTTP stage names with kill-specific messages:
 ### Kill model path
 
 The classifier is Hugging Face [`keejkrej/killing-assay-resnet18`](https://huggingface.co/keejkrej/killing-assay-resnet18)
-(killing-assay owned). This repo does **not** treat it as a product model;
-Studio **curls the ONNX at package time** into `models/killing-assay-resnet18/`
-(see `.github/workflows/release.yml`). Set `LISCA_KILL_MODEL` to a directory
-containing `model.onnx`, or use the packaged resource next to the bundled
-server. Workspace-local `models/killing-assay-resnet18/` is a cache, not a
-second weights tree. Package-time download:
+(killing-assay owned). This repo does **not** treat it as a product model, and
+Studio installers do **not** ship the ONNX. Set `LISCA_KILL_MODEL` to a directory
+containing `model.onnx`, or place that file in the workspace cache
+`models/killing-assay-resnet18/`. That cache is not a second weights tree.
+Local download:
 
 ```sh
 curl -fL --retry 3 --retry-delay 2 \
@@ -263,8 +263,8 @@ Summary — full process, tolerances table, and lifecycle in [`parity.md`](./par
 
 - Fit uses the two-pass pooled-protein strategy on the **basic translation–degradation model** (onset time t0, expression rate m0 k_TL, mRNA/protein lifetimes τ = ln(2)/rate; **no maturation**). Optional `analysis.maxOnsetMinutes` in `assay.json` is **transfection-only** (default **`120`** when omitted for that assay; set `0` to fix onset time t0 at 0). Other assays ignore it. Public CSV/UI names: `onset_time`, `expression_rate`, `mrna_lifetime`, `protein_lifetime`, `baseline_intensity` (no alternate aliases). `mrna_degradation_rate` (δ), `protein_degradation_rate` (β), and `expression_amplitude` are internal solver fields, not CSV. Stored times are minutes; plots may show hours. See [`CONTEXT.md`](../../CONTEXT.md).
 - Comparing two finished Workspaces is not an analysis stage. The offline script is [`batch-harmonization.md`](./batch-harmonization.md).
-- Frame interval (`interval.value` / `interval.unit`) is **general**. Transfection defaults to **10 minutes** when omitted; other assays require an explicit positive interval. Optional `analysis.skipSegment` skips Otsu and uses full-ROI p10 background.
-- Samples are `samples[]: {name, positions}`. A Sample is identified by its name: non-empty after trim and unique within the assay (compared trimmed). The sample mapping (`build_sample_mapping` → `SampleMapping` of `SampleAnalysis`) keeps assay order. `results/<sample>/` uses the filesystem-safe name, prefixed with the 0-based assay index (`{index}_{safe}`) only when two names sanitize to the same folder.
+- Frame interval (`interval.value` / `interval.unit`) is **general**. Transfection defaults to **10 minutes** when omitted. Studio prefills death-reporter killing at **5 minutes**; analysis still requires an explicit positive interval for killing when `interval.value` is missing. Optional `analysis.skipSegment` skips Otsu and uses full-ROI p10 background.
+- Samples are `samples[]: {name, positions}`. `positions` is 0-based: one index (`3`), an inclusive range (`0:4`), or several of those separated by commas (`0:4,20:24`). A gap stays a gap. A Sample is identified by its name: non-empty after trim and unique within the assay (compared trimmed). The sample mapping (`build_sample_mapping` → `SampleMapping` of `SampleAnalysis`) keeps assay order. `results/<sample>/` uses the filesystem-safe name, prefixed with the 0-based assay index (`{index}_{safe}`) only when two names sanitize to the same folder.
 - Channel indices live under `analysis`, not on sample rows: `analysis.channels.{segmentation,signal}` (default Segmentation channel and Signal channels) and optional `analysis.sampleChannels[]` overrides `{sample, segmentation, signal}`, where `sample` is a `samples[].name`. `signal` is a non-empty int list (one Trace CSV per Signal channel).
 
   ```json

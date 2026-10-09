@@ -33,8 +33,7 @@ describe("assay validation", () => {
     const samples = initial.samples.map((row, index) =>
       Object.assign({}, row, {
         name: row.name || `sample-${index}`,
-        positionStart: "1",
-        positionFinish: "4",
+        positions: "1:4",
         segmentation: row.segmentation || "0",
         signal: row.signal || "1",
       }),
@@ -65,8 +64,7 @@ describe("assay validation", () => {
     const samples = initial.samples.map((row, index) =>
       Object.assign({}, row, {
         name: row.name || `sample-${index}`,
-        positionStart: "1",
-        positionFinish: "4",
+        positions: "1:4",
         segmentation: row.segmentation || "0",
         signal: row.signal || "1",
       }),
@@ -125,5 +123,5 @@ describe("assay validation", () => {
 });
 
 function sampleRow(id: string, name: string): StudioAssaySampleRow {
-  return { id, name, positionStart: "0", positionFinish: "1", segmentation: "0", signal: "1" };
+  return { id, name, positions: "0:1", segmentation: "0", signal: "1" };
 }
