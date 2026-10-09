@@ -1,0 +1,47 @@
+name: Desktop build
+
+# Test channel. Same package, sign, and notarize steps as a stable release, but the
+# installer is an Actions artifact. No tag, no GitHub Release, and no auto-update feed.
+
+on:
+  workflow_dispatch:
+    inputs:
+      os:
+        description: Installer to build
+        type: choice
+        options:
+          - macos
+          - windows
+          - linux
+          - all
+        default: macos
+
+permissions:
+  contents: read
+
+jobs:
+  guard:
+    name: check-input
+    runs-on: ubuntu-latest
+    outputs:
+      oses: ${{ steps.set.outputs.oses }}
+    steps:
+      - name: Check os
+        id: set
+        run: |
+          case "${{ inputs.os }}" in
+            macos) echo 'oses=["macos-latest"]' >> "$GITHUB_OUTPUT" ;;
+            windows) echo 'oses=["windows-latest"]' >> "$GITHUB_OUTPUT" ;;
+            linux) echo 'oses=["ubuntu-latest"]' >> "$GITHUB_OUTPUT" ;;
+            all) echo 'oses=["macos-latest","windows-latest","ubuntu-latest"]' >> "$GITHUB_OUTPUT" ;;
+            *) echo "::error::os must be macos, windows, linux, or all"; exit 1 ;;
+          esac
+
+  package:
+    needs: guard
+    uses: ./.github/workflows/desktop-package.yml
+    with:
+      upload_target: artifact
+      oses: ${{ needs.guard.outputs.oses }}
+      products: '["studio"]'
+    secrets: inherit
