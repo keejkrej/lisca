@@ -23,6 +23,7 @@ const catalogModules = [
   "checkbox",
   "collapsible",
   "combobox",
+  "coming-soon-tooltip",
   "command",
   "context-menu",
   "dialog",
