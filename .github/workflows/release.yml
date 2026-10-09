@@ -52,6 +52,6 @@ jobs:
     uses: ./.github/workflows/desktop-package.yml
     with:
       upload_target: release
-      os: all
+      oses: '["macos-latest","windows-latest","ubuntu-latest"]'
       products: '["studio", "aligner", "annotator"]'
     secrets: inherit

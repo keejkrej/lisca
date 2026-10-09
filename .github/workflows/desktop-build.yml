@@ -23,11 +23,17 @@ jobs:
   guard:
     name: check-input
     runs-on: ubuntu-latest
+    outputs:
+      oses: ${{ steps.set.outputs.oses }}
     steps:
       - name: Check os
+        id: set
         run: |
           case "${{ inputs.os }}" in
-            macos|windows|linux|all) ;;
+            macos) echo 'oses=["macos-latest"]' >> "$GITHUB_OUTPUT" ;;
+            windows) echo 'oses=["windows-latest"]' >> "$GITHUB_OUTPUT" ;;
+            linux) echo 'oses=["ubuntu-latest"]' >> "$GITHUB_OUTPUT" ;;
+            all) echo 'oses=["macos-latest","windows-latest","ubuntu-latest"]' >> "$GITHUB_OUTPUT" ;;
             *) echo "::error::os must be macos, windows, linux, or all"; exit 1 ;;
           esac
 
@@ -36,6 +42,6 @@ jobs:
     uses: ./.github/workflows/desktop-package.yml
     with:
       upload_target: artifact
-      os: ${{ inputs.os }}
+      oses: ${{ needs.guard.outputs.oses }}
       products: '["studio"]'
     secrets: inherit
