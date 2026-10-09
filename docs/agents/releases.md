@@ -1,15 +1,16 @@
 # Desktop releases
 
-LiSCA uses one release train for its three shipped desktop products. A public tag such as `v0.3.2`
-ships Studio, Aligner, and Annotator at version `0.3.2`.
+LiSCA uses one release train for Studio. A public tag such as `v0.3.2` ships Studio
+installers for macOS, Windows, and Linux at version `0.3.2`. Local
+`pnpm run dist:aligner` and `pnpm run dist:annotator` remain available for those apps.
 
 ## Versioning policy
 
 - Use [Semantic Versioning](https://semver.org/) and prefix Git tags with `v`.
-- Keep the release-bearing manifests for all three desktop products in lockstep:
-  - `apps/<product>/desktop/package.json`
-  - `apps/<product>/desktop/src-tauri/Cargo.toml`
-  - `apps/<product>/desktop/src-tauri/tauri.conf.json`
+- Keep the release-bearing Studio desktop manifests in lockstep:
+  - `apps/studio/desktop/package.json`
+  - `apps/studio/desktop/src-tauri/Cargo.toml`
+  - `apps/studio/desktop/src-tauri/tauri.conf.json`
 - Do not give private web apps, servers, helper packages, or shared crates an empty version bump. Their
   versions move only if they are published independently or their own package-version policy requires
   it.
@@ -23,12 +24,12 @@ ships Studio, Aligner, and Annotator at version `0.3.2`.
   problem on `main` and publish the next patch version.
 
 The release workflow runs `scripts/check-release-version.ts` before it creates a GitHub Release. A tag
-whose version differs from any of the nine desktop manifest fields fails without publishing artifacts.
+whose version differs from any of the three Studio desktop manifest fields fails without publishing artifacts.
 
 ## Release procedure
 
 1. Choose the next SemVer version from the latest stable GitHub Release.
-2. Update the nine desktop manifest fields above to the version without the `v` prefix.
+2. Update the three Studio desktop manifest fields above to the version without the `v` prefix.
 3. Run:
 
    ```sh
@@ -46,8 +47,8 @@ whose version differs from any of the nine desktop manifest fields fails without
    git push origin refs/tags/vX.Y.Z
    ```
 
-7. Wait for all nine `Release` matrix jobs to succeed, then verify that the GitHub Release contains one
-   DMG, one NSIS installer, and one Debian package for each product.
+7. Wait for the three `Release` matrix jobs (Studio on macOS, Windows, and Linux) to succeed, then
+   verify that the GitHub Release contains one DMG, one NSIS installer, and one Debian package.
 
 ## Channels
 
@@ -93,8 +94,7 @@ not force unrelated package-version bumps.
 Jupyter notebooks are a second, independent SemVer train. They do not share a version with desktop
 installers and must not be hooked into `.github/workflows/release.yml`.
 
-- Desktop tags: `vX.Y.Z` → Studio, Aligner, and Annotator installers (signed and notarized DMG,
-  unsigned NSIS, deb).
+- Desktop tags: `vX.Y.Z` → Studio installers (signed and notarized DMG, unsigned NSIS, deb).
 - Notebook tags: `notebooks-vX.Y.Z` on the **export commit** of branch `notebooks` (not `main`).
   Asset: `lisca-notebooks-X.Y.Z.zip`. Workflow: `.github/workflows/release-jupyternotebook.yml`.
 - Bump `notebooks/VERSION` (and `notebooks/pyproject.toml`) on **`main`**. Daily work never lands on
