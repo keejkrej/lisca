@@ -49,6 +49,25 @@ whose version differs from any of the nine desktop manifest fields fails without
 7. Wait for all nine `Release` matrix jobs to succeed, then verify that the GitHub Release contains one
    DMG, one NSIS installer, and one Debian package for each product.
 
+## Channels
+
+Two channels. There is no nightly. One machine has one install, and that install is one channel.
+
+- **Stable** is a `v*` tag. `.github/workflows/release.yml` publishes the GitHub Release. A stable install looks for updates on that release feed only. It does not look at test artifacts.
+- **Test** is `.github/workflows/desktop-build.yml` (`Desktop build`, `workflow_dispatch`). It packages Studio with the same signing and notarization and uploads an Actions artifact. It does not create a tag, a GitHub Release, or an updater manifest. A test install looks for nothing. Replace it by installing another artifact by hand.
+
+Run Desktop build from the Actions tab on the branch you want to try. The `os` input is `macos` (default), `windows`, `linux`, or `all`.
+
+```sh
+gh workflow run desktop-build.yml --ref <branch> -f os=macos
+gh run watch
+gh run download --name studio-macos-<shortsha>
+```
+
+Artifacts are kept for 14 days. The file name includes the short commit (`studio-macos-237b3fa.dmg`). The version inside the bundle stays the version in the Studio manifests. Packaging for both channels lives in `.github/workflows/desktop-package.yml`.
+
+GitHub lists `workflow_dispatch` workflows only after they are on `main`. Merge the workflow, then run it. `--ref` selects the commit to package; the workflow file itself comes from `main`.
+
 ## macOS signing
 
 macOS DMGs are signed with the Developer ID Application certificate and notarized in the `Release`

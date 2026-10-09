@@ -1,5 +1,7 @@
 name: Release
 
+# Stable channel. A v* tag publishes a GitHub Release. Test installers come from
+# Desktop build (workflow_dispatch) and are not releases or auto-update sources.
 # Landing already deploys from deploy/landing via Render (pnpm run deploy:landing).
 # Notebook zips ship from notebooks-v* tags via release-jupyternotebook.yml, not this workflow.
 
@@ -45,159 +47,11 @@ jobs:
 
             Linux is Debian/Ubuntu `.deb` only. There is no AppImage, rpm, or pacman package.
 
-  publish:
-    name: ${{ matrix.product }} / ${{ matrix.os }}
+  package:
     needs: release
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 90
-    strategy:
-      fail-fast: false
-      matrix:
-        product: [studio, aligner, annotator]
-        os: [macos-latest, windows-latest, ubuntu-latest]
-    steps:
-      - uses: actions/checkout@v4
-
-      # Installs the pnpm version pinned by package.json "packageManager".
-      - uses: pnpm/action-setup@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: pnpm
-
-      - uses: dtolnay/rust-toolchain@stable
-
-      - uses: Swatinem/rust-cache@v2
-
-      - name: Install Linux libraries
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
-            pkg-config \
-            libssl-dev \
-            libgtk-3-dev \
-            libwebkit2gtk-4.1-dev \
-            libayatana-appindicator3-dev \
-            librsvg2-dev \
-            libfontconfig1-dev \
-            fakeroot \
-            dpkg
-
-      - name: Install JavaScript dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Download Studio killing model
-        # Killing-assay ONNX (HF); package-time cache only — not a product brain.
-        if: matrix.product == 'studio'
-        shell: bash
-        run: |
-          curl -fL --retry 3 --retry-delay 2 "https://huggingface.co/keejkrej/killing-assay-resnet18/resolve/main/model.onnx" \
-            -o ./models/killing-assay-resnet18/model.onnx
-          test -s models/killing-assay-resnet18/model.onnx
-
-      # Without these, Tauri leaves only the linker's ad-hoc signature on the executable and
-      # macOS reports the downloaded app as "damaged". Fail rather than ship that.
-      - name: Check macOS signing secrets
-        if: runner.os == 'macOS'
-        shell: bash
-        env:
-          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
-          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-        run: |
-          missing=0
-          for name in APPLE_CERTIFICATE APPLE_CERTIFICATE_PASSWORD APPLE_SIGNING_IDENTITY APPLE_ID APPLE_PASSWORD APPLE_TEAM_ID; do
-            if [ -z "${!name}" ]; then
-              echo "::error::Missing Actions secret ${name} (see docs/agents/releases.md)"
-              missing=1
-            fi
-          done
-          exit "${missing}"
-
-      # Tauri imports the certificate into a temporary keychain, signs the bundle with the
-      # hardened runtime, notarizes and staples the .app, then builds and signs the DMG.
-      - name: Package desktop app
-        env:
-          APPLE_CERTIFICATE: ${{ runner.os == 'macOS' && secrets.APPLE_CERTIFICATE || '' }}
-          APPLE_CERTIFICATE_PASSWORD: ${{ runner.os == 'macOS' && secrets.APPLE_CERTIFICATE_PASSWORD || '' }}
-          APPLE_SIGNING_IDENTITY: ${{ runner.os == 'macOS' && secrets.APPLE_SIGNING_IDENTITY || '' }}
-          APPLE_ID: ${{ runner.os == 'macOS' && secrets.APPLE_ID || '' }}
-          APPLE_PASSWORD: ${{ runner.os == 'macOS' && secrets.APPLE_PASSWORD || '' }}
-          APPLE_TEAM_ID: ${{ runner.os == 'macOS' && secrets.APPLE_TEAM_ID || '' }}
-        run: pnpm run dist:${{ matrix.product }}
-
-      # Tauri 2.11 leaves the signed DMG itself unnotarized (tauri-apps/tauri#15822), so submit
-      # and staple the DMG that gets uploaded.
-      - name: Notarize macOS DMG
-        if: runner.os == 'macOS'
-        shell: bash
-        env:
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-        run: |
-          set -euo pipefail
-          shopt -s nullglob
-          dmgs=("apps/${{ matrix.product }}/desktop/release/dmg/"*.dmg)
-          if [ "${#dmgs[@]}" -ne 1 ]; then
-            echo "Expected one DMG, found ${#dmgs[@]}" >&2
-            exit 1
-          fi
-          xcrun notarytool submit "${dmgs[0]}" \
-            --apple-id "${APPLE_ID}" --password "${APPLE_PASSWORD}" --team-id "${APPLE_TEAM_ID}" \
-            --wait --timeout 30m
-          xcrun stapler staple "${dmgs[0]}"
-
-      # Check the app users install, inside the DMG; with only the dmg target Tauri does not
-      # keep a loose .app in the release directory.
-      - name: Verify macOS signature and notarization
-        if: runner.os == 'macOS'
-        shell: bash
-        run: |
-          set -euo pipefail
-          shopt -s nullglob
-          dmgs=("apps/${{ matrix.product }}/desktop/release/dmg/"*.dmg)
-          if [ "${#dmgs[@]}" -ne 1 ]; then
-            echo "Expected one DMG, found ${#dmgs[@]}" >&2
-            exit 1
-          fi
-          codesign --verify --strict --verbose=2 "${dmgs[0]}"
-          xcrun stapler validate "${dmgs[0]}"
-          spctl --assess --type open --context context:primary-signature --verbose=4 "${dmgs[0]}"
-          mnt="$(mktemp -d)"
-          hdiutil attach "${dmgs[0]}" -readonly -nobrowse -mountpoint "${mnt}" >/dev/null
-          trap 'hdiutil detach "${mnt}" >/dev/null' EXIT
-          apps=("${mnt}/"*.app)
-          if [ "${#apps[@]}" -ne 1 ]; then
-            echo "Expected one .app in the DMG, found ${#apps[@]}" >&2
-            exit 1
-          fi
-          codesign --verify --deep --strict --verbose=2 "${apps[0]}"
-          spctl --assess --type execute --verbose=4 "${apps[0]}"
-
-      - name: Upload installers
-        shell: bash
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          set -euo pipefail
-          product="${{ matrix.product }}"
-          dest="apps/${product}/desktop/release"
-          shopt -s nullglob
-          case "${RUNNER_OS}" in
-            macOS) files=("${dest}"/dmg/*.dmg) ;;
-            Windows) files=("${dest}"/nsis/*.exe) ;;
-            Linux) files=("${dest}"/deb/*.deb) ;;
-            *) echo "unsupported OS ${RUNNER_OS}" >&2; exit 1 ;;
-          esac
-          if [ "${#files[@]}" -eq 0 ]; then
-            echo "No installers under ${dest}" >&2
-            ls -R "${dest}" || true
-            exit 1
-          fi
-          gh release upload "${GITHUB_REF_NAME}" "${files[@]}" --clobber
+    uses: ./.github/workflows/desktop-package.yml
+    with:
+      upload_target: release
+      os: all
+      products: '["studio", "aligner", "annotator"]'
+    secrets: inherit
