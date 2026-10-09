@@ -11,7 +11,8 @@ import { Show, createMemo } from "solid-js";
 
 import { useStudioAlignNav } from "../state/studio-align-page-selectors";
 
-export function StudioAlignNav(props: { frameOnly?: boolean }) {
+/** Standard Navigation shows Channel and Frame. Expert adds Position, Z, and Contrast. */
+export function StudioAlignNav(props: { standard?: boolean }) {
   const nav = useStudioAlignNav();
   const disabled = createMemo(() => !nav.scan);
   const positionOptions = createMemo(() =>
@@ -33,9 +34,8 @@ export function StudioAlignNav(props: { frameOnly?: boolean }) {
     <>
       <FrameNavigation
         sectionAppearance="rail"
-        sectionTitle={props.frameOnly ? "Frame" : undefined}
         position={
-          props.frameOnly
+          props.standard
             ? undefined
             : {
                 get value() {
@@ -64,36 +64,32 @@ export function StudioAlignNav(props: { frameOnly?: boolean }) {
                 },
               }
         }
-        channel={
-          props.frameOnly
-            ? undefined
-            : {
-                get value() {
-                  return nav.selection.channel;
-                },
-                get options() {
-                  return channelOptions();
-                },
-                get disabled() {
-                  return disabled();
-                },
-                onChange: (channel) => nav.setSelection({ channel }),
-                get previousDisabled() {
-                  return disabled() || chIndex() <= 0;
-                },
-                get nextDisabled() {
-                  return disabled() || chIndex() >= channelOptions().length - 1;
-                },
-                onPrevious: () => {
-                  const next = stepNavigationValue(channelOptions(), nav.selection.channel, -1);
-                  if (next != null) nav.setSelection({ channel: next });
-                },
-                onNext: () => {
-                  const next = stepNavigationValue(channelOptions(), nav.selection.channel, 1);
-                  if (next != null) nav.setSelection({ channel: next });
-                },
-              }
-        }
+        channel={{
+          get value() {
+            return nav.selection.channel;
+          },
+          get options() {
+            return channelOptions();
+          },
+          get disabled() {
+            return disabled();
+          },
+          onChange: (channel) => nav.setSelection({ channel }),
+          get previousDisabled() {
+            return disabled() || chIndex() <= 0;
+          },
+          get nextDisabled() {
+            return disabled() || chIndex() >= channelOptions().length - 1;
+          },
+          onPrevious: () => {
+            const next = stepNavigationValue(channelOptions(), nav.selection.channel, -1);
+            if (next != null) nav.setSelection({ channel: next });
+          },
+          onNext: () => {
+            const next = stepNavigationValue(channelOptions(), nav.selection.channel, 1);
+            if (next != null) nav.setSelection({ channel: next });
+          },
+        }}
         frame={{
           get value() {
             return clamp(timeIndex(), 0, Math.max(0, (nav.scan?.times?.length ?? 1) - 1));
@@ -158,7 +154,7 @@ export function StudioAlignNav(props: { frameOnly?: boolean }) {
           },
         }}
         zPlane={
-          props.frameOnly
+          props.standard
             ? undefined
             : {
                 get value() {
@@ -226,7 +222,7 @@ export function StudioAlignNav(props: { frameOnly?: boolean }) {
               }
         }
       />
-      <Show when={!props.frameOnly}>
+      <Show when={!props.standard}>
         <ContrastControl
           aria-label="Contrast"
           contrast={nav.contrast}

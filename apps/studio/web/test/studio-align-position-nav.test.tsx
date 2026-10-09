@@ -110,13 +110,18 @@ function renderStack(pos: Accessor<number>, expert = false): void {
 afterEach(cleanup);
 
 describe("Studio Align position buttons", () => {
-  it("enables Next on the first position and shows the frame slider", () => {
+  it("enables Next on the first position and shows Channel and Frame in Navigation", () => {
     const [pos] = createSignal(61);
     renderStack(pos);
 
     expect(screen.getByRole("button", { name: "Back" }).hasAttribute("disabled")).toBe(true);
     expect(screen.getByRole("button", { name: "Next" }).hasAttribute("disabled")).toBe(false);
+    expect(screen.getByText("Navigation")).toBeTruthy();
+    expect(screen.getByText("Channel")).toBeTruthy();
+    expect(screen.getByText("Frame")).toBeTruthy();
     expect(screen.getByText("20 (3/3)")).toBeTruthy();
+    expect(screen.queryByText("Position")).toBeNull();
+    expect(screen.queryByText("Z plane")).toBeNull();
     expect(screen.queryByText("Contrast")).toBeNull();
   });
 
@@ -134,6 +139,10 @@ describe("Studio Align position buttons", () => {
     renderStack(pos, true);
 
     expect(screen.getByText("Navigation")).toBeTruthy();
+    expect(screen.getByText("Position")).toBeTruthy();
+    expect(screen.getByText("Channel")).toBeTruthy();
+    expect(screen.getByText("Frame")).toBeTruthy();
+    expect(screen.getByText("Z plane")).toBeTruthy();
     expect(screen.getByText("Contrast")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Back" }).hasAttribute("disabled")).toBe(false);
     expect(screen.getByRole("button", { name: "Next" }).hasAttribute("disabled")).toBe(false);

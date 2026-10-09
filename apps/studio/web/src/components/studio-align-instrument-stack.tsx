@@ -86,7 +86,7 @@ export function StudioAlignInstrumentStack(props: { expert?: boolean }) {
   return (
     <RailSectionStack class={RAIL_CLASS}>
       <Show when={!props.expert}>
-        <StudioAlignNav frameOnly />
+        <StudioAlignNav standard />
       </Show>
       <Show when={props.expert}>
         <StudioAlignNav />
