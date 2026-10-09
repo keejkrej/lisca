@@ -37,8 +37,6 @@ jobs:
             | App | macOS | Windows | Linux |
             | --- | --- | --- | --- |
             | Studio | DMG | NSIS | deb |
-            | Aligner | DMG | NSIS | deb |
-            | Annotator | DMG | NSIS | deb |
 
             macOS builds are signed with a Developer ID and notarized by Apple. Windows builds are not
             signed yet, so SmartScreen will warn.
@@ -53,7 +51,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        product: [studio, aligner, annotator]
+        product: [studio]
         os: [macos-latest, windows-latest, ubuntu-latest]
     steps:
       - uses: actions/checkout@v4

@@ -23,9 +23,9 @@ describe("desktop release versions", () => {
     ).toThrow(/studio\/Cargo\.toml: 0\.1\.0[\s\S]*studio\/tauri\.conf\.json: 0\.2\.0/);
   });
 
-  it("keeps all shipped desktop products on one release train", () => {
+  it("keeps the shipped Studio desktop product on the release train", () => {
     const entries = desktopReleaseVersions(process.cwd());
-    expect(entries).toHaveLength(9);
+    expect(entries).toHaveLength(3);
     const version = entries[0].version;
     expect(assertReleaseVersions(`v${version}`, entries)).toBe(version);
   });
