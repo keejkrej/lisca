@@ -44,22 +44,8 @@ function stageArtifacts(product: LiscaProduct, cfg: DesktopProductConfig): strin
   }
   cpSync(brandSrc, join(resourcesDir, "brand"), { recursive: true });
 
-  if (product === "studio") {
-    // Killing-assay ONNX (HF keejkrej/killing-assay-resnet18). Ownership is
-    // the killing sidecar; this repo only stages the curl-at-package-time cache.
-    const modelSrc = join(root, "models", "killing-assay-resnet18");
-    const modelFile = join(modelSrc, "model.onnx");
-    if (!existsSync(modelFile)) {
-      console.error(
-        `Missing Studio killing model at ${modelFile}. Download it before packaging (see models/killing-assay-resnet18/README.md).`,
-      );
-      process.exit(1);
-    }
-    cpSync(modelSrc, join(resourcesDir, "models", "killing-assay-resnet18"), {
-      recursive: true,
-    });
-  }
-
+  // ONNX weights stay off the installer. Smart tools are deferred to a hosted
+  // service, and killing predict resolves a local cache or LISCA_KILL_MODEL.
   return desktopDir;
 }
 

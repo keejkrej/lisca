@@ -37,10 +37,19 @@ export function PathPickerTriggerContent(props: {
   );
 }
 
+export function pathPickerAccessibleName(
+  label: string,
+  value: string,
+  placeholder: string,
+  action: string,
+): string {
+  const shown = value.trim() || placeholder.trim();
+  return shown ? `${label}: ${shown}. ${action}` : `${label}. ${action}`;
+}
+
 /** A read-only path value whose whole surface opens a picker dialog. */
 export function PathPickerField(props: PathPickerFieldProps) {
   const actionLabel = () => props.actionLabel ?? "Browse";
-  const displayValue = () => props.value.trim() || props.placeholder;
 
   return (
     <Field class="w-full gap-2">
@@ -49,11 +58,16 @@ export function PathPickerField(props: PathPickerFieldProps) {
       </FieldLabel>
       <Button
         aria-haspopup="dialog"
-        aria-label={`${props.label}: ${displayValue()}. ${actionLabel()}`}
+        aria-label={pathPickerAccessibleName(
+          props.label,
+          props.value,
+          props.placeholder,
+          actionLabel(),
+        )}
         class={pathPickerTriggerClass}
         id={props.id}
         size="sm"
-        title={props.value.trim() || props.placeholder}
+        title={props.value.trim() || props.placeholder.trim() || undefined}
         type="button"
         variant="outline"
         onClick={props.onOpen}

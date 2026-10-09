@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, within } from "@solidjs/testing-library";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@solidjs/testing-library";
 import { createSignal } from "solid-js";
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
@@ -154,6 +154,37 @@ describe("stage rail tool compatibility", () => {
         "magnifier-icon",
       ),
     ).toBeTruthy();
+  });
+
+  it("keeps Smart and Smart Erase visible and refuses to select them", async () => {
+    const onToolChange = vi.fn();
+    const actions = buildAnnotationToolActions("brush", onToolChange, false);
+    const rail = render(() => (
+      <AnnotationToolGrid canEditTools layout="rail" shortcutsEnabled toolActions={actions} />
+    ));
+
+    const smart = screen.getByRole("button", { name: "Smart (3)" }) as HTMLButtonElement;
+    expect(smart.disabled).toBe(true);
+    expect(smart.textContent).not.toContain("Version 1.0");
+    expect(smart.title).toBe("");
+    const smartTrigger = smart.closest("[data-slot='tooltip-trigger']");
+    expect(smartTrigger).toBeTruthy();
+    (smartTrigger as HTMLElement).focus();
+    await waitFor(() => {
+      expect(screen.getByRole("tooltip").textContent).toBe("Coming soon in version 1.0.");
+    });
+    fireEvent.click(smart);
+    fireEvent.keyDown(window, { key: "3" });
+    expect(onToolChange).not.toHaveBeenCalled();
+    rail.unmount();
+
+    render(() => <AnnotationToolGrid canEditTools shortcutsEnabled toolActions={actions} />);
+    const smartErase = screen.getByRole("button", { name: "Smart Erase (6)" }) as HTMLButtonElement;
+    expect(smartErase.disabled).toBe(true);
+    expect(smartErase.textContent).not.toContain("Version 1.0");
+    fireEvent.click(smartErase);
+    fireEvent.keyDown(window, { key: "6" });
+    expect(onToolChange).not.toHaveBeenCalled();
   });
 
   it("keeps tool numbers visible while shortcut keys are disabled", () => {

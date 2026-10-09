@@ -14,8 +14,8 @@ use crate::analysis::sample::{build_sample_mapping, parse_interval_minutes, Samp
 pub use predict::{PredictControl, PredictFailure};
 
 pub fn resolve_model_path(workspace: &Path) -> Result<PathBuf, String> {
-    // Killing-assay brain (HF keejkrej/killing-assay-resnet18). This repo
-    // curls the ONNX at Studio package time; do not grow a third weights tree.
+    // Killing-assay brain (HF keejkrej/killing-assay-resnet18). Installers do
+    // not ship the ONNX; resolve a local cache or LISCA_KILL_MODEL.
     let mut candidates = vec![
         workspace.join("models/killing-assay-resnet18"),
         crate::onnx::workspace_models_dir().join("killing-assay-resnet18"),

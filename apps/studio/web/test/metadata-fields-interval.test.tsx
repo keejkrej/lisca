@@ -38,23 +38,33 @@ function intervalInput(container: HTMLElement): HTMLInputElement {
 afterEach(cleanup);
 
 describe("MetadataFields misc", () => {
-  it("shows skip segmentation under Misc for transfection only", async () => {
+  it("shows segmentation settings for transfection and killing, and keeps smart segmentation unavailable", async () => {
     renderWizard();
     expect(screen.getByText("Misc")).toBeTruthy();
+    expect(screen.getByText("Max onset time t0")).toBeTruthy();
     expect(screen.getByRole("checkbox", { name: "Skip segmentation" })).toBeTruthy();
     expect(screen.getByText("Segmentation method")).toBeTruthy();
     const logstd = screen.getByRole("radio", { name: "Log-std segmentation" });
-    const smart = screen.getByRole("radio", { name: "Smart segmentation" });
+    const smart = screen.getByRole("radio", { name: /Smart segmentation/ });
     const method = screen.getByRole("radiogroup", { name: "Segmentation method" });
     expect(method.parentElement?.className).toContain("ps-[calc(1rem+0.625rem)]");
     expect((logstd as HTMLInputElement).checked).toBe(true);
     expect(logstd.hasAttribute("disabled") || logstd.getAttribute("aria-disabled") === "true").toBe(
       false,
     );
-    fireEvent.click(smart);
+    expect(smart.hasAttribute("disabled") || smart.getAttribute("aria-disabled") === "true").toBe(
+      true,
+    );
+    expect(screen.queryByText("Version 1.0")).toBeNull();
+    const smartTrigger = smart.closest("[data-slot='tooltip-trigger']");
+    expect(smartTrigger).toBeTruthy();
+    (smartTrigger as HTMLElement).focus();
     await waitFor(() => {
-      expect((smart as HTMLInputElement).checked).toBe(true);
+      expect(screen.getByRole("tooltip").textContent).toBe("Coming soon in version 1.0.");
     });
+    fireEvent.click(smart);
+    expect((logstd as HTMLInputElement).checked).toBe(true);
+    expect((smart as HTMLInputElement).checked).toBe(false);
     fireEvent.click(screen.getByRole("checkbox", { name: "Skip segmentation" }));
     await waitFor(() => {
       for (const mode of [logstd, smart]) {
@@ -65,31 +75,39 @@ describe("MetadataFields misc", () => {
     });
     expect(screen.queryByText("Use the full ROI (skip mask)")).toBeNull();
 
-    fireEvent.click(screen.getByRole("button", { name: /Killing/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Killing \(death reporter\)/ }));
 
     await waitFor(() => {
-      expect(screen.queryByText("Misc")).toBeNull();
-      expect(screen.queryByRole("checkbox", { name: "Skip segmentation" })).toBeNull();
+      expect(screen.getByText("Misc")).toBeTruthy();
+      expect(screen.getByRole("checkbox", { name: "Skip segmentation" })).toBeTruthy();
+      expect(screen.queryByText("Max onset time t0")).toBeNull();
     });
   });
 });
 
 describe("MetadataFields interval field across assay switches", () => {
-  it("seeds the transfection default 10 and the e.g. 10 placeholder", () => {
+  it("seeds the transfection default 10", () => {
     const { container } = renderWizard();
     const input = intervalInput(container);
     expect(input.value).toBe("10");
-    expect(input.placeholder).toBe("e.g. 10…");
+    expect(input.placeholder).toBe("");
   });
 
-  it("clears the interval and switches the placeholder to Enter interval when selecting killing", async () => {
+  it("replaces the transfection default with 5 minutes when selecting killing", async () => {
     const { container } = renderWizard();
-    fireEvent.click(screen.getByRole("button", { name: /Killing/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Killing \(death reporter\)/ }));
 
     await waitFor(() => {
       const input = intervalInput(container);
-      expect(input.value).toBe("");
-      expect(input.placeholder).toBe("Enter interval…");
+      expect(input.value).toBe("5");
+      expect(input.placeholder).toBe("");
+      const killing = screen.getByRole("button", { name: /Killing \(death reporter\)/ });
+      expect(killing.textContent).toContain("Cytotoxicity timeseries");
+      expect(killing.textContent).toContain("Fluorescence");
+      const labelFree = screen.getByRole("button", { name: /Killing \(label-free\)/ });
+      expect(labelFree.hasAttribute("disabled")).toBe(true);
+      expect(labelFree.textContent).toContain("Cytotoxicity timeseries");
+      expect(labelFree.textContent).toContain("Brightfield");
     });
   });
 });

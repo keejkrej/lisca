@@ -4,7 +4,7 @@ import type {
   StudioIntervalUnit,
 } from "@lisca/contracts/assay";
 
-import { isValidSamplePositionRange, parseSignalChannels } from "./sample-positions";
+import { isValidStoredPositions, parseSignalChannels } from "./sample-positions";
 
 function parseNonNegativeInteger(value: string): number | null {
   const trimmed = value.trim();
@@ -52,7 +52,7 @@ export function validAssaySamples(samples: StudioAssaySampleRow[]): boolean {
     samples.every(
       (row) =>
         row.name.trim().length > 0 &&
-        isValidSamplePositionRange(row.positionStart, row.positionFinish) &&
+        isValidStoredPositions(row.positions) &&
         parseNonNegativeInteger(row.segmentation) != null &&
         parseSignalChannels(row.signal) != null,
     )
@@ -91,9 +91,9 @@ export function validateAssayForAnalysis(input: {
     if (row.name.trim().length === 0) {
       errors.push(`${rowLabel}: sample name must be non-empty.`);
     }
-    if (!isValidSamplePositionRange(row.positionStart, row.positionFinish)) {
+    if (!isValidStoredPositions(row.positions)) {
       errors.push(
-        `${rowLabel}: position start and end must be whole numbers from 1, with end >= start.`,
+        `${rowLabel}: positions must be whole numbers from 1. Separate ranges with a comma.`,
       );
     }
     if (parseNonNegativeInteger(row.segmentation) == null) {
@@ -116,7 +116,7 @@ export function validateAssayForAnalysis(input: {
   return { ok: true };
 }
 
-export { isValidSamplePositionRange } from "./sample-positions";
+export { isValidStoredPositions } from "./sample-positions";
 
 /** @deprecated Use validAssayIdentity */
 export const validInfo1 = (info: { name: string; dataPath: string; saveTo: string }): boolean =>

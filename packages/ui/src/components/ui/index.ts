@@ -83,4 +83,5 @@ export * from "./table";
 export * from "./tabs";
 export * from "./textarea";
 export * from "./toast";
+export * from "./coming-soon-tooltip";
 export * from "./tooltip";

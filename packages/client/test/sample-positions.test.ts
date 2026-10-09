@@ -4,11 +4,14 @@ import type { StudioAssaySamples } from "@lisca/contracts/assay";
 import {
   analysisChannelsFromSamples,
   collectAssayPositions,
+  commitDisplayPositionDraft,
   expandPositionRange,
+  expandStoredPositions,
   filterScanPositionsForAssay,
+  formatPositionChip,
   formatSamplePositions,
-  isValidSamplePositionRange,
-  parseSamplePositions,
+  formatStoredPositions,
+  isValidStoredPositions,
   parseSignalChannels,
   samplePositionFromDisplay,
   samplePositionToDisplay,
@@ -23,26 +26,38 @@ describe("sample positions", () => {
     expect(formatSamplePositions("12", "1")).toBe("1:12");
   });
 
-  test("parses positions strings into start and finish", () => {
-    expect(parseSamplePositions("1:12")).toEqual({
-      positionStart: "1",
-      positionFinish: "12",
+  test("keeps gaps and merges overlaps in the stored positions string", () => {
+    expect(
+      formatStoredPositions([
+        { start: 0, end: 4 },
+        { start: 20, end: 24 },
+      ]),
+    ).toBe("0:4,20:24");
+    expect(formatPositionChip({ start: 0, end: 4 })).toBe("1–5");
+    expect(formatPositionChip({ start: 7, end: 7 })).toBe("8");
+    expect(commitDisplayPositionDraft("", "1-5, 21-25", true)).toEqual({
+      positions: "0:4,20:24",
+      draft: "",
+      invalid: false,
     });
-    expect(parseSamplePositions("5")).toEqual({
-      positionStart: "5",
-      positionFinish: "5",
+    expect(commitDisplayPositionDraft("", "1-5, 4-8", true).positions).toBe("0:7");
+    expect(commitDisplayPositionDraft("", "5-1", true).positions).toBe("0:4");
+    expect(commitDisplayPositionDraft("", "8", true).positions).toBe("7");
+    expect(commitDisplayPositionDraft("0:4", "21-25", true).positions).toBe("0:4,20:24");
+    expect(commitDisplayPositionDraft("", "foo", true)).toEqual({
+      positions: "",
+      draft: "foo",
+      invalid: true,
     });
-    expect(parseSamplePositions("1,3,5")).toEqual({
-      positionStart: "1",
-      positionFinish: "5",
+    expect(commitDisplayPositionDraft("", "1-5,", false)).toMatchObject({
+      positions: "0:4",
+      draft: "",
+      invalid: false,
     });
-  });
-
-  test("validates 0-based position ranges", () => {
-    expect(isValidSamplePositionRange("0", "11")).toBe(true);
-    expect(isValidSamplePositionRange("1", "12")).toBe(true);
-    expect(isValidSamplePositionRange("12", "1")).toBe(false);
-    expect(isValidSamplePositionRange("", "12")).toBe(false);
+    expect(isValidStoredPositions("0:4,20:24")).toBe(true);
+    expect(isValidStoredPositions("")).toBe(false);
+    expect(isValidStoredPositions("4:1")).toBe(false);
+    expect(expandStoredPositions("0:1,3")).toEqual([0, 1, 3]);
   });
 
   test("parses signal channel lists", () => {
@@ -56,12 +71,11 @@ describe("sample positions", () => {
     expect(
       sampleRowToDisk({
         name: "  sample ",
-        positionStart: "2",
-        positionFinish: "4",
+        positions: "2:4,8",
       }),
     ).toEqual({
       name: "sample",
-      positions: "2:4",
+      positions: "2:4,8",
     });
   });
 
@@ -70,7 +84,7 @@ describe("sample positions", () => {
       sampleRowFromDisk(
         {
           name: "sample",
-          positions: "9:20",
+          positions: "9:20,30:31",
         },
         {
           channels: { segmentation: 0, signal: [1] },
@@ -82,8 +96,7 @@ describe("sample positions", () => {
       ),
     ).toEqual({
       name: "sample",
-      positionStart: "9",
-      positionFinish: "20",
+      positions: "9:20,30:31",
       segmentation: "2",
       signal: "3,4",
     });
@@ -133,22 +146,20 @@ describe("sample positions", () => {
         {
           id: "sample:0",
           name: "a",
-          positionStart: "0",
-          positionFinish: "3",
+          positions: "0:3",
           segmentation: "0",
           signal: "1",
         },
         {
           id: "sample:1",
           name: "b",
-          positionStart: "2",
-          positionFinish: "5",
+          positions: "2:5,8",
           segmentation: "0",
           signal: "1",
         },
       ],
     };
-    expect(collectAssayPositions(samples)).toEqual([0, 1, 2, 3, 4, 5]);
+    expect(collectAssayPositions(samples)).toEqual([0, 1, 2, 3, 4, 5, 8]);
   });
 
   test("filters scan positions to assay positions in scan order", () => {

@@ -1,11 +1,24 @@
-import { Button, Input } from "@lisca/ui/components";
+import {
+  Button,
+  Card,
+  CardContent,
+  Input,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@lisca/ui/components";
 import { useAtomSet, useAtomValue } from "@effect/atom-solid";
 import {
-  samplePositionFromDisplay,
-  samplePositionToDisplay,
+  commitDisplayPositionDraft,
+  formatPositionChip,
+  formatStoredPositions,
+  storedPositionRanges,
+  type StoredPositionRange,
 } from "@lisca/client/studio/sample-positions";
-import { createSignal, For } from "solid-js";
+import { createEffect, createSignal, createUniqueId, For, Show, type JSX } from "solid-js";
+import IconInfoRegular from "phosphor-icons-solid/IconInfoRegular";
 import IconTrashRegular from "phosphor-icons-solid/IconTrashRegular";
+import IconXRegular from "phosphor-icons-solid/IconXRegular";
 
 import { studioWizardActions, studioWizardAtom } from "../state/studio-store";
 
@@ -31,20 +44,27 @@ export function MetadataSamples() {
           Samples
         </h2>
         <p class="text-[13px] leading-[18px] text-muted-foreground">
-          Each row is one sample: a unique name, position range, and segmentation vs signal
-          channels.
+          Each card is one sample: a unique name, the positions it covers, and segmentation vs
+          signal channels.
         </p>
       </div>
-      <div class="flex w-full min-w-0 flex-col gap-5">
-        <For each={samples()}>
-          {(row, index) => (
-            <SampleCard
-              index={index()}
-              row={row}
-              onChange={(patch) => updateSample(index(), patch)}
-              onRemove={() => removeSample(index())}
-            />
-          )}
+      <div class="grid w-full min-w-0 grid-cols-[repeat(auto-fill,minmax(min(100%,17.5rem),1fr))] gap-4">
+        <For each={samples().map((row) => row.id)}>
+          {(id, index) => {
+            const row = () => samples().find((sample) => sample.id === id);
+            return (
+              <Show when={row()}>
+                {(current) => (
+                  <SampleCard
+                    index={index()}
+                    row={current()}
+                    onChange={(patch) => updateSample(index(), patch)}
+                    onRemove={() => removeSample(index())}
+                  />
+                )}
+              </Show>
+            );
+          }}
         </For>
       </div>
       <Button class="w-full justify-center" type="button" variant="outline" onClick={addSample}>
@@ -58,135 +78,230 @@ function SampleCard(props: {
   index: number;
   row: {
     name: string;
-    positionStart: string;
-    positionFinish: string;
+    positions: string;
     segmentation: string;
     signal: string;
   };
   onChange: (patch: {
     name?: string;
-    positionStart?: string;
-    positionFinish?: string;
+    positions?: string;
     segmentation?: string;
     signal?: string;
   }) => void;
   onRemove: () => void;
 }) {
   return (
-    <article
-      aria-label={`Sample ${props.index + 1}`}
-      class="grid min-w-0 grid-cols-[minmax(0,1fr)_2rem] gap-x-2.5 gap-y-4"
-    >
-      <label class="flex min-w-0 flex-col gap-1.5">
-        <span class="text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
-          Name
-        </span>
-        <Input
-          autocomplete="off"
-          aria-label="Name"
-          class="h-8 min-w-0 px-3 text-[13px]"
-          name={`samples.${props.index}.name`}
-          placeholder="e.g. eGFP, 100 nM STS…"
-          value={props.row.name}
-          onChange={(event) => props.onChange({ name: event.currentTarget.value })}
-        />
-      </label>
-      <Button
-        aria-label="Remove sample"
-        class="self-end justify-self-center"
-        size="icon"
-        type="button"
-        variant="ghost"
-        onClick={props.onRemove}
-      >
-        <IconTrashRegular />
-      </Button>
-      <div class="col-start-1 grid min-w-0 grid-cols-2 gap-4 sm:grid-cols-4">
-        <SampleField label="Position start">
-          <SamplePositionInput
-            aria-label="Position start"
-            name={`samples.${props.index}.position-start`}
-            placeholder="e.g. 1…"
-            value={props.row.positionStart}
-            onChange={(positionStart) => props.onChange({ positionStart })}
-          />
-        </SampleField>
-        <SampleField label="Position end">
-          <SamplePositionInput
-            aria-label="Position finish"
-            name={`samples.${props.index}.position-finish`}
-            placeholder="e.g. 10…"
-            value={props.row.positionFinish}
-            onChange={(positionFinish) => props.onChange({ positionFinish })}
-          />
-        </SampleField>
-        <SampleField label="Segmentation">
+    <Card aria-label={`Sample ${props.index + 1}`} class="min-w-0" role="article" size="sm">
+      <CardContent class="flex flex-col gap-4">
+        <div class="flex flex-col gap-1.5">
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+              Name
+            </span>
+            <Button
+              aria-label="Remove sample"
+              class="size-6"
+              size="icon-xs"
+              type="button"
+              variant="ghost"
+              onClick={props.onRemove}
+            >
+              <IconTrashRegular />
+            </Button>
+          </div>
           <Input
             autocomplete="off"
-            aria-label="Segmentation channel"
-            class="h-8 w-full px-2 text-center font-mono text-[13px]"
-            inputMode="numeric"
-            name={`samples.${props.index}.segmentation-channel`}
-            placeholder="e.g. 0…"
-            value={props.row.segmentation}
-            onChange={(event) => props.onChange({ segmentation: event.currentTarget.value })}
+            aria-label="Name"
+            class="h-8 w-full min-w-0 px-3 text-[13px]"
+            name={`samples.${props.index}.name`}
+            value={props.row.name}
+            onChange={(event) => props.onChange({ name: event.currentTarget.value })}
           />
+        </div>
+        <SampleField
+          hint="Counting starts at 1. Type 1-5, 21-25, 28 and press Enter."
+          label="Positions"
+        >
+          {(fieldId) => (
+            <SamplePositionsInput
+              id={fieldId}
+              name={`samples.${props.index}.positions`}
+              value={props.row.positions}
+              onChange={(positions) => props.onChange({ positions })}
+            />
+          )}
         </SampleField>
-        <SampleField label="Signal">
-          <Input
-            autocomplete="off"
-            aria-label="Signal channels"
-            class="h-8 w-full px-3 text-center font-mono text-[13px]"
-            name={`samples.${props.index}.signal-channels`}
-            placeholder="e.g. 1 or 1,2…"
-            value={props.row.signal}
-            onChange={(event) => props.onChange({ signal: event.currentTarget.value })}
-          />
+        <SampleField hint="Channel used to find cells." label="Segmentation channel">
+          {(fieldId) => (
+            <Input
+              id={fieldId}
+              autocomplete="off"
+              aria-label="Segmentation channel"
+              class="h-8 w-full px-3 font-mono text-[13px]"
+              inputMode="numeric"
+              name={`samples.${props.index}.segmentation-channel`}
+              value={props.row.segmentation}
+              onChange={(event) => props.onChange({ segmentation: event.currentTarget.value })}
+            />
+          )}
         </SampleField>
-      </div>
-    </article>
+        <SampleField
+          hint="Channel measured for intensity. Separate extra channels with a comma."
+          label="Signal channel"
+        >
+          {(fieldId) => (
+            <Input
+              id={fieldId}
+              autocomplete="off"
+              aria-label="Signal channel"
+              class="h-8 w-full px-3 font-mono text-[13px]"
+              name={`samples.${props.index}.signal-channels`}
+              value={props.row.signal}
+              onChange={(event) => props.onChange({ signal: event.currentTarget.value })}
+            />
+          )}
+        </SampleField>
+      </CardContent>
+    </Card>
   );
 }
 
-function SampleField(props: { label: string; children: import("solid-js").JSX.Element }) {
+function SampleField(props: {
+  label: string;
+  hint?: string;
+  children: (fieldId: string) => JSX.Element;
+}) {
+  const fieldId = createUniqueId();
   return (
-    <label class="flex min-w-0 flex-col gap-1.5">
-      <span class="text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
-        {props.label}
-      </span>
-      {props.children}
-    </label>
+    <div class="flex min-w-0 flex-col gap-1.5">
+      <div class="flex min-w-0 items-center gap-1">
+        <label
+          class="text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground"
+          for={fieldId}
+        >
+          {props.label}
+        </label>
+        <Show when={props.hint}>
+          {(hint) => (
+            <Tooltip placement="top" openDelay={200}>
+              <TooltipTrigger
+                type="button"
+                aria-label={`${props.label} details`}
+                class="inline-flex size-3.5 shrink-0 items-center justify-center border-0 bg-transparent p-0 text-muted-foreground"
+                delay={200}
+              >
+                <IconInfoRegular class="size-3.5" />
+              </TooltipTrigger>
+              <TooltipContent class="max-w-56 px-2.5 py-1.5 text-left text-[11px] font-normal normal-case leading-4 tracking-normal">
+                {hint()}
+              </TooltipContent>
+            </Tooltip>
+          )}
+        </Show>
+      </div>
+      {props.children(fieldId)}
+    </div>
   );
 }
 
 /**
- * Edits a stored 0-based position as a 1-based number. Text that is not an integer >= 1
- * stays visible as typed and stores `""`, so validation flags the row.
+ * Edits 0-based assay positions as 1-based chips. `1-5, 21-25` becomes two chips.
+ * A token that is not a position stays in the field and is not saved.
  */
-function SamplePositionInput(props: {
-  "aria-label": string;
+function SamplePositionsInput(props: {
+  id: string;
   name: string;
-  placeholder: string;
   value: string;
-  onChange: (stored: string) => void;
+  onChange: (positions: string) => void;
 }) {
-  const [draft, setDraft] = createSignal<string | null>(null);
+  const [draft, setDraft] = createSignal("");
+  const [invalid, setInvalid] = createSignal(false);
+  // The field can commit twice before the wizard prop catches up (comma, then blur).
+  let committed = props.value;
+  let seen = props.value;
+  const [ranges, setRanges] = createSignal(storedPositionRanges(props.value));
+  createEffect(() => {
+    const incoming = props.value;
+    if (incoming === seen) return;
+    seen = incoming;
+    committed = incoming;
+    setRanges(storedPositionRanges(incoming));
+  });
+
+  const publish = (positions: string) => {
+    committed = positions;
+    setRanges(storedPositionRanges(positions));
+    if (positions !== props.value) props.onChange(positions);
+  };
+
+  const applyDraft = (raw: string, commitTrailing: boolean) => {
+    const next = commitDisplayPositionDraft(committed, raw, commitTrailing);
+    publish(next.positions);
+    setDraft(next.draft);
+    setInvalid(next.invalid);
+  };
+
+  const removeRange = (range: StoredPositionRange) => {
+    publish(
+      formatStoredPositions(
+        ranges().filter((item) => item.start !== range.start || item.end !== range.end),
+      ),
+    );
+  };
 
   return (
-    <Input
-      autocomplete="off"
-      aria-label={props["aria-label"]}
-      class="h-8 w-full px-3 text-center font-mono text-[13px]"
-      inputMode="numeric"
-      name={props.name}
-      placeholder={props.placeholder}
-      value={draft() ?? samplePositionToDisplay(props.value)}
-      onChange={(event) => {
-        const raw = event.currentTarget.value;
-        const stored = samplePositionFromDisplay(raw);
-        setDraft(stored == null ? raw : null);
-        props.onChange(stored ?? "");
-      }}
-    />
+    <div
+      class="flex min-h-8 w-full flex-wrap items-center gap-1 rounded-none border border-input bg-transparent px-1.5 py-1 focus-within:border-ring focus-within:ring-1 focus-within:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-1 aria-invalid:ring-destructive/20"
+      aria-invalid={invalid() ? true : undefined}
+    >
+      <For each={ranges()}>
+        {(range) => {
+          const label = () => formatPositionChip(range);
+          return (
+            <span class="inline-flex h-6 max-w-full items-center gap-0.5 bg-muted px-1.5 font-mono text-[12px] text-foreground">
+              <span class="truncate">{label()}</span>
+              <Button
+                aria-label={`Remove ${label()}`}
+                class="size-4"
+                size="icon-xs"
+                type="button"
+                variant="ghost"
+                onClick={() => removeRange(range)}
+              >
+                <IconXRegular class="size-3" />
+              </Button>
+            </span>
+          );
+        }}
+      </For>
+      <input
+        id={props.id}
+        autocomplete="off"
+        aria-invalid={invalid() ? "true" : undefined}
+        aria-label="Positions"
+        class="h-6 min-w-16 flex-1 border-0 bg-transparent px-1 font-mono text-[13px] outline-none"
+        name={props.name}
+        value={draft()}
+        onBlur={(event) => {
+          applyDraft(event.currentTarget.value, true);
+          event.currentTarget.value = draft();
+        }}
+        onInput={(event) => {
+          applyDraft(event.currentTarget.value, event.inputType === "insertFromPaste");
+          event.currentTarget.value = draft();
+        }}
+        onKeyDown={(event) => {
+          if (event.key === "Enter") {
+            event.preventDefault();
+            applyDraft(draft(), true);
+          }
+          if (event.key === "Backspace" && draft() === "" && ranges().length > 0) {
+            event.preventDefault();
+            const current = ranges();
+            removeRange(current[current.length - 1]!);
+          }
+        }}
+      />
+    </div>
   );
 }

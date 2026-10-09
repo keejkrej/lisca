@@ -96,8 +96,10 @@ export const AssaySegmentationModeSchema = Schema.Literals(["logstd", "smart"]).
 
 /**
  * Assay-dependent analysis options on assay.json.
- * `maxOnsetMinutes` (onset time t0 search cap) / `skipSegment` / `segmentationMode`
- * are transfection-oriented; other assays ignore them.
+ * `maxOnsetMinutes` (onset time t0 search cap) is transfection-only.
+ * `skipSegment` / `segmentationMode` apply to assays that segment a channel
+ * (transfection and killing). `smart` segmentation is reserved for a hosted
+ * service in version 1.0.
  * `channels` / `sampleChannels` resolve segmentation and signal (intensity) channel indices.
  */
 export const AssayAnalysisConfigSchema = Schema.Struct({

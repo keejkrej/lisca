@@ -6,7 +6,7 @@ import {
 } from "@lisca/client/studio/assay-validation";
 
 export { validAssayIdentity, validAssayInterval, validAssaySamples };
-export { isValidSamplePositionRange } from "@lisca/client/studio/assay-validation";
+export { isValidStoredPositions } from "@lisca/client/studio/assay-validation";
 
 export function instructionForStep(step: StudioStep): string {
   if (step === "chooseAssay") {

@@ -9,6 +9,7 @@ import {
 import { Show } from "solid-js";
 
 import { Button } from "../../components/ui/button";
+import { ComingSoonTooltip } from "../../components/ui/coming-soon-tooltip";
 import { PanelSection } from "../../shell/regions/panel-section";
 import { RailActionPair } from "../../shell/regions/rail-control-layout";
 
@@ -126,18 +127,17 @@ export function AlignSelectionRail(props: AlignSelectionRailProps) {
     </Button>
   );
   const SmartExcludeControl = () => (
-    <Button
-      class="w-full justify-center text-xs"
-      disabled={
-        disabled() || !hasVisiblePatterns() || variationExcludeLoading() || smartExcludeLoading()
-      }
-      size="sm"
-      type="button"
-      variant="outline"
-      onClick={() => void props.onSmartExclude()}
-    >
-      Smart exclude
-    </Button>
+    <ComingSoonTooltip class="flex w-full">
+      <Button
+        class="pointer-events-none h-auto w-full justify-center text-xs"
+        disabled
+        size="sm"
+        type="button"
+        variant="outline"
+      >
+        Smart exclude
+      </Button>
+    </ComingSoonTooltip>
   );
 
   return (

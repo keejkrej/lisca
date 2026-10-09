@@ -6,7 +6,7 @@ import { buildStudioAssayJson, parseStudioAssayJson } from "../src/atoms/studio-
 type BuildInput = Parameters<typeof buildStudioAssayJson>[0];
 
 function row(id: string, name: string, segmentation: string, signal: string): StudioAssaySampleRow {
-  return { id, name, positionStart: "0", positionFinish: "1", segmentation, signal };
+  return { id, name, positions: "0:1", segmentation, signal };
 }
 
 function build(samples: StudioAssaySampleRow[], analysis?: BuildInput["analysis"]) {
@@ -32,6 +32,8 @@ describe("studio assay.json samples", () => {
       { name: "CAR-T", positions: "0:1" },
     ]);
     expect(json.analysis).toEqual({
+      skipSegment: false,
+      segmentationMode: "logstd",
       channels: { segmentation: 0, signal: [1] },
       sampleChannels: [{ sample: "CAR-T", segmentation: 2, signal: [1, 3] }],
     });
@@ -42,7 +44,11 @@ describe("studio assay.json samples", () => {
       channels: { segmentation: 0, signal: [1] },
       sampleChannels: [{ sample: "Old name", segmentation: 2, signal: [3] }],
     });
-    expect(json.analysis).toEqual({ channels: { segmentation: 0, signal: [1] } });
+    expect(json.analysis).toEqual({
+      skipSegment: false,
+      segmentationMode: "logstd",
+      channels: { segmentation: 0, signal: [1] },
+    });
   });
 
   test("round-trips sampleChannels by sample name when loading assay.json", () => {

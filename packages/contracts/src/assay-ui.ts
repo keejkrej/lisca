@@ -62,11 +62,13 @@ export type EnabledStudioAssayId = (typeof ENABLED_STUDIO_ASSAY_IDS)[number];
 
 /**
  * Default frame interval (minutes) when the user has not set interval.*.
- * Interval is a general field; the default value is assay-dependent.
+ * Gene expression is the longer experiment, so transfection stays at 10.
+ * Death-reporter killing (drugs or T cells) defaults to 5.
  * Assays omitted here require an explicit interval before analysis.
  */
 export const ASSAY_DEFAULT_INTERVAL_MINUTES: Partial<Record<StudioAssayType, number>> = {
   [ASSAY_TYPE.TRANSFECTION]: 10,
+  [ASSAY_TYPE.KILLING]: 5,
 };
 
 /**
@@ -80,9 +82,12 @@ export function assayUsesMaxOnsetMinutes(assayId: StudioAssayType | null): boole
   return assayId === ASSAY_TYPE.TRANSFECTION;
 }
 
-/** Whether the assay exposes skipSegment in Studio analysis options. */
+/**
+ * Whether the assay exposes skip-segmentation and the segmentation method.
+ * Transfection and killing both segment a channel. Max onset time stays transfection-only.
+ */
 export function assayUsesSkipSegment(assayId: StudioAssayType | null): boolean {
-  return assayId === ASSAY_TYPE.TRANSFECTION;
+  return assayId === ASSAY_TYPE.TRANSFECTION || assayId === ASSAY_TYPE.KILLING;
 }
 
 export type StudioAssayId = StudioAssayType;
@@ -96,8 +101,11 @@ export type StudioAssaySampleRow = {
   id: string;
   /** Sample name; identifies the sample (non-empty after trim, unique). */
   name: string;
-  positionStart: string;
-  positionFinish: string;
+  /**
+   * 0-based positions this sample covers. assay.json grammar: `3` or `0:4,20:24`.
+   * The metadata editor shows these 1-based and can keep gaps.
+   */
+  positions: string;
   /**
    * Segmentation channel and comma-separated signal channels for this sample (UI).
    * Persisted under `analysis.channels` / `analysis.sampleChannels`, not on the sample row.

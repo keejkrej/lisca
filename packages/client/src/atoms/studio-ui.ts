@@ -4,7 +4,6 @@ import type {
   StudioAssayJson,
   StudioAssaySampleRow as BasicInfoSampleRow,
   StudioIntervalUnit as IntervalUnit,
-  TransfectionAssayType,
   StudioDataSourceKind,
   EnabledStudioAssayId,
 } from "@lisca/contracts/assay";
@@ -19,6 +18,8 @@ import { Atom } from "effect/unstable/reactivity";
 import {
   ASSAY_CHOICE_LABEL,
   analysisConfigForAssay,
+  assayUsesMaxOnsetMinutes,
+  assayUsesSkipSegment,
   buildStudioAssayJson as buildStudioAssayJsonCore,
   dataSourceKindFromAssayData,
   defaultIntervalMinutesForAssay,
@@ -26,7 +27,12 @@ import {
   inferDataSourceKind,
   parseStudioAssayJson as parseStudioAssayJsonCore,
 } from "../studio/studio-assay-json";
-import { sampleRowFromDisk, sampleRowToDisk } from "../studio/sample-positions";
+import {
+  formatSamplePositions,
+  normalizeStoredPositions,
+  sampleRowFromDisk,
+  sampleRowToDisk,
+} from "../studio/sample-positions";
 import {
   isBasicInfoDirty as isBasicInfoDirtyCore,
   serializeBasicInfoSnapshot as serializeBasicInfoSnapshotCore,
@@ -50,10 +56,6 @@ const INTERVAL_UNIT_SET = new Set<IntervalUnit>(["second", "minute", "hour"]);
 const ENABLED_ASSAY_IDS = new Set<EnabledStudioAssayId>(ENABLED_STUDIO_ASSAY_IDS);
 const DEFAULT_ASSAY_ID: AssayId = ASSAY_TYPE.TRANSFECTION;
 
-function isTransfectionAssay(assayId: AssayId | null): assayId is TransfectionAssayType {
-  return assayId === ASSAY_TYPE.TRANSFECTION;
-}
-
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -62,8 +64,7 @@ function emptySampleRow(id: string): BasicInfoSampleRow {
   return {
     id,
     name: "",
-    positionStart: "",
-    positionFinish: "",
+    positions: "",
     segmentation: "",
     signal: "",
   };
@@ -138,7 +139,7 @@ export type StudioWizardState = {
   intervalValue: number | null;
   intervalUnit: IntervalUnit;
   samples: BasicInfoSampleRow[];
-  /** Assay-dependent analysis params (transfection: maxOnsetMinutes, skipSegment). */
+  /** Assay-dependent analysis params (max onset for transfection; segmentation for transfection and killing). */
   analysis: AssayAnalysisConfig | null;
   basicInfoSavedSnapshot: string | null;
 };
@@ -207,14 +208,20 @@ const initialFolderTemplate = {
 const initialAnalysis: AssayAnalysisConfig | null =
   analysisConfigForAssay(DEFAULT_ASSAY_ID, null) ?? null;
 
-function cloneSampleRow(id: string, row: BasicInfoSampleRow): BasicInfoSampleRow {
+function cloneSampleRow(
+  id: string,
+  row: Partial<BasicInfoSampleRow> & { positionStart?: string; positionFinish?: string },
+): BasicInfoSampleRow {
+  const positions =
+    typeof row.positions === "string"
+      ? normalizeStoredPositions(row.positions)
+      : formatSamplePositions(row.positionStart ?? "", row.positionFinish ?? "");
   return {
     id,
-    name: row.name,
-    positionStart: row.positionStart,
-    positionFinish: row.positionFinish,
-    segmentation: row.segmentation,
-    signal: row.signal,
+    name: row.name ?? "",
+    positions,
+    segmentation: row.segmentation ?? "",
+    signal: row.signal ?? "",
   };
 }
 
@@ -432,17 +439,13 @@ export const studioWizardActions = {
     patch: Partial<AssayAnalysisConfig>,
   ) {
     patchStudioWizard(set, (current) => {
-      if (!isTransfectionAssay(current.assayId)) {
+      if (!assayUsesMaxOnsetMinutes(current.assayId) && !assayUsesSkipSegment(current.assayId)) {
         return { ...current, analysis: null };
       }
-      const base = current.analysis ?? {
-        maxOnsetMinutes: defaultMaxOnsetMinutesForAssay(current.assayId) ?? undefined,
-        skipSegment: false,
-        segmentationMode: "logstd",
-      };
       return {
         ...current,
-        analysis: analysisConfigForAssay(current.assayId, { ...base, ...patch }) ?? null,
+        analysis:
+          analysisConfigForAssay(current.assayId, { ...current.analysis, ...patch }) ?? null,
       };
     });
   },

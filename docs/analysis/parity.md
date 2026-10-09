@@ -18,11 +18,11 @@ shared across assays and is not part of `lisca-transfection-assay`.
 
 **Models** (see [`models/README.md`](../../models/README.md)):
 
-| Stay in this repo (product / any-assay)    | Assay brains (HF / sidecar; not long-term `models/` ownership)                                |
-| ------------------------------------------ | --------------------------------------------------------------------------------------------- |
-| Smart exclude (`smart-exclusion-resnet18`) | Transfection pattern U-Net: HF `keejkrej/single-cell-pattern-unet`, `LISCA_PATTERN_SEG_MODEL` |
-| Smart segment (`smart-segment-slimsam`)    | Killing ResNet: HF `keejkrej/killing-assay-resnet18`; curl at Studio package time             |
-| `mupattern-resnet18` (legacy reference)    | Do not add new assay-specific weights under `models/`                                         |
+| Stay in this repo (product / any-assay)    | Assay brains (HF / sidecar; not long-term `models/` ownership)                                                |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------- |
+| Smart exclude (`smart-exclusion-resnet18`) | Transfection pattern U-Net: HF `keejkrej/single-cell-pattern-unet`, `LISCA_PATTERN_SEG_MODEL`                 |
+| Smart segment (`smart-segment-slimsam`)    | Killing ResNet: HF `keejkrej/killing-assay-resnet18`; local cache or `LISCA_KILL_MODEL`, not in the installer |
+| `mupattern-resnet18` (legacy reference)    | Do not add new assay-specific weights under `models/`                                                         |
 
 Studio still hosts a **transfection ONNX segment adapter** (`segment_onnx.rs`)
 until `lisca-transfection` un-stubs its ONNX backend. That adapter must resolve
@@ -240,8 +240,9 @@ Support kernels for tests: `crates/lisca/tests/support/transfection_reference.rs
   brain.
 - Shared ROI I/O in this crate: `analysis/roi_stack.rs`, `csv_io.rs`, crop.
 - Killing (in-tree until its sidecar exists): ONNX (`ort`) + mplot-rs. The
-  ResNet is HF `keejkrej/killing-assay-resnet18`; this repo curls it at
-  package time and does not own a third weights path.
+  ResNet is HF `keejkrej/killing-assay-resnet18`. Installers do not ship it;
+  local runs use `LISCA_KILL_MODEL` or the workspace cache. This repo does not
+  own a third weights path.
 - Progress + HTTP remain in Studio; parity CLI calls the same stage functions.
 
 Sibling repos describe **goals** and, once imported, **own the kernels**.
