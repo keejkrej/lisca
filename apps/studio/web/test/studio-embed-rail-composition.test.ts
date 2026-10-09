@@ -57,7 +57,7 @@ describe("Studio Align instrument stack composition", () => {
       navSource.indexOf("<ContrastControl"),
     );
 
-    expect(stackSource).toMatch(/<StudioAlignNav\s+frameOnly\s*\/>/);
+    expect(stackSource).toMatch(/<StudioAlignNav\s+standard\s*\/>/);
     expect(stackSource).toMatch(/<StudioAlignNav\s*\/>/);
     expect(stackSource).toMatch(/<AlignToolSection\b/);
     expect(stackSource).toMatch(/<AlignGridRail\b/);
