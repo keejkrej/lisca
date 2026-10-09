@@ -10,11 +10,10 @@ on:
         description: release uploads to the tag's GitHub Release; artifact uploads an Actions artifact
         required: true
         type: string
-      os:
-        description: macos, windows, linux, or all
-        required: false
+      oses:
+        description: JSON array of GitHub-hosted runner labels
+        required: true
         type: string
-        default: all
       products:
         description: JSON array of desktop products to package
         required: false
@@ -27,14 +26,13 @@ env:
 jobs:
   publish:
     name: ${{ matrix.product }} / ${{ matrix.os }}
-    if: inputs.os == 'all' || (inputs.os == 'macos' && matrix.os == 'macos-latest') || (inputs.os == 'windows' && matrix.os == 'windows-latest') || (inputs.os == 'linux' && matrix.os == 'ubuntu-latest')
     runs-on: ${{ matrix.os }}
     timeout-minutes: 90
     strategy:
       fail-fast: false
       matrix:
         product: ${{ fromJSON(inputs.products) }}
-        os: [macos-latest, windows-latest, ubuntu-latest]
+        os: ${{ fromJSON(inputs.oses) }}
     steps:
       - name: Require a known upload target
         if: inputs.upload_target != 'release' && inputs.upload_target != 'artifact'
