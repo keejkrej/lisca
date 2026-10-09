@@ -49,20 +49,23 @@ export function analysisConfigForAssay(
   assayId: StudioAssayType | null,
   analysis: AssayAnalysisConfig | null | undefined,
 ): AssayAnalysisConfig | undefined {
-  const bits: AssayAnalysisConfig = {};
-  if (assayUsesMaxOnsetMinutes(assayId)) {
-    bits.maxOnsetMinutes = analysis?.maxOnsetMinutes ?? TRANSFECTION_DEFAULT_MAX_ONSET_MINUTES;
-  }
-  if (assayUsesSkipSegment(assayId)) {
-    bits.skipSegment = analysis?.skipSegment ?? false;
-    bits.segmentationMode = analysis?.segmentationMode ?? "logstd";
-  }
+  // Schema types are readonly, so each field is set in a fresh object.
+  const onset = assayUsesMaxOnsetMinutes(assayId)
+    ? { maxOnsetMinutes: analysis?.maxOnsetMinutes ?? TRANSFECTION_DEFAULT_MAX_ONSET_MINUTES }
+    : {};
+  const segment = assayUsesSkipSegment(assayId)
+    ? {
+        skipSegment: analysis?.skipSegment ?? false,
+        segmentationMode: analysis?.segmentationMode ?? "logstd",
+      }
+    : {};
 
   const channels = analysis?.channels;
   const sampleChannels = analysis?.sampleChannels;
 
   if (
-    Object.keys(bits).length === 0 &&
+    Object.keys(onset).length === 0 &&
+    Object.keys(segment).length === 0 &&
     channels == null &&
     (sampleChannels == null || sampleChannels.length === 0)
   ) {
@@ -70,7 +73,8 @@ export function analysisConfigForAssay(
   }
 
   return {
-    ...bits,
+    ...onset,
+    ...segment,
     ...(channels != null ? { channels } : {}),
     ...(sampleChannels != null && sampleChannels.length > 0 ? { sampleChannels } : {}),
   };
