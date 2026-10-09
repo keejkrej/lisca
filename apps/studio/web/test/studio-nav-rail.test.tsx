@@ -104,6 +104,7 @@ vi.mock("@lisca/client/session/task-center", () => ({
   subscribeTaskCenterTasks: mocks.subscribe,
 }));
 
+import { clearStudioTaskCenterOpen, openStudioTaskCenter } from "../src/components/studio-task-center-open";
 import { StudioNavRail } from "../src/components/studio-nav-rail";
 import { StudioTopBar } from "../src/components/studio-top-bar";
 
@@ -162,6 +163,7 @@ function renderStudioShell(initial = "/align?position=7") {
 }
 
 afterEach(() => {
+  clearStudioTaskCenterOpen();
   cleanup();
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
@@ -179,6 +181,26 @@ describe("StudioNavRail Task Center", () => {
     renderStudioShell("/metadata");
     expect(await screen.findByRole("button", { name: /Expert mode$/ })).toBeTruthy();
     expect(screen.queryByRole("button", { name: /^Tasks/ })).toBeNull();
+  });
+
+  it("opens crop tasks when Align hands off to Annotate", async () => {
+    const { router } = renderStudioShell("/align");
+    expect(screen.queryByRole("button", { name: /^Tasks/ })).toBeNull();
+    openStudioTaskCenter("crop");
+    await router.navigate({ to: "/annotate" });
+    const dialog = await screen.findByRole("dialog", { name: "Tasks" });
+    fireEvent.pointerDown(document.body);
+    fireEvent.keyDown(document.body, { key: "Escape" });
+    expect(dialog.isConnected).toBe(true);
+    expect(screen.getByText("Background crop computations")).toBeTruthy();
+  });
+
+  it("opens analysis tasks when Annotate hands off to Analysis", async () => {
+    const { router } = renderStudioShell("/annotate");
+    openStudioTaskCenter("analysis");
+    await router.navigate({ to: "/analysis" });
+    expect(await screen.findByRole("dialog", { name: "Tasks" })).toBeTruthy();
+    expect(screen.getByText("Background analysis computations")).toBeTruthy();
   });
 
   it("lists crop tasks on Annotate", async () => {

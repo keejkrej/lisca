@@ -47,6 +47,7 @@ export const DEFAULT_FOLDER_SOURCE_TEMPLATE = FOLDER_SOURCE_TEMPLATE_PRESETS[0];
 export const ASSAY_TYPE = {
   TRANSFECTION: "transfection",
   KILLING: "killing",
+  KILLING_ENGAGEMENT: "killing-engagement",
   LNP_BINDING: "lnp-binding",
 } as const;
 
@@ -69,6 +70,7 @@ export type EnabledStudioAssayId = (typeof ENABLED_STUDIO_ASSAY_IDS)[number];
 export const ASSAY_DEFAULT_INTERVAL_MINUTES: Partial<Record<StudioAssayType, number>> = {
   [ASSAY_TYPE.TRANSFECTION]: 10,
   [ASSAY_TYPE.KILLING]: 5,
+  [ASSAY_TYPE.KILLING_ENGAGEMENT]: 5,
 };
 
 /**

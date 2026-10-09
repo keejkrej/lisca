@@ -18,6 +18,7 @@ pub fn resolve_model_path(workspace: &Path) -> Result<PathBuf, String> {
     // not ship the ONNX; resolve a local cache or LISCA_KILL_MODEL.
     let mut candidates = vec![
         workspace.join("models/killing-assay-resnet18"),
+        crate::config::config_dir().join("models/killing-assay-resnet18"),
         crate::onnx::workspace_models_dir().join("killing-assay-resnet18"),
         PathBuf::from("models/killing-assay-resnet18"),
     ];
@@ -518,6 +519,61 @@ mod scheduler_stage_tests {
             workspace.join("results/traces.png").is_file(),
             "traces.png must be produced once traces/ survives the merge"
         );
+        fs::remove_dir_all(root).unwrap();
+    }
+}
+
+#[cfg(test)]
+mod model_path_tests {
+    use super::*;
+    use crate::config::test_lock::TEST_CONFIG_LOCK;
+
+    struct RestoreVar {
+        key: &'static str,
+        previous: Option<String>,
+    }
+
+    impl RestoreVar {
+        fn set(key: &'static str, value: Option<&str>) -> Self {
+            let previous = std::env::var(key).ok();
+            match value {
+                Some(value) => std::env::set_var(key, value),
+                None => std::env::remove_var(key),
+            }
+            Self { key, previous }
+        }
+    }
+
+    impl Drop for RestoreVar {
+        fn drop(&mut self) {
+            match &self.previous {
+                Some(value) => std::env::set_var(self.key, value),
+                None => std::env::remove_var(self.key),
+            }
+        }
+    }
+
+    #[test]
+    fn resolve_model_path_uses_the_user_config_cache() {
+        let _guard = TEST_CONFIG_LOCK.lock().unwrap();
+        let root = std::env::temp_dir().join(format!(
+            "lisca-kill-config-cache-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        let _ = fs::remove_dir_all(&root);
+        let model_dir = root.join("models/killing-assay-resnet18");
+        fs::create_dir_all(&model_dir).unwrap();
+        fs::write(model_dir.join("model.onnx"), b"onnx").unwrap();
+        let workspace = root.join("workspace");
+        fs::create_dir_all(&workspace).unwrap();
+        let _config = RestoreVar::set("LISCA_CONFIG_DIR", Some(root.to_str().unwrap()));
+        let _model = RestoreVar::set("LISCA_KILL_MODEL", None);
+        let resolved = resolve_model_path(&workspace).unwrap();
+        assert_eq!(resolved, model_dir);
         fs::remove_dir_all(root).unwrap();
     }
 }

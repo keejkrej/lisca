@@ -133,8 +133,8 @@ Progress reuses the same HTTP stage names with kill-specific messages:
 The classifier is Hugging Face [`keejkrej/killing-assay-resnet18`](https://huggingface.co/keejkrej/killing-assay-resnet18)
 (killing-assay owned). This repo does **not** treat it as a product model, and
 Studio installers do **not** ship the ONNX. Set `LISCA_KILL_MODEL` to a directory
-containing `model.onnx`, or place that file in the workspace cache
-`models/killing-assay-resnet18/`. That cache is not a second weights tree.
+containing `model.onnx`, or place that file in `~/.lisca/models/killing-assay-resnet18/`
+or the workspace cache `models/killing-assay-resnet18/`. That cache is not a second weights tree.
 Local download:
 
 ```sh
@@ -169,6 +169,26 @@ above is unchanged.
 `sample` is the Sample name (`samples[].name` in `assay.json`). Older killing
 Workspaces wrote `timeseries/Pos{n}/`; the `killing_traces_dir` migration renames
 it to `traces/` on open (see [Workspace migrations](#workspace-migrations)).
+
+### Engagement
+
+`killing-engagement` counts T cells whose membrane touches a tumor cell in each
+ROI frame. Tumor cells are the minority Otsu class on the segmentation channel.
+T cells are the first signal channel, thresholded at mean + 6 standard
+deviations, which keeps a quiet CMRA field empty. Components smaller than 4
+pixels are dropped. A T cell counts once when any of its pixels touches a tumor
+pixel, including a one-pixel neighborhood.
+
+Studio shows the card and does not offer it in the picker. See
+[ADR-0009](../adr/0009-shared-killing-workspace.md).
+
+| Path                                 | Role                                                                 |
+| ------------------------------------ | -------------------------------------------------------------------- |
+| `traces/engagement/Pos{n}.csv`       | Per-frame `tumor_cells`, `t_cells`, `engagements`                    |
+| `results/engagement_counts.csv`      | Those rows for every Position                                        |
+| `results/engagement_summary.csv`     | Mean counts per ROI                                                  |
+
+The death-reporter files above are left in place.
 
 ## Workspace I/O
 

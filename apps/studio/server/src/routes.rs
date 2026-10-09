@@ -106,6 +106,9 @@ fn build_analysis_task(
     match assay.type_ {
         AssayType::Transfection => build_transfection_task(scheduler, workspace, assay),
         AssayType::Killing => build_killing_task(scheduler, workspace, assay, request_id),
+        AssayType::KillingEngagement => {
+            build_engagement_task(scheduler, workspace, assay, request_id)
+        }
         assay_id => {
             let step = analysis_step(
                 format!("analysis/unsupported/{assay_id}"),
@@ -486,6 +489,97 @@ fn build_killing_task(
     ))
 }
 
+fn build_engagement_task(
+    scheduler: &lisca_server::TaskScheduler,
+    workspace: PathBuf,
+    assay: AssayJsonFile,
+    _request_id: &str,
+) -> Result<lisca::protocol::TaskDetail, lisca_server::SchedulerError> {
+    use lisca::analysis::{
+        assays::killing_engagement,
+        sample::{build_sample_mapping, parse_interval_minutes},
+    };
+
+    let mapping = match build_sample_mapping(&assay) {
+        Ok(mapping) => Arc::new(mapping),
+        Err(message) => {
+            let step = analysis_step(
+                "analysis/killing-engagement/prepare",
+                Vec::new(),
+                Arc::new(move || Err(message.clone())),
+            );
+            return scheduler.submit(TaskSpec::new(
+                "analysis/killing-engagement",
+                workspace.to_string_lossy(),
+                true,
+                vec![step],
+            ));
+        }
+    };
+    let interval = parse_interval_minutes(assay.interval.value, Some(assay.interval.unit.as_str()))
+        .unwrap_or(1.0);
+    let mut steps = Vec::new();
+    let prepare = analysis_step(
+        "analysis/killing-engagement/prepare",
+        Vec::new(),
+        Arc::new(move || Ok(())),
+    );
+    let prepare_id = prepare.step_id().to_string();
+    steps.push(prepare);
+
+    let mut count_ids = Vec::new();
+    let count_weight = scheduler.capacity();
+    for position in mapping.positions() {
+        let step_mapping = Arc::new(mapping.for_position(position));
+        let step_workspace = workspace.clone();
+        let step = StepSpec::new(
+            format!("analysis/killing-engagement/count/Pos{position}"),
+            count_weight,
+            move |context| {
+                let step_workspace = step_workspace.clone();
+                let step_mapping = step_mapping.clone();
+                async move {
+                    context.checkpoint()?;
+                    let outcome = tokio::task::spawn_blocking(move || {
+                        killing_engagement::run_position(
+                            &step_workspace,
+                            &step_mapping,
+                            position,
+                            interval,
+                        )
+                    })
+                    .await
+                    .map_err(|error| {
+                        StepFailure::new("analysis_worker_failed", error.to_string())
+                    })?;
+                    outcome
+                        .map_err(|message| StepFailure::new("analysis_stage_failed", message))?;
+                    context.checkpoint()
+                }
+            },
+        )
+        .with_dependencies([prepare_id.clone()]);
+        count_ids.push(step.step_id().to_string());
+        steps.push(step);
+    }
+
+    let summary_workspace = workspace.clone();
+    steps.push(analysis_step(
+        "analysis/killing-engagement/finalize",
+        count_ids,
+        Arc::new(move || {
+            killing_engagement::write_summary(&summary_workspace)?;
+            analysis::workspace_analysis_manifest(&summary_workspace).map(|_| ())
+        }),
+    ));
+    scheduler.submit(TaskSpec::new(
+        "analysis/killing-engagement",
+        workspace.to_string_lossy(),
+        true,
+        steps,
+    ))
+}
+
 async fn start_analysis_handler<S: HasAnalysisTasks + HasTaskScheduler>(
     State(state): State<S>,
     Json(payload): Json<AnalysisStartRequest>,
@@ -744,7 +838,11 @@ mod tests {
 
     #[tokio::test]
     async fn assay_tasks_expose_real_fan_out_and_fan_in_graphs() {
-        for assay_id in [AssayType::Transfection, AssayType::Killing] {
+        for assay_id in [
+            AssayType::Transfection,
+            AssayType::Killing,
+            AssayType::KillingEngagement,
+        ] {
             let state = TestState::new();
             let workspace = graph_workspace(assay_id);
             let assay = load_assay_json(&workspace).unwrap();
@@ -754,6 +852,7 @@ mod tests {
             let prefix = match assay_id {
                 AssayType::Transfection => "analysis/transfection",
                 AssayType::Killing => "analysis/killing",
+                AssayType::KillingEngagement => "analysis/killing-engagement",
                 _ => unreachable!(),
             };
             let position_step_count = detail
@@ -762,6 +861,7 @@ mod tests {
                 .filter(|step| {
                     step.step_kind.starts_with(&format!("{prefix}/segment/Pos"))
                         || step.step_kind.starts_with(&format!("{prefix}/predict/Pos"))
+                        || step.step_kind.starts_with(&format!("{prefix}/count/Pos"))
                 })
                 .count();
             assert_eq!(position_step_count, 2);
@@ -771,6 +871,8 @@ mod tests {
                 .find(|step| {
                     step.step_kind == "analysis/transfection/auc"
                         || step.step_kind.ends_with("/merge-predictions")
+                        || step.step_kind.ends_with("/finalize")
+                            && assay_id == AssayType::KillingEngagement
                 })
                 .unwrap();
             assert_eq!(fan_in.dependencies.len(), 2);

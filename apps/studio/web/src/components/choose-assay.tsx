@@ -21,6 +21,11 @@ const ASSAY_CHOICE_DETAIL: Record<
     description: "Cytotoxicity timeseries",
     readout: "Fluorescence",
   },
+  "killing-engagement": {
+    title: "Killing (engagement)",
+    description: "T cell and tumor cell contacts",
+    readout: "Fluorescence",
+  },
   "lnp-binding": {
     title: "LNP binding",
     description: "Nanoparticle binding over time",
@@ -96,6 +101,25 @@ export function ChooseAssay() {
             </span>
             <span class="shrink-0 text-[11px] font-medium uppercase leading-[14px] tracking-[0.14em] text-muted-foreground">
               Brightfield
+            </span>
+          </Button>
+        </ComingSoonTooltip>
+        <ComingSoonTooltip class="flex w-full">
+          <Button
+            aria-disabled="true"
+            class="pointer-events-none h-auto w-full items-center justify-start gap-3 rounded-none px-5 py-[18px] text-left"
+            disabled
+            type="button"
+            variant="secondary"
+          >
+            <span class="flex min-w-0 flex-1 flex-col items-start gap-1">
+              <span class="text-base font-medium leading-5">Killing (engagement)</span>
+              <span class="text-sm font-normal leading-5 text-muted-foreground">
+                T cell and tumor cell contacts
+              </span>
+            </span>
+            <span class="shrink-0 text-[11px] font-medium uppercase leading-[14px] tracking-[0.14em] text-muted-foreground">
+              Fluorescence
             </span>
           </Button>
         </ComingSoonTooltip>

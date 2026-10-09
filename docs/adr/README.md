@@ -19,3 +19,4 @@ Why a shipped choice looks the way it does. Agents write these during the change
 | [0005](0005-transfection-control-bridge.md)       | accepted   | Transfection batch comparison is an offline script                        |
 | [0007](0007-remote-embedding-service.md)          | superseded | Studio calls label-free viability on the killing-assay service            |
 | [0008](0008-inference-host-loads-assay-models.md) | accepted   | The inference host loads assay models, starting with EmbeddingGemma       |
+| [0009](0009-shared-killing-workspace.md)          | accepted   | One workspace holds every killing kind                                    |

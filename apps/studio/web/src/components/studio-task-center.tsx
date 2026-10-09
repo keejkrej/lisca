@@ -12,7 +12,12 @@ import {
   commandShortcutKeys,
   useStudioCommandShortcut,
 } from "../navigation/use-studio-command-shortcut";
-import { clearStudioTaskCenterOpen, studioTaskCenterOpenScope } from "./studio-task-center-open";
+import {
+  clearStudioTaskCenterOpen,
+  studioTaskCenterOpenIsHeld,
+  studioTaskCenterOpenScope,
+  studioTaskCenterRequestedAt,
+} from "./studio-task-center-open";
 import {
   filterStudioTasks,
   studioTaskCenterCopy,
@@ -25,10 +30,20 @@ export function StudioTaskCenter(props: { scope: "crop" | "analysis" }) {
   const copy = () => studioTaskCenterCopy(props.scope);
   const [open, setOpen] = createSignal(false);
   createEffect(() => {
-    if (studioTaskCenterOpenScope() !== props.scope) return;
-    setOpen(true);
-    clearStudioTaskCenterOpen();
+    if (studioTaskCenterOpenScope() === props.scope) setOpen(true);
   });
+  const onOpenChange = (next: boolean) => {
+    if (
+      !next &&
+      studioTaskCenterOpenScope() === props.scope &&
+      studioTaskCenterOpenIsHeld(studioTaskCenterRequestedAt(), Date.now())
+    ) {
+      setOpen(true);
+      return;
+    }
+    if (!next && studioTaskCenterOpenScope() === props.scope) clearStudioTaskCenterOpen();
+    setOpen(next);
+  };
   useStudioCommandShortcut(
     "tasks",
     () => true,
@@ -46,7 +61,7 @@ export function StudioTaskCenter(props: { scope: "crop" | "analysis" }) {
       shortcutHint={<CommandShortcutHint command="tasks" placement="inline" />}
       shortcutKeys={commandShortcutKeys("tasks")}
       title={copy().title}
-      onOpenChange={setOpen}
+      onOpenChange={onOpenChange}
       subscribe={({ onSnapshot, onError }) =>
         subscribeTaskCenterTasks({
           gateway,
