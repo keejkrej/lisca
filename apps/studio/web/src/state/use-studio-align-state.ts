@@ -27,16 +27,18 @@ import { openStudioTaskCenter } from "../components/studio-task-center-open";
 import { studioNavigate } from "../navigation/use-studio-navigate";
 import { scanIdleAtom, scanSourceAtom } from "../atoms/studio-query-atoms";
 import { effectErrorMessage, loadFrameEffect } from "../effects/frame-loader";
+import { logClientEvent } from "@lisca/client/client-log";
 import { runClientEffect } from "@lisca/client/runtime";
 import {
   defaultStudioAlignTime,
   lockedStudioSelection,
+  recallStudioAlignChannel,
   recallStudioAlignFrame,
+  rememberStudioAlignChannel,
   rememberStudioAlignFrame,
   studioAlignFrameDefault,
   studioAlignFrameMemoryKey,
   studioAlignPositionNav,
-  studioSegmentationChannel,
   toStudioSource,
 } from "@lisca/client/studio/source";
 import {
@@ -155,7 +157,6 @@ export function useStudioAlignState(): StudioAlignState {
   const folderTemplate = useStudioStore((state) => state.folderTemplate);
   const workspacePath = useStudioStore((state) => state.workspacePath);
   const samples = useStudioStore((state) => state.samples);
-  const segmentationChannel = useStudioStore((state) => state.segmentationChannel);
   const dataSourceKind = useStudioStore((state) => state.dataSourceKind);
   const assayId = useStudioStore((state) => state.assayId);
   const [preparingCrop, setPreparingCrop] = createSignal(false);
@@ -171,9 +172,6 @@ export function useStudioAlignState(): StudioAlignState {
     }),
   );
   const activeWorkspacePath = createMemo(() => workspacePath().trim() || null);
-  const brightfieldChannel = createMemo(() =>
-    studioSegmentationChannel(samples(), segmentationChannel()),
-  );
   const assayPositions = createMemo(() => collectAssayPositions({ samples: samples() }));
   const alignPositionsForScan = (scan: WorkspaceScan | null) =>
     scan ? filterScanPositionsForAssay(scan.positions, assayPositions()) : [];
@@ -211,9 +209,10 @@ export function useStudioAlignState(): StudioAlignState {
         if (!state.scan) return state.selection;
         const positions = alignPositionsForScan(state.scan);
         const position = clampedAlignPosition(positions, state.selection.pos);
-        return lockedStudioSelection(state.scan, state.selection, brightfieldChannel(), positions, {
+        return lockedStudioSelection(state.scan, state.selection, positions, {
           frameDefault: studioAlignFrameDefault(assayId()),
           rememberedTime: recallStudioAlignFrame(frameMemoryKey(), position),
+          rememberedChannel: recallStudioAlignChannel(frameMemoryKey(), position),
         });
       },
       canLoadFrame: (state) => alignPositionsForScan(state.scan).length > 0,
@@ -246,12 +245,16 @@ export function useStudioAlignState(): StudioAlignState {
     setSelection: setStoredSelection,
     setToolMode,
   } = session.actions;
-  // Write the chosen frame before the lock policy runs. Otherwise the policy
-  // puts the assay default back over the slider.
+  // Write the chosen frame and channel before the lock policy runs. Otherwise a
+  // new position's defaults (channel 0, assay frame) replace the control.
   const setSelection = (patch: Partial<FrameRequest>) => {
+    const positions = alignPositions();
+    const position = clampedAlignPosition(positions, patch.pos ?? lockedSelection().pos);
+    if (typeof patch.channel === "number") {
+      rememberStudioAlignChannel(frameMemoryKey(), position, patch.channel);
+      logClientEvent(`align channel ${patch.channel} pos ${position}`);
+    }
     if (typeof patch.time === "number") {
-      const positions = alignPositions();
-      const position = clampedAlignPosition(positions, patch.pos ?? lockedSelection().pos);
       rememberStudioAlignFrame(frameMemoryKey(), position, patch.time);
     }
     setStoredSelection(patch);

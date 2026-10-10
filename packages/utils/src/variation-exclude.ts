@@ -373,6 +373,25 @@ function comparePatternScores(left: PatternScore, right: PatternScore): number {
   );
 }
 
+/** Slider domain for a log-std preview. Scores are foreground fractions, so the floor is 0. */
+export function variationExcludeSliderBounds(scoreMax: number): { min: number; max: number } {
+  const max = Number.isFinite(scoreMax) && scoreMax > 0 ? scoreMax : 0;
+  return { min: 0, max };
+}
+
+/**
+ * Opening threshold for the log-std slider.
+ * `null` (nothing saved yet) starts at 0. A saved value is reused, clamped to this preview.
+ */
+export function initialVariationExcludeThreshold(
+  remembered: number | null | undefined,
+  scoreMax: number,
+): number {
+  const { min, max } = variationExcludeSliderBounds(scoreMax);
+  const start = typeof remembered === "number" && Number.isFinite(remembered) ? remembered : 0;
+  return Math.min(max, Math.max(min, start));
+}
+
 export function computeVariationExcludePreview(
   frame: FrameResult,
   patterns: readonly AlignGridPatternBox[],

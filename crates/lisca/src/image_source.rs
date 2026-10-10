@@ -27,11 +27,71 @@ impl CachedSourceReader {
 }
 
 pub fn scan_source(source: ImageSource) -> Result<WorkspaceScan, String> {
-    adapters::scan(source)
+    let kind = source_kind(&source);
+    let path = source_path(&source).to_string();
+    match adapters::scan(source) {
+        Ok(scan) => {
+            tracing::info!(
+                kind,
+                %path,
+                positions = scan.positions.len(),
+                channels = ?scan.channels,
+                times = scan.times.len(),
+                z = scan.z_slices.len(),
+                "scanned source"
+            );
+            Ok(scan)
+        }
+        Err(error) => {
+            tracing::warn!(kind, %path, %error, "source scan failed");
+            Err(error)
+        }
+    }
 }
 
 pub fn load_frame(source: ImageSource, request: FrameRequest) -> Result<RawFrame, String> {
-    CachedSourceReader::open(source)?.load_frame(request)
+    let kind = source_kind(&source);
+    let path = source_path(&source).to_string();
+    let pos = request.pos;
+    let channel = request.channel;
+    let time = request.time;
+    let z = request.z;
+    match CachedSourceReader::open(source).and_then(|mut reader| reader.load_frame(request)) {
+        Ok(frame) => {
+            tracing::info!(
+                kind,
+                %path,
+                pos,
+                channel,
+                time,
+                z,
+                width = frame.width,
+                height = frame.height,
+                "loaded frame"
+            );
+            Ok(frame)
+        }
+        Err(error) => {
+            tracing::warn!(kind, %path, pos, channel, time, z, %error, "frame load failed");
+            Err(error)
+        }
+    }
+}
+
+fn source_kind(source: &ImageSource) -> &'static str {
+    match source {
+        ImageSource::Folder { .. } => "folder",
+        ImageSource::Nd2 { .. } => "nd2",
+        ImageSource::Czi { .. } => "czi",
+    }
+}
+
+fn source_path(source: &ImageSource) -> &str {
+    match source {
+        ImageSource::Folder { path, .. }
+        | ImageSource::Nd2 { path }
+        | ImageSource::Czi { path } => path,
+    }
 }
 
 pub fn load_frame_payload(

@@ -45,7 +45,7 @@ export function StudioAnnotateInstrumentStack() {
     >
       <>
         <Show when={!expertMode()}>
-          <StudioAnnotateNav frameOnly />
+          <StudioAnnotateNav standard />
         </Show>
         <Show when={expertMode()}>
           <StudioAnnotateNav />

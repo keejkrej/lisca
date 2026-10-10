@@ -21,9 +21,10 @@ import { StudioAlignNav } from "./studio-align-nav";
 /**
  * Frame load does not touch the rail — only suppress disabled-state opacity flicker.
  * Back / Next (`data-rail-nav`) keep the dimmed look: their disabled state marks the first/last position.
+ * Coming-soon controls (`data-unavailable`) stay dimmed too.
  */
 const RAIL_CLASS =
-  "[&_button]:transition-none [&_button:not([data-rail-nav])]:disabled:opacity-100 [&_button:not([data-rail-nav])]:disabled:saturate-100";
+  "[&_button]:transition-none [&_button:not([data-rail-nav]):not([data-unavailable])]:disabled:opacity-100 [&_button:not([data-rail-nav]):not([data-unavailable])]:disabled:saturate-100";
 
 /**
  * Shared Studio Align instrument stack for basic and expert modes.

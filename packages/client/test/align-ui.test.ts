@@ -9,6 +9,7 @@ import {
   createStudioPersist,
   type AlignUiState,
 } from "../src/atoms/align-ui";
+import { createInitialStudioAlignUiState } from "../src/atoms/align-ui-studio";
 
 function createMemoryStorage(): LiscaStorageAdapter {
   const items = new Map<string, string>();
@@ -435,7 +436,53 @@ describe("align session persistence", () => {
       selection,
       spacingZoomLocked: false,
       patternZoomLocked: false,
+      variationExcludeThreshold: null,
     });
+  });
+
+  it("round-trips the last log-std threshold and treats a missing value as null", () => {
+    const persist = createStudioPersist("test-studio-align-session");
+    const source = {
+      kind: "folder" as const,
+      path: "/data/src",
+      subfolderTemplate: "Pos{pos}",
+      filenameTemplate: "img.tif",
+    };
+    const selection = { pos: 1, channel: 2, time: 3, z: 4 };
+    persist.write({
+      ...createInitialAlignUiState(),
+      workspacePath: "/data/ws",
+      source,
+      selection,
+      variationExcludeThreshold: 0.25,
+    });
+    expect(persist.read()?.variationExcludeThreshold).toBe(0.25);
+
+    persist.write({
+      ...createInitialAlignUiState(),
+      workspacePath: "/data/ws",
+      source,
+      selection,
+      variationExcludeThreshold: null,
+    });
+    expect(persist.read()?.variationExcludeThreshold).toBeNull();
+  });
+
+  it("restores a saved log-std threshold into the Studio align session", () => {
+    const persist = createStudioPersist("lisca-studio-align-session");
+    persist.write({
+      ...createInitialAlignUiState(),
+      workspacePath: "/data/ws",
+      source: {
+        kind: "folder" as const,
+        path: "/data/src",
+        subfolderTemplate: "Pos{pos}",
+        filenameTemplate: "img.tif",
+      },
+      variationExcludeThreshold: 0.15,
+    });
+    expect(createInitialStudioAlignUiState().variationExcludeThreshold).toBe(0.15);
+    expect(createInitialAlignUiState().variationExcludeThreshold).toBeNull();
   });
 
   it("Studio persist returns null when source is missing but workspace is set", () => {

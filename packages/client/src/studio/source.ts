@@ -70,17 +70,37 @@ export type StudioAlignTimeOptions = {
   frameDefault?: StudioAlignFrameDefault;
   /** Frame the user already chose for this position. Absent means the position is new. */
   rememberedTime?: number;
+  /** Channel the user already chose for this position. Absent means the position is new. */
+  rememberedChannel?: number;
 };
 
+/** A new position starts on channel 0. If the scan has no channel 0, use its first channel. */
+export function defaultStudioAlignChannel(channels: readonly number[] | undefined): number {
+  if (channels == null || channels.length === 0 || channels.includes(0)) return 0;
+  return firstOrZero(channels);
+}
+
+function lockedChannel(
+  channels: readonly number[] | undefined,
+  rememberedChannel: number | undefined,
+): number {
+  if (
+    rememberedChannel != null &&
+    (channels == null || channels.length === 0 || channels.includes(rememberedChannel))
+  ) {
+    return rememberedChannel;
+  }
+  return defaultStudioAlignChannel(channels);
+}
+
 /**
- * Channel and z stay locked to the segmentation channel and plane 0.
- * Time is the remembered frame for this position, or the assay default
- * the first time that position is shown.
+ * Z stays on plane 0. Channel and time are remembered per position.
+ * A position with no memory starts on channel 0 and the assay's default frame.
+ * Those defaults apply together, and only until the user chooses a value there.
  */
 export function lockedStudioSelection(
   scan: WorkspaceScan,
   current: FrameRequest,
-  brightfieldChannel: number,
   positionOptions: number[] = scan.positions,
   timeOptions?: StudioAlignTimeOptions,
 ): FrameRequest {
@@ -95,13 +115,14 @@ export function lockedStudioSelection(
       : defaultStudioAlignTime(times, timeOptions?.frameDefault ?? "last");
   return {
     pos: position,
-    channel: brightfieldChannel,
+    channel: lockedChannel(scan.channels, timeOptions?.rememberedChannel),
     time,
     z: 0,
   };
 }
 
 const alignFrameMemory = new Map<string, Map<number, number>>();
+const alignChannelMemory = new Map<string, Map<number, number>>();
 
 export function studioAlignFrameMemoryKey(input: {
   workspacePath: string | null;
@@ -124,8 +145,22 @@ export function rememberStudioAlignFrame(key: string, position: number, time: nu
   frames.set(position, time);
 }
 
+export function recallStudioAlignChannel(key: string, position: number): number | undefined {
+  return alignChannelMemory.get(key)?.get(position);
+}
+
+export function rememberStudioAlignChannel(key: string, position: number, channel: number): void {
+  let channels = alignChannelMemory.get(key);
+  if (!channels) {
+    channels = new Map();
+    alignChannelMemory.set(key, channels);
+  }
+  channels.set(position, channel);
+}
+
 export function clearStudioAlignFrameMemory(): void {
   alignFrameMemory.clear();
+  alignChannelMemory.clear();
 }
 
 /** Back is off on the first assay position. Next is off on the last. A position outside the list disables both. */
