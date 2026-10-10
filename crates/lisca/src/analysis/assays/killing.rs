@@ -1,7 +1,10 @@
 mod clean;
 mod fluorescence;
+mod mapping;
 mod plot;
 mod predict;
+
+pub(crate) use mapping::to_killing_mapping;
 
 pub use fluorescence::run_position_traces;
 

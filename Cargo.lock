@@ -2306,6 +2306,7 @@ dependencies = [
  "czi-rs",
  "image 0.25.10",
  "libc",
+ "lisca-killing",
  "lisca-transfection",
  "lisca-workspace",
  "mplot",
@@ -2325,6 +2326,18 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "uuid",
+]
+
+[[package]]
+name = "lisca-killing"
+version = "0.1.0"
+source = "git+https://github.com/keejkrej/lisca-killing-assay?rev=8f296073eea2095eaab3f4c8dc96e2ecb97bde85#8f296073eea2095eaab3f4c8dc96e2ecb97bde85"
+dependencies = [
+ "csv",
+ "rust_xlsxwriter",
+ "serde",
+ "serde_json",
+ "tiff",
 ]
 
 [[package]]

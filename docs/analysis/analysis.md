@@ -74,7 +74,7 @@ via [**mplot-rs**](https://github.com/keejkrej/mplot-rs). Death-reporter killing
 
 ## Design stance
 
-Sibling **goal sources** (`lisca-*-assay` packages, mupattern) describe **what** to compute and **which files** to read/write. Mature transfection analysis is **imported** from `lisca-transfection-assay` (git crate + Python package). Killing remains in-tree until its sidecar exists.
+Sibling **goal sources** (`lisca-*-assay` packages, mupattern) describe **what** to compute and **which files** to read/write. Mature transfection analysis is **imported** from `lisca-transfection-assay` (git crate + Python package). Death-reporter fluorescence and fluorescent engagement are imported from [`lisca-killing-assay`](https://github.com/keejkrej/lisca-killing-assay) the same way. Studio keeps scheduling, progress, and the shared per-sample figures.
 
 Rust in this crate should stay idiomatic:
 
@@ -84,9 +84,10 @@ Rust in this crate should stay idiomatic:
   ONNX segment may stay as a Studio adapter (`segment_onnx.rs` + `ort`) until
   the sidecar un-stubs it; resolve `keejkrej/single-cell-pattern-unet` via
   `LISCA_PATTERN_SEG_MODEL`, not as a lisca-owned assay brain.
-- Killing: per-assay code under `assays/killing/` (fluorescence) and
-  `assays/killing_engagement.rs` (spot counts). Analyze does not load the
-  ResNet. Desktop packaging does not download or bundle ONNX weights.
+- Killing measurements: call `lisca-killing` (death-reporter fluorescence and
+  engagement counts, CSV, and Excel). Do not keep a second copy of those
+  kernels under `assays/killing/`. Figures stay here. Analyze does not load
+  the ResNet. Desktop packaging does not download or bundle ONNX weights.
 - Parity for transfection is judged in the sidecar; this repo’s wrapper tests check the dispatch still writes the workspace contract.
 
 ## Transfection pipeline

@@ -1,37 +1,19 @@
-//! Death-reporter fluorescence. Each existing ROI crop is one cell. The signal
-//! channel is measured at z=0 with the same full-frame reduction transfection
-//! uses when segmentation is skipped. No detection and no classifier.
+//! Death-reporter fluorescence dispatch into `lisca-killing`.
+//!
+//! Each existing ROI crop is one cell. The signal channel is measured at z=0
+//! with the same full-frame reduction transfection uses when segmentation is
+//! skipped. The measurement lives in the killing-assay crate. Plotting stays
+//! here with the shared figure composer.
 
-use std::collections::HashSet;
 use std::path::Path;
 
-use crate::analysis::array::full_frame_roi_stats;
-use crate::analysis::csv_io::{format_float, write_csv_only};
-use crate::analysis::roi_stack::{
-    position_dir, read_position_index, roi_frame_2d, validate_channel_index, PositionIndex,
-    RoiStack,
-};
 use crate::analysis::sample::SampleMapping;
 
-struct MetricRow {
-    roi: u32,
-    t: u32,
-    area: u32,
-    background: f64,
-    intensity: f64,
-    corrected: f64,
-}
+use super::to_killing_mapping;
 
 /// Fluorescence series for every Position in `mapping`.
 pub fn run_traces(workspace: &Path, mapping: &SampleMapping) -> Result<(), String> {
-    let positions = mapping.positions();
-    if positions.is_empty() {
-        return Err("sample mapping defines no positions".to_string());
-    }
-    for position in positions {
-        run_position_traces(workspace, mapping, position)?;
-    }
-    Ok(())
+    lisca_killing::run_fluorescence(workspace, &to_killing_mapping(mapping))
 }
 
 /// One Position (the Studio `analysis/killing/traces/Pos{n}` step).
@@ -43,87 +25,11 @@ pub fn run_position_traces(
     mapping: &SampleMapping,
     position: u32,
 ) -> Result<(), String> {
-    let shard = mapping.for_position(position);
-    if shard.is_empty() {
-        return Err(format!("no sample in assay.json lists Pos{position}"));
-    }
-    let pos_dir = position_dir(workspace, position)?;
-    let index = read_position_index(&pos_dir)?;
-    let mut seen = HashSet::new();
-    let mut wrote = false;
-    for sample in shard.iter() {
-        for &signal_channel in &sample.signal {
-            if !seen.insert(signal_channel) {
-                continue;
-            }
-            validate_channel_index(&index, signal_channel)?;
-            let rows = measure_signal(&pos_dir, &index, signal_channel)?;
-            let output = workspace
-                .join("analysis")
-                .join(format!("Pos{position}"))
-                .join(format!("ch{signal_channel}.csv"));
-            write_metric_csv(&output, &rows)?;
-            wrote = true;
-        }
-    }
-    if !wrote {
-        return Err(format!("Pos{position} has no signal channel"));
-    }
-    Ok(())
-}
-
-fn measure_signal(
-    pos_dir: &Path,
-    index: &PositionIndex,
-    signal_channel: u32,
-) -> Result<Vec<MetricRow>, String> {
-    let mut rows = Vec::new();
-    for roi in &index.rois {
-        let roi_path = pos_dir.join(&roi.file_name);
-        if !roi_path.is_file() {
-            return Err(format!(
-                "Missing ROI TIFF referenced by index.json: {}",
-                roi_path.display()
-            ));
-        }
-        let stack = RoiStack::load(&roi_path, roi.shape)?;
-        for stack_t in 0..index.time_count {
-            let frame = roi_frame_2d(&stack, &index.axis_order, stack_t, signal_channel, 0)?;
-            let stats = full_frame_roi_stats(frame.as_slice());
-            let source_t = index.time_indices[stack_t as usize];
-            rows.push(MetricRow {
-                roi: roi.roi,
-                t: source_t,
-                area: stats.area,
-                background: stats.background,
-                intensity: stats.intensity,
-                corrected: stats.corrected,
-            });
-        }
-    }
-    if rows.is_empty() {
-        return Err(format!("No fluorescence rows for Pos{}", index.position));
-    }
-    rows.sort_by_key(|row| (row.roi, row.t));
-    Ok(rows)
-}
-
-fn write_metric_csv(path: &Path, rows: &[MetricRow]) -> Result<(), String> {
-    let headers = ["roi", "t", "area", "background", "sum", "corrected"];
-    let csv_rows = rows
-        .iter()
-        .map(|row| {
-            vec![
-                row.roi.to_string(),
-                row.t.to_string(),
-                row.area.to_string(),
-                format_float(row.background),
-                format_float(row.intensity),
-                format_float(row.corrected),
-            ]
-        })
-        .collect::<Vec<_>>();
-    write_csv_only(path, &headers, &csv_rows)
+    lisca_killing::run_position_fluorescence(
+        workspace,
+        &to_killing_mapping(&mapping.for_position(position)),
+        position,
+    )
 }
 
 #[cfg(test)]

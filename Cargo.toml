@@ -58,6 +58,10 @@ lisca-server = { path = "crates/lisca-server" }
 # ndarray 0.16 / imageproc 0.25 in that crate; this workspace stays on 0.17 / 0.27.
 # Call workspace-path APIs so ndarray types are not unified across the boundary.
 lisca-transfection = { git = "https://github.com/keejkrej/lisca-transfection-assay", rev = "9eda2a7dd62c73cc8fd36071762a043f436462db" }
+# Death-reporter fluorescence and fluorescent engagement.
+# Python `apoptosis` in that repo is the same definitions. Lisca does not
+# depend on it: the package also pulls the label-free training stack.
+lisca-killing = { git = "https://github.com/keejkrej/lisca-killing-assay", rev = "8f296073eea2095eaab3f4c8dc96e2ecb97bde85" }
 tauri = "2"
 tauri-build = "2"
 tauri-plugin-dialog = "2"
