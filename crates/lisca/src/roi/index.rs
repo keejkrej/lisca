@@ -41,10 +41,60 @@ pub fn scan_roi_workspace(workspace_path: &str) -> Result<RoiWorkspaceScan, Stri
     }
 
     positions.sort_by_key(|entry| entry.pos);
+    let channels = positions
+        .first()
+        .map(|entry| entry.channels.clone())
+        .unwrap_or_default();
+    tracing::info!(
+        workspace = %workspace_path,
+        positions = positions.len(),
+        ?channels,
+        "scanned roi workspace"
+    );
     Ok(RoiWorkspaceScan { positions })
 }
 
 pub fn load_roi_frame(workspace_path: &str, request: RoiFrameRequest) -> Result<RawFrame, String> {
+    let pos = request.pos;
+    let roi = request.roi;
+    let channel = request.channel;
+    let time = request.time;
+    let z = request.z;
+    match load_roi_frame_inner(workspace_path, request) {
+        Ok(frame) => {
+            tracing::info!(
+                workspace = %workspace_path,
+                pos,
+                roi,
+                channel,
+                time,
+                z,
+                width = frame.width,
+                height = frame.height,
+                "loaded roi frame"
+            );
+            Ok(frame)
+        }
+        Err(error) => {
+            tracing::warn!(
+                workspace = %workspace_path,
+                pos,
+                roi,
+                channel,
+                time,
+                z,
+                %error,
+                "roi frame load failed"
+            );
+            Err(error)
+        }
+    }
+}
+
+fn load_roi_frame_inner(
+    workspace_path: &str,
+    request: RoiFrameRequest,
+) -> Result<RawFrame, String> {
     let index = read_roi_index(workspace_path, request.pos)?;
     let roi = index
         .rois

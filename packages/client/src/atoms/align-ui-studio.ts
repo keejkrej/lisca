@@ -1,6 +1,8 @@
+import { Atom } from "effect/unstable/reactivity";
+
 import {
   createAlignUiActions,
-  createAlignUiAtom,
+  createInitialAlignUiState,
   createStudioPersist,
   type AlignUiAtom,
   type AlignUiState,
@@ -10,7 +12,18 @@ export const STUDIO_ALIGN_SESSION_KEY = "lisca-studio-align-session";
 
 const studioPersist = createStudioPersist(STUDIO_ALIGN_SESSION_KEY);
 
-export const studioAlignUiAtom: AlignUiAtom = createAlignUiAtom();
+/** Restores the log-std threshold from the same session record as position, frame, and channel. */
+export function createInitialStudioAlignUiState(): AlignUiState {
+  const session = studioPersist.read();
+  return {
+    ...createInitialAlignUiState(),
+    variationExcludeThreshold: session?.variationExcludeThreshold ?? null,
+  };
+}
+
+export const studioAlignUiAtom: AlignUiAtom = Atom.make(createInitialStudioAlignUiState()).pipe(
+  Atom.keepAlive,
+);
 
 export const studioAlignUiActions = createAlignUiActions(studioPersist, {
   clearSourceOnWorkspaceChange: false,
@@ -21,7 +34,12 @@ export const studioAlignUiActions = createAlignUiActions(studioPersist, {
 
 export type StudioAlignSessionPersist = Pick<
   AlignUiState,
-  "workspacePath" | "source" | "selection" | "spacingZoomLocked" | "patternZoomLocked"
+  | "workspacePath"
+  | "source"
+  | "selection"
+  | "spacingZoomLocked"
+  | "patternZoomLocked"
+  | "variationExcludeThreshold"
 >;
 
 export function readStudioAlignSession(): StudioAlignSessionPersist | null {
@@ -38,5 +56,6 @@ export function readStudioAlignSession(): StudioAlignSessionPersist | null {
     },
     spacingZoomLocked: session.spacingZoomLocked ?? true,
     patternZoomLocked: session.patternZoomLocked ?? true,
+    variationExcludeThreshold: session.variationExcludeThreshold ?? null,
   };
 }

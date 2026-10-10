@@ -2,8 +2,24 @@ import { describe, expect, it } from "vite-plus/test";
 
 import {
   computeVariationExcludePreview,
+  initialVariationExcludeThreshold,
   maxEntropyThresholdOnHistogram,
 } from "../src/variation-exclude";
+
+describe("initialVariationExcludeThreshold", () => {
+  it("starts at 0 when nothing is saved and reuses a saved value", () => {
+    expect(initialVariationExcludeThreshold(null, 1.2)).toBe(0);
+    expect(initialVariationExcludeThreshold(undefined, 1.2)).toBe(0);
+    expect(initialVariationExcludeThreshold(0.4, 1.2)).toBe(0.4);
+  });
+
+  it("clamps a saved value into this preview's slider range", () => {
+    expect(initialVariationExcludeThreshold(5, 1.2)).toBe(1.2);
+    expect(initialVariationExcludeThreshold(-1, 1.2)).toBe(0);
+    expect(initialVariationExcludeThreshold(Number.NaN, 1.2)).toBe(0);
+    expect(initialVariationExcludeThreshold(0.4, 0)).toBe(0);
+  });
+});
 
 describe("maxEntropyThresholdOnHistogram", () => {
   it("splits a bimodal histogram at the bin edge between the modes", () => {

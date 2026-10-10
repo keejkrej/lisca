@@ -4,7 +4,9 @@ import { beforeEach, describe, expect, it } from "vite-plus/test";
 import {
   clearStudioAlignFrameMemory,
   lockedStudioSelection,
+  recallStudioAlignChannel,
   recallStudioAlignFrame,
+  rememberStudioAlignChannel,
   rememberStudioAlignFrame,
   studioAlignFrameDefault,
   studioAlignFrameMemoryKey,
@@ -30,17 +32,17 @@ describe("studio align frame", () => {
     expect(studioAlignFrameDefault(null)).toBe("last");
 
     expect(
-      lockedStudioSelection(scan, current, 0, scan.positions, { frameDefault: "first" }),
+      lockedStudioSelection(scan, current, scan.positions, { frameDefault: "first" }),
     ).toEqual({ pos: 61, channel: 0, time: 10, z: 0 });
     expect(
-      lockedStudioSelection(scan, current, 0, scan.positions, { frameDefault: "last" }),
+      lockedStudioSelection(scan, current, scan.positions, { frameDefault: "last" }),
     ).toEqual({ pos: 61, channel: 0, time: 30, z: 0 });
   });
 
   it("keeps a remembered frame, including frame 0 on a last-frame assay", () => {
     const transfection: WorkspaceScan = { ...scan, times: [0, 10, 20] };
     expect(
-      lockedStudioSelection(transfection, current, 0, transfection.positions, {
+      lockedStudioSelection(transfection, current, transfection.positions, {
         frameDefault: "last",
         rememberedTime: 0,
       }),
@@ -49,7 +51,7 @@ describe("studio align frame", () => {
 
   it("falls back to the assay default when the remembered frame is not in the scan", () => {
     expect(
-      lockedStudioSelection(scan, current, 0, scan.positions, {
+      lockedStudioSelection(scan, current, scan.positions, {
         frameDefault: "first",
         rememberedTime: 99,
       }).time,
@@ -58,11 +60,33 @@ describe("studio align frame", () => {
 
   it("clamps the position into the assay list before recalling its frame", () => {
     expect(
-      lockedStudioSelection(scan, { ...current, pos: 1 }, 0, [61, 62], {
+      lockedStudioSelection(scan, { ...current, pos: 1 }, [61, 62], {
         frameDefault: "last",
         rememberedTime: 20,
       }),
     ).toEqual({ pos: 61, channel: 0, time: 20, z: 0 });
+  });
+
+  it("resets channel to 0 on a new position and keeps a chosen channel there", () => {
+    expect(
+      lockedStudioSelection(scan, { ...current, pos: 62, channel: 1 }, scan.positions, {
+        frameDefault: "last",
+      }),
+    ).toEqual({ pos: 62, channel: 0, time: 30, z: 0 });
+
+    expect(
+      lockedStudioSelection(scan, { ...current, channel: 1 }, scan.positions, {
+        frameDefault: "last",
+        rememberedChannel: 1,
+      }),
+    ).toEqual({ pos: 61, channel: 1, time: 30, z: 0 });
+
+    expect(
+      lockedStudioSelection(scan, current, scan.positions, {
+        frameDefault: "last",
+        rememberedChannel: 99,
+      }).channel,
+    ).toBe(0);
   });
 
   it("remembers a frame per position and per assay", () => {
@@ -80,6 +104,10 @@ describe("studio align frame", () => {
     expect(recallStudioAlignFrame(killing, 61)).toBe(20);
     expect(recallStudioAlignFrame(killing, 62)).toBeUndefined();
     expect(recallStudioAlignFrame(transfection, 61)).toBeUndefined();
+    rememberStudioAlignChannel(killing, 61, 1);
+    expect(recallStudioAlignChannel(killing, 61)).toBe(1);
+    expect(recallStudioAlignChannel(killing, 62)).toBeUndefined();
+    expect(recallStudioAlignChannel(transfection, 61)).toBeUndefined();
   });
 
   it("enables Next on the first position and Back on the last", () => {

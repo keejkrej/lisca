@@ -47,6 +47,8 @@ export type AlignUiState = {
   toolMode: AlignGridToolMode;
   spacingZoomLocked: boolean;
   patternZoomLocked: boolean;
+  /** Last log-std slider value. Null until the user sets one. Shared by every position. */
+  variationExcludeThreshold: number | null;
   manualExclusionEnabled: boolean;
   excludedPatternsByPosition: ExcludedByPosition;
   frameLoading: boolean;
@@ -57,6 +59,10 @@ export type AlignUiState = {
 };
 
 const defaultSelection: FrameRequest = { pos: 0, channel: 0, time: 0, z: 0 };
+
+function finiteVariationExcludeThreshold(value: number | null | undefined): number | null {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
 
 function firstOrZero(values: number[] | undefined): number {
   return values?.[0] ?? 0;
@@ -94,6 +100,7 @@ export function createInitialAlignUiState(): AlignUiState {
     toolMode: "pan",
     spacingZoomLocked: true,
     patternZoomLocked: true,
+    variationExcludeThreshold: null,
     manualExclusionEnabled: false,
     excludedPatternsByPosition: {},
     frameLoading: false,
@@ -350,6 +357,16 @@ export function createAlignUiActions(persist: AlignUiPersist, behavior: AlignUiB
     ) {
       patchAlignUi(set, persist, (state) => ({ ...state, patternZoomLocked }));
     },
+    setVariationExcludeThreshold(
+      set: (update: StateUpdater<AlignUiState>) => void,
+      variationExcludeThreshold: number | null,
+    ) {
+      patchAlignUi(set, persist, (state) =>
+        state.variationExcludeThreshold === variationExcludeThreshold
+          ? state
+          : { ...state, variationExcludeThreshold },
+      );
+    },
     setManualExclusionEnabled(
       set: (update: StateUpdater<AlignUiState>) => void,
       manualExclusionEnabled: boolean,
@@ -496,6 +513,9 @@ export function createStudioPersist(sessionKey: string): AlignUiPersist {
           selection: state.selection,
           spacingZoomLocked: state.spacingZoomLocked,
           patternZoomLocked: state.patternZoomLocked,
+          variationExcludeThreshold: finiteVariationExcludeThreshold(
+            state.variationExcludeThreshold,
+          ),
         },
       });
     },
@@ -507,6 +527,7 @@ export function createStudioPersist(sessionKey: string): AlignUiPersist {
           selection: FrameRequest;
           spacingZoomLocked?: boolean;
           patternZoomLocked?: boolean;
+          variationExcludeThreshold?: number | null;
         };
       }>(liscaSessionStorage(), sessionKey);
       if (!parsed) return null;
@@ -518,6 +539,7 @@ export function createStudioPersist(sessionKey: string): AlignUiPersist {
           selection: FrameRequest;
           spacingZoomLocked?: boolean;
           patternZoomLocked?: boolean;
+          variationExcludeThreshold?: number | null;
         });
       if (!session.workspacePath?.trim() || !session.source) return null;
       return {
@@ -526,6 +548,9 @@ export function createStudioPersist(sessionKey: string): AlignUiPersist {
         selection: session.selection,
         spacingZoomLocked: session.spacingZoomLocked ?? true,
         patternZoomLocked: session.patternZoomLocked ?? true,
+        variationExcludeThreshold: finiteVariationExcludeThreshold(
+          session.variationExcludeThreshold,
+        ),
       };
     },
   };

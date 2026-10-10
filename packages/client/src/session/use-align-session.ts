@@ -20,6 +20,7 @@ import {
   clearAlignDriftPins,
   collectAlignGridEdgePatterns,
   computeVariationExcludePreview,
+  initialVariationExcludeThreshold,
   countVisibleAlignGridPatterns,
   effectiveAlignGrid,
   enumerateVisibleAlignGridPatterns,
@@ -477,17 +478,20 @@ export function useAlignSessionCore(options: UseAlignSessionCoreOptions) {
         sessionActions.reportStatus("No visible patterns for log-std exclude");
         return;
       }
-      setVariationExcludePreview({
-        preview,
-        threshold: preview.threshold,
-      });
+      setVariationExcludePreview(openVariationExcludePreview(preview));
     } catch (cause) {
       sessionActions.reportError(backend.toErrorMessage(cause, "Log-std exclude preview failed"));
     }
   };
 
+  const openVariationExcludePreview = (preview: VariationExcludePreviewResponse) => ({
+    preview,
+    threshold: initialVariationExcludeThreshold(ui().variationExcludeThreshold, preview.scoreMax),
+  });
+
   const setVariationExcludeThreshold = (threshold: number) => {
     setVariationExcludePreview((current) => updateVariationExcludeThreshold(current, threshold));
+    actions.setVariationExcludeThreshold(setUi, threshold);
   };
 
   const dismissVariationExcludePreview = () => {
@@ -772,10 +776,7 @@ export function useAlignSessionCore(options: UseAlignSessionCoreOptions) {
       loading: variationExcludeLoading,
       exclude: variationExclude,
       showPreview: (preview: VariationExcludePreviewResponse) => {
-        setVariationExcludePreview({
-          preview,
-          threshold: preview.threshold,
-        });
+        setVariationExcludePreview(openVariationExcludePreview(preview));
       },
       setThreshold: setVariationExcludeThreshold,
       dismiss: dismissVariationExcludePreview,

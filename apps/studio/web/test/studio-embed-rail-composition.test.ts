@@ -63,6 +63,7 @@ describe("Studio Align instrument stack composition", () => {
     expect(stackSource).toMatch(/<AlignGridRail\b/);
     expect(stackSource).toMatch(/railPart=\{railPart\}/);
     expect(stackSource).toMatch(/<AlignSelectionRail\b/);
+    expect(stackSource).toMatch(/:not\(\[data-unavailable\]\)/);
     expect(stackSource).toMatch(/title="Action"/);
   });
 
@@ -79,14 +80,14 @@ describe("Studio Annotate instrument stack composition", () => {
   const navSource = readSource("../src/components/studio-annotate-nav.tsx");
   const routeSource = readSource("../src/routes/annotate.tsx");
 
-  it("shows the frame slider in standard mode and full navigation in expert mode", () => {
+  it("shows channel and frame in standard mode and full navigation in expert mode", () => {
     expect(routeSource).toMatch(/<StudioAnnotateInstrumentStack\s*\/>/);
     expect(routeSource).not.toMatch(/expert=\{\(\) => <StudioAnnotateInstrumentStack/);
     expect(routeSource).not.toMatch(/showShuffle|Shuffle/);
     expect(routeSource).not.toMatch(
       /StudioAnnotateRight|StudioAnnotateExpertRight|studio-annotate-dock/,
     );
-    expect(stackSource).toMatch(/<StudioAnnotateNav\s+frameOnly\s*\/>/);
+    expect(stackSource).toMatch(/<StudioAnnotateNav\s+standard\s*\/>/);
     const expertBlock =
       stackSource.match(/<Show when=\{expertMode\(\)\}>([\s\S]*?)<\/Show>/)?.[1] ?? "";
     expect(expertBlock).toMatch(/<StudioAnnotateNav\s*\/>/);
