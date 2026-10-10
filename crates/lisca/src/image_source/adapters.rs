@@ -1,7 +1,7 @@
 use std::{collections::HashMap, path::Path};
 
-use czi_rs::CziFile;
-use nd2_rs::Nd2File;
+use czi::CziFile;
+use nd2::Nd2File;
 
 use crate::protocol::{AlignerSource, ContrastWindow, FrameRequest, ImageSource, WorkspaceScan};
 

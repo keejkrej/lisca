@@ -35,8 +35,8 @@ Assay science and the microscopy readers are public sibling repositories under [
 | [lisca-transfection-assay](https://github.com/keejkrej/lisca-transfection-assay) | Transfection analysis: Python `transfection` and Rust `lisca-transfection` (segment, traces, AUC, fit, plots), plus the Python/Rust parity tests |
 | [lisca-killing-assay](https://github.com/keejkrej/lisca-killing-assay)           | Death-reporter fluorescence, fluorescent engagement, and the killing classifier. Rust crate `lisca-killing`                                      |
 | [mplot-rs](https://github.com/keejkrej/mplot-rs)                                 | Rust 2D plotting (`mplot`). Analysis figures are rendered with this crate                                                                        |
-| [czi-rs](https://github.com/keejkrej/czi-rs)                                     | Zeiss CZI reader                                                                                                                                 |
-| [nd2-rs](https://github.com/keejkrej/nd2-rs)                                     | Nikon ND2 reader                                                                                                                                 |
+| [czi-rs](https://github.com/keejkrej/czi-rs)                                     | Zeiss CZI reader (`czi`)                                                                                                                         |
+| [nd2-rs](https://github.com/keejkrej/nd2-rs)                                     | Nikon ND2 reader (`nd2`)                                                                                                                         |
 | [mlab-rs](https://github.com/keejkrej/mlab-rs)                                   | Pure-Rust scientific computing (`mlab`): array, signal, image, and classical ML modules in the NumPy / SciPy style                               |
 
 ## Install

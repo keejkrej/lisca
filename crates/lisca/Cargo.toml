@@ -18,9 +18,9 @@ studio = ["smart", "dep:mplot", "dep:lisca-transfection", "dep:lisca-killing"]
 [dependencies]
 axum.workspace = true
 base64.workspace = true
-czi-rs = { workspace = true }
+czi = { workspace = true }
 image.workspace = true
-nd2-rs = { workspace = true }
+nd2 = { workspace = true }
 serde.workspace = true
 serde_json.workspace = true
 tiff.workspace = true
