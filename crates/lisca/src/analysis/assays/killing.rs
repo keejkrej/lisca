@@ -1,12 +1,11 @@
-mod clean;
 mod fluorescence;
 mod mapping;
 mod plot;
-mod predict;
 
 pub(crate) use mapping::to_killing_mapping;
 
 pub use fluorescence::run_position_traces;
+pub use lisca_killing::{PredictControl, PredictFailure};
 
 use std::path::{Path, PathBuf};
 use std::{collections::BTreeMap, fs};
@@ -16,8 +15,6 @@ use crate::protocol::{AnalysisCsvFile, AnalysisProgress, AnalysisStage, AssayJso
 use crate::analysis::output::collect_csv_outputs;
 use crate::analysis::progress::{analysis_progress, run_blocking};
 use crate::analysis::sample::{build_sample_mapping, parse_interval_minutes, SampleMapping};
-
-pub use predict::{PredictControl, PredictFailure};
 
 pub fn resolve_model_path(workspace: &Path) -> Result<PathBuf, String> {
     // Killing-assay brain (HF keejkrej/killing-assay-resnet18). Installers do
@@ -55,12 +52,12 @@ pub fn run_predict_shard(
     mapping: &SampleMapping,
     model_dir: &Path,
 ) -> Result<(), String> {
-    predict::run_predict_to(
+    lisca_killing::run_predict_to(
         workspace,
         output_workspace,
-        mapping,
+        &to_killing_mapping(mapping),
         model_dir,
-        predict::PredictOptions::default(),
+        lisca_killing::PredictOptions::default(),
     )
 }
 
@@ -71,12 +68,12 @@ pub fn run_predict_shard_controlled(
     model_dir: &Path,
     control: &PredictControl<'_>,
 ) -> Result<(), PredictFailure> {
-    predict::run_predict_to_controlled(
+    lisca_killing::run_predict_to_controlled(
         workspace,
         output_workspace,
-        mapping,
+        &to_killing_mapping(mapping),
         model_dir,
-        predict::PredictOptions::default(),
+        lisca_killing::PredictOptions::default(),
         control,
     )
 }
@@ -177,7 +174,7 @@ pub fn run_plot_traces_stage(
 }
 
 pub fn run_clean_stage(workspace: &Path, mapping: &SampleMapping) -> Result<(), String> {
-    clean::run_clean(workspace, mapping)
+    lisca_killing::run_clean(workspace, &to_killing_mapping(mapping))
 }
 
 pub fn run_plot_kill_stage(

@@ -10,7 +10,7 @@ than keeping a second copy of the pipeline.
 | Sibling package (R&D + prod kernels)                                               | Role                                                                                                                                                                                                       |
 | ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [`lisca-transfection-assay`](https://github.com/keejkrej/lisca-transfection-assay) | Transfection analysis: Python `transfection` + Rust `lisca-transfection` (git URL). Parity: that repo’s [`docs/parity.md`](https://github.com/keejkrej/lisca-transfection-assay/blob/main/docs/parity.md). |
-| [`lisca-killing-assay`](https://github.com/keejkrej/lisca-killing-assay)           | Death-reporter fluorescence and fluorescent engagement: Python `apoptosis` + Rust `lisca-killing` (git URL). Label-free viability stays in that repo too. |
+| [`lisca-killing-assay`](https://github.com/keejkrej/lisca-killing-assay)           | Death-reporter fluorescence, fluorescent engagement, and the killing classifier (predict, clean, kill curve): Python `killing` + Rust `lisca-killing` (git URL). Label-free viability stays in that repo too. |
 | `lisca-binding-assay` (planned)                                                    | Binding / LNP-style assays before Studio registration                                                                                                                                                      |
 
 **Crop** (`lisca-crop`, ND2/CZI, bbox → `roi/`) stays in this monorepo. It is
@@ -78,8 +78,8 @@ pools, or bitwise float identity.
 | Studio `assayId`                                        | Goal source + Rust                                                           | This repo                                                             | Parity CLI                            | Notes                                                              |
 | ------------------------------------------------------- | ---------------------------------------------------------------------------- | --------------------------------------------------------------------- | ------------------------------------- | ------------------------------------------------------------------ |
 | `transfection` (Studio wire id; science = transfection) | `lisca-transfection-assay` (`transfection` CLI + `lisca-transfection` crate) | Thin dispatch in `analysis/assays/transfection/` + local ONNX segment | `lisca-analyze` (calls the git crate) | Crop stays here. Python+Rust parity: sidecar `docs/parity.md`.     |
-| `killing`                                               | `lisca-killing-assay` (`apoptosis fluorescence` + `lisca-killing`)   | Thin dispatch in `analysis/assays/killing/`; figures stay here        | `uv run apoptosis fluorescence`       | Per-cell traces and sample-mean figures. No classifier and no fit. |
-| `killing-engagement`                                    | `lisca-killing-assay` (`apoptosis engagement` + `lisca-killing`)     | Thin dispatch in `analysis/assays/killing_engagement.rs`; figures stay here | `uv run apoptosis engagement`    | Spot counts. Tumor touch is recorded and is not proof of contact.  |
+| `killing`                                               | `lisca-killing-assay` (`killing fluorescence`, `killing clean` + `lisca-killing`) | Thin dispatch in `analysis/assays/killing/`; figures stay here        | `uv run killing fluorescence` / `uv run killing clean` | Per-cell traces and sample-mean figures. Analyze does not run the classifier. `clean` writes the kill curve from `predictions.csv`. |
+| `killing-engagement`                                    | `lisca-killing-assay` (`killing engagement` + `lisca-killing`)     | Thin dispatch in `analysis/assays/killing_engagement.rs`; figures stay here | `uv run killing engagement`    | Spot counts. Tumor touch is recorded and is not proof of contact.  |
 | `lnp-binding` / binding                                 | future `lisca-binding-assay`                                                 | none until mature                                                     | —                                     | Closed enum: do not half-register                                  |
 
 Adding a Studio assay id is a **cross-cutting** change (`@lisca/contracts`,
@@ -89,7 +89,7 @@ Cargo (this workspace):
 
 ```toml
 lisca-transfection = { git = "https://github.com/keejkrej/lisca-transfection-assay", rev = "9eda2a7dd62c73cc8fd36071762a043f436462db" }
-lisca-killing = { git = "https://github.com/keejkrej/lisca-killing-assay", rev = "8f296073eea2095eaab3f4c8dc96e2ecb97bde85" }
+lisca-killing = { git = "https://github.com/keejkrej/lisca-killing-assay", rev = "cabb4b2495c7e472a333cdfd74fac1bfad91ac7c" }
 ```
 
 Python extra (`python/pyproject.toml`, `analysis` extra):
@@ -100,9 +100,9 @@ transfection = { git = "https://github.com/keejkrej/lisca-transfection-assay", r
 
 Keep transfection Cargo and Python on the **same SHA**. Lock files (`Cargo.lock`,
 `python/uv.lock`) must match. Notebooks vendor sync reads that SHA.
-`lisca-killing` is Rust-only from this repo. `apoptosis` also ships the
+`lisca-killing` is Rust-only from this repo. `killing` also ships the
 label-free training stack, so LiSCA does not add it as a Python extra. Run
-`uv run apoptosis` in `lisca-killing-assay` at the pinned SHA.
+`uv run killing` in `lisca-killing-assay` at the pinned SHA.
 
 The sidecar crate must **not** depend on crate `lisca` (that would cycle:
 `lisca` already depends on `lisca-transfection`). It **may** git-depend on

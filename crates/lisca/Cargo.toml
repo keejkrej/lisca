@@ -36,7 +36,7 @@ rust_xlsxwriter = { workspace = true, optional = true }
 ndarray.workspace = true
 ndarray-stats.workspace = true
 lisca-transfection = { workspace = true, optional = true }
-lisca-killing = { workspace = true, optional = true }
+lisca-killing = { workspace = true, optional = true, features = ["onnx"] }
 lisca-workspace.workspace = true
 ort = { workspace = true, optional = true }
 

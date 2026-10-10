@@ -2331,9 +2331,12 @@ dependencies = [
 [[package]]
 name = "lisca-killing"
 version = "0.1.0"
-source = "git+https://github.com/keejkrej/lisca-killing-assay?rev=8f296073eea2095eaab3f4c8dc96e2ecb97bde85#8f296073eea2095eaab3f4c8dc96e2ecb97bde85"
+source = "git+https://github.com/keejkrej/lisca-killing-assay?rev=cabb4b2495c7e472a333cdfd74fac1bfad91ac7c#cabb4b2495c7e472a333cdfd74fac1bfad91ac7c"
 dependencies = [
  "csv",
+ "image 0.25.10",
+ "ndarray 0.17.2",
+ "ort",
  "rust_xlsxwriter",
  "serde",
  "serde_json",

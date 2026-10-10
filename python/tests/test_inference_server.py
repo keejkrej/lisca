@@ -81,7 +81,7 @@ def test_auth_cors_reference_creation_and_movie(tmp_path):
     pytest.importorskip("fastapi")
     pytest.importorskip("httpx")
     pytest.importorskip("multipart")
-    pytest.importorskip("apoptosis")
+    pytest.importorskip("killing")
     import tifffile
     from fastapi.testclient import TestClient
 
