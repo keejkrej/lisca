@@ -2521,7 +2521,7 @@ dependencies = [
  "lisca-transfection",
  "lisca-workspace",
  "marray",
- "mplot 1.0.0",
+ "mplot",
  "nd2",
  "ndarray 0.17.2",
  "ndarray-stats 0.7.0",
@@ -2542,11 +2542,11 @@ dependencies = [
 [[package]]
 name = "lisca-killing"
 version = "0.1.0"
-source = "git+https://github.com/keejkrej/lisca-killing-assay?rev=eab87dc30ca3eb855b28c5e9b4f5583ce20a1883#eab87dc30ca3eb855b28c5e9b4f5583ce20a1883"
+source = "git+https://github.com/keejkrej/lisca-killing-assay?rev=0d1d750e04ed5ec3fa1cbedb8ad9320b8103c3e4#0d1d750e04ed5ec3fa1cbedb8ad9320b8103c3e4"
 dependencies = [
  "csv",
  "image 0.25.10",
- "mlab",
+ "marray",
  "ndarray 0.17.2",
  "ort",
  "rust_xlsxwriter",
@@ -2585,13 +2585,13 @@ dependencies = [
 [[package]]
 name = "lisca-transfection"
 version = "0.1.0"
-source = "git+https://github.com/keejkrej/lisca-transfection-assay?rev=8c177dbc589434d7df17e15a61a81112acbe687f#8c177dbc589434d7df17e15a61a81112acbe687f"
+source = "git+https://github.com/keejkrej/lisca-transfection-assay?rev=0a127d425f5e97f353b503b962ce4e7b2affa4d1#0a127d425f5e97f353b503b962ce4e7b2affa4d1"
 dependencies = [
  "csv",
  "image 0.25.10",
  "imageproc",
- "mlab",
- "mplot 0.1.0",
+ "marray",
+ "mplot",
  "ndarray 0.16.1",
  "ndarray-ndimage",
  "rayon",
@@ -2660,6 +2660,8 @@ name = "marray"
 version = "1.0.0"
 source = "git+https://github.com/keejkrej/marray-rs?rev=af67ac2d833f55e069f286022d0a0de0b9547bfb#af67ac2d833f55e069f286022d0a0de0b9547bfb"
 dependencies = [
+ "image 0.25.10",
+ "imageproc",
  "nalgebra 0.33.3",
  "ndarray 0.16.1",
  "num-traits",
@@ -2756,22 +2758,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "mlab"
-version = "0.1.0"
-source = "git+https://github.com/keejkrej/mlab-rs?rev=0366f8af5bba4baa4f6345e7d1dcc750179f6e29#0366f8af5bba4baa4f6345e7d1dcc750179f6e29"
-dependencies = [
- "image 0.25.10",
- "imageproc",
- "nalgebra 0.33.3",
- "ndarray 0.16.1",
- "num-traits",
- "rand 0.8.6",
- "rand_distr",
- "rustfft",
- "special",
-]
-
-[[package]]
 name = "moxcms"
 version = "0.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2779,16 +2765,6 @@ checksum = "bb85c154ba489f01b25c0d36ae69a87e4a1c73a72631fc6c0eb6dde34a73e44b"
 dependencies = [
  "num-traits",
  "pxfm",
-]
-
-[[package]]
-name = "mplot"
-version = "0.1.0"
-source = "git+https://github.com/keejkrej/mplot-rs?rev=b4a3b228e1ab1aeb54a0f15a37b5bf9ff9f73386#b4a3b228e1ab1aeb54a0f15a37b5bf9ff9f73386"
-dependencies = [
- "num-traits",
- "plotters",
- "svg2pdf",
 ]
 
 [[package]]
