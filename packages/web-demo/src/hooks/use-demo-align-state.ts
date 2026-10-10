@@ -6,6 +6,7 @@ import { patternsBelowVariationThreshold } from "@lisca/client/align-session";
 import {
   collectAlignGridEdgePatterns,
   computeVariationExcludePreview,
+  initialVariationExcludeThreshold,
   countVisibleAlignGridPatterns,
   enumerateVisibleAlignGridPatterns,
   mergeExcludedAlignGridPatterns,
@@ -69,6 +70,7 @@ export type DemoAlignState = {
 
 export function useDemoAlignState(): Accessor<DemoAlignState> {
   const [state, setState] = useAtom(() => demoAlignUiAtom);
+  let rememberedVariationThreshold: number | null = null;
 
   const previewVariationExclude = (): VariationExcludePreviewResponse | null => {
     const current = state();
@@ -154,7 +156,10 @@ export function useDemoAlignState(): Accessor<DemoAlignState> {
           }
           demoAlignUiActions.setVariationExcludePreview(setState, {
             preview,
-            threshold: preview.threshold,
+            threshold: initialVariationExcludeThreshold(
+              rememberedVariationThreshold,
+              preview.scoreMax,
+            ),
           });
           demoAlignUiActions.setStatus(setState, null);
         } catch (cause) {
@@ -168,6 +173,7 @@ export function useDemoAlignState(): Accessor<DemoAlignState> {
       },
       setVariationExcludeThreshold: (threshold) => {
         if (!variationExcludePreview) return;
+        rememberedVariationThreshold = threshold;
         demoAlignUiActions.setVariationExcludePreview(setState, {
           ...variationExcludePreview,
           threshold,

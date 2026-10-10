@@ -84,6 +84,9 @@ describe("stage rail feature composition", () => {
       ["Exclude all", "Edge exclude"],
       ["Log-std exclude", "Smart exclude"],
     ]);
+    const smartExclude = within(section).getByRole("button", { name: "Smart exclude" });
+    expect(smartExclude.hasAttribute("disabled")).toBe(true);
+    expect(smartExclude.hasAttribute("data-unavailable")).toBe(true);
   });
 
   it("stacks user-authored Labels while packing fixed Edit peers", () => {

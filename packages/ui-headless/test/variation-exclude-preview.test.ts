@@ -42,7 +42,7 @@ describe("variation exclude preview", () => {
 
   it("derives slider metrics and histogram scale", () => {
     const metrics = deriveVariationExcludeMetrics(preview);
-    expect(metrics.min).toBe(0.1);
+    expect(metrics.min).toBe(0);
     expect(metrics.max).toBe(1.2);
     expect(metrics.maxBinCount).toBe(2);
   });
@@ -61,6 +61,9 @@ describe("variation exclude preview", () => {
     const derived = deriveVariationExcludePreview({ preview, threshold: 2 });
     expect(derived?.threshold).toBe(1.2);
     expect(derived?.selectedCount).toBe(4);
+    const fromZero = deriveVariationExcludePreview({ preview, threshold: -1 });
+    expect(fromZero?.threshold).toBe(0);
+    expect(fromZero?.selectedCount).toBe(0);
   });
 
   it("returns next threshold clamped to range", () => {

@@ -130,6 +130,7 @@ export function AlignSelectionRail(props: AlignSelectionRailProps) {
     <ComingSoonTooltip class="flex w-full">
       <Button
         class="pointer-events-none h-auto w-full justify-center text-xs"
+        data-unavailable=""
         disabled
         size="sm"
         type="button"

@@ -1,4 +1,5 @@
 import type { VariationExcludePreviewResponse } from "@lisca/contracts";
+import { variationExcludeSliderBounds } from "@lisca/utils";
 
 export type VariationExcludePreviewInput = {
   preview: VariationExcludePreviewResponse;
@@ -15,8 +16,7 @@ export function clampVariationThreshold(value: number, min: number, max: number)
 }
 
 export function deriveVariationExcludeMetrics(preview: VariationExcludePreviewResponse) {
-  const min = preview.scoreMin;
-  const max = preview.scoreMax > preview.scoreMin ? preview.scoreMax : preview.scoreMin + 1;
+  const { min, max } = variationExcludeSliderBounds(preview.scoreMax);
   const step = Math.max((max - min) / 500, 0.001);
   const maxBinCount = Math.max(1, ...preview.histogramBins.map((bin) => bin.count));
   return { min, max, step, maxBinCount };

@@ -24,8 +24,10 @@ export type RoiFrameNavigationProps = {
   selection: RoiFrameSelection;
   changeSelection: (apply: () => void) => void;
   setSelection: (patch: Partial<RoiFrameSelection>) => void;
-  /** Standard mode shows the frame slider. Expert mode keeps position, ROI, channel, and Z. */
+  /** Frame slider only, titled Frame. */
   frameOnly?: boolean;
+  /** Channel and Frame under Navigation. Expert mode keeps position, ROI, channel, frame, and Z. */
+  standard?: boolean;
 } & Pick<
   FrameNavigationProps<number>,
   | "class"
@@ -74,6 +76,8 @@ export function RoiFrameNavigation(props: RoiFrameNavigationProps) {
   const posValue = () => props.selection.pos ?? positionOptions()[0]?.value ?? 0;
   const roiValue = () => props.selection.roi ?? roiOptions()[0]?.value ?? 0;
   const channelValue = () => props.selection.channel ?? channelOptions()[0]?.value ?? 0;
+  const frameAxisOnly = () => Boolean(props.frameOnly);
+  const hideExpertAxes = () => frameAxisOnly() || Boolean(props.standard);
 
   return (
     <FrameNavigation
@@ -82,9 +86,9 @@ export function RoiFrameNavigation(props: RoiFrameNavigationProps) {
       sectionClassName={props.sectionClassName}
       sectionContentClassName={props.sectionContentClassName}
       sectionDescription={props.sectionDescription}
-      sectionTitle={props.frameOnly ? "Frame" : props.sectionTitle}
+      sectionTitle={frameAxisOnly() ? "Frame" : props.sectionTitle}
       channel={
-        props.frameOnly
+        frameAxisOnly()
           ? undefined
           : buildSelectStepperControl({
               value: channelValue(),
@@ -94,7 +98,7 @@ export function RoiFrameNavigation(props: RoiFrameNavigationProps) {
             })
       }
       position={
-        props.frameOnly
+        hideExpertAxes()
           ? undefined
           : buildSelectStepperControl({
               value: posValue(),
@@ -104,7 +108,7 @@ export function RoiFrameNavigation(props: RoiFrameNavigationProps) {
             })
       }
       roi={
-        props.frameOnly
+        hideExpertAxes()
           ? undefined
           : buildSelectStepperControl({
               value: roiValue(),
@@ -120,7 +124,7 @@ export function RoiFrameNavigation(props: RoiFrameNavigationProps) {
           props.changeSelection(() => props.setSelection({ timeIndex })),
       })}
       zPlane={
-        props.frameOnly
+        hideExpertAxes()
           ? undefined
           : createAxisIndexSliderControl({
               axisValues: props.position?.zSlices,
