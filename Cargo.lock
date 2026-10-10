@@ -2519,7 +2519,7 @@ dependencies = [
  "lisca-killing",
  "lisca-transfection",
  "lisca-workspace",
- "mlab_rs",
+ "mlab",
  "mplot",
  "nd2-rs",
  "ndarray 0.17.2",
@@ -2541,11 +2541,11 @@ dependencies = [
 [[package]]
 name = "lisca-killing"
 version = "0.1.0"
-source = "git+https://github.com/keejkrej/lisca-killing-assay?rev=a4b883e19faa0a4714e86046ecf08381c3558b25#a4b883e19faa0a4714e86046ecf08381c3558b25"
+source = "git+https://github.com/keejkrej/lisca-killing-assay?rev=eab87dc30ca3eb855b28c5e9b4f5583ce20a1883#eab87dc30ca3eb855b28c5e9b4f5583ce20a1883"
 dependencies = [
  "csv",
  "image 0.25.10",
- "mlab_rs",
+ "mlab",
  "ndarray 0.17.2",
  "ort",
  "rust_xlsxwriter",
@@ -2584,12 +2584,12 @@ dependencies = [
 [[package]]
 name = "lisca-transfection"
 version = "0.1.0"
-source = "git+https://github.com/keejkrej/lisca-transfection-assay?rev=b6aff806eb122bc62e1389d90056c4af4de0bba2#b6aff806eb122bc62e1389d90056c4af4de0bba2"
+source = "git+https://github.com/keejkrej/lisca-transfection-assay?rev=8c177dbc589434d7df17e15a61a81112acbe687f#8c177dbc589434d7df17e15a61a81112acbe687f"
 dependencies = [
  "csv",
  "image 0.25.10",
  "imageproc",
- "mlab_rs",
+ "mlab",
  "mplot",
  "ndarray 0.16.1",
  "ndarray-ndimage",
@@ -2741,9 +2741,9 @@ dependencies = [
 ]
 
 [[package]]
-name = "mlab_rs"
+name = "mlab"
 version = "0.1.0"
-source = "git+https://github.com/keejkrej/mlab-rs?rev=333bc9005f5413600ccf86b36523b9cf1ebfff1e#333bc9005f5413600ccf86b36523b9cf1ebfff1e"
+source = "git+https://github.com/keejkrej/mlab-rs?rev=0366f8af5bba4baa4f6345e7d1dcc750179f6e29#0366f8af5bba4baa4f6345e7d1dcc750179f6e29"
 dependencies = [
  "image 0.25.10",
  "imageproc",
