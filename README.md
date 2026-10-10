@@ -14,15 +14,15 @@ Studio includes the Aligner and Annotator flows. GitHub Releases publish Studio 
 
 pnpm, Vite+, and Cargo monorepo.
 
-| Path | Contents |
-| --- | --- |
-| `apps/{aligner,annotator,studio}/` | SolidJS `web/`, Rust `server/`, Tauri `desktop/`, and demos |
-| `packages/` | TypeScript contracts, client, UI, and workspace fixtures |
-| `crates/` | Rust libraries, including the `lisca-analyze` and `lisca-crop` binaries |
-| `python/` | ROI crop, dataset building, and training |
-| `notebooks/` | Jupyter export for Hub and local zip users (tags `notebooks-v*`) |
-| `models/` | Product models (Smart exclude, Smart segment) |
-| `docs/` | Domain notes and ADRs |
+| Path                               | Contents                                                                |
+| ---------------------------------- | ----------------------------------------------------------------------- |
+| `apps/{aligner,annotator,studio}/` | SolidJS `web/`, Rust `server/`, Tauri `desktop/`, and demos             |
+| `packages/`                        | TypeScript contracts, client, UI, and workspace fixtures                |
+| `crates/`                          | Rust libraries, including the `lisca-analyze` and `lisca-crop` binaries |
+| `python/`                          | ROI crop, dataset building, and training                                |
+| `notebooks/`                       | Jupyter export for Hub and local zip users (tags `notebooks-v*`)        |
+| `models/`                          | Product models (Smart exclude, Smart segment)                           |
+| `docs/`                            | Domain notes and ADRs                                                   |
 
 Assay weights (the transfection pattern U-Net, the killing ResNet) live with the assay repositories and on Hugging Face. See `models/README.md`.
 
@@ -30,14 +30,14 @@ Assay weights (the transfection pattern U-Net, the killing ResNet) live with the
 
 Assay science and the microscopy readers are public sibling repositories under [keejkrej](https://github.com/keejkrej). This repo pins the assay crates, and the transfection Python package, by git revision in `Cargo.toml` and `python/pyproject.toml`.
 
-| Repository | What it owns |
-| --- | --- |
+| Repository                                                                       | What it owns                                                                                                                                     |
+| -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
 | [lisca-transfection-assay](https://github.com/keejkrej/lisca-transfection-assay) | Transfection analysis: Python `transfection` and Rust `lisca-transfection` (segment, traces, AUC, fit, plots), plus the Python/Rust parity tests |
-| [lisca-killing-assay](https://github.com/keejkrej/lisca-killing-assay) | Death-reporter fluorescence, fluorescent engagement, and the killing classifier. Rust crate `lisca-killing` |
-| [mplot-rs](https://github.com/keejkrej/mplot-rs) | Rust 2D plotting (`mplot`). Analysis figures are rendered with this crate |
-| [czi-rs](https://github.com/keejkrej/czi-rs) | Zeiss CZI reader |
-| [nd2-rs](https://github.com/keejkrej/nd2-rs) | Nikon ND2 reader |
-| [mlab-rs](https://github.com/keejkrej/mlab-rs) | Pure-Rust scientific computing: array, signal, image, and classical ML modules in the NumPy / SciPy style |
+| [lisca-killing-assay](https://github.com/keejkrej/lisca-killing-assay)           | Death-reporter fluorescence, fluorescent engagement, and the killing classifier. Rust crate `lisca-killing`                                      |
+| [mplot-rs](https://github.com/keejkrej/mplot-rs)                                 | Rust 2D plotting (`mplot`). Analysis figures are rendered with this crate                                                                        |
+| [czi-rs](https://github.com/keejkrej/czi-rs)                                     | Zeiss CZI reader                                                                                                                                 |
+| [nd2-rs](https://github.com/keejkrej/nd2-rs)                                     | Nikon ND2 reader                                                                                                                                 |
+| [mlab-rs](https://github.com/keejkrej/mlab-rs)                                   | Pure-Rust scientific computing: array, signal, image, and classical ML modules in the NumPy / SciPy style                                        |
 
 ## Install
 
