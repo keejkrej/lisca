@@ -3,7 +3,7 @@
  * Verify that a Git release tag matches every release-bearing desktop manifest.
  *
  * Usage:
- *   node --experimental-strip-types scripts/check-release-version.ts v0.4.9
+ *   node --experimental-strip-types scripts/check-release-version.ts studio-v0.4.9
  *   node --experimental-strip-types scripts/check-release-version.ts aligner-v0.4.7
  *   node --experimental-strip-types scripts/check-release-version.ts annotator-v0.4.7
  */
@@ -28,18 +28,18 @@ export interface ReleaseVersionEntry {
 }
 
 function releaseTagPattern(): RegExp {
-  return new RegExp(`^(?:(?<product>aligner|annotator|studio)-)?v${SEMVER.source}$`);
+  return new RegExp(`^(?<product>aligner|annotator|studio)-v${SEMVER.source}$`);
 }
 
 export function parseReleaseTag(tag: string): ParsedReleaseTag {
   const match = releaseTagPattern().exec(tag);
-  if (!match?.groups) {
+  if (!match?.groups?.product) {
     throw new Error(
-      `Release tag must be valid SemVer prefixed with "v" (vX.Y.Z, studio-vX.Y.Z, aligner-vX.Y.Z, or annotator-vX.Y.Z); received "${tag}".`,
+      `Release tag must be valid SemVer prefixed with the app (studio-vX.Y.Z, aligner-vX.Y.Z, or annotator-vX.Y.Z). Notebook tags are notebooks-vX.Y.Z and are not a desktop release; received "${tag}".`,
     );
   }
-  const product = (match.groups.product ?? "studio") as DesktopProduct;
-  const version = tag.startsWith("v") ? tag.slice(1) : tag.slice(tag.indexOf("-v") + 2);
+  const product = match.groups.product as DesktopProduct;
+  const version = tag.slice(tag.indexOf("-v") + 2);
   return { product, version };
 }
 
@@ -100,7 +100,9 @@ export function assertReleaseVersions(tag: string, entries: ReleaseVersionEntry[
 function main(): void {
   const tag = process.argv[2];
   if (!tag) {
-    console.error("Usage: check-release-version.ts v<major>.<minor>.<patch>");
+    console.error(
+      "Usage: check-release-version.ts <studio-vX.Y.Z|aligner-vX.Y.Z|annotator-vX.Y.Z>",
+    );
     process.exit(2);
   }
 

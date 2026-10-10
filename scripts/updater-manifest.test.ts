@@ -27,14 +27,14 @@ describe("updater manifest", () => {
       version: "0.4.10",
       notes: "Studio 0.4.10",
       pubDate: "2026-10-10T00:00:00.000Z",
-      tag: "v0.4.10",
+      tag: "studio-v0.4.10",
       owner: "keejkrej",
       repo: "lisca",
       files,
     });
     expect(manifest.platforms["darwin-aarch64"]).toEqual({
       signature: "mac-sig",
-      url: "https://github.com/keejkrej/lisca/releases/download/v0.4.10/Lisca.Studio_aarch64.app.tar.gz",
+      url: "https://github.com/keejkrej/lisca/releases/download/studio-v0.4.10/Lisca.Studio_aarch64.app.tar.gz",
     });
     expect(manifest.platforms["windows-x86_64"]?.url).toContain("_x64-setup.exe");
     expect(manifest.platforms["linux-x86_64"]?.signature).toBe("linux-sig");
@@ -51,7 +51,7 @@ describe("updater manifest", () => {
         version: "0.4.10",
         notes: "Studio 0.4.10",
         pubDate: "2026-10-10T00:00:00.000Z",
-        tag: "v0.4.10",
+        tag: "studio-v0.4.10",
         owner: "keejkrej",
         repo: "lisca",
         files: [...files, { name: "Lisca.Studio_arm64.app.tar.gz", signature: "other-mac-sig" }],
@@ -65,7 +65,7 @@ describe("updater manifest", () => {
         version: "0.4.10",
         notes: "Studio 0.4.10",
         pubDate: "2026-10-10T00:00:00.000Z",
-        tag: "v0.4.10",
+        tag: "studio-v0.4.10",
         owner: "keejkrej",
         repo: "lisca",
         files: files.slice(0, 2),

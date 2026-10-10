@@ -72,7 +72,7 @@ JavaScript workspace tasks are plain `pnpm run` scripts. Per-app dev, build, and
 - `pnpm run check` runs lint, TypeScript, contract validation, Rust check and Clippy, and workspace tests.
 - `pnpm run fmt` formats supported files. `pnpm run fmt:check` verifies formatting.
 - GitHub Actions `Checks` runs `pnpm run fmt:check` and `pnpm run check` on pull requests and `main`. Copilot reviews every non-draft pull request (repository ruleset). PR Agent (`.github/workflows/pr-agent.yml`) reviews with Ollama Cloud `deepseek-v4.1-flash` once the `OLLAMA_API_KEY` Actions secret is set. Review guidance is in `.github/copilot-instructions.md`.
-- A `v*` or `studio-v*` tag publishes Studio. `aligner-v*` publishes Aligner. `annotator-v*` publishes Annotator. A tag ships only that app. The manual `Desktop build` workflow uploads an Actions artifact and stops there. The `release-jupyternotebook` workflow publishes `lisca-notebooks-X.Y.Z.zip` and tags `notebooks-v*`. Procedure: `docs/agents/releases.md`.
+- A `studio-v*` tag publishes Studio. `aligner-v*` publishes Aligner. `annotator-v*` publishes Annotator. A tag ships only that app. The manual `Desktop build` workflow uploads an Actions artifact and stops there. The `release-jupyternotebook` workflow publishes `lisca-notebooks-X.Y.Z.zip` and tags `notebooks-v*`. Procedure: `docs/agents/releases.md`.
 - `cargo test --workspace` runs Rust tests.
 - `cd python && uv run pytest` runs the Python suite.
 

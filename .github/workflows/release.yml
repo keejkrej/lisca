@@ -1,7 +1,7 @@
 name: Release
 
 # Stable channel. One tag publishes one app:
-#   v* and studio-v* ship Studio, aligner-v* ships Aligner, annotator-v* ships Annotator.
+#   studio-v* ships Studio, aligner-v* ships Aligner, annotator-v* ships Annotator.
 # Test installers come from Desktop build (workflow_dispatch) and are not releases
 # or auto-update sources.
 # Landing already deploys from deploy/landing via Render (pnpm run deploy:landing).
@@ -9,7 +9,7 @@ name: Release
 
 on:
   push:
-    tags: ["v*", "studio-v*", "aligner-v*", "annotator-v*"]
+    tags: ["studio-v*", "aligner-v*", "annotator-v*"]
 
 permissions:
   contents: write
@@ -39,7 +39,7 @@ jobs:
           case "${GITHUB_REF_NAME}" in
             aligner-v*) product=aligner; label=Aligner ;;
             annotator-v*) product=annotator; label=Annotator ;;
-            studio-v*|v*) product=studio; label=Studio ;;
+            studio-v*) product=studio; label=Studio ;;
             *) echo "unsupported release tag ${GITHUB_REF_NAME}" >&2; exit 1 ;;
           esac
           echo "product=${product}" >> "$GITHUB_OUTPUT"

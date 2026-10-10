@@ -2,17 +2,18 @@
 
 Each desktop app has its own version and its own release. A tag ships one app for macOS, Windows, and Linux:
 
-| Tag                         | App       |
-| --------------------------- | --------- |
-| `vX.Y.Z` or `studio-vX.Y.Z` | Studio    |
-| `aligner-vX.Y.Z`            | Aligner   |
-| `annotator-vX.Y.Z`          | Annotator |
+| Tag                | App       |
+| ------------------ | --------- |
+| `studio-vX.Y.Z`    | Studio    |
+| `aligner-vX.Y.Z`   | Aligner   |
+| `annotator-vX.Y.Z` | Annotator |
 
 Local `pnpm run dist:studio`, `dist:aligner`, and `dist:annotator` stay available and do not publish a release.
 
 ## Versioning policy
 
-- Use [Semantic Versioning](https://semver.org/). Studio tags are `vX.Y.Z` or `studio-vX.Y.Z`. Aligner tags are `aligner-vX.Y.Z`. Annotator tags are `annotator-vX.Y.Z`.
+- Use [Semantic Versioning](https://semver.org/). Studio tags are `studio-vX.Y.Z`. Aligner tags are `aligner-vX.Y.Z`. Annotator tags are `annotator-vX.Y.Z`. Notebook tags are `notebooks-vX.Y.Z` and ship from their own workflow.
+- Published tags `v0.4.8` and `v0.4.9` stay as they are. Do not move them. The next Studio release is `studio-vX.Y.Z`.
 - Bump only the three desktop manifests of the app you are releasing:
   - `apps/<app>/desktop/package.json`
   - `apps/<app>/desktop/src-tauri/Cargo.toml`
@@ -40,7 +41,7 @@ whose version differs from any of that app's three desktop manifest fields fails
 3. Run the check for that tag:
 
    ```sh
-   node --experimental-strip-types scripts/check-release-version.ts vX.Y.Z
+   node --experimental-strip-types scripts/check-release-version.ts studio-vX.Y.Z
    node --experimental-strip-types scripts/check-release-version.ts aligner-vX.Y.Z
    node --experimental-strip-types scripts/check-release-version.ts annotator-vX.Y.Z
    pnpm run fmt:check
@@ -54,11 +55,11 @@ whose version differs from any of that app's three desktop manifest fields fails
 6. Create and push the tag without moving it later:
 
    ```sh
-   git tag vX.Y.Z
-   git push origin refs/tags/vX.Y.Z
+   git tag studio-vX.Y.Z
+   git push origin refs/tags/studio-vX.Y.Z
    ```
 
-   Use `studio-vX.Y.Z`, `aligner-vX.Y.Z`, or `annotator-vX.Y.Z` for those apps. `vX.Y.Z` is Studio.
+   Use `aligner-vX.Y.Z` or `annotator-vX.Y.Z` when releasing those apps. A bare `vX.Y.Z` tag does not publish a desktop app.
 
 7. Wait for the three package jobs and `publish-updater-manifest` to succeed. The versioned GitHub
    Release contains one DMG, one NSIS installer, and one Debian package, plus the updater signatures.
@@ -71,7 +72,7 @@ whose version differs from any of that app's three desktop manifest fields fails
 
 Two channels. There is no nightly. One machine has one install, and that install is one channel.
 
-- **Stable** is a product tag (`v*`, `studio-v*`, `aligner-v*`, or `annotator-v*`). `.github/workflows/release.yml` publishes that app's GitHub Release and its update feed. An installed app checks its own feed once at startup. It downloads nothing until the user chooses Install. Settings can turn the check off. It does not look at test artifacts or at the other apps' feeds.
+- **Stable** is a product tag (`studio-v*`, `aligner-v*`, or `annotator-v*`). `.github/workflows/release.yml` publishes that app's GitHub Release and its update feed. An installed app checks its own feed once at startup. It downloads nothing until the user chooses Install. Settings can turn the check off. It does not look at test artifacts, notebook zips, or the other apps' feeds.
 - **Test** is `.github/workflows/desktop-build.yml` (`Desktop build`, `workflow_dispatch`). It packages Studio with the same signing and notarization and uploads an Actions artifact. It does not create a tag, a GitHub Release, or an updater manifest. A test install looks for nothing. Replace it by installing another artifact by hand.
 
 Updater signatures use the `TAURI_SIGNING_PRIVATE_KEY` and `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` Actions secrets. The matching public key is in each app's `tauri.conf.json`. Keep a copy of the private key outside the repo. Losing it means installed apps cannot verify a later update.
@@ -110,10 +111,10 @@ not force unrelated package-version bumps.
 
 ## Notebook zip releases
 
-Jupyter notebooks are a second, independent SemVer train. They do not share a version with desktop
-installers and must not be hooked into `.github/workflows/release.yml`.
+Jupyter notebooks are their own SemVer train. They do not share a version with Studio, Aligner, or
+Annotator, and they must not be hooked into `.github/workflows/release.yml`.
 
-- Desktop tags: `vX.Y.Z` → Studio installers (signed and notarized DMG, unsigned NSIS, deb).
+- Desktop tags: `studio-vX.Y.Z`, `aligner-vX.Y.Z`, and `annotator-vX.Y.Z`. Each publishes that app's installers (signed and notarized DMG, unsigned NSIS, deb).
 - Notebook tags: `notebooks-vX.Y.Z` on the **export commit** of branch `notebooks` (not `main`).
   Asset: `lisca-notebooks-X.Y.Z.zip`. Workflow: `.github/workflows/release-jupyternotebook.yml`.
 - Bump `notebooks/VERSION` (and `notebooks/pyproject.toml`) on **`main`**. Daily work never lands on
@@ -149,4 +150,5 @@ installers and must not be hooked into `.github/workflows/release.yml`.
   contain `git+` / `github.com/keejkrej` sources.
 
 Pack locally with `bash scripts/pack-notebooks.sh`. CI smoke-tests that zip on pull requests. Desktop
-`v*` / `0.3.2` is a separate train.
+tags (`studio-v*`, `aligner-v*`, `annotator-v*`) are a separate train. The notebooks version in this
+tree is `notebooks/VERSION`.
