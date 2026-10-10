@@ -37,7 +37,7 @@ Assay science and the microscopy readers are public sibling repositories under [
 | [mplot-rs](https://github.com/keejkrej/mplot-rs)                                 | Rust 2D plotting (`mplot`). Analysis figures are rendered with this crate                                                                        |
 | [czi-rs](https://github.com/keejkrej/czi-rs)                                     | Zeiss CZI reader (`czi`)                                                                                                                         |
 | [nd2-rs](https://github.com/keejkrej/nd2-rs)                                     | Nikon ND2 reader (`nd2`)                                                                                                                         |
-| [mlab-rs](https://github.com/keejkrej/mlab-rs)                                   | Pure-Rust scientific computing (`mlab`): array, signal, image, and classical ML modules in the NumPy / SciPy style                               |
+| [marray-rs](https://github.com/keejkrej/marray-rs)                               | Pure-Rust scientific computing (`marray`): array, signal, image, and classical ML modules in the NumPy / SciPy style                             |
 
 ## Install
 

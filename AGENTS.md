@@ -19,9 +19,9 @@ Open the sibling that owns the behavior under change. Cite these by GitHub URL.
 | Figure layout, axes, or PNG/SVG/PDF export                                     | [mplot-rs](https://github.com/keejkrej/mplot-rs) (crate `mplot`)                                                                     |
 | Zeiss CZI reads                                                                | [czi-rs](https://github.com/keejkrej/czi-rs) (crate `czi`)                                                                           |
 | Nikon ND2 reads                                                                | [nd2-rs](https://github.com/keejkrej/nd2-rs) (crate `nd2`)                                                                           |
-| Array, signal, image, or classical ML primitives in Rust                       | [mlab-rs](https://github.com/keejkrej/mlab-rs) (crate `mlab`)                                                                        |
+| Array, signal, image, or classical ML primitives in Rust                       | [marray-rs](https://github.com/keejkrej/marray-rs) (crate `marray`)                                                                  |
 
-`Cargo.toml` and `python/pyproject.toml` pin `lisca-transfection-assay` and `lisca-killing-assay`. `Cargo.toml` also git-depends on `mplot-rs`, `mlab-rs`, `czi-rs`, and `nd2-rs`. When an assay has both a Cargo pin and a Python pin, keep them on the same commit.
+`Cargo.toml` and `python/pyproject.toml` pin `lisca-transfection-assay` and `lisca-killing-assay`. `Cargo.toml` also git-depends on `mplot-rs`, `marray-rs`, `czi-rs`, and `nd2-rs` at 1.0.0. When an assay has both a Cargo pin and a Python pin, keep them on the same commit.
 
 ## Install
 
