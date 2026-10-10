@@ -4,7 +4,7 @@
 
 LiSCA is live-cell single-cell analysis for time-lapse microscopy on micropattern arrays. An acquisition (ND2, CZI, or a templated image folder) becomes one workspace: pattern alignment, ROI crops, annotations, and per-cell assay results.
 
-This repository is the product monorepo for Studio, Aligner, and Annotator (SolidJS web, Axum server, Tauri desktop). Studio includes the Aligner and Annotator flows, and GitHub Releases ship Studio. Assay definitions and kernels live in the sibling repositories below. This repo schedules the work, owns the workspace layout, and renders figures.
+This repository is the product monorepo for Studio, Aligner, and Annotator (SolidJS web, Axum server, Tauri desktop). Studio includes the Aligner and Annotator flows. GitHub Releases ship one desktop app per tag. Assay definitions and kernels live in the sibling repositories below. This repo schedules the work, owns the workspace layout, and renders figures.
 
 Human install and run steps are in `README.md`. Domain language is in `CONTEXT.md`. Decisions are in `docs/adr/`.
 
@@ -72,7 +72,7 @@ JavaScript workspace tasks are plain `pnpm run` scripts. Per-app dev, build, and
 - `pnpm run check` runs lint, TypeScript, contract validation, Rust check and Clippy, and workspace tests.
 - `pnpm run fmt` formats supported files. `pnpm run fmt:check` verifies formatting.
 - GitHub Actions `Checks` runs `pnpm run fmt:check` and `pnpm run check` on pull requests and `main`. Copilot reviews every non-draft pull request (repository ruleset). PR Agent (`.github/workflows/pr-agent.yml`) reviews with Ollama Cloud `deepseek-v4.1-flash` once the `OLLAMA_API_KEY` Actions secret is set. Review guidance is in `.github/copilot-instructions.md`.
-- A `v*` tag publishes Studio installers to a GitHub Release. The manual `Desktop build` workflow uploads an Actions artifact and stops there. The `release-jupyternotebook` workflow publishes `lisca-notebooks-X.Y.Z.zip` and tags `notebooks-v*`. Procedure: `docs/agents/releases.md`.
+- A `studio-v*` tag publishes Studio. `aligner-v*` publishes Aligner. `annotator-v*` publishes Annotator. A tag ships only that app. The manual `Desktop build` workflow uploads an Actions artifact and stops there. The `release-jupyternotebook` workflow publishes `lisca-notebooks-X.Y.Z.zip` and tags `notebooks-v*`. Procedure: `docs/agents/releases.md`.
 - `cargo test --workspace` runs Rust tests.
 - `cd python && uv run pytest` runs the Python suite.
 

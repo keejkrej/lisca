@@ -5,6 +5,7 @@ import { Show } from "solid-js";
 
 import { ShellThemeToggle } from "../theme/shell-theme";
 import { ConnectionStatus } from "./connection-status";
+import { DesktopUpdateSettings } from "./update-settings";
 import { PathButton } from "./path-button";
 import { useShellServer } from "../server/shell-server";
 import { useShellWorkspace } from "../workspace/workspace";
@@ -81,6 +82,7 @@ function ShellNavbarRoot(props: ShellNavbarProps) {
         <div class="flex min-w-0 items-center justify-end justify-self-end gap-1 sm:gap-2">
           <ConnectionStatus state={server.state} onRetry={server.retry} />
           <Show when={props.showToolsMenu !== false}>{props.endLeading}</Show>
+          <DesktopUpdateSettings />
           <ShellThemeToggle />
         </div>
       </div>

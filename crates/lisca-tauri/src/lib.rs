@@ -19,6 +19,8 @@ const MAIN_WINDOW_LABEL: &str = "main";
 use tauri_plugin_dialog::DialogExt;
 use tower::ServiceExt;
 
+mod updater;
+
 /// Product-specific configuration for a Lisca Tauri desktop shell.
 #[derive(Clone, Debug)]
 pub struct ProductConfig {
@@ -193,15 +195,10 @@ where
     {
         use tauri::utils::acl::RemoteUrlPattern;
         let authority = context.runtime_authority_mut();
-        authority.__allow_command("lisca_request".to_string(), ExecutionContext::Local);
-        authority.__allow_command("lisca_save_file".to_string(), ExecutionContext::Local);
-        authority.__allow_command("lisca_pick_path".to_string(), ExecutionContext::Local);
+        allow_bridge_commands(authority, ExecutionContext::Local);
         for url in ["http://127.0.0.1:*", "http://localhost:*"] {
             if let Ok(pattern) = url.parse::<RemoteUrlPattern>() {
-                let context = ExecutionContext::Remote { url: pattern };
-                authority.__allow_command("lisca_request".to_string(), context.clone());
-                authority.__allow_command("lisca_save_file".to_string(), context.clone());
-                authority.__allow_command("lisca_pick_path".to_string(), context);
+                allow_bridge_commands(authority, ExecutionContext::Remote { url: pattern });
             }
         }
     }
@@ -209,7 +206,14 @@ where
     let reopen_config = config.clone();
     let app = tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
-        .invoke_handler(tauri::generate_handler![lisca_request, lisca_save_file, lisca_pick_path])
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .invoke_handler(tauri::generate_handler![
+            lisca_request,
+            lisca_save_file,
+            lisca_pick_path,
+            updater::update_check_enabled,
+            updater::set_update_check_enabled
+        ])
         .setup(move |app| {
             if config.product == "studio" {
                 if let Some(model) = resolve_kill_model_path(app) {
@@ -225,6 +229,13 @@ where
         .build(context);
     match app {
         Ok(app) => app.run(move |app_handle, event| {
+            if let tauri::RunEvent::Ready = &event {
+                let handle = app_handle.clone();
+                let product_name = reopen_config.product_name;
+                tauri::async_runtime::spawn(async move {
+                    updater::offer_startup_update(handle, product_name).await;
+                });
+            }
             on_shell_event(app_handle, event, &reopen_config);
         }),
         Err(error) => {
@@ -239,6 +250,18 @@ where
 /// this check, so a codeless request stays in the Dock and a coded one still quits.
 fn should_quit_on_exit_request(code: Option<i32>) -> bool {
     !cfg!(target_os = "macos") || code.is_some()
+}
+
+fn allow_bridge_commands(authority: &mut tauri::ipc::RuntimeAuthority, context: ExecutionContext) {
+    for command in [
+        "lisca_request",
+        "lisca_save_file",
+        "lisca_pick_path",
+        "update_check_enabled",
+        "set_update_check_enabled",
+    ] {
+        authority.__allow_command(command.to_string(), context.clone());
+    }
 }
 
 fn on_shell_event<R: tauri::Runtime>(
@@ -464,7 +487,9 @@ fn create_window<R: tauri::Runtime, M: Manager<R>>(
             product: {:?},
             request: (request) => window.__TAURI_INTERNALS__.invoke("lisca_request", {{ request }}),
             saveFile: (request) => window.__TAURI_INTERNALS__.invoke("lisca_save_file", {{ request }}),
-            pickPath: (request) => window.__TAURI_INTERNALS__.invoke("lisca_pick_path", {{ request }})
+            pickPath: (request) => window.__TAURI_INTERNALS__.invoke("lisca_pick_path", {{ request }}),
+            updateCheckEnabled: () => window.__TAURI_INTERNALS__.invoke("update_check_enabled"),
+            setUpdateCheckEnabled: (enabled) => window.__TAURI_INTERNALS__.invoke("set_update_check_enabled", {{ enabled }})
         }});"#,
         config.product
     );

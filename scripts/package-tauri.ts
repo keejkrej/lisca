@@ -13,6 +13,7 @@ import { cpSync, existsSync, mkdirSync, rmSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { DESKTOP_PRODUCTS } from "./lisca-desktop-products.cjs";
 import { runVpSync } from "./node-run.ts";
+import { tauriUpdaterBuildConfig } from "./updater-manifest.ts";
 
 type LiscaProduct = "aligner" | "annotator" | "studio";
 type DesktopProductConfig = (typeof DESKTOP_PRODUCTS)[LiscaProduct];
@@ -71,10 +72,14 @@ runVpSync(["run", "--filter", cfg.webPkg, "build"], {
 
 const desktopDir = stageArtifacts(product, cfg);
 
-runVpSync(["exec", "tauri", "build"], {
-  cwd: desktopDir,
-  env: process.env,
-});
+const releaseUpdater = process.env.LISCA_UPDATER_ARTIFACTS === "1";
+runVpSync(
+  ["exec", "tauri", "build", "--config", JSON.stringify(tauriUpdaterBuildConfig(releaseUpdater))],
+  {
+    cwd: desktopDir,
+    env: process.env,
+  },
+);
 
 const bundleSrc = join(root, "target", "release", "bundle");
 const bundleDest = join(desktopDir, "release");

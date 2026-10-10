@@ -1,13 +1,15 @@
 name: Release
 
-# Stable channel. A v* tag publishes a GitHub Release. Test installers come from
-# Desktop build (workflow_dispatch) and are not releases or auto-update sources.
+# Stable channel. One tag publishes one app:
+#   studio-v* ships Studio, aligner-v* ships Aligner, annotator-v* ships Annotator.
+# Test installers come from Desktop build (workflow_dispatch) and are not releases
+# or auto-update sources.
 # Landing already deploys from deploy/landing via Render (pnpm run deploy:landing).
 # Notebook zips ship from notebooks-v* tags via release-jupyternotebook.yml, not this workflow.
 
 on:
   push:
-    tags: ["v*"]
+    tags: ["studio-v*", "aligner-v*", "annotator-v*"]
 
 permissions:
   contents: write
@@ -19,12 +21,29 @@ jobs:
   release:
     name: create-release
     runs-on: ubuntu-latest
+    outputs:
+      product: ${{ steps.app.outputs.product }}
+      label: ${{ steps.app.outputs.label }}
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
           node-version: 24
+
+      - name: Select the released app
+        id: app
+        shell: bash
+        run: |
+          set -euo pipefail
+          case "${GITHUB_REF_NAME}" in
+            aligner-v*) product=aligner; label=Aligner ;;
+            annotator-v*) product=annotator; label=Annotator ;;
+            studio-v*) product=studio; label=Studio ;;
+            *) echo "unsupported release tag ${GITHUB_REF_NAME}" >&2; exit 1 ;;
+          esac
+          echo "product=${product}" >> "$GITHUB_OUTPUT"
+          echo "label=${label}" >> "$GITHUB_OUTPUT"
 
       - name: Verify desktop release versions
         run: node --experimental-strip-types scripts/check-release-version.ts "${GITHUB_REF_NAME}"
@@ -34,11 +53,11 @@ jobs:
         with:
           generate_release_notes: true
           body: |
-            Desktop installers.
+            ${{ steps.app.outputs.label }} installers.
 
             | App | macOS | Windows | Linux |
             | --- | --- | --- | --- |
-            | Studio | DMG | NSIS | deb |
+            | ${{ steps.app.outputs.label }} | DMG | NSIS | deb |
 
             macOS builds are signed with a Developer ID and notarized by Apple. Windows builds are not
             signed yet, so SmartScreen will warn.
@@ -51,5 +70,24 @@ jobs:
     with:
       upload_target: release
       oses: '["macos-latest","windows-latest","ubuntu-latest"]'
-      products: '["studio"]'
+      products: '["${{ needs.release.outputs.product }}"]'
     secrets: inherit
+
+  updater-manifest:
+    name: publish-updater-manifest
+    needs: [release, package]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Publish the app update feed
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          node --experimental-strip-types scripts/updater-manifest.ts \
+            --tag "${GITHUB_REF_NAME}" \
+            --repo "${GITHUB_REPOSITORY}"

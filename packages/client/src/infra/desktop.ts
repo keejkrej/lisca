@@ -33,6 +33,10 @@ export type LiscaDesktopBridge = {
   saveFile?: (request: LiscaSaveFileRequest) => Promise<string | null>;
   /** Native open dialog; resolves to the chosen path, or null when cancelled. */
   pickPath?: (request: LiscaPickPathRequest) => Promise<string | null>;
+  /** Whether this install looks for an update once at startup. Desktop only. */
+  updateCheckEnabled?: () => Promise<boolean>;
+  /** Persist the startup update check. Desktop only. */
+  setUpdateCheckEnabled?: (enabled: boolean) => Promise<void>;
 };
 
 declare global {

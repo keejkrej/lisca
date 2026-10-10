@@ -28,7 +28,7 @@
     "fmt": "vp fmt",
     "fmt:check": "vp fmt --check",
     "test": "pnpm run -r test",
-    "test:scripts": "vp test run scripts/check-openapi-routes.test.ts scripts/check-release-version.test.ts scripts/lisca-dev.test.ts scripts/lint-boundaries.test.ts scripts/node-run.test.ts --exclude '.deploy/**'",
+    "test:scripts": "vp test run scripts/check-openapi-routes.test.ts scripts/check-release-version.test.ts scripts/updater-manifest.test.ts scripts/lisca-dev.test.ts scripts/lint-boundaries.test.ts scripts/node-run.test.ts --exclude '.deploy/**'",
     "typecheck": "pnpm run -r typecheck"
   },
   "devDependencies": {
