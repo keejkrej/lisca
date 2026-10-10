@@ -1,5 +1,4 @@
 import {
-  inferResultAssayKind,
   resultSectionInstruction,
   resultSectionLabel,
   type ResultPlotSection,
@@ -33,7 +32,7 @@ export function AnalysisDemo(props: AnalysisDemoProps) {
   const [assayId, setAssayId] = createSignal<FixtureAssayId>("transfection");
   const [section, setSection] = createSignal<ResultPlotSection>("traces");
   const fixture = createMemo(() => FIXTURES[assayId()]());
-  const assayKind = createMemo(() => inferResultAssayKind(fixture().files));
+  const assayKind = createMemo(() => assayId());
   const plots = createMemo(() => fixture().plots.filter((plot) => plot.section === section()));
 
   const switchAssay = (next: FixtureAssayId) => {

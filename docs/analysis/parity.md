@@ -75,11 +75,11 @@ pools, or bitwise float identity.
 
 ## Assay map
 
-| Studio `assayId`                                        | Goal source + Rust                                                           | This repo                                                             | Parity CLI                            | Notes                                                          |
-| ------------------------------------------------------- | ---------------------------------------------------------------------------- | --------------------------------------------------------------------- | ------------------------------------- | -------------------------------------------------------------- |
-| `transfection` (Studio wire id; science = transfection) | `lisca-transfection-assay` (`transfection` CLI + `lisca-transfection` crate) | Thin dispatch in `analysis/assays/transfection/` + local ONNX segment | `lisca-analyze` (calls the git crate) | Crop stays here. Python+Rust parity: sidecar `docs/parity.md`. |
-| `killing`                                               | mupattern / future `lisca-killing-assay`                                     | `analysis/assays/killing/`                                            | extend when stages need stage-CLI     | ONNX ResNet + kill-curve tables                                |
-| `lnp-binding` / binding                                 | future `lisca-binding-assay`                                                 | none until mature                                                     | —                                     | Closed enum: do not half-register                              |
+| Studio `assayId`                                        | Goal source + Rust                                                           | This repo                                                             | Parity CLI                            | Notes                                                              |
+| ------------------------------------------------------- | ---------------------------------------------------------------------------- | --------------------------------------------------------------------- | ------------------------------------- | ------------------------------------------------------------------ |
+| `transfection` (Studio wire id; science = transfection) | `lisca-transfection-assay` (`transfection` CLI + `lisca-transfection` crate) | Thin dispatch in `analysis/assays/transfection/` + local ONNX segment | `lisca-analyze` (calls the git crate) | Crop stays here. Python+Rust parity: sidecar `docs/parity.md`.     |
+| `killing`                                               | Death reporter fluorescence on the signal channel                            | `analysis/assays/killing/`                                            | `lisca-analyze`                       | Per-cell traces and sample-mean figures. No classifier and no fit. |
+| `lnp-binding` / binding                                 | future `lisca-binding-assay`                                                 | none until mature                                                     | —                                     | Closed enum: do not half-register                                  |
 
 Adding a Studio assay id is a **cross-cutting** change (`@lisca/contracts`,
 Rust, generated types). Unsupported ids fail explicitly — see `PRODUCT.md`.
@@ -239,10 +239,9 @@ Support kernels for tests: `crates/lisca/tests/support/transfection_reference.rs
   adapter. Pattern-U-Net weights are the sidecar/HF’s, not a new `models/`
   brain.
 - Shared ROI I/O in this crate: `analysis/roi_stack.rs`, `csv_io.rs`, crop.
-- Killing (in-tree until its sidecar exists): ONNX (`ort`) + mplot-rs. The
-  ResNet is HF `keejkrej/killing-assay-resnet18`. Installers do not ship it;
-  local runs use `LISCA_KILL_MODEL` or the workspace cache. This repo does not
-  own a third weights path.
+- Killing (in-tree until its sidecar exists): death-reporter fluorescence and
+  fluorescent-engagement spot counts, plotted with mplot-rs. Analyze does not
+  load a classifier. Desktop packaging does not download or bundle ONNX weights.
 - Progress + HTTP remain in Studio; parity CLI calls the same stage functions.
 
 Sibling repos describe **goals** and, once imported, **own the kernels**.

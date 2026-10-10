@@ -25,10 +25,10 @@ pnpm run --filter @lisca/studio-demo dev
 The app listens on [http://localhost:5177](http://localhost:5177).
 
 Use the navbar to switch `transfection.fixture` and `killing.fixture`. Dock
-buttons switch Traces vs Parameters (transfection) or Survival (killing).
+buttons switch Traces vs Parameters (transfection) or Traces vs Compare (killing).
 
 ## What you should see
 
 - **Transfection:** `traces.png`, `traces_summary.png`, `area.png`, `traces_fit.png`,
   then `mrna_lifetime.png`, `auc.png`, `expression_rate.png`, `onset_time.png`.
-- **Killing:** `traces.png`, then `kill_curve.png` and `death_times.png`.
+- **Killing:** `traces.png` (each cell), then `traces_summary.png` (mean per sample).

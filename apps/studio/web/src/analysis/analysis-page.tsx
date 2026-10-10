@@ -25,10 +25,12 @@ import {
   resultSectionInstruction,
   resultSectionLabel,
   withPlotSrc,
+  type ResultAssayKind,
   type ResultPlotSection,
 } from "@lisca/analysis";
 import { useStudioNavigate } from "../navigation/use-studio-navigate";
 import { useStudioAnalysisPage } from "../state/use-studio-analysis-page";
+import { useStudioStore } from "../state/studio-store";
 
 export default function AnalysisPage() {
   const { navigateTo } = useStudioNavigate();
@@ -37,7 +39,12 @@ export default function AnalysisPage() {
   const [isSaving, setIsSaving] = createSignal(false);
   const [saveMessage, setSaveMessage] = createSignal<string | null>(null);
   const analysisResultFiles = () => analysisPage.analysisResultFiles;
-  const assayKind = createMemo(() => inferResultAssayKind(analysisResultFiles()));
+  const assayId = useStudioStore((state) => state.assayId);
+  const assayKind = createMemo((): ResultAssayKind => {
+    const id = assayId();
+    if (id === "killing" || id === "transfection" || id === "killing-engagement") return id;
+    return inferResultAssayKind(analysisResultFiles());
+  });
   const isDesktop = liscaDesktopBridge() !== null;
   const plotsWithUrls = createMemo(() =>
     collectResultPlots(analysisResultFiles(), assayKind()).map(withPlotSrc),

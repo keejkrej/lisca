@@ -57,7 +57,11 @@ export type TransfectionAssayType = typeof ASSAY_TYPE.TRANSFECTION;
 export type KillingAssayType = typeof ASSAY_TYPE.KILLING;
 
 /** Assay types selectable in the wizard today. */
-export const ENABLED_STUDIO_ASSAY_IDS = [ASSAY_TYPE.TRANSFECTION, ASSAY_TYPE.KILLING] as const;
+export const ENABLED_STUDIO_ASSAY_IDS = [
+  ASSAY_TYPE.TRANSFECTION,
+  ASSAY_TYPE.KILLING,
+  ASSAY_TYPE.KILLING_ENGAGEMENT,
+] as const;
 
 export type EnabledStudioAssayId = (typeof ENABLED_STUDIO_ASSAY_IDS)[number];
 

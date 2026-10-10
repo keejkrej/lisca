@@ -22,6 +22,36 @@ describe("inferResultAssayKind", () => {
     expect(inferResultAssayKind([{ fileName: "traces_fit.png", path: "" }])).toBe("transfection");
   });
 
+  it("detects engagement from its own figures", () => {
+    expect(
+      inferResultAssayKind([
+        {
+          fileName: "engagement_traces_summary.png",
+          path: "/results/engagement_traces_summary.png",
+        },
+      ]),
+    ).toBe("killing-engagement");
+    const plots = collectResultPlots(
+      [
+        { kind: "plot", fileName: "engagement_traces.png", path: "/results/engagement_traces.png" },
+        {
+          kind: "plot",
+          fileName: "engagement_traces_summary_shared_y.png",
+          path: "/results/engagement_traces_summary_shared_y.png",
+        },
+        { kind: "plot", fileName: "traces.png", path: "/results/traces.png" },
+      ],
+      "killing-engagement",
+    );
+    expect(plots.map((plot) => plot.fileName).slice(0, 2)).toEqual([
+      "engagement_traces.png",
+      "engagement_traces_summary_shared_y.png",
+    ]);
+    expect(plots[0]?.section).toBe("traces");
+    expect(plots[1]?.section).toBe("parameters");
+    expect(resultSectionLabel("parameters", "killing-engagement")).toBe("Compare");
+  });
+
   it("does not treat analysis CSVs as transfection markers", () => {
     expect(inferResultAssayKind([{ fileName: "auc.csv", path: "/analysis/Pos1/auc.csv" }])).toBe(
       "unknown",
@@ -129,12 +159,12 @@ describe("collectResultPlots", () => {
     const plots = collectResultPlots(
       [
         { kind: "plot", fileName: "traces.png", path: "/traces.png" },
-        { kind: "plot", fileName: "kill_curve.png", path: "/kill_curve.png" },
+        { kind: "plot", fileName: "traces_summary.png", path: "/traces_summary.png" },
       ],
       "killing",
     );
-    expect(plots[0]?.title).toBe("P(dead) traces");
-    expect(plots[1]?.title).toBe("N(alive)");
+    expect(plots[0]?.title).toBe("Fluorescence traces");
+    expect(plots[1]?.title).toBe("Mean fluorescence");
     expect(plots[1]?.section).toBe("parameters");
   });
 
@@ -152,8 +182,8 @@ describe("collectResultPlots", () => {
 });
 
 describe("result sections", () => {
-  it("labels Survival for killing parameters", () => {
-    expect(resultSectionLabel("parameters", "killing")).toBe("Survival");
+  it("labels Compare for killing sample means", () => {
+    expect(resultSectionLabel("parameters", "killing")).toBe("Compare");
     expect(resultSectionLabel("parameters", "transfection")).toBe("Parameters");
   });
 
@@ -179,7 +209,7 @@ describe("resultSectionInstruction", () => {
       "Fitted parameters: mRNA lifetime τ_mRNA, AUC, expression rate m0 k_TL, and onset time t0.",
     );
     expect(resultSectionInstruction("parameters", "killing")).toBe(
-      "Survival curve and death-time distributions.",
+      "Mean fluorescence for each sample, on one figure.",
     );
   });
 });

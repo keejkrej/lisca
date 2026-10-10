@@ -274,15 +274,6 @@ fn write_trace_csv(path: &Path, rows: &[TraceRow]) -> Result<(), String> {
     write_csv(path, &headers, &csv_rows)
 }
 
-pub fn run_predict(
-    workspace: &Path,
-    mapping: &SampleMapping,
-    model_dir: &Path,
-    options: PredictOptions,
-) -> Result<(), String> {
-    run_predict_to(workspace, workspace, mapping, model_dir, options)
-}
-
 pub fn run_predict_to(
     workspace: &Path,
     output_workspace: &Path,

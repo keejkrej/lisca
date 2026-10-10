@@ -140,14 +140,12 @@ describe("workspace fixture smoke", () => {
   it("writes killing analysis CSVs and every catalog PNG name", () => {
     const out = tempOut("kill-analyzed");
     materializeFixture({ assay: "killing", stage: "analyzed", out, force: true });
-    expect(read(out, "traces/Pos1/ch1.csv").split("\n")[0]).toBe("roi,t,p_dead");
-    expect(read(out, "results/kill_curve.csv").startsWith("t,n_alive,sample")).toBe(true);
-    expect(read(out, "results/death_times.csv").startsWith("crop,death_time,pos,sample")).toBe(
-      true,
+    expect(read(out, "traces/Pos1/ch1.csv").split("\n")[0]).toBe(
+      "roi,t,area,background,sum,corrected",
     );
-    expect(read(out, "results/predictions.csv").startsWith("t,crop,p_dead,label,pos,sample")).toBe(
-      true,
-    );
+    expect(existsSync(join(out, "results/predictions.csv"))).toBe(false);
+    expect(existsSync(join(out, "results/kill_curve.csv"))).toBe(false);
+    expect(existsSync(join(out, "results/death_times.csv"))).toBe(false);
     for (const plot of KILLING_PLOTS) {
       expect(existsSync(join(out, "results", plot.fileName))).toBe(true);
     }
@@ -160,24 +158,13 @@ describe("workspace fixture smoke", () => {
     const assay = decodeJson(AssayJsonFileSchema, JSON.parse(read(out, "assay.json")));
     const names = assay.samples.map((sample) => sample.name);
     expect(names).toEqual(["Control (fixture)", "CAR-T 1:4 (fixture)"]);
-    const lastColumn = (rel: string) =>
-      new Set(
-        read(out, rel)
-          .trim()
-          .split("\n")
-          .slice(1)
-          .map((line) => line.split(",").at(-1)),
+    const positions = assay.samples.map((sample) => sample.positions);
+    expect(positions).toEqual(["1", "2"]);
+    for (const position of ["1", "2"]) {
+      expect(read(out, `traces/Pos${position}/ch1.csv`).split("\n")[0]).toBe(
+        "roi,t,area,background,sum,corrected",
       );
-    for (const rel of [
-      "results/predictions.csv",
-      "results/predictions_cleaned.csv",
-      "results/death_times.csv",
-      "results/kill_curve.csv",
-    ]) {
-      expect([...lastColumn(rel)], rel).toEqual(names);
     }
-    const death = read(out, "results/death_times.csv").trim().split("\n");
-    expect(death).toContain("1,2,2,CAR-T 1:4 (fixture)");
   });
 
   it("refuses a non-empty out directory without --force", () => {

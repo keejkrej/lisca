@@ -91,15 +91,14 @@ export function buildTransfectionFixture(): AnalysisFixture {
 
 export function buildKillingFixture(): AnalysisFixture {
   const plots = [
-    plotFile("traces", "P(dead) traces", "traces"),
-    plotFile("kill_curve", "N(alive)", "parameters"),
-    plotFile("death_times", "T_death", "parameters"),
+    plotFile("traces", "Fluorescence traces", "traces"),
+    plotFile("traces_summary", "Mean fluorescence", "parameters"),
   ];
   return {
     id: "killing",
     title: "Killing (fixture)",
     description:
-      "Fixture killing workspace showing the PNG plots analysis writes (P(dead) traces, kill curve, death times). Images are sample placeholders.",
+      "Fixture killing workspace showing the PNG plots analysis writes (per-cell fluorescence and the mean for each sample). Images are sample placeholders.",
     intervalMinutes: 15,
     sampleNames: ["Control (fixture)", "CAR-T 1:4 (fixture)", "CAR-T 1:1 (fixture)"],
     files: plots.map(asResultFile),

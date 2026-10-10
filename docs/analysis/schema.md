@@ -141,15 +141,11 @@ writes `results/` tables in this repo until its sidecar exists — see
 
 ## Killing `traces/` and `results/` (in-tree until the killing sidecar exists)
 
-| File                              | Columns                                         |
-| --------------------------------- | ----------------------------------------------- |
-| `traces/Pos{n}/ch{m}.csv`         | `roi`, `t`, `p_dead`                            |
-| `results/predictions.csv`         | `t`, `crop`, `p_dead`, `label`, `pos`, `sample` |
-| `results/predictions_cleaned.csv` | `t`, `crop`, `label`, `pos`, `sample`           |
-| `results/death_times.csv`         | `crop`, `death_time`, `pos`, `sample`           |
-| `results/kill_curve.csv`          | `t`, `n_alive`, `sample`                        |
+| File                      | Columns                                              |
+| ------------------------- | ---------------------------------------------------- |
+| `traces/Pos{n}/ch{m}.csv` | `roi`, `t`, `area`, `background`, `sum`, `corrected` |
 
-`sample` is the Sample name. Older killing Workspaces wrote `timeseries/Pos{n}/`;
+Sample identity comes from `samples[].name` and which Positions that Sample lists. The comparison figures put one panel per Sample. Older killing Workspaces wrote `timeseries/Pos{n}/`;
 `migrate_workspace` (migration `killing_traces_dir`) renames `timeseries/` to
 `traces/` when `traces/` is absent. When both exist, an empty `timeseries/` or
 one with the same files and bytes as `traces/` is removed; otherwise the

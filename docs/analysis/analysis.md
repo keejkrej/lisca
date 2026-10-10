@@ -23,7 +23,7 @@ Per-sample titles include the sample folder (for example
 `Intensity traces (A431_aiLNP)`).
 
 Sections stay assay-aware: Traces / Parameters (transfection) vs Traces /
-Survival (killing).
+Compare (killing). Compare is the mean fluorescence for each sample.
 
 ## Analysis demo
 
@@ -64,11 +64,11 @@ depends on `assay.json` → root `type`:
 | Assay          | Goal source (not implementation reference)                                                                                    | Pipeline                                                                                       |
 | -------------- | ----------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
 | `transfection` | [`lisca-transfection-assay`](https://github.com/keejkrej/lisca-transfection-assay) — Python + Rust crate imported via git URL | segment → traces → AUC → fit (+ plots) in `lisca-transfection`; Studio ONNX segment stays here |
-| `killing`      | [mupattern](https://github.com/keejkrej/mupattern) / future `lisca-killing-assay` — kill curve semantics, ResNet classifier   | predict → plot-traces → clean → death times → kill curve plot                                  |
+| `killing`      | Death reporter. Signal-channel fluorescence in each ROI crop. No classifier and no fit.                                       | traces → plot-traces                                                                           |
 
 Numeric stages and PNG plots for transfection run in the imported
 [`lisca-transfection`](https://github.com/keejkrej/lisca-transfection-assay) crate
-via [**mplot-rs**](https://github.com/keejkrej/mplot-rs). Killing inference uses ONNX Runtime (`ort`) with Hugging Face `keejkrej/killing-assay-resnet18` (local cache or `LISCA_KILL_MODEL`; not shipped in the installer, and not a product `models/` brain).
+via [**mplot-rs**](https://github.com/keejkrej/mplot-rs). Death-reporter killing and fluorescent engagement do not load a model. Desktop packaging does not download or bundle ONNX weights.
 
 **Python-first → imported crate process, tolerances, and assay map:** [`parity.md`](./parity.md). Transfection Python+Rust parity lives in the sidecar (`docs/parity.md` there). Agent workflow: `/lisca-parity`.
 
@@ -84,9 +84,9 @@ Rust in this crate should stay idiomatic:
   ONNX segment may stay as a Studio adapter (`segment_onnx.rs` + `ort`) until
   the sidecar un-stubs it; resolve `keejkrej/single-cell-pattern-unet` via
   `LISCA_PATTERN_SEG_MODEL`, not as a lisca-owned assay brain.
-- Killing: per-assay code under `assays/killing/`. Weights: HF
-  `keejkrej/killing-assay-resnet18`, local cache or `LISCA_KILL_MODEL`. Desktop
-  installers do not bundle the ONNX.
+- Killing: per-assay code under `assays/killing/` (fluorescence) and
+  `assays/killing_engagement.rs` (spot counts). Analyze does not load the
+  ResNet. Desktop packaging does not download or bundle ONNX weights.
 - Parity for transfection is judged in the sidecar; this repo’s wrapper tests check the dispatch still writes the workspace contract.
 
 ## Transfection pipeline
@@ -109,86 +109,52 @@ and `analysis/transfection/traces/Pos{n}` (one Step per Position; Rust entry poi
 
 ## Killing pipeline
 
-Ports the mupattern kill workflow (predict → clean → plot) to Studio ROI stacks (`roi/PosN/` TIFF stacks, not crops.zarr):
+Death reporter (`assayId` `killing`) measures fluorescence in each existing ROI crop. It does not segment, detect cells, fit a curve, or run a classifier. The signal channel comes from `analysis.channels.signal`. Each crop plane at z=0 uses the same full-frame reduction as transfection `analysis.skipSegment`: area is the pixel count, background is the 10th percentile, and corrected fluorescence is the sum minus area times background.
 
 ```
-assay.json → predict (ResNet ONNX, P(dead) per frame) → plot-traces → clean (monotonicity) → death times → plot kill curve
+assay.json → traces (per Position) → plot-traces
 ```
 
-Steps: `analysis/killing/predict/Pos{n}` (one per Position), then
-`analysis/killing/plot-traces`, clean, and the kill curve / death time plots.
-
-Progress reuses the same HTTP stage names with kill-specific messages:
-
-| Stage       | Kill step                           |
-| ----------- | ----------------------------------- |
-| `preparing` | Resolve ONNX model + sample mapping |
-| `segment`   | P(dead) inference per ROI frame     |
-| `traces`    | Monotonicity clean                  |
-| `auc`       | Death times + kill curve table      |
-| `fit`       | P(dead) trace + kill curve PNGs     |
-
-### Kill model path
-
-The classifier is Hugging Face [`keejkrej/killing-assay-resnet18`](https://huggingface.co/keejkrej/killing-assay-resnet18)
-(killing-assay owned). This repo does **not** treat it as a product model, and
-Studio installers do **not** ship the ONNX. Set `LISCA_KILL_MODEL` to a directory
-containing `model.onnx`, or place that file in `~/.lisca/models/killing-assay-resnet18/`
-or the workspace cache `models/killing-assay-resnet18/`. That cache is not a second weights tree.
-Local download:
-
-```sh
-curl -fL --retry 3 --retry-delay 2 \
-  "https://huggingface.co/keejkrej/killing-assay-resnet18/resolve/main/model.onnx" \
-  -o ./models/killing-assay-resnet18/model.onnx
-```
-
-### Remote label-free viability
-
-The Analysis page can also call the inference host in this repo
-([install](./inference-server.md)). The host loads EmbeddingGemma and the
-viable/dead classifier from
-[`lisca-killing-assay`](https://github.com/keejkrej/lisca-killing-assay). Studio
-sends movies on a separate private connection. See
-[ADR-0008](../adr/0008-inference-host-loads-assay-models.md). The ResNet pipeline
-above is unchanged.
+Studio steps: `analysis/killing/traces/Pos{n}` (one per Position), then
+`analysis/killing/plot-traces`, then finalize. `traces.png` is every cell, one
+panel per sample. `traces_summary.png` is the mean, median, and interquartile
+range of those cells, so samples can be compared on one figure.
 
 ### Killing outputs
 
-| Path                                                | Role                                                                    |
-| --------------------------------------------------- | ----------------------------------------------------------------------- |
-| `traces/Pos{n}/ch{m}.csv`                           | Per-ROI `P(dead)` Trace (`roi, t, p_dead`)                              |
-| `results/predictions.csv`                           | Raw `t, crop, p_dead, label, pos, sample` from ResNet                   |
-| `results/predictions_cleaned.csv`                   | Monotonicity-enforced labels (`t, crop, label, pos, sample`)            |
-| `results/kill_curve.csv`                            | `N(alive)` vs time per Sample (`t, n_alive, sample`)                    |
-| `results/death_times.csv`                           | Per-ROI death frame (`crop, death_time, pos, sample`; `≥80%` true span) |
-| `results/traces.png`, `results/traces_shared_y.png` | P(dead) trace grids                                                     |
-| `results/kill_curve.png`                            | N(alive) curve plot                                                     |
-| `results/death_times.png`                           | T_death histogram per Sample                                            |
+| Path                                                                | Role                                                                             |
+| ------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| `traces/Pos{n}/ch{m}.csv`                                           | Per-cell fluorescence (`roi`, `t`, `area`, `background`, `sum`, `corrected`)     |
+| `results/traces.png`, `results/traces_shared_y.png`                 | Per-cell fluorescence, one panel per sample                                      |
+| `results/traces_summary.png`, `results/traces_summary_shared_y.png` | Mean, median, and interquartile range of that fluorescence, one panel per sample |
 
-`sample` is the Sample name (`samples[].name` in `assay.json`). Older killing
+`ch{m}` is a signal channel, not the segmentation channel. Older killing
 Workspaces wrote `timeseries/Pos{n}/`; the `killing_traces_dir` migration renames
 it to `traces/` on open (see [Workspace migrations](#workspace-migrations)).
 
 ### Engagement
 
-`killing-engagement` counts T cells whose membrane touches a tumor cell in each
-ROI frame. Tumor cells are the minority Otsu class on the segmentation channel.
-T cells are the first signal channel, thresholded at mean + 6 standard
-deviations, which keeps a quiet CMRA field empty. Components smaller than 4
-pixels are dropped. A T cell counts once when any of its pixels touches a tumor
-pixel, including a one-pixel neighborhood.
+`killing-engagement` counts round spots on the first signal channel inside each
+ROI. The spot diameter is about 10 pixels (kept when the equivalent diameter is
+7 to 13 pixels). Every ROI in a position shares one scale: the median
+background, plus 8 robust noise widths. A crop is not stretched to its own
+brightest pixel. Two touching spots are split by a distance-transform
+watershed. `t_cells` is that spot count. `engagements` still records whether a
+spot touches the brightfield tumor mask. The gallery plots `t_cells`.
 
-Studio shows the card and does not offer it in the picker. See
+Studio offers the card in the picker. See
 [ADR-0009](../adr/0009-shared-killing-workspace.md).
 
-| Path                                 | Role                                                                 |
-| ------------------------------------ | -------------------------------------------------------------------- |
-| `traces/engagement/Pos{n}.csv`       | Per-frame `tumor_cells`, `t_cells`, `engagements`                    |
-| `results/engagement_counts.csv`      | Those rows for every Position                                        |
-| `results/engagement_summary.csv`     | Mean counts per ROI                                                  |
+| Path                                    | Role                                              |
+| --------------------------------------- | ------------------------------------------------- |
+| `traces/engagement/Pos{n}.csv`          | Per-frame `tumor_cells`, `t_cells`, `engagements` |
+| `results/engagement_counts.csv`         | Those rows for every Position                     |
+| `results/engagement_summary.csv`        | Mean counts per ROI                               |
+| `results/engagement_traces.png`         | Per-cell engager counts, one panel per sample     |
+| `results/engagement_traces_summary.png` | Mean, median, and interquartile range             |
 
-The death-reporter files above are left in place.
+Shared-y companions use the same names with `_shared_y`. These files do not
+replace `results/traces.png` or `traces/Pos{n}/ch{m}.csv`.
 
 ## Workspace I/O
 

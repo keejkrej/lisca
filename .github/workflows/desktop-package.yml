@@ -72,15 +72,6 @@ jobs:
       - name: Install JavaScript dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Download Studio killing model
-        # Killing-assay ONNX (HF); package-time cache only — not a product brain.
-        if: matrix.product == 'studio'
-        shell: bash
-        run: |
-          curl -fL --retry 3 --retry-delay 2 "https://huggingface.co/keejkrej/killing-assay-resnet18/resolve/main/model.onnx" \
-            -o ./models/killing-assay-resnet18/model.onnx
-          test -s models/killing-assay-resnet18/model.onnx
-
       # Without these, Tauri leaves only the linker's ad-hoc signature on the executable and
       # macOS reports the downloaded app as "damaged". Fail rather than ship that.
       - name: Check macOS signing secrets

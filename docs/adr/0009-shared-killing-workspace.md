@@ -8,7 +8,9 @@
 Death reporter, label-free, and engagement share one Workspace and one set of
 ROIs. Each kind writes its own results. Engagement counts go to
 `traces/engagement/` and `results/engagement_counts.csv` /
-`results/engagement_summary.csv`. They do not replace
+`results/engagement_summary.csv`. Engager-count figures are
+`results/engagement_traces.png` and `results/engagement_traces_summary.png`
+(plus `_shared_y` companions). They do not replace
 `traces/Pos{n}/ch{m}.csv` or the death-reporter files under `results/`.
 
 ## Why
@@ -27,8 +29,7 @@ Rejected alternatives:
 
 ## Looks like a bug when
 
-- Engagement stays off the Studio assay picker. The pipeline is registered and
-  the card is visible, but it is not selectable until it is enabled.
+- Label-free stays off the Studio assay picker. Engagement is selectable.
 - A death-reporter Workspace grows `results/engagement_*.csv` only after an
   engagement run. Those files are not cytotoxicity traces.
 - Re-running death reporter does not delete engagement files, and an engagement

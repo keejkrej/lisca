@@ -80,7 +80,7 @@ const { out } = materializeFixture({
 - ROI stacks: `roi/PosN/RoiN.tif` + slim `index.json` (`axisOrder: TCZYX`)
 - Alignment: `bbox/PosN.csv` (`roi,x,y,w,h`) and `align/PosN.json`
 - Transfection analysis CSVs: `analysis/PosN/chC.csv` (`roi,t,area,background,sum,corrected`), `auc.csv` (`roi,auc`), `fit.csv` (`roi,baseline_intensity,onset_time,expression_rate,mrna_lifetime,protein_lifetime,success`)
-- Killing traces: `traces/PosN/chN.csv` (`roi,t,p_dead`); killing `results/*.csv`
+- Killing traces: `traces/PosN/chN.csv` (`roi,t,area,background,sum,corrected`)
   carry a `sample` column holding the sample name from `assay.json`
 - Transfection plots: workspace boxplots at `results/*.png` and per-sample PNGs
   at `results/<sample>/` from the `@lisca/analysis` catalog. Killing plots stay

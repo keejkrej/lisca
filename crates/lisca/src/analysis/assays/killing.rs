@@ -1,6 +1,9 @@
 mod clean;
+mod fluorescence;
 mod plot;
 mod predict;
+
+pub use fluorescence::run_position_traces;
 
 use std::path::{Path, PathBuf};
 use std::{collections::BTreeMap, fs};
@@ -38,18 +41,8 @@ pub fn run_sync(workspace: &Path, assay_json: &AssayJsonFile) -> Result<(), Stri
     .ok_or_else(|| "invalid interval.value/unit in assay.json".to_string())?;
 
     let mapping = build_sample_mapping(assay_json)?;
-
-    let model_dir = resolve_model_path(workspace)?;
-    predict::run_predict(
-        workspace,
-        &mapping,
-        &model_dir,
-        predict::PredictOptions::default(),
-    )?;
+    fluorescence::run_traces(workspace, &mapping)?;
     plot::run_plot_traces(workspace, &mapping, interval, None)?;
-    clean::run_clean(workspace, &mapping)?;
-    plot::run_plot_kill(workspace, &mapping, interval)?;
-    plot::run_plot_death_times(workspace, &mapping, interval)?;
     Ok(())
 }
 
@@ -213,7 +206,7 @@ where
         &request_id,
         AnalysisStage::Preparing,
         5.0,
-        "Preparing killing analysis",
+        "Measuring signal-channel fluorescence",
     ));
 
     let kill_workspace = workspace_path.clone();
@@ -226,25 +219,25 @@ where
         &request_id,
         AnalysisStage::Segment,
         35.0,
-        "Completed P(dead) inference",
+        "Measured fluorescence in each crop",
     ));
     update_progress(analysis_progress(
         &request_id,
         AnalysisStage::Traces,
         65.0,
-        "Cleaned kill predictions",
+        "Wrote per-cell fluorescence time series",
     ));
     update_progress(analysis_progress(
         &request_id,
         AnalysisStage::Auc,
         85.0,
-        "Computed death times and kill curve",
+        "Averaged fluorescence for each sample",
     ));
     update_progress(analysis_progress(
         &request_id,
         AnalysisStage::Fit,
         98.0,
-        "Generated kill curve plots",
+        "Wrote sample comparison figures",
     ));
 
     let outputs = collect_csv_outputs(&workspace_path)?;
@@ -486,10 +479,24 @@ mod scheduler_stage_tests {
         // trace leaf gets a binary `ch0.xlsx` sidecar too.
         write_csv(
             &shard.join("traces/Pos1/ch0.csv"),
-            &["roi", "t", "p_dead"],
+            &["roi", "t", "area", "background", "sum", "corrected"],
             &[
-                vec!["0".into(), "0".into(), "0.1".into()],
-                vec!["0".into(), "1".into(), "0.2".into()],
+                vec![
+                    "0".into(),
+                    "0".into(),
+                    "4".into(),
+                    "1".into(),
+                    "10".into(),
+                    "6".into(),
+                ],
+                vec![
+                    "0".into(),
+                    "1".into(),
+                    "4".into(),
+                    "1".into(),
+                    "12".into(),
+                    "8".into(),
+                ],
             ],
         )
         .unwrap();

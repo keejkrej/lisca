@@ -14,9 +14,9 @@ pub fn run_plot_traces(
         return Err(format!("interval must be > 0, got {interval}"));
     }
     let csvs = discover_trace_csvs(&workspace.join("traces"))?;
-    let panels = load_trace_panels_by_sample(&csvs, "p_dead", mapping)?;
+    let panels = load_trace_panels_by_sample(&csvs, "corrected", mapping)?;
     if panels.is_empty() {
-        return Err("no p_dead trace panels to plot".to_string());
+        return Err("no fluorescence trace panels to plot".to_string());
     }
 
     let results_dir = workspace.join("results");
@@ -25,7 +25,7 @@ pub fn run_plot_traces(
     write_metric_plots(
         &panels,
         &results_dir.join("traces.png"),
-        "P(dead)",
+        "fluorescence",
         interval,
         columns,
         mapping,
