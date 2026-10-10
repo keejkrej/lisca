@@ -31,12 +31,15 @@ describe("studio align frame", () => {
     expect(studioAlignFrameDefault("transfection")).toBe("last");
     expect(studioAlignFrameDefault(null)).toBe("last");
 
-    expect(
-      lockedStudioSelection(scan, current, scan.positions, { frameDefault: "first" }),
-    ).toEqual({ pos: 61, channel: 0, time: 10, z: 0 });
-    expect(
-      lockedStudioSelection(scan, current, scan.positions, { frameDefault: "last" }),
-    ).toEqual({ pos: 61, channel: 0, time: 30, z: 0 });
+    expect(lockedStudioSelection(scan, current, scan.positions, { frameDefault: "first" })).toEqual(
+      { pos: 61, channel: 0, time: 10, z: 0 },
+    );
+    expect(lockedStudioSelection(scan, current, scan.positions, { frameDefault: "last" })).toEqual({
+      pos: 61,
+      channel: 0,
+      time: 30,
+      z: 0,
+    });
   });
 
   it("keeps a remembered frame, including frame 0 on a last-frame assay", () => {

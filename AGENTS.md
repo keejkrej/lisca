@@ -12,16 +12,16 @@ Human install and run steps are in `README.md`. Domain language is in `CONTEXT.m
 
 Open the sibling that owns the behavior under change. Cite these by GitHub URL.
 
-| When | Repository |
-| --- | --- |
-| Transfection segment, traces, AUC, fit, plots, or Python/Rust parity | [lisca-transfection-assay](https://github.com/keejkrej/lisca-transfection-assay) (Python `transfection`, crate `lisca-transfection`) |
-| Death-reporter fluorescence, fluorescent engagement, or the killing classifier | [lisca-killing-assay](https://github.com/keejkrej/lisca-killing-assay) (crate `lisca-killing`) |
-| Figure layout, axes, or PNG/SVG/PDF export | [mplot-rs](https://github.com/keejkrej/mplot-rs) (crate `mplot`) |
-| Zeiss CZI reads | [czi-rs](https://github.com/keejkrej/czi-rs) |
-| Nikon ND2 reads | [nd2-rs](https://github.com/keejkrej/nd2-rs) |
-| Array, signal, image, or classical ML primitives in Rust | [mlab-rs](https://github.com/keejkrej/mlab-rs) |
+| When                                                                           | Repository                                                                                                                           |
+| ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
+| Transfection segment, traces, AUC, fit, plots, or Python/Rust parity           | [lisca-transfection-assay](https://github.com/keejkrej/lisca-transfection-assay) (Python `transfection`, crate `lisca-transfection`) |
+| Death-reporter fluorescence, fluorescent engagement, or the killing classifier | [lisca-killing-assay](https://github.com/keejkrej/lisca-killing-assay) (crate `lisca-killing`)                                       |
+| Figure layout, axes, or PNG/SVG/PDF export                                     | [mplot-rs](https://github.com/keejkrej/mplot-rs) (crate `mplot`)                                                                     |
+| Zeiss CZI reads                                                                | [czi-rs](https://github.com/keejkrej/czi-rs)                                                                                         |
+| Nikon ND2 reads                                                                | [nd2-rs](https://github.com/keejkrej/nd2-rs)                                                                                         |
+| Array, signal, image, or classical ML primitives in Rust                       | [mlab-rs](https://github.com/keejkrej/mlab-rs)                                                                                       |
 
-`Cargo.toml` and `python/pyproject.toml` pin `lisca-transfection-assay` and `lisca-killing-assay`. `Cargo.toml` also git-depends on `mplot-rs`, `czi-rs`, and `nd2-rs`. When an assay has both a Cargo pin and a Python pin, keep them on the same commit.
+`Cargo.toml` and `python/pyproject.toml` pin `lisca-transfection-assay` and `lisca-killing-assay`. `Cargo.toml` also git-depends on `mplot-rs`, `mlab-rs`, `czi-rs`, and `nd2-rs`. When an assay has both a Cargo pin and a Python pin, keep them on the same commit.
 
 ## Install
 

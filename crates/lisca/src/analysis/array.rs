@@ -2,9 +2,12 @@
 //!
 //! Transfection production kernels live in `lisca-transfection`. This module
 //! keeps Frame2D / quantiles / trapz used by crop viewers, killing plots, and
-//! Studio ONNX segment.
+//! Studio ONNX segment. Quantile interpolation is `mlab_rs::np::percentile`
+//! and trapezoidal integrals are `mlab_rs::sp::integrate::trapz`. Non-finite
+//! samples are dropped here first. Do not switch the quantile path to
+//! `ndarray-stats` quickselect: a tied plate of traces overflows the worker stack.
 
-use ndarray::{s, Array1, ArrayView2};
+use ndarray::{Array1, ArrayView2};
 
 #[derive(Debug, Clone)]
 pub struct Frame2D {
@@ -161,7 +164,8 @@ pub fn quantile_linear(values: &[f64], q: f64) -> f64 {
 
 /// Linear interpolation quantile on a pre-sorted finite slice (`q` in `[0, 1]`).
 ///
-/// Index is `q * (n - 1)`, matching `numpy.quantile(..., method="linear")`.
+/// `mlab_rs::np::percentile` uses index `q * (n - 1)`, matching
+/// `numpy.quantile(..., method="linear")`.
 pub fn quantile_linear_sorted(sorted: &[f64], q: f64) -> f64 {
     if sorted.is_empty() {
         return 0.0;
@@ -172,13 +176,7 @@ pub fn quantile_linear_sorted(sorted: &[f64], q: f64) -> f64 {
     let Some(q) = finite_quantile_fraction(q) else {
         return 0.0;
     };
-    let index = q * (sorted.len() - 1) as f64;
-    let lower_index = (index.floor() as usize).min(sorted.len() - 1);
-    let upper_index = (index.ceil() as usize).min(sorted.len() - 1);
-    let fraction = index - lower_index as f64;
-    let lower = sorted[lower_index];
-    let upper = sorted[upper_index];
-    lower + fraction * (upper - lower)
+    mlab_rs::np::percentile(&mlab_rs::np::array(sorted.to_vec()), q * 100.0)
 }
 
 fn finite_quantile_fraction(q: f64) -> Option<f64> {
@@ -205,11 +203,9 @@ pub fn trapezoidal_integral(times: &[f64], values: &[f64]) -> f64 {
     if times.len() < 2 || times.len() != values.len() {
         return 0.0;
     }
-    let t = Array1::from_iter(times.iter().copied());
-    let y = Array1::from_iter(values.iter().copied());
-    let dt = (&t.slice(s![1..]) - &t.slice(s![..t.len() - 1])) * 0.5;
-    let heights = &y.slice(s![..y.len() - 1]) + &y.slice(s![1..]);
-    (dt * heights).sum()
+    let times = mlab_rs::np::array(times.to_vec());
+    let values = mlab_rs::np::array(values.to_vec());
+    mlab_rs::sp::integrate::trapz(&values, Some(&times), None)
 }
 
 /// Coefficients for the basic translation–degradation model (Müller et al. 2024
