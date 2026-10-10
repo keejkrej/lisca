@@ -49,19 +49,20 @@ walkdir = "2.5"
 uuid = { version = "1", features = ["v4"] }
 csv = "1.3"
 rayon = "1.10"
-mplot = { git = "https://github.com/keejkrej/mplot-rs" }
+mplot = { git = "https://github.com/keejkrej/mplot-rs", rev = "b4a3b228e1ab1aeb54a0f15a37b5bf9ff9f73386" }
+mlab_rs = { git = "https://github.com/keejkrej/mlab-rs", rev = "333bc9005f5413600ccf86b36523b9cf1ebfff1e", default-features = false }
 lisca = { path = "crates/lisca", default-features = false }
 lisca-workspace = { path = "crates/lisca-workspace" }
 lisca-server = { path = "crates/lisca-server" }
 # Transfection analysis (Otsu segment, traces, AUC, fit, plots).
 # ndarray 0.16 / imageproc 0.25 in that crate; this workspace stays on 0.17 / 0.27.
 # Call workspace-path APIs so ndarray types are not unified across the boundary.
-lisca-transfection = { git = "https://github.com/keejkrej/lisca-transfection-assay", rev = "9eda2a7dd62c73cc8fd36071762a043f436462db" }
+lisca-transfection = { git = "https://github.com/keejkrej/lisca-transfection-assay", rev = "b6aff806eb122bc62e1389d90056c4af4de0bba2" }
 # Death-reporter fluorescence, fluorescent engagement, and the killing
 # classifier (predict, clean, kill curve). Python `killing` in that repo is
 # the same definitions. Lisca does not depend on it: the package also pulls
 # the label-free training stack.
-lisca-killing = { git = "https://github.com/keejkrej/lisca-killing-assay", rev = "75861fafe9ca671cb98f4a3a9df89918a3d6d9c4" }
+lisca-killing = { git = "https://github.com/keejkrej/lisca-killing-assay", rev = "a4b883e19faa0a4714e86046ecf08381c3558b25" }
 tauri = "2"
 tauri-build = "2"
 tauri-plugin-dialog = "2"

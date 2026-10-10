@@ -21,7 +21,7 @@ Open the sibling that owns the behavior under change. Cite these by GitHub URL.
 | Nikon ND2 reads | [nd2-rs](https://github.com/keejkrej/nd2-rs) |
 | Array, signal, image, or classical ML primitives in Rust | [mlab-rs](https://github.com/keejkrej/mlab-rs) |
 
-`Cargo.toml` and `python/pyproject.toml` pin `lisca-transfection-assay` and `lisca-killing-assay`. `Cargo.toml` also git-depends on `mplot-rs`, `czi-rs`, and `nd2-rs`. When an assay has both a Cargo pin and a Python pin, keep them on the same commit.
+`Cargo.toml` and `python/pyproject.toml` pin `lisca-transfection-assay` and `lisca-killing-assay`. `Cargo.toml` also git-depends on `mplot-rs`, `mlab-rs`, `czi-rs`, and `nd2-rs`. When an assay has both a Cargo pin and a Python pin, keep them on the same commit.
 
 ## Install
 
