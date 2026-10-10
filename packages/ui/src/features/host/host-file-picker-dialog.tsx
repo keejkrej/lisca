@@ -1,10 +1,15 @@
 import type { HostFilePickerMode, HostFilePickerOperations } from "@lisca/utils";
 import { useHostFilePickerState } from "@lisca/ui-headless/host-file-picker-state";
-import { favoriteLabel, recentLabel } from "@lisca/ui-headless/host-file-picker-state";
+import {
+  favoriteLabel,
+  nativeFilePickerLabel,
+  recentLabel,
+} from "@lisca/ui-headless/host-file-picker-state";
 import IconArrowUpRegular from "phosphor-icons-solid/IconArrowUpRegular";
 import IconClockCounterClockwiseRegular from "phosphor-icons-solid/IconClockCounterClockwiseRegular";
 import IconEyeRegular from "phosphor-icons-solid/IconEyeRegular";
 import IconEyeSlashRegular from "phosphor-icons-solid/IconEyeSlashRegular";
+import IconFolderOpenRegular from "phosphor-icons-solid/IconFolderOpenRegular";
 import IconHouseRegular from "phosphor-icons-solid/IconHouseRegular";
 import IconPlusRegular from "phosphor-icons-solid/IconPlusRegular";
 import IconStarFill from "phosphor-icons-solid/IconStarFill";
@@ -15,6 +20,13 @@ import { Button } from "../../components/ui/button";
 import { Field, FieldLabel } from "../../components/ui/field";
 import { Input } from "../../components/ui/input";
 import { ScrollArea } from "../../components/ui/scroll-area";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../../components/ui/select";
 import { cn } from "../../lib/utils";
 import { DialogSurface } from "../../shell/modal/dialog-surface";
 import { ModalScrim } from "../../shell/modal/modal-scrim";
@@ -58,6 +70,13 @@ export function HostFilePickerDialog(props: HostFilePickerDialogProps) {
 
   /** Recent picks share the favorites chip row; newest first, a handful at most. */
   const recent = () => (props.onPickRecent ? (props.recentItems ?? []).slice(0, 5) : []);
+  const nativeLabel = () => {
+    if (!picker.canOpenNative()) return null;
+    const platform = typeof navigator === "undefined" ? "" : navigator.platform;
+    return nativeFilePickerLabel(platform, picker.windowsHost());
+  };
+  const driveLetter = (path: string) =>
+    picker.drives().find((drive) => drive.path === path)?.letter ?? path;
 
   const [showNewFolder, setShowNewFolder] = createSignal(false);
   const [folderName, setFolderName] = createSignal("");
@@ -156,6 +175,33 @@ export function HostFilePickerDialog(props: HostFilePickerDialogProps) {
               >
                 <IconHouseRegular class="size-4" />
               </Button>
+              <Show when={picker.drives().length > 0}>
+                <Select<string>
+                  class="w-auto"
+                  options={picker.drives().map((drive) => drive.path)}
+                  optionValue={(path) => path}
+                  optionTextValue={driveLetter}
+                  itemComponent={(itemProps) => (
+                    <SelectItem item={itemProps.item}>
+                      {driveLetter(itemProps.item.rawValue)}
+                    </SelectItem>
+                  )}
+                  placement="bottom-start"
+                  sameWidth={false}
+                  value={picker.currentDrive()?.path}
+                  onChange={(next) => {
+                    if (next != null && next !== picker.currentDrive()?.path)
+                      picker.selectDrive(next);
+                  }}
+                >
+                  <SelectTrigger aria-label="Drive" size="sm" class="w-auto">
+                    <SelectValue<string>>
+                      {(state) => driveLetter(state.selectedOption() ?? "")}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent class="min-w-24" />
+                </Select>
+              </Show>
               <Button
                 aria-label="Create new folder"
                 disabled={picker.loading() || !picker.list()?.path}
@@ -292,8 +338,27 @@ export function HostFilePickerDialog(props: HostFilePickerDialogProps) {
             </ScrollArea>
           </div>
 
-          <div class="flex justify-end gap-2 border-t border-border px-5 py-4">
-            <Button type="button" variant="outline" onClick={() => props.onOpenChange(false)}>
+          <div class="flex items-center gap-2 border-t border-border px-5 py-4">
+            <Show when={nativeLabel()}>
+              {(label) => (
+                <Button
+                  class="mr-auto"
+                  disabled={picker.pickingNative()}
+                  type="button"
+                  variant="ghost"
+                  onClick={() => void picker.openNative()}
+                >
+                  <IconFolderOpenRegular class="size-4" />
+                  {label()}
+                </Button>
+              )}
+            </Show>
+            <Button
+              class="ml-auto"
+              type="button"
+              variant="outline"
+              onClick={() => props.onOpenChange(false)}
+            >
               Cancel
             </Button>
             <Show

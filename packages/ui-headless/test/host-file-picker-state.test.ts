@@ -4,8 +4,11 @@ import {
   canGoUpFromList,
   favoriteLabel,
   fileMatchesMode,
+  driveForPath,
   hostFilePickerLocationLabel,
   isDirectoryMode,
+  nativeFilePickerLabel,
+  nativePickerExtensions,
   normalizeFavoritePaths,
   recentLabel,
   parentPathForGoUp,
@@ -42,6 +45,31 @@ describe("host-file-picker-state", () => {
     expect(fileMatchesMode("nd2_file", nd2)).toBe(true);
     expect(fileMatchesMode("nd2_file", txt)).toBe(false);
     expect(fileMatchesMode("nd2_file", { ...nd2, isDirectory: true })).toBe(false);
+  });
+
+  it("matches a Windows path to its drive letter", () => {
+    const drives = [
+      { letter: "C:", path: "C:\\" },
+      { letter: "E:", path: "E:\\" },
+    ];
+    expect(driveForPath("C:\\Users\\ana\\Documents", drives)?.letter).toBe("C:");
+    expect(driveForPath("e:/imaging", drives)?.path).toBe("E:\\");
+    expect(driveForPath("/Users/ana", drives)).toBeNull();
+    expect(driveForPath(null, drives)).toBeNull();
+  });
+
+  it("names the desktop dialog after the host system", () => {
+    expect(nativeFilePickerLabel("Win32", false)).toBe("Open in Explorer");
+    expect(nativeFilePickerLabel("MacIntel", false)).toBe("Open in Finder");
+    expect(nativeFilePickerLabel("Linux x86_64", false)).toBe("Open in Files");
+    expect(nativeFilePickerLabel("", true)).toBe("Open in Explorer");
+  });
+
+  it("filters the native file dialog by picker mode", () => {
+    expect(nativePickerExtensions("nd2_file")).toEqual(["nd2"]);
+    expect(nativePickerExtensions("czi_file")).toEqual(["czi"]);
+    expect(nativePickerExtensions("assay_json_file")).toEqual(["json"]);
+    expect(nativePickerExtensions("workspace")).toEqual([]);
   });
 
   it("hostFilePickerLocationLabel hides empty and root-list paths", () => {

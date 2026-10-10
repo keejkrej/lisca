@@ -20,11 +20,19 @@ export type LiscaSaveFileRequest = {
   contentsBase64: string;
 };
 
+export type LiscaPickPathRequest = {
+  directory: boolean;
+  directoryPath?: string;
+  extensions: string[];
+};
+
 export type LiscaDesktopBridge = {
   product: string;
   request: (request: LiscaIpcRequest) => Promise<LiscaIpcResponse>;
   /** Native save dialog + write; resolves to the saved path, or null when cancelled. */
   saveFile?: (request: LiscaSaveFileRequest) => Promise<string | null>;
+  /** Native open dialog; resolves to the chosen path, or null when cancelled. */
+  pickPath?: (request: LiscaPickPathRequest) => Promise<string | null>;
 };
 
 declare global {

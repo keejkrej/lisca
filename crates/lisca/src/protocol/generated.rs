@@ -2936,6 +2936,26 @@ impl HomeDirectoryResponse {
         Default::default()
     }
 }
+#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
+pub struct HostDrive {
+    pub letter: ::std::string::String,
+    pub path: ::std::string::String,
+}
+impl HostDrive {
+    pub fn builder() -> builder::HostDrive {
+        Default::default()
+    }
+}
+#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
+pub struct HostWindowsDrivesResponse {
+    pub drives: ::std::vec::Vec<HostDrive>,
+    pub windows: bool,
+}
+impl HostWindowsDrivesResponse {
+    pub fn builder() -> builder::HostWindowsDrivesResponse {
+        Default::default()
+    }
+}
 #[doc = "`HostFsEntry`"]
 #[doc = r""]
 #[doc = r" <details><summary>JSON schema</summary>"]
@@ -9531,6 +9551,112 @@ pub mod builder {
         fn from(value: super::HomeDirectoryResponse) -> Self {
             Self {
                 path: Ok(value.path),
+            }
+        }
+    }
+    #[derive(Clone, Debug)]
+    pub struct HostDrive {
+        letter: ::std::result::Result<::std::string::String, ::std::string::String>,
+        path: ::std::result::Result<::std::string::String, ::std::string::String>,
+    }
+    impl ::std::default::Default for HostDrive {
+        fn default() -> Self {
+            Self {
+                letter: Err("no value supplied for letter".to_string()),
+                path: Err("no value supplied for path".to_string()),
+            }
+        }
+    }
+    impl HostDrive {
+        pub fn letter<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::string::String>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.letter = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for letter: {e}"));
+            self
+        }
+        pub fn path<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::string::String>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.path = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for path: {e}"));
+            self
+        }
+    }
+    impl ::std::convert::TryFrom<HostDrive> for super::HostDrive {
+        type Error = super::error::ConversionError;
+        fn try_from(value: HostDrive) -> ::std::result::Result<Self, super::error::ConversionError> {
+            Ok(Self {
+                letter: value.letter?,
+                path: value.path?,
+            })
+        }
+    }
+    impl ::std::convert::From<super::HostDrive> for HostDrive {
+        fn from(value: super::HostDrive) -> Self {
+            Self {
+                letter: Ok(value.letter),
+                path: Ok(value.path),
+            }
+        }
+    }
+    #[derive(Clone, Debug)]
+    pub struct HostWindowsDrivesResponse {
+        drives: ::std::result::Result<::std::vec::Vec<super::HostDrive>, ::std::string::String>,
+        windows: ::std::result::Result<bool, ::std::string::String>,
+    }
+    impl ::std::default::Default for HostWindowsDrivesResponse {
+        fn default() -> Self {
+            Self {
+                drives: Err("no value supplied for drives".to_string()),
+                windows: Err("no value supplied for windows".to_string()),
+            }
+        }
+    }
+    impl HostWindowsDrivesResponse {
+        pub fn drives<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::vec::Vec<super::HostDrive>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.drives = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for drives: {e}"));
+            self
+        }
+        pub fn windows<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<bool>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.windows = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for windows: {e}"));
+            self
+        }
+    }
+    impl ::std::convert::TryFrom<HostWindowsDrivesResponse> for super::HostWindowsDrivesResponse {
+        type Error = super::error::ConversionError;
+        fn try_from(
+            value: HostWindowsDrivesResponse,
+        ) -> ::std::result::Result<Self, super::error::ConversionError> {
+            Ok(Self {
+                drives: value.drives?,
+                windows: value.windows?,
+            })
+        }
+    }
+    impl ::std::convert::From<super::HostWindowsDrivesResponse> for HostWindowsDrivesResponse {
+        fn from(value: super::HostWindowsDrivesResponse) -> Self {
+            Self {
+                drives: Ok(value.drives),
+                windows: Ok(value.windows),
             }
         }
     }

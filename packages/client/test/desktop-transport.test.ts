@@ -89,6 +89,34 @@ describe("desktop IPC transport", () => {
     );
   });
 
+  it("asks the backend whether the host is Windows over the same client", async () => {
+    const request = vi.fn(async () => ({
+      status: 200,
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        windows: true,
+        drives: [{ letter: "E:", path: "E:\\" }],
+      }),
+    }));
+    vi.stubGlobal("window", {
+      liscaDesktop: { product: "studio", request },
+      location: { href: "tauri://localhost/index.html" },
+    });
+    vi.stubGlobal("location", { origin: "tauri://localhost", pathname: "/index.html" });
+    const port = createHostPort({});
+
+    await expect(Effect.runPromise(port.windowsDrives())).resolves.toEqual({
+      windows: true,
+      drives: [{ letter: "E:", path: "E:\\" }],
+    });
+    expect(request).toHaveBeenCalledWith(
+      expect.objectContaining({
+        method: "GET",
+        uri: "/fs/windows-drives",
+      }),
+    );
+  });
+
   it("turns backend files into renderer-safe data URLs", async () => {
     const bridge: LiscaDesktopBridge = {
       product: "studio",

@@ -176,4 +176,17 @@ mod contract_tests {
         assert_eq!(detail.steps[0].step_id, "step-1");
         assert_eq!(detail.steps[0].attempts[0].attempt_id, "attempt-1");
     }
+
+    #[test]
+    fn windows_drives_response_lists_letters_only() {
+        let value = json!({
+            "windows": true,
+            "drives": [{ "letter": "E:", "path": "E:\\" }]
+        });
+        let parsed: HostWindowsDrivesResponse = serde_json::from_value(value.clone()).unwrap();
+        assert!(parsed.windows);
+        assert_eq!(parsed.drives[0].letter, "E:");
+        assert_eq!(parsed.drives[0].path, "E:\\");
+        assert_eq!(serde_json::to_value(&parsed).unwrap(), value);
+    }
 }

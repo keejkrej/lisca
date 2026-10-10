@@ -16,6 +16,17 @@ export const HomeDirectoryResponseSchema = Schema.Struct({
   path: Schema.String,
 }).annotate({ identifier: "HomeDirectoryResponse" });
 
+export const HostDriveSchema = Schema.Struct({
+  letter: Schema.String,
+  path: Schema.String,
+}).annotate({ identifier: "HostDrive" });
+
+/** `windows` is the host machine, not the browser. Drives are letters only. */
+export const HostWindowsDrivesResponseSchema = Schema.Struct({
+  windows: Schema.Boolean,
+  drives: Schema.mutable(Schema.Array(HostDriveSchema)),
+}).annotate({ identifier: "HostWindowsDrivesResponse" });
+
 export const ReadTextFileResponseSchema = Schema.Struct({
   contents: Schema.String,
 }).annotate({ identifier: "ReadTextFileResponse" });
@@ -40,6 +51,8 @@ export const ReadTextFileQuerySchema = Schema.Struct({
 export type HostFsEntry = typeof HostFsEntrySchema.Type;
 export type HostListDirectoryResult = typeof HostListDirectoryResultSchema.Type;
 export type HomeDirectoryResponse = typeof HomeDirectoryResponseSchema.Type;
+export type HostDrive = typeof HostDriveSchema.Type;
+export type HostWindowsDrivesResponse = typeof HostWindowsDrivesResponseSchema.Type;
 export type ReadTextFileResponse = typeof ReadTextFileResponseSchema.Type;
 export type CreateDirectoryRequest = typeof CreateDirectoryRequestSchema.Type;
 export type CreateDirectoryResponse = typeof CreateDirectoryResponseSchema.Type;

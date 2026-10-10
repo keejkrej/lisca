@@ -27,6 +27,7 @@ function makeHostPort(): HostFilePickerOperations {
     userHomeDirectory: vi.fn(async () => "/home/user"),
     listDirectory: vi.fn(async (path: string | null) => listings[path ?? "/home/user"]!),
     createDirectory: vi.fn(async () => "/home/user/new"),
+    windowsDrives: vi.fn(async () => ({ windows: false, drives: [] })),
   };
 }
 
