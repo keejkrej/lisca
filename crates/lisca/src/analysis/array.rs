@@ -2,8 +2,8 @@
 //!
 //! Transfection production kernels live in `lisca-transfection`. This module
 //! keeps Frame2D / quantiles / trapz used by crop viewers, killing plots, and
-//! Studio ONNX segment. Quantile interpolation is `mlab_rs::np::percentile`
-//! and trapezoidal integrals are `mlab_rs::sp::integrate::trapz`. Non-finite
+//! Studio ONNX segment. Quantile interpolation is `mlab::np::percentile`
+//! and trapezoidal integrals are `mlab::sp::integrate::trapz`. Non-finite
 //! samples are dropped here first. Do not switch the quantile path to
 //! `ndarray-stats` quickselect: a tied plate of traces overflows the worker stack.
 
@@ -164,7 +164,7 @@ pub fn quantile_linear(values: &[f64], q: f64) -> f64 {
 
 /// Linear interpolation quantile on a pre-sorted finite slice (`q` in `[0, 1]`).
 ///
-/// `mlab_rs::np::percentile` uses index `q * (n - 1)`, matching
+/// `mlab::np::percentile` uses index `q * (n - 1)`, matching
 /// `numpy.quantile(..., method="linear")`.
 pub fn quantile_linear_sorted(sorted: &[f64], q: f64) -> f64 {
     if sorted.is_empty() {
@@ -176,7 +176,7 @@ pub fn quantile_linear_sorted(sorted: &[f64], q: f64) -> f64 {
     let Some(q) = finite_quantile_fraction(q) else {
         return 0.0;
     };
-    mlab_rs::np::percentile(&mlab_rs::np::array(sorted.to_vec()), q * 100.0)
+    mlab::np::percentile(&mlab::np::array(sorted.to_vec()), q * 100.0)
 }
 
 fn finite_quantile_fraction(q: f64) -> Option<f64> {
@@ -203,9 +203,9 @@ pub fn trapezoidal_integral(times: &[f64], values: &[f64]) -> f64 {
     if times.len() < 2 || times.len() != values.len() {
         return 0.0;
     }
-    let times = mlab_rs::np::array(times.to_vec());
-    let values = mlab_rs::np::array(values.to_vec());
-    mlab_rs::sp::integrate::trapz(&values, Some(&times), None)
+    let times = mlab::np::array(times.to_vec());
+    let values = mlab::np::array(values.to_vec());
+    mlab::sp::integrate::trapz(&values, Some(&times), None)
 }
 
 /// Coefficients for the basic translation–degradation model (Müller et al. 2024
