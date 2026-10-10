@@ -36,7 +36,7 @@ pub fn run_position_traces(
 mod tests {
     use super::*;
     use crate::analysis::array::full_frame_roi_stats;
-    use crate::analysis::csv_io::{format_float, read_csv};
+    use crate::analysis::csv_io::read_csv;
     use crate::analysis::sample::SampleAnalysis;
     use crate::protocol::AssayJsonFile;
 
@@ -133,10 +133,10 @@ mod tests {
         assert_eq!(rows[0][0], "0");
         assert_eq!(rows[0][1], "0");
         assert_eq!(rows[0][2], expected.area.to_string());
-        assert_eq!(rows[0][5], format_float(expected.corrected));
+        assert_eq!(rows[0][5], expected.corrected.to_string());
         let flat = full_frame_roi_stats(&[10.0, 10.0, 10.0, 10.0]);
         assert_eq!(rows[1][1], "1");
-        assert_eq!(rows[1][5], format_float(flat.corrected));
+        assert_eq!(rows[1][5], flat.corrected.to_string());
         assert!(expected.corrected > flat.corrected);
     }
 

@@ -5,7 +5,6 @@
 //! the per-sample figures with the shared plot composer.
 
 use std::cmp::Ordering;
-use std::fs;
 use std::path::{Path, PathBuf};
 
 use crate::analysis::output::collect_csv_outputs;
@@ -156,6 +155,8 @@ fn engagement_position(path: &Path) -> Result<u32, String> {
 
 #[cfg(test)]
 mod tests {
+    use std::fs;
+
     use super::*;
 
     use lisca_killing::{
