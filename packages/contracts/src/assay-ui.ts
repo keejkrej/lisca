@@ -46,7 +46,7 @@ export const DEFAULT_FOLDER_SOURCE_TEMPLATE = FOLDER_SOURCE_TEMPLATE_PRESETS[0];
 
 export const ASSAY_TYPE = {
   TRANSFECTION: "transfection",
-  KILLING: "killing",
+  KILLING_DEATH_REPORTER: "killing-death-reporter",
   KILLING_ENGAGEMENT: "killing-engagement",
   LNP_BINDING: "lnp-binding",
 } as const;
@@ -54,12 +54,12 @@ export const ASSAY_TYPE = {
 /** Wizard-facing assay id union (const object keys, not the on-disk schema type). */
 export type StudioAssayType = (typeof ASSAY_TYPE)[keyof typeof ASSAY_TYPE];
 export type TransfectionAssayType = typeof ASSAY_TYPE.TRANSFECTION;
-export type KillingAssayType = typeof ASSAY_TYPE.KILLING;
+export type KillingDeathReporterAssayType = typeof ASSAY_TYPE.KILLING_DEATH_REPORTER;
 
 /** Assay types selectable in the wizard today. */
 export const ENABLED_STUDIO_ASSAY_IDS = [
   ASSAY_TYPE.TRANSFECTION,
-  ASSAY_TYPE.KILLING,
+  ASSAY_TYPE.KILLING_DEATH_REPORTER,
   ASSAY_TYPE.KILLING_ENGAGEMENT,
 ] as const;
 
@@ -73,7 +73,7 @@ export type EnabledStudioAssayId = (typeof ENABLED_STUDIO_ASSAY_IDS)[number];
  */
 export const ASSAY_DEFAULT_INTERVAL_MINUTES: Partial<Record<StudioAssayType, number>> = {
   [ASSAY_TYPE.TRANSFECTION]: 10,
-  [ASSAY_TYPE.KILLING]: 5,
+  [ASSAY_TYPE.KILLING_DEATH_REPORTER]: 5,
   [ASSAY_TYPE.KILLING_ENGAGEMENT]: 5,
 };
 
@@ -93,7 +93,7 @@ export function assayUsesMaxOnsetMinutes(assayId: StudioAssayType | null): boole
  * Transfection and killing both segment a channel. Max onset time stays transfection-only.
  */
 export function assayUsesSkipSegment(assayId: StudioAssayType | null): boolean {
-  return assayId === ASSAY_TYPE.TRANSFECTION || assayId === ASSAY_TYPE.KILLING;
+  return assayId === ASSAY_TYPE.TRANSFECTION || assayId === ASSAY_TYPE.KILLING_DEATH_REPORTER;
 }
 
 export type StudioAssayId = StudioAssayType;

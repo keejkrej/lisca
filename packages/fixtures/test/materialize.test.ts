@@ -44,7 +44,7 @@ describe("parseFixtureArgs", () => {
   it("parses long flags and --force", () => {
     const parsed = parseFixtureArgs([
       "--assay",
-      "killing",
+      "killing-death-reporter",
       "--stage=aligned",
       "--out",
       "/tmp/ws",
@@ -52,7 +52,7 @@ describe("parseFixtureArgs", () => {
     ]);
     expect(parsed).toEqual({
       ok: true,
-      assay: "killing",
+      assay: "killing-death-reporter",
       stage: "aligned",
       out: "/tmp/ws",
       force: true,
@@ -71,9 +71,9 @@ describe("workspace fixture smoke", () => {
     ["transfection", "source"],
     ["transfection", "aligned"],
     ["transfection", "analyzed"],
-    ["killing", "source"],
-    ["killing", "aligned"],
-    ["killing", "analyzed"],
+    ["killing-death-reporter", "source"],
+    ["killing-death-reporter", "aligned"],
+    ["killing-death-reporter", "analyzed"],
   ];
 
   it.each(cases)("writes %s %s key files", (assay, stage) => {
@@ -102,7 +102,7 @@ describe("workspace fixture smoke", () => {
 
   it("writes a cropped ROI index Studio/CLI can open", () => {
     const out = tempOut("cropped");
-    materializeFixture({ assay: "killing", stage: "cropped", out, force: true });
+    materializeFixture({ assay: "killing-death-reporter", stage: "cropped", out, force: true });
     const index = decodeJson(RoiIndexFileSchema, JSON.parse(read(out, "roi/Pos1/index.json")));
     expect(index.axisOrder).toBe("TCZYX");
     expect(index.rois[0]?.fileName).toBe("Roi1.tif");
@@ -139,7 +139,7 @@ describe("workspace fixture smoke", () => {
 
   it("writes killing analysis CSVs and every catalog PNG name", () => {
     const out = tempOut("kill-analyzed");
-    materializeFixture({ assay: "killing", stage: "analyzed", out, force: true });
+    materializeFixture({ assay: "killing-death-reporter", stage: "analyzed", out, force: true });
     expect(read(out, "analysis/Pos1/ch1.csv").split("\n")[0]).toBe(
       "roi,t,area,background,sum,corrected",
     );
@@ -158,7 +158,7 @@ describe("workspace fixture smoke", () => {
 
   it("keys killing results tables by sample name from assay.json", () => {
     const out = tempOut("kill-samples");
-    materializeFixture({ assay: "killing", stage: "analyzed", out, force: true });
+    materializeFixture({ assay: "killing-death-reporter", stage: "analyzed", out, force: true });
     const assay = decodeJson(AssayJsonFileSchema, JSON.parse(read(out, "assay.json")));
     const names = assay.samples.map((sample) => sample.name);
     expect(names).toEqual(["Control (fixture)", "CAR-T 1:4 (fixture)"]);
@@ -181,7 +181,7 @@ describe("workspace fixture smoke", () => {
 
   it("source stage is a folder, not a workspace", () => {
     const out = tempOut("source-only");
-    materializeFixture({ assay: "killing", stage: "source", out, force: true });
+    materializeFixture({ assay: "killing-death-reporter", stage: "source", out, force: true });
     expect(existsSync(join(out, "assay.json"))).toBe(false);
     expect(existsSync(join(out, "Pos1", sourceFileName(1, 0, 0, 0)))).toBe(true);
   });
@@ -206,6 +206,6 @@ describe("runFixtureCli", () => {
 
 describe("fixture catalogs", () => {
   it("covers both shipping assays", () => {
-    expect(FIXTURE_ASSAYS).toEqual(["transfection", "killing"]);
+    expect(FIXTURE_ASSAYS).toEqual(["transfection", "killing-death-reporter"]);
   });
 });

@@ -1,13 +1,17 @@
-//! Transfection analysis CLI. Stages dispatch into `lisca-transfection`
-//! (git crate) so outputs stay aligned with the Python `transfection` package.
+//! Assay analysis CLI. Transfection stages dispatch into `lisca-transfection`.
+//! `killing-death-reporter` and `killing-engagement` dispatch into the killing
+//! assay and take a workspace path only. `killing-death-reporter` requires
+//! `assay.json` type `killing-death-reporter`.
 //!
 //! `--backend onnx` uses the local Studio ONNX segmenter; Otsu and all
-//! downstream stages come from the sidecar crate.
+//! downstream transfection stages come from the sidecar crate.
 //!
 //! ```text
 //! cargo run -p lisca --bin lisca-analyze -- --help
 //! cargo run -p lisca --release --bin lisca-analyze -- auc ~/data/TF84
 //! cargo run -p lisca --release --bin lisca-analyze -- pipeline ~/data/TF84
+//! cargo run -p lisca --bin lisca-analyze -- killing-death-reporter ~/data/killing_pi
+//! cargo run -p lisca --bin lisca-analyze -- killing-engagement ~/data/killing_tcell
 //! ```
 //!
 //! Requires the `studio` feature (default). Config is `assay.json` only.
@@ -18,14 +22,18 @@ use std::path::{Path, PathBuf};
 use std::process;
 use std::time::Instant;
 
+use lisca::analysis::assays::killing;
+use lisca::analysis::assays::killing_engagement;
 use lisca::analysis::assays::transfection::{
     default_fit_jobs, default_jobs, default_traces_jobs, interval_minutes, max_onset_minutes,
     publish_sample_tables_xlsx, publish_sample_traces_xlsx, run_auc, run_fit, run_plot_auc,
     run_plot_fit, run_plot_traces, run_segment, run_sync_with_mode, run_traces_with_mode,
     skip_segment, SegmentBackend, SegmentOptions,
 };
-use lisca::analysis::sample::{load_mapping_for_workspace, resolve_assay_path};
-use lisca::protocol::AssayJsonFile;
+use lisca::analysis::sample::{
+    build_sample_mapping, load_mapping_for_workspace, parse_interval_minutes, resolve_assay_path,
+};
+use lisca::protocol::{AssayJsonFile, AssayType};
 
 fn main() {
     if let Err(error) = run() {
@@ -52,6 +60,8 @@ fn run() -> Result<(), String> {
         "plot-auc" => cmd_plot_auc(rest),
         "plot-fit" => cmd_plot_fit(rest),
         "pipeline" | "analyze" | "all" => cmd_pipeline(rest),
+        "killing-death-reporter" => cmd_killing_death_reporter(rest),
+        "killing-engagement" => cmd_killing_engagement(rest),
         other => Err(format!(
             "unknown command {other:?}\n\nRun `lisca-analyze --help` for usage."
         )),
@@ -61,12 +71,22 @@ fn run() -> Result<(), String> {
 fn print_help() {
     eprintln!(
         "\
-lisca-analyze — transfection stages (`lisca-transfection` git crate + local ONNX)
+lisca-analyze — assay CLI
+  segment | traces | auc | fit | plot-traces | plot-auc | plot-fit | pipeline
+  killing-death-reporter <workspace>
+  killing-engagement <workspace>
+
+Transfection stages call `lisca-transfection`. `killing-death-reporter` and
+`killing-engagement` call the killing dispatch and take a workspace path only.
+`killing-death-reporter` requires assay.json type `killing-death-reporter`. This binary does not
+run the classifier and has no `fluorescence`, `clean`, or `predict` command.
 
 Usage:
   lisca-analyze <command> [options] <workspace>
+  lisca-analyze killing-death-reporter <workspace>
+  lisca-analyze killing-engagement <workspace>
 
-Commands (same stage names as `transfection`):
+Commands (transfection stage names):
   segment           Masks → mask/PosN/ (default Otsu; optional ONNX U-Net)
   traces            Intensity traces → analysis/Pos{{n}}/ch{{n}}.csv
   auc               Trapezoidal AUC → analysis/Pos{{n}}/auc.csv
@@ -77,7 +97,17 @@ Commands (same stage names as `transfection`):
   pipeline          Full Studio order from assay.json
                     (aliases: analyze, all)
 
-Common options:
+  killing-death-reporter
+                    Killing (death reporter): fluorescence CSVs, traces.xlsx,
+                    traces.png, traces_shared_y.png, traces_summary.png,
+                    traces_summary_shared_y.png. assay.json type `killing-death-reporter`.
+  killing-engagement
+                    Killing (engagement): engagement.csv, engagement_summary.csv,
+                    the engagement workbooks, engagement_traces.png,
+                    engagement_traces_shared_y.png, engagement_traces_summary.png,
+                    engagement_traces_summary_shared_y.png
+
+Transfection stage options (not accepted by killing-death-reporter or killing-engagement):
   --assay PATH            assay.json (default: <workspace>/assay.json)
   --interval MINUTES      frame interval (default: assay.json interval.value/unit)
   --max-onset-minutes N   fit onset time t0 search cap (default: assay analysis.maxOnsetMinutes
@@ -97,10 +127,10 @@ Common options:
 Parallel stages always use available CPU cores (no --jobs).
 
 Examples:
-  transfection auc ~/data/TF84
   lisca-analyze auc ~/data/TF84
-
   lisca-analyze pipeline ~/data/TF84
+  lisca-analyze killing-death-reporter ~/data/killing_pi
+  lisca-analyze killing-engagement ~/data/killing_tcell
 "
     );
 }
@@ -260,6 +290,56 @@ fn cmd_pipeline(args: &[String]) -> Result<(), String> {
     timed("pipeline", || {
         run_sync_with_mode(&workspace, &assay, full_frame)
     })
+}
+
+fn cmd_killing_death_reporter(args: &[String]) -> Result<(), String> {
+    let workspace = killing_workspace(args, "killing-death-reporter")?;
+    let assay = load_assay_json(&workspace)?;
+    if assay.type_ != AssayType::KillingDeathReporter {
+        return Err(format!(
+            "lisca-analyze killing-death-reporter requires assay.json type killing-death-reporter, found {}",
+            assay.type_
+        ));
+    }
+    timed("killing-death-reporter", || {
+        killing::run_sync(&workspace, &assay)
+    })
+}
+
+fn cmd_killing_engagement(args: &[String]) -> Result<(), String> {
+    let workspace = killing_workspace(args, "killing-engagement")?;
+    let assay = load_assay_json(&workspace)?;
+    if assay.type_ != AssayType::KillingEngagement {
+        return Err(format!(
+            "lisca-analyze killing-engagement requires assay.json type killing-engagement, found {}",
+            assay.type_
+        ));
+    }
+    let interval = parse_interval_minutes(assay.interval.value, Some(assay.interval.unit.as_str()))
+        .ok_or_else(|| "invalid interval.value/unit in assay.json".to_string())?;
+    let mapping = build_sample_mapping(&assay)?;
+    timed("killing-engagement", || {
+        for position in mapping.positions() {
+            killing_engagement::run_position(&workspace, &mapping, position, interval)?;
+        }
+        killing_engagement::run_plot_traces(&workspace, &mapping, interval)?;
+        killing_engagement::write_summary(&workspace, &mapping)?;
+        Ok(())
+    })
+}
+
+/// One workspace directory and no flags. A dashed argument is an error before
+/// the workspace is read, because `first_positional` would skip it.
+fn killing_workspace(args: &[String], command: &str) -> Result<PathBuf, String> {
+    if args.iter().any(|arg| arg.starts_with('-')) || args.len() != 1 {
+        return Err(format!("{command} takes only a workspace path"));
+    }
+    let path = PathBuf::from(&args[0]);
+    if !path.is_dir() {
+        return Err(format!("workspace is not a directory: {}", path.display()));
+    }
+    migrate_workspace(&path)?;
+    Ok(path)
 }
 
 fn timed(label: &str, work: impl FnOnce() -> Result<(), String>) -> Result<(), String> {
@@ -461,5 +541,152 @@ fn flag_usize(args: &[String], name: &str) -> Result<Option<usize>, String> {
             .parse::<usize>()
             .map(Some)
             .map_err(|_| format!("invalid {name} value: {raw}")),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn assay_json(assay_type: &str, interval_value: &str) -> String {
+        format!(
+            r#"{{
+                "type": "{assay_type}",
+                "name": "cli",
+                "workspace": {{ "path": "" }},
+                "data": {{ "type": "folder", "path": "", "template": {{ "subfolder": "", "filename": "" }} }},
+                "interval": {{ "value": {interval_value}, "unit": "minute" }},
+                "samples": [{{ "name": "tcells", "positions": "1" }}],
+                "analysis": {{ "channels": {{ "segmentation": 0, "signal": [1] }} }}
+            }}"#
+        )
+    }
+
+    fn write_assay(root: &Path, assay_type: &str, interval_value: &str) {
+        fs::write(
+            root.join("assay.json"),
+            assay_json(assay_type, interval_value),
+        )
+        .unwrap();
+    }
+
+    #[test]
+    fn wrong_assay_type_writes_nothing() {
+        let killing_on_transfection = tempfile::tempdir().unwrap();
+        let root = killing_on_transfection.path();
+        write_assay(root, "transfection", "2.75");
+        let error = cmd_killing_death_reporter(&[root.display().to_string()]).unwrap_err();
+        assert_eq!(
+            error,
+            "lisca-analyze killing-death-reporter requires assay.json type killing-death-reporter, found transfection"
+        );
+        assert!(!root.join("analysis").exists());
+        assert!(!root.join("results").exists());
+
+        let engagement_on_killing = tempfile::tempdir().unwrap();
+        let root = engagement_on_killing.path();
+        write_assay(root, "killing-death-reporter", "2.75");
+        let error = cmd_killing_engagement(&[root.display().to_string()]).unwrap_err();
+        assert_eq!(
+            error,
+            "lisca-analyze killing-engagement requires assay.json type killing-engagement, found killing-death-reporter"
+        );
+        assert!(!root.join("analysis").exists());
+        assert!(!root.join("results").exists());
+    }
+
+    #[test]
+    fn missing_or_non_positive_interval_writes_nothing() {
+        let missing = tempfile::tempdir().unwrap();
+        let root = missing.path();
+        write_assay(root, "killing-death-reporter", "null");
+        let error = cmd_killing_death_reporter(&[root.display().to_string()]).unwrap_err();
+        assert_eq!(error, "invalid interval.value/unit in assay.json");
+        assert!(!root.join("analysis").exists());
+
+        let non_positive = tempfile::tempdir().unwrap();
+        let root = non_positive.path();
+        write_assay(root, "killing-engagement", "0");
+        let error = cmd_killing_engagement(&[root.display().to_string()]).unwrap_err();
+        assert_eq!(error, "invalid interval.value/unit in assay.json");
+        assert!(!root.join("analysis").exists());
+    }
+
+    #[test]
+    fn dashed_arguments_are_rejected_before_the_workspace_is_read() {
+        assert_eq!(
+            cmd_killing_death_reporter(&["--interval".into(), "10".into()]).unwrap_err(),
+            "killing-death-reporter takes only a workspace path"
+        );
+        assert_eq!(
+            cmd_killing_death_reporter(&["--interval=10".into()]).unwrap_err(),
+            "killing-death-reporter takes only a workspace path"
+        );
+        assert_eq!(
+            cmd_killing_engagement(&["--assay".into(), "/tmp/other.json".into(), "/tmp/ws".into()])
+                .unwrap_err(),
+            "killing-engagement takes only a workspace path"
+        );
+        assert_eq!(
+            cmd_killing_engagement(&["-f".into(), "/tmp/ws".into()]).unwrap_err(),
+            "killing-engagement takes only a workspace path"
+        );
+    }
+
+    fn write_pages(path: &Path, pages: &[Vec<u8>]) {
+        let file = fs::File::create(path).expect("create tiff");
+        let mut encoder = tiff::encoder::TiffEncoder::new(file).expect("encoder");
+        for page in pages {
+            let image = encoder
+                .new_image::<tiff::encoder::colortype::Gray8>(2, 2)
+                .expect("gray image");
+            image.write_data(page).expect("write page");
+        }
+    }
+
+    /// TCZYX: channel 0 then channel 1 at each time. Engagement reads channel 0
+    /// as the tumor mask and channel 1 as the engager signal.
+    fn write_engagement_position(workspace: &Path) {
+        let pos_dir = workspace.join("roi/Pos1");
+        fs::create_dir_all(&pos_dir).unwrap();
+        write_pages(
+            &pos_dir.join("Roi0.tif"),
+            &[
+                vec![255; 4],
+                vec![1, 2, 3, 40],
+                vec![255; 4],
+                vec![10, 10, 10, 10],
+            ],
+        );
+        let index = serde_json::json!({
+            "position": 1,
+            "axisOrder": "TCZYX",
+            "channelCount": 2,
+            "timeCount": 2,
+            "zCount": 1,
+            "rois": [{
+                "roi": 0,
+                "fileName": "Roi0.tif",
+                "bbox": { "roi": 0, "x": 0, "y": 0, "w": 2, "h": 2 }
+            }]
+        });
+        fs::write(
+            pos_dir.join("index.json"),
+            serde_json::to_string(&index).unwrap(),
+        )
+        .unwrap();
+    }
+
+    #[test]
+    fn killing_engagement_writes_the_trace_png_and_the_summary_csv() {
+        let workspace = tempfile::tempdir().unwrap();
+        let root = workspace.path();
+        write_assay(root, "killing-engagement", "2.75");
+        write_engagement_position(root);
+
+        cmd_killing_engagement(&[root.display().to_string()]).unwrap();
+
+        assert!(root.join("results/tcells/engagement_traces.png").is_file());
+        assert!(root.join("analysis/Pos1/engagement_summary.csv").is_file());
     }
 }

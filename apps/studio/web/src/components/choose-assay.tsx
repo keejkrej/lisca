@@ -16,7 +16,7 @@ const ASSAY_CHOICE_DETAIL: Record<
     description: "Gene expression timeseries",
     readout: "Fluorescence",
   },
-  killing: {
+  "killing-death-reporter": {
     title: "Killing (death reporter)",
     description: "Cytotoxicity timeseries",
     readout: "Fluorescence",

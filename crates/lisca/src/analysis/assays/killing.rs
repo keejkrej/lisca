@@ -1,9 +1,11 @@
-mod clean;
 mod fluorescence;
+mod mapping;
 mod plot;
-mod predict;
+
+pub(crate) use mapping::to_killing_mapping;
 
 pub use fluorescence::run_position_traces;
+pub use lisca_killing::{PredictControl, PredictFailure};
 
 use std::path::{Path, PathBuf};
 use std::{collections::BTreeMap, fs};
@@ -13,8 +15,6 @@ use crate::protocol::{AnalysisCsvFile, AnalysisProgress, AnalysisStage, AssayJso
 use crate::analysis::output::collect_csv_outputs;
 use crate::analysis::progress::{analysis_progress, run_blocking};
 use crate::analysis::sample::{build_sample_mapping, parse_interval_minutes, SampleMapping};
-
-pub use predict::{PredictControl, PredictFailure};
 
 pub fn resolve_model_path(workspace: &Path) -> Result<PathBuf, String> {
     // Killing-assay brain (HF keejkrej/killing-assay-resnet18). Installers do
@@ -52,12 +52,12 @@ pub fn run_predict_shard(
     mapping: &SampleMapping,
     model_dir: &Path,
 ) -> Result<(), String> {
-    predict::run_predict_to(
+    lisca_killing::run_predict_to(
         workspace,
         output_workspace,
-        mapping,
+        &to_killing_mapping(mapping),
         model_dir,
-        predict::PredictOptions::default(),
+        lisca_killing::PredictOptions::default(),
     )
 }
 
@@ -68,12 +68,12 @@ pub fn run_predict_shard_controlled(
     model_dir: &Path,
     control: &PredictControl<'_>,
 ) -> Result<(), PredictFailure> {
-    predict::run_predict_to_controlled(
+    lisca_killing::run_predict_to_controlled(
         workspace,
         output_workspace,
-        mapping,
+        &to_killing_mapping(mapping),
         model_dir,
-        predict::PredictOptions::default(),
+        lisca_killing::PredictOptions::default(),
         control,
     )
 }
@@ -128,13 +128,10 @@ pub fn merge_prediction_shards(workspace: &Path, shards: &[PathBuf]) -> Result<(
 /// directory is treated as "no files for this shard subtree".
 ///
 /// Only `.csv` files are collected because the merge concatenates with
-/// line-based header dedup — a CSV-only operation. `write_csv`
-/// (`analysis::csv_io`) emits a binary `.xlsx` sidecar next to every CSV
-/// (`results/predictions.xlsx`, `traces/Pos{N}/ch{M}.xlsx`); reading
-/// those as UTF-8 text would crash the merge, and the merge cannot
-/// meaningfully concatenate binary workbooks. The xlsx is not a collected
-/// deliverable (`collect_csv_outputs` only gathers `.csv`), and downstream
-/// stages read the `.csv`, so skipping non-CSV sidecars is safe.
+/// line-based header dedup — a CSV-only operation. A binary sidecar such as
+/// `results/predictions.xlsx` or `traces/Pos{N}/ch{M}.xlsx` is not a collected
+/// deliverable. Reading it as UTF-8 would crash the merge, and the merge
+/// cannot concatenate workbooks. Downstream stages read the `.csv`.
 fn collect_shard_files(
     directory: &Path,
     shard: &Path,
@@ -174,7 +171,7 @@ pub fn run_plot_traces_stage(
 }
 
 pub fn run_clean_stage(workspace: &Path, mapping: &SampleMapping) -> Result<(), String> {
-    clean::run_clean(workspace, mapping)
+    lisca_killing::run_clean(workspace, &to_killing_mapping(mapping))
 }
 
 pub fn run_plot_kill_stage(
@@ -430,19 +427,15 @@ mod scheduler_stage_tests {
         fs::remove_dir_all(root).unwrap();
     }
 
-    /// End-to-end with the REAL producer: `predict.rs` writes every CSV via
-    /// `write_csv`, which also emits a binary `.xlsx` sidecar next to each
-    /// `.csv` (both `results/predictions.xlsx` and
-    /// `traces/Pos{N}/ch{M}.xlsx`). The merge must skip those binary
-    /// sidecars — `fs::read_to_string` on a binary xlsx crashes the merge
-    /// (and BTreeMap order processes `results/predictions.xlsx` before the
-    /// nested traces, so the crash would happen BEFORE the traces
-    /// is merged). This test reproduces that exact production payload via
-    /// `write_csv` and asserts the merge folds the CSVs (skipping xlsx)
-    /// and `run_plot_traces_stage` renders `results/<sample>/traces.png`.
+    /// A prediction shard can carry a binary `.xlsx` beside each CSV
+    /// (`results/predictions.xlsx` and `traces/Pos{N}/ch{M}.xlsx`). The merge
+    /// must skip those sidecars. `fs::read_to_string` on a binary xlsx crashes
+    /// the merge, and BTreeMap order visits `results/predictions.xlsx` before
+    /// the nested traces. This test writes that payload and asserts the merge
+    /// folds the CSVs and `run_plot_traces_stage` renders
+    /// `results/<sample>/traces.png`.
     #[test]
     fn merge_skips_binary_xlsx_sidecars_and_renders_traces() {
-        use crate::analysis::csv_io::write_csv;
         let root = unique_root("xlsx");
         let _ = fs::remove_dir_all(&root);
         let workspace = root.join("workspace");
@@ -450,56 +443,14 @@ mod scheduler_stage_tests {
         fs::create_dir_all(shard.join("traces/Pos1")).unwrap();
         fs::create_dir_all(shard.join("results")).unwrap();
 
-        // Use the real producer: `write_csv` writes `predictions.csv` AND
-        // `predictions.xlsx` (binary) — exactly what `predict.rs` does.
-        write_csv(
+        write_csv_with_binary_sidecar(
             &shard.join("results/predictions.csv"),
-            &["t", "crop", "p_dead", "label", "pos", "sample"],
-            &[
-                vec![
-                    "0".into(),
-                    "1".into(),
-                    "0.1".into(),
-                    "false".into(),
-                    "1".into(),
-                    "A".into(),
-                ],
-                vec![
-                    "1".into(),
-                    "1".into(),
-                    "0.3".into(),
-                    "false".into(),
-                    "1".into(),
-                    "A".into(),
-                ],
-            ],
-        )
-        .unwrap();
-        // `predict.rs::write_trace_csv` also uses `write_csv`, so each
-        // trace leaf gets a binary `ch0.xlsx` sidecar too.
-        write_csv(
+            "t,crop,p_dead,label,pos,sample\n0,1,0.1,false,1,A\n1,1,0.3,false,1,A\n",
+        );
+        write_csv_with_binary_sidecar(
             &shard.join("traces/Pos1/ch0.csv"),
-            &["roi", "t", "area", "background", "sum", "corrected"],
-            &[
-                vec![
-                    "0".into(),
-                    "0".into(),
-                    "4".into(),
-                    "1".into(),
-                    "10".into(),
-                    "6".into(),
-                ],
-                vec![
-                    "0".into(),
-                    "1".into(),
-                    "4".into(),
-                    "1".into(),
-                    "12".into(),
-                    "8".into(),
-                ],
-            ],
-        )
-        .unwrap();
+            "roi,t,area,background,sum,corrected\n0,0,4,1,10,6\n0,1,4,1,12,8\n",
+        );
 
         // Sanity: the binary sidecars really exist on disk.
         assert!(shard.join("results/predictions.xlsx").is_file());
@@ -535,6 +486,11 @@ mod scheduler_stage_tests {
         assert!(workspace.join("results/A/traces.xlsx").is_file());
         assert!(!workspace.join("results/traces.png").exists());
         fs::remove_dir_all(root).unwrap();
+    }
+
+    fn write_csv_with_binary_sidecar(path: &Path, csv: &str) {
+        fs::write(path, csv).unwrap();
+        fs::write(path.with_extension("xlsx"), [0xff, 0xfe, 0x00]).unwrap();
     }
 }
 

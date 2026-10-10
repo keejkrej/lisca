@@ -28,7 +28,7 @@ as sample data (`FIXTURE.txt`, assay names end with `(fixture)`).
 Stages are cumulative except `source`, which is not a workspace. Skip ahead by
 picking the stage **before** the step you want to test.
 
-Assays: `transfection` | `killing` (the two shipping next month).
+Assays: `transfection` | `killing-death-reporter`.
 
 ## Commands
 
@@ -39,13 +39,13 @@ From the repo root:
 pnpm run fixture:workspace -- --assay transfection --stage assay --out /tmp/tf-align
 
 # Only test crop — alignment already saved
-pnpm run fixture:workspace -- --assay killing --stage aligned --out /tmp/kill-crop
+pnpm run fixture:workspace -- --assay killing-death-reporter --stage aligned --out /tmp/kill-crop
 
 # Only test analysis — ROI stacks present, no results yet
 pnpm run fixture:workspace -- --assay transfection --stage cropped --out /tmp/tf-analyze
 
 # Finished workspace for result review / agent inspection
-pnpm run fixture:workspace -- --assay killing --stage analyzed --out /tmp/kill-done --force
+pnpm run fixture:workspace -- --assay killing-death-reporter --stage analyzed --out /tmp/kill-done --force
 ```
 
 Equivalent:

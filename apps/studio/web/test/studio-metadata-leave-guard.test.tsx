@@ -268,11 +268,15 @@ describe("StudioMetadataLeaveGuard dirty trigger", () => {
     const initial = createInitialStudioWizardState();
     expect(isBasicInfoDirty(initial)).toBe(false);
 
-    // Mirrors `studioWizardActions.setAssayId(KILLING)` on a fresh wizard:
-    // assayId flips to "killing" and the transfection-only analysis section
+    // Mirrors `studioWizardActions.setAssayId(KILLING_DEATH_REPORTER)` on a fresh wizard:
+    // assayId flips to killing-death-reporter and the transfection-only analysis section
     // drops to null, so the serialized snapshot differs from the baseline —
     // all while `workspacePath` stays empty.
-    const killing: WizardState = { ...initial, assayId: ASSAY_TYPE.KILLING, analysis: null };
+    const killing: WizardState = {
+      ...initial,
+      assayId: ASSAY_TYPE.KILLING_DEATH_REPORTER,
+      analysis: null,
+    };
     expect(killing.workspacePath).toBe("");
     expect(isBasicInfoDirty(killing)).toBe(true);
   });

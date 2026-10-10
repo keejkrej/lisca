@@ -48,7 +48,7 @@ PNGs above.
 pnpm run fixture:workspace -- --assay transfection --stage cropped --out /tmp/tf-analyze
 
 # Only test align
-pnpm run fixture:workspace -- --assay killing --stage assay --out /tmp/kill-align
+pnpm run fixture:workspace -- --assay killing-death-reporter --stage assay --out /tmp/kill-align
 ```
 
 Stages: `source`, `assay`, `aligned`, `cropped`, `annotated`, `analyzed`.
@@ -61,10 +61,10 @@ mature assays. ROI stacks under `roi/` come from **Studio crop**, CLI (`lisca-cr
 or the notebooks zip (`lisca.services.crop` in `python/`) — not from the light Aligner shell. The running workflow
 depends on `assay.json` → root `type`:
 
-| Assay          | Goal source (not implementation reference)                                                                                    | Pipeline                                                                                       |
-| -------------- | ----------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| `transfection` | [`lisca-transfection-assay`](https://github.com/keejkrej/lisca-transfection-assay) — Python + Rust crate imported via git URL | segment → traces → AUC → fit (+ plots) in `lisca-transfection`; Studio ONNX segment stays here |
-| `killing`      | Death reporter. Signal-channel fluorescence in each ROI crop. No classifier and no fit.                                       | traces → plot-traces                                                                           |
+| Assay                    | Goal source (not implementation reference)                                                                                    | Pipeline                                                                                       |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `transfection`           | [`lisca-transfection-assay`](https://github.com/keejkrej/lisca-transfection-assay) — Python + Rust crate imported via git URL | segment → traces → AUC → fit (+ plots) in `lisca-transfection`; Studio ONNX segment stays here |
+| `killing-death-reporter` | Death reporter. Signal-channel fluorescence in each ROI crop. No classifier and no fit.                                       | traces → plot-traces                                                                           |
 
 Numeric stages and PNG plots for transfection run in the imported
 [`lisca-transfection`](https://github.com/keejkrej/lisca-transfection-assay) crate
@@ -74,7 +74,7 @@ via [**mplot-rs**](https://github.com/keejkrej/mplot-rs). Death-reporter killing
 
 ## Design stance
 
-Sibling **goal sources** (`lisca-*-assay` packages, mupattern) describe **what** to compute and **which files** to read/write. Mature transfection analysis is **imported** from `lisca-transfection-assay` (git crate + Python package). Killing remains in-tree until its sidecar exists.
+Sibling **goal sources** (`lisca-*-assay` packages, mupattern) describe **what** to compute and **which files** to read/write. Mature transfection analysis is **imported** from `lisca-transfection-assay` (git crate + Python package). Death-reporter fluorescence, fluorescent engagement, and the killing classifier (predict, clean, kill curve) are imported from [`lisca-killing-assay`](https://github.com/keejkrej/lisca-killing-assay) the same way. Studio keeps scheduling, progress, and the figures.
 
 Rust in this crate should stay idiomatic:
 
@@ -84,9 +84,13 @@ Rust in this crate should stay idiomatic:
   ONNX segment may stay as a Studio adapter (`segment_onnx.rs` + `ort`) until
   the sidecar un-stubs it; resolve `keejkrej/single-cell-pattern-unet` via
   `LISCA_PATTERN_SEG_MODEL`, not as a lisca-owned assay brain.
-- Killing: per-assay code under `assays/killing/` (fluorescence) and
-  `assays/killing_engagement.rs` (spot counts). Analyze does not load the
-  ResNet. Desktop packaging does not download or bundle ONNX weights.
+- Killing measurements: call `lisca-killing` (death-reporter fluorescence,
+  engagement counts, and the classifier: predict, monotonicity clean, death
+  times, and the kill curve). Do not keep a second copy of those kernels under
+  `assays/killing/`. Figures stay here, including the kill-curve and death-time
+  grids. Analyze does not load the ResNet. Desktop packaging does not download
+  or bundle ONNX weights. Predict loads `model.onnx` through the crate's
+  `onnx` feature.
 - Parity for transfection is judged in the sidecar; this repo’s wrapper tests check the dispatch still writes the workspace contract.
 
 ## Transfection pipeline
@@ -109,7 +113,7 @@ and `analysis/transfection/traces/Pos{n}` (one Step per Position; Rust entry poi
 
 ## Killing pipeline
 
-Death reporter (`assayId` `killing`) measures fluorescence in each existing ROI crop. It does not segment, detect cells, fit a curve, or run a classifier. The signal channel comes from `analysis.channels.signal`. Each crop plane at z=0 uses the same full-frame reduction as transfection `analysis.skipSegment`: area is the pixel count, background is the 10th percentile, and corrected fluorescence is the sum minus area times background.
+Death reporter (`assayId` `killing-death-reporter`) measures fluorescence in each existing ROI crop. It does not segment, detect cells, fit a curve, or run a classifier. The signal channel comes from `analysis.channels.signal`. Each crop plane at z=0 uses the same full-frame reduction as transfection `analysis.skipSegment`: area is the pixel count, background is the 10th percentile, and corrected fluorescence is the sum minus area times background.
 
 ```
 assay.json → analysis/Pos{n}/ch{m}.csv → results/<sample>/traces.xlsx + one PNG per sample
@@ -217,12 +221,12 @@ analysis/
     killing.rs + killing/
 ```
 
-| Module                                | Goal                                                              |
-| ------------------------------------- | ----------------------------------------------------------------- |
-| `assays/transfection/`                | Dispatch into `lisca-transfection`; Studio ONNX adapter           |
-| `assays/transfection/segment_onnx.rs` | Studio ONNX adapter; weights via `LISCA_PATTERN_SEG_MODEL` / HF   |
-| `lisca-transfection` (git)            | Otsu, traces, AUC, kinetic fit, PNG plots, sample XLSX publishers |
-| `assays/killing/`                     | ResNet presence, monotonicity clean, death times, kill curve      |
+| Module                                | Goal                                                                       |
+| ------------------------------------- | -------------------------------------------------------------------------- |
+| `assays/transfection/`                | Dispatch into `lisca-transfection`; Studio ONNX adapter                    |
+| `assays/transfection/segment_onnx.rs` | Studio ONNX adapter; weights via `LISCA_PATTERN_SEG_MODEL` / HF            |
+| `lisca-transfection` (git)            | Otsu, traces, AUC, kinetic fit, PNG plots, sample XLSX publishers          |
+| `assays/killing/`                     | Dispatch into `lisca-killing`; kill-curve and death-time figures stay here |
 
 Adding a new assay type: create `assays/<name>.rs` plus `assays/<name>/`, implement `run` (async) and optionally `run_sync`, then register in `assays.rs`.
 
@@ -275,12 +279,12 @@ Summary — full process, tolerances table, and lifecycle in [`parity.md`](./par
 
 ## Parity CLI (`lisca-analyze`)
 
-Rust stage CLI shaped like sibling [`lisca-transfection-assay`](https://github.com/keejkrej/lisca-transfection-assay) so the same workspace can be driven from either side. `lisca-analyze` calls the git crate (plus local ONNX segment). Process and side-by-side recipe: [`parity.md`](./parity.md).
+Transfection stages are shaped like sibling [`lisca-transfection-assay`](https://github.com/keejkrej/lisca-transfection-assay) so the same workspace can be driven from either side. Those stages call the git crate (plus local ONNX segment). `killing-death-reporter` and `killing-engagement` take a workspace path only. `killing-death-reporter` requires `assay.json` type `killing-death-reporter`. Process and side-by-side recipe: [`parity.md`](./parity.md).
 
 ```sh
 cargo build -p lisca --release --bin lisca-analyze
 
-# Stage commands (mirror transfection CLI; mapping from assay.json)
+# Transfection stage commands (mapping from assay.json)
 ./target/release/lisca-analyze segment ~/data/TF84
 ./target/release/lisca-analyze traces ~/data/TF84
 ./target/release/lisca-analyze auc ~/data/TF84
@@ -289,11 +293,17 @@ cargo build -p lisca --release --bin lisca-analyze
 ./target/release/lisca-analyze plot-auc ~/data/TF84
 ./target/release/lisca-analyze plot-fit ~/data/TF84
 
-# Full pipeline from assay.json
+# Full transfection pipeline from assay.json
 ./target/release/lisca-analyze pipeline ~/data/TF84
+
+# Killing assays (workspace path only; no --interval, no --assay)
+./target/release/lisca-analyze killing-death-reporter ~/data/killing_pi
+./target/release/lisca-analyze killing-engagement ~/data/killing_tcell
 ```
 
-`--interval` / `--max-onset-minutes` may be omitted when `assay.json` has `interval` and optional `analysis.maxOnsetMinutes`. `--assay` defaults to `<workspace>/assay.json`. Plot commands also accept transfection-style paths (`…/analysis`, `…/analysis/PosN/auc.csv`, `…/analysis/PosN/fit.csv`).
+`killing-death-reporter` writes fluorescence CSVs, `results/<sample>/traces.xlsx`, and `traces.png`, `traces_shared_y.png`, `traces_summary.png`, `traces_summary_shared_y.png`. `killing-engagement` writes `engagement.csv`, `engagement_summary.csv`, the engagement workbooks, and `engagement_traces.png`, `engagement_traces_shared_y.png`, `engagement_traces_summary.png`, `engagement_traces_summary_shared_y.png`.
+
+Transfection `--interval` / `--max-onset-minutes` may be omitted when `assay.json` has `interval` and optional `analysis.maxOnsetMinutes`. `--assay` defaults to `<workspace>/assay.json`. Plot commands also accept transfection-style paths (`…/analysis`, `…/analysis/PosN/auc.csv`, `…/analysis/PosN/fit.csv`). Those flags are transfection stage options.
 
 ## Tests
 

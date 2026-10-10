@@ -117,9 +117,9 @@ describe("replace-document guard (New / Open)", () => {
   it("keeps the selected assay type for the new assay", () => {
     const { wizard } = renderGuard({
       ...createInitialStudioWizardState(),
-      assayId: ASSAY_TYPE.KILLING,
+      assayId: ASSAY_TYPE.KILLING_DEATH_REPORTER,
     });
     fireEvent.click(screen.getByRole("button", { name: "New" }));
-    expect(wizard().assayId).toBe(ASSAY_TYPE.KILLING);
+    expect(wizard().assayId).toBe(ASSAY_TYPE.KILLING_DEATH_REPORTER);
   });
 });

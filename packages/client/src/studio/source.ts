@@ -54,7 +54,7 @@ export type StudioAlignFrameDefault = "first" | "last";
 export function studioAlignFrameDefault(
   assayId: string | null | undefined,
 ): StudioAlignFrameDefault {
-  return assayId === ASSAY_TYPE.KILLING || assayId === ASSAY_TYPE.KILLING_ENGAGEMENT
+  return assayId === ASSAY_TYPE.KILLING_DEATH_REPORTER || assayId === ASSAY_TYPE.KILLING_ENGAGEMENT
     ? "first"
     : "last";
 }

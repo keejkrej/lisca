@@ -20,7 +20,7 @@ enum SupportedAssay {
 fn dispatch(assay_id: AssayType) -> Result<SupportedAssay, AnalysisError> {
     match assay_id {
         AssayType::Transfection => Ok(SupportedAssay::Transfection),
-        AssayType::Killing => Ok(SupportedAssay::Killing),
+        AssayType::KillingDeathReporter => Ok(SupportedAssay::Killing),
         AssayType::KillingEngagement => Ok(SupportedAssay::KillingEngagement),
         AssayType::LnpBinding => Err(AnalysisError::UnsupportedAssay { assay_id }),
     }

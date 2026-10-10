@@ -25,7 +25,7 @@ export type AnalysisDemoProps = {
 
 const FIXTURES: Record<FixtureAssayId, () => AnalysisFixture> = {
   transfection: buildTransfectionFixture,
-  killing: buildKillingFixture,
+  "killing-death-reporter": buildKillingFixture,
 };
 
 export function AnalysisDemo(props: AnalysisDemoProps) {
@@ -48,13 +48,13 @@ export function AnalysisDemo(props: AnalysisDemoProps) {
           fileName={fixture().title}
           sampleImages={[
             { id: "transfection", fileName: "transfection.fixture" },
-            { id: "killing", fileName: "killing.fixture" },
+            { id: "killing-death-reporter", fileName: "killing.fixture" },
           ]}
           selectedSampleId={assayId()}
           showThemeToggle={!props.embedded}
           onOpenFile={() => undefined}
           onSampleChange={(value) => {
-            if (value === "transfection" || value === "killing") switchAssay(value);
+            if (value === "transfection" || value === "killing-death-reporter") switchAssay(value);
           }}
         />
       </DemoShell.Header>

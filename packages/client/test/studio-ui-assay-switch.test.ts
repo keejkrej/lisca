@@ -47,30 +47,30 @@ describe("setAssayId interval handling", () => {
   test("switching transfection -> killing replaces the gene-expression default with 5 minutes", () => {
     const { set, get } = drive(createInitialStudioWizardState());
 
-    studioWizardActions.setAssayId(set, ASSAY_TYPE.KILLING);
+    studioWizardActions.setAssayId(set, ASSAY_TYPE.KILLING_DEATH_REPORTER);
 
-    expect(get().assayId).toBe(ASSAY_TYPE.KILLING);
+    expect(get().assayId).toBe(ASSAY_TYPE.KILLING_DEATH_REPORTER);
     expect(get().intervalValue).toBe(5);
   });
 
   test("switching transfection -> killing persists the killing default into assay.json", () => {
     const { set, get } = drive(createInitialStudioWizardState());
 
-    studioWizardActions.setAssayId(set, ASSAY_TYPE.KILLING);
+    studioWizardActions.setAssayId(set, ASSAY_TYPE.KILLING_DEATH_REPORTER);
 
     const json = buildStudioAssayJsonFromWizard(get());
     expect(json.interval.value).toBe(5);
     expect(json.interval.unit).toBe("minute");
-    expect(json.type).toBe(ASSAY_TYPE.KILLING);
+    expect(json.type).toBe(ASSAY_TYPE.KILLING_DEATH_REPORTER);
   });
 
   test("a user-entered interval survives switching assays", () => {
     const { set, get } = drive(createInitialStudioWizardState());
     studioWizardActions.patchWizard(set, { intervalValue: 7 });
 
-    studioWizardActions.setAssayId(set, ASSAY_TYPE.KILLING);
+    studioWizardActions.setAssayId(set, ASSAY_TYPE.KILLING_DEATH_REPORTER);
 
-    expect(get().assayId).toBe(ASSAY_TYPE.KILLING);
+    expect(get().assayId).toBe(ASSAY_TYPE.KILLING_DEATH_REPORTER);
     expect(get().intervalValue).toBe(7);
 
     const json = buildStudioAssayJsonFromWizard(get());
@@ -85,15 +85,15 @@ describe("setAssayId interval handling", () => {
     const { set, get } = drive(createInitialStudioWizardState());
     studioWizardActions.patchWizard(set, { intervalValue: 10 });
 
-    studioWizardActions.setAssayId(set, ASSAY_TYPE.KILLING);
+    studioWizardActions.setAssayId(set, ASSAY_TYPE.KILLING_DEATH_REPORTER);
 
-    expect(get().assayId).toBe(ASSAY_TYPE.KILLING);
+    expect(get().assayId).toBe(ASSAY_TYPE.KILLING_DEATH_REPORTER);
     expect(get().intervalValue).toBe(5);
   });
 
   test("switching killing -> transfection replaces the killing default with 10 minutes", () => {
     const { set, get } = drive(createInitialStudioWizardState());
-    studioWizardActions.setAssayId(set, ASSAY_TYPE.KILLING);
+    studioWizardActions.setAssayId(set, ASSAY_TYPE.KILLING_DEATH_REPORTER);
     expect(get().intervalValue).toBe(5);
 
     studioWizardActions.setAssayId(set, ASSAY_TYPE.TRANSFECTION);
@@ -105,13 +105,13 @@ describe("setAssayId interval handling", () => {
   test("a cleared interval survives writeStudioSession -> readStudioSession", () => {
     const { set, get } = drive(createInitialStudioWizardState());
 
-    studioWizardActions.setAssayId(set, ASSAY_TYPE.KILLING);
+    studioWizardActions.setAssayId(set, ASSAY_TYPE.KILLING_DEATH_REPORTER);
     studioWizardActions.patchWizard(set, { intervalValue: null });
     expect(get().intervalValue).toBeNull();
 
     const restored = readStudioSession();
     expect(restored).not.toBeNull();
-    expect(restored?.assayId).toBe(ASSAY_TYPE.KILLING);
+    expect(restored?.assayId).toBe(ASSAY_TYPE.KILLING_DEATH_REPORTER);
     expect(restored?.intervalValue).toBeNull();
   });
 });
