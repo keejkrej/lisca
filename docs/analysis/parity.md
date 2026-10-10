@@ -3,9 +3,12 @@
 ## Why this exists
 
 Most **analysis science** is developed outside this monorepo, in focused
-`lisca-*-assay` packages. Once a package is **mature** (stable CLI, stable
-workspace layout, trusted on real experiments), this repo **imports** it rather
-than keeping a second copy of the pipeline.
+`lisca-*-assay` packages. Once a package is **mature** (stable library surface:
+workspace paths, CSV columns, and scientific definitions, trusted on real
+experiments), this repo **imports** it rather than keeping a second copy of the
+pipeline. Once Studio enables the assay, `lisca-analyze` grows one command
+named for the Studio wire id. Transfection's stage CLI is the historical shape
+for that assay only.
 
 | Sibling package (R&D + prod kernels)                                               | Role                                                                                                                                                                                                       |
 | ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -37,10 +40,10 @@ workflow: [`/lisca-parity`](../../.agents/skills/lisca-parity/SKILL.md).
 
 | Layer                                             | Responsibility                                                                      |
 | ------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| **Goal source** (Python `lisca-*-assay`)          | Define stages, flags, output paths, CSV columns, plot names, scientific definitions |
-| **Imported crate** (`lisca-transfection` git dep) | Idiomatic Rust for transfection stages; Studio and `lisca-analyze` call it          |
-| **In-tree port** (`crates/lisca` killing, crop)   | Pipelines that do not yet have a sidecar crate                                      |
-| **Parity cage**                                   | Transfection: tests in the sidecar repo. Killing: tests here.                       |
+| **Goal source** (Python `lisca-*-assay`)                 | Scientific definitions, output paths, CSV columns, and plot names. Flags in this file are transfection stage flags. |
+| **Imported crate** (`lisca-transfection`, `lisca-killing`) | Idiomatic Rust kernels. Studio and `lisca-analyze` call the crate.                                                                                    |
+| **In-tree port** (`crates/lisca`)                        | Crop, plus killing dispatch and plots.                                                                                                                 |
+| **Parity cage**                                          | Transfection shell-out tests stay in the sidecar. Killing unit tests are `pytest` and `cargo test -p lisca-killing` in the side repo, plus the Lisca dispatch tests. Killing does not gain a shell-out cage. |
 | **Studio UI** (`@lisca/analysis`, Studio web)     | Consume workspace outputs; chart catalogs must match file/column contracts          |
 
 **Not required:** matching Python module trees, NumPy evaluation order, process
@@ -49,37 +52,38 @@ pools, or bitwise float identity.
 ## Lifecycle
 
 ```
- explore in lisca-*-assay (Python CLI)
+ explore in lisca-*-assay (library: Python core/services + Rust crate)
         │
         ▼
- stabilize stages + workspace I/O on real data
+ stabilize workspace I/O and scientific definitions on real data
         │
         ▼
- port goals → sidecar crate (transfection) or crates/lisca assays/<name>/
+ port goals → sidecar crate
         │
         ▼
  this monorepo depends on the crate via git URL (no cycle back to lisca)
         │
         ▼
- Studio / contracts only after stages green
+ Studio / contracts only after the library is green
 ```
 
-1. **Develop in Python** until stage semantics and I/O are trusted.
-2. **Port to Rust** in the assay sidecar (preferred) or under `crates/lisca`
-   until a sidecar exists.
-3. **Prove parity** in the sidecar (synthetic + real workspace). This repo
-   should not keep a second full transfection pipeline.
+1. **Develop the library** until semantics and I/O are trusted.
+2. **Port to Rust** in the assay sidecar crate.
+3. **Prove parity** by importing functions (synthetic + real workspace). This
+   repo should not keep a second full pipeline.
 4. **Wire Studio** only after contract + scientific parity hold.
-5. **Keep Python** as the oracle in the sidecar: `uv run transfection …` vs
-   `lisca-analyze` / `lisca-transfection`’s own `lisca-analyze`.
+5. **Transfection only.** Keep Python as the oracle in that sidecar:
+   `uv run transfection …` vs `lisca-analyze` / `lisca-transfection`’s own
+   `lisca-analyze`. That shell-out is not the killing oracle and not the rule
+   for the next assay.
 
 ## Assay map
 
 | Studio `assayId`                                        | Goal source + Rust                                                           | This repo                                                             | Parity CLI                            | Notes                                                              |
 | ------------------------------------------------------- | ---------------------------------------------------------------------------- | --------------------------------------------------------------------- | ------------------------------------- | ------------------------------------------------------------------ |
 | `transfection` (Studio wire id; science = transfection) | `lisca-transfection-assay` (`transfection` CLI + `lisca-transfection` crate) | Thin dispatch in `analysis/assays/transfection/` + local ONNX segment | `lisca-analyze` (calls the git crate) | Crop stays here. Python+Rust parity: sidecar `docs/parity.md`.     |
-| `killing`                                               | `lisca-killing-assay` (`killing fluorescence`, `killing clean` + `lisca-killing`) | Thin dispatch in `analysis/assays/killing/`; figures stay here        | `uv run killing fluorescence` / `uv run killing clean` | Per-cell traces and sample-mean figures. Analyze does not run the classifier. `clean` writes the kill curve from `predictions.csv`. |
-| `killing-engagement`                                    | `lisca-killing-assay` (`killing engagement` + `lisca-killing`)     | Thin dispatch in `analysis/assays/killing_engagement.rs`; figures stay here | `uv run killing engagement`    | Spot counts. Tumor touch is recorded and is not proof of contact.  |
+| `killing`                                               | `lisca-killing-assay` (`lisca-killing` + `killing.core` / `killing.services`) | Thin dispatch and plots in `analysis/assays/killing/` | `lisca-analyze killing` | Per-cell traces and sample-mean figures. Analyze does not run the classifier. The kill curve is `lisca_killing::run_clean` / `killing.services.classifier.run_clean`, library only. |
+| `killing-engagement`                                    | `lisca-killing-assay` (`lisca-killing` + `killing.core` / `killing.services`) | Thin dispatch and plots in `analysis/assays/killing_engagement.rs` | `lisca-analyze killing-engagement` | Spot counts. Tumor touch is recorded and is not proof of contact. |
 | `lnp-binding` / binding                                 | future `lisca-binding-assay`                                                 | none until mature                                                     | —                                     | Closed enum: do not half-register                                  |
 
 Adding a Studio assay id is a **cross-cutting** change (`@lisca/contracts`,
@@ -89,7 +93,7 @@ Cargo (this workspace):
 
 ```toml
 lisca-transfection = { git = "https://github.com/keejkrej/lisca-transfection-assay", rev = "9eda2a7dd62c73cc8fd36071762a043f436462db" }
-lisca-killing = { git = "https://github.com/keejkrej/lisca-killing-assay", rev = "cabb4b2495c7e472a333cdfd74fac1bfad91ac7c" }
+lisca-killing = { git = "https://github.com/keejkrej/lisca-killing-assay", rev = "99deb27c9bc6140303797e631c679c544616406c" }
 ```
 
 Python extra (`python/pyproject.toml`, `analysis` extra):
@@ -102,14 +106,18 @@ Keep transfection Cargo and Python on the **same SHA**. Lock files (`Cargo.lock`
 `python/uv.lock`) must match. Notebooks vendor sync reads that SHA.
 `lisca-killing` is Rust-only from this repo. `killing` also ships the
 label-free training stack, so LiSCA does not add it as a Python extra. Run
-`uv run killing` in `lisca-killing-assay` at the pinned SHA.
+the training tool in `lisca-killing-assay` at the pinned SHA if you are
+training; run `lisca-analyze` if you are measuring a workspace.
 
 The sidecar crate must **not** depend on crate `lisca` (that would cycle:
 `lisca` already depends on `lisca-transfection`). It **may** git-depend on
 `lisca-workspace` in this repo for folder names and bbox/ROI path helpers.
-Public analysis API is workspace-path based: `run_segment`, `run_traces`,
-`run_auc`, `run_fit`, `run_pipeline`, `run_plot_*` (PNG only),
-`publish_sample_*_xlsx`, `load_assay_for_workspace`.
+The `lisca-transfection` public API is workspace-path based: `run_segment`,
+`run_traces`, `run_auc`, `run_fit`, `run_pipeline`, `run_plot_*` (PNG only),
+`publish_sample_*_xlsx`, `load_assay_for_workspace`. The killing crate surface
+the product calls is `run_fluorescence`, `run_position_fluorescence`,
+`run_position_engagement`, and `write_engagement_summary`. `run_predict_to`
+and `run_clean` stay library functions and are not `lisca-analyze` commands.
 
 ### ndarray / imageproc versions
 
@@ -125,7 +133,11 @@ crates); do not silently rewrite the sidecar to match this workspace.
 
 - Workspace layout: folder names + bbox/ROI files owned here
   ([`schema.md`](./schema.md)). Transfection analysis/results **columns** are
-  owned by the sidecar. Killing tables stay in-tree until that sidecar exists.
+  owned by the sidecar. Killing kernels are the git crate at the pinned SHA.
+  In-tree code is dispatch, plots, crop, scheduling, and progress. The crate
+  writes fluorescence CSVs, `engagement.csv`, `engagement_summary.csv`, and
+  the engagement workbooks. Lisca writes every PNG and the death-reporter
+  `traces.xlsx`.
 - Trace columns (`analysis/Pos{n}/ch{m}.csv`): `roi,t,area,background,sum,corrected` (no `pos` /
   `sample`; joined later from path + sample mapping). `background`
   and `sum` are QC columns. `t` uses `index.json` `timeIndices`. Segmented
@@ -200,11 +212,29 @@ always use available CPU cores (no `--jobs` on Python or `lisca-analyze`).
 
 Details and examples: [`analysis.md`](./analysis.md) § Parity CLI.
 
+### Killing: `lisca-analyze`
+
+`killing` and `killing-engagement` take a workspace path and nothing else.
+Interval and assay type come from `assay.json`. `--interval`, `--assay`, and
+any other flag exit 1. There is no `fluorescence`, `clean`, `predict`, or
+`label-free` command.
+
+| Command | Writes |
+| --- | --- |
+| `killing` | Fluorescence CSVs, `results/<sample>/traces.xlsx`, and `traces.png`, `traces_shared_y.png`, `traces_summary.png`, `traces_summary_shared_y.png` |
+| `killing-engagement` | `analysis/Pos{n}/engagement.csv`, `analysis/Pos{n}/engagement_summary.csv`, the engagement workbooks, and `engagement_traces.png`, `engagement_traces_shared_y.png`, `engagement_traces_summary.png`, `engagement_traces_summary_shared_y.png` |
+
+```sh
+./target/release/lisca-analyze killing ~/data/killing_pi
+./target/release/lisca-analyze killing-engagement ~/data/killing_tcell
+```
+
 ### Side-by-side recipe
 
-Prefer the sidecar’s own recipe when comparing Python vs Rust kernels. From
-this repo, `lisca-analyze` should match `lisca-transfection` because it calls
-that crate:
+The block below is the transfection legacy oracle, not the pattern for killing.
+Prefer the sidecar’s own recipe when comparing transfection Python vs Rust
+kernels. From this repo, `lisca-analyze` should match `lisca-transfection`
+because it calls that crate:
 
 ```sh
 WS=~/data/TF84
@@ -244,8 +274,9 @@ Support kernels for tests: `crates/lisca/tests/support/transfection_reference.rs
   adapter. Pattern-U-Net weights are the sidecar/HF’s, not a new `models/`
   brain.
 - Shared ROI I/O in this crate: `analysis/roi_stack.rs`, `csv_io.rs`, crop.
-- Killing (in-tree until its sidecar exists): death-reporter fluorescence and
-  fluorescent-engagement spot counts, plotted with mplot-rs. Analyze does not
+- Killing: kernels are crate `lisca-killing` at the pinned SHA. This repo keeps
+  dispatch, plots, and scheduling. Death-reporter fluorescence and
+  fluorescent-engagement spot counts are plotted with mplot-rs. Analyze does not
   load a classifier. Desktop packaging does not download or bundle ONNX weights.
 - Progress + HTTP remain in Studio; parity CLI calls the same stage functions.
 
@@ -254,13 +285,14 @@ They are not a licence to transliterate Python line-by-line.
 
 ## Expanding parity to a new assay
 
-1. Mature the science in `lisca-*-assay` (CLI + real data), including a Rust
-   crate when ready to import.
+1. Mature the science in `lisca-*-assay` (library code plus real data, and a
+   local training tool only when the assay needs one), including a Rust crate
+   when ready to import.
 2. Depend on that crate via git URL (no cycle back to this repo). Keep crop
    here until it is truly shared infrastructure.
 3. Register in `assays.rs` + contracts enum when ready for Studio.
-4. Add or extend a **parity binary** with stage subcommands matching the
-   Python CLI names (thin dispatch is enough).
+4. Extend `lisca-analyze` with one command per Studio wire id. The command
+   takes a workspace path only and calls the imported crate.
 5. Run synthetic + one real workspace differential before enabling in
    `ENABLED_STUDIO_ASSAY_IDS`.
 

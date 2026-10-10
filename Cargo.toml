@@ -62,7 +62,7 @@ lisca-transfection = { git = "https://github.com/keejkrej/lisca-transfection-ass
 # classifier (predict, clean, kill curve). Python `killing` in that repo is
 # the same definitions. Lisca does not depend on it: the package also pulls
 # the label-free training stack.
-lisca-killing = { git = "https://github.com/keejkrej/lisca-killing-assay", rev = "cabb4b2495c7e472a333cdfd74fac1bfad91ac7c" }
+lisca-killing = { git = "https://github.com/keejkrej/lisca-killing-assay", rev = "99deb27c9bc6140303797e631c679c544616406c" }
 tauri = "2"
 tauri-build = "2"
 tauri-plugin-dialog = "2"
