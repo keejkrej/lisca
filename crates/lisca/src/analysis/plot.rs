@@ -19,7 +19,7 @@ pub use util::{
 };
 
 use std::collections::BTreeMap;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use mplot::prelude::{AxesStyle, FillBetweenStyle, GridPos, LegendStyle, LineDash, TickFormat};
 use mplot::Color;
@@ -28,120 +28,86 @@ use super::array::quantile;
 use super::sample::SampleMapping;
 use super::traces::TracePanel;
 
-/// Write individual-trace grids plus mean/median/IQR summary companions.
-///
-/// Outputs (when primary is `traces.png`):
-/// `traces.png`, `traces_shared_y.png`, `traces_summary.png`, `traces_summary_shared_y.png`.
-pub(crate) fn write_metric_plots(
+/// One figure per sample. `sample_dir(sample index)` receives
+/// `{file_stem}.png`, `{file_stem}_shared_y.png`, `{file_stem}_summary.png`,
+/// and `{file_stem}_summary_shared_y.png`. Shared scales pool every sample
+/// the way transfection does. The app composes the files.
+pub(crate) fn write_per_sample_metric_plots(
     panels: &[TracePanel],
-    output_plot: &Path,
+    sample_dir: impl Fn(usize) -> PathBuf,
+    file_stem: &str,
     y_label: &str,
     interval: f64,
-    columns: Option<usize>,
     mapping: &SampleMapping,
 ) -> Result<(), String> {
-    let panel_ylims: Vec<(f64, f64)> = panels
+    if panels.is_empty() {
+        return Err("no panels to plot".to_string());
+    }
+    let mut all_y = Vec::new();
+    for panel in panels {
+        all_y.extend_from_slice(&panel.y_values);
+    }
+    let shared_ylim = percentile_ylim(&all_y);
+    let summaries: Vec<Option<SampleSummary>> = panels
         .iter()
-        .map(|panel| percentile_ylim(&panel.y_values))
+        .map(|panel| sample_summary_curves(&panel.traces, interval))
         .collect();
-    let unified_low = panel_ylims
-        .iter()
-        .map(|(low, _)| *low)
-        .fold(f64::INFINITY, f64::min);
-    let unified_high = panel_ylims
-        .iter()
-        .map(|(_, high)| *high)
-        .fold(f64::NEG_INFINITY, f64::max);
-    let shared_ylim = expand_degenerate_ylim(unified_low, unified_high);
-    let shared_y_plot = companion_plot_path(output_plot, "shared_y");
+    let mut summary_values = Vec::new();
+    for summary in summaries.iter().flatten() {
+        summary_values.extend_from_slice(&summary.mean);
+        summary_values.extend_from_slice(&summary.median);
+        summary_values.extend_from_slice(&summary.q25);
+        summary_values.extend_from_slice(&summary.q75);
+    }
+    let shared_summary = percentile_ylim(&summary_values);
 
-    write_subplot_grid(
-        panels,
-        output_plot,
-        y_label,
-        interval,
-        columns,
-        mapping,
-        |index| panel_ylims.get(index).copied().unwrap_or((0.0, 1.0)),
-    )?;
-    write_subplot_grid(
-        panels,
-        &shared_y_plot,
-        y_label,
-        interval,
-        columns,
-        mapping,
-        |_| shared_ylim,
-    )?;
-
-    let summary_plot = companion_plot_path(output_plot, "summary");
-    let summary_shared_y_plot = companion_plot_path(&summary_plot, "shared_y");
-    write_summary_metric_plots(
-        panels,
-        &summary_plot,
-        &summary_shared_y_plot,
-        y_label,
-        interval,
-        columns,
-        mapping,
-    )?;
+    for (index, panel) in panels.iter().enumerate() {
+        let dir = sample_dir(panel.sample);
+        std::fs::create_dir_all(&dir).map_err(|error| error.to_string())?;
+        let primary = dir.join(format!("{file_stem}.png"));
+        let own = percentile_ylim(&panel.y_values);
+        let one = std::slice::from_ref(panel);
+        let summary = summaries.get(index).unwrap_or(&None);
+        let own_summary = summary_ylim(summary.as_ref());
+        write_subplot_grid(one, &primary, y_label, interval, None, mapping, |_| own)?;
+        write_subplot_grid(
+            one,
+            &companion_plot_path(&primary, "shared_y"),
+            y_label,
+            interval,
+            None,
+            mapping,
+            |_| shared_ylim,
+        )?;
+        let summary_plot = companion_plot_path(&primary, "summary");
+        write_summary_subplot_grid(
+            one,
+            std::slice::from_ref(summary),
+            &summary_plot,
+            y_label,
+            None,
+            mapping,
+            |_| own_summary,
+        )?;
+        write_summary_subplot_grid(
+            one,
+            std::slice::from_ref(summary),
+            &companion_plot_path(&summary_plot, "shared_y"),
+            y_label,
+            None,
+            mapping,
+            |_| shared_summary,
+        )?;
+    }
     Ok(())
 }
 
-fn companion_plot_path(primary: &Path, suffix: &str) -> std::path::PathBuf {
+fn companion_plot_path(primary: &Path, suffix: &str) -> PathBuf {
     let stem = primary
         .file_stem()
         .and_then(|stem| stem.to_str())
         .unwrap_or("plot");
     primary.with_file_name(format!("{stem}_{suffix}.png"))
-}
-
-fn write_summary_metric_plots(
-    panels: &[TracePanel],
-    output_plot: &Path,
-    shared_y_plot: &Path,
-    y_label: &str,
-    interval: f64,
-    columns: Option<usize>,
-    mapping: &SampleMapping,
-) -> Result<(), String> {
-    let summaries: Vec<Option<SampleSummary>> = panels
-        .iter()
-        .map(|panel| sample_summary_curves(&panel.traces, interval))
-        .collect();
-    let panel_ylims: Vec<(f64, f64)> = summaries
-        .iter()
-        .map(|summary| summary_ylim(summary.as_ref()))
-        .collect();
-    let unified_low = panel_ylims
-        .iter()
-        .map(|(low, _)| *low)
-        .fold(f64::INFINITY, f64::min);
-    let unified_high = panel_ylims
-        .iter()
-        .map(|(_, high)| *high)
-        .fold(f64::NEG_INFINITY, f64::max);
-    let shared_ylim = expand_degenerate_ylim(unified_low, unified_high);
-
-    write_summary_subplot_grid(
-        panels,
-        &summaries,
-        output_plot,
-        y_label,
-        columns,
-        mapping,
-        |index| panel_ylims.get(index).copied().unwrap_or((0.0, 1.0)),
-    )?;
-    write_summary_subplot_grid(
-        panels,
-        &summaries,
-        shared_y_plot,
-        y_label,
-        columns,
-        mapping,
-        |_| shared_ylim,
-    )?;
-    Ok(())
 }
 
 #[derive(Debug, Clone)]

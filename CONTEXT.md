@@ -168,6 +168,10 @@ _Avoid_: membrane integrity, death label, PI assay
 The killing kind that judges death from brightfield or phase-contrast morphology, with no death reporter.
 _Avoid_: phase-contrast model, ResNet killing
 
+**Engagement**:
+One T cell whose membrane touches a tumor cell inside an ROI.
+_Avoid_: interaction, contact, synapse
+
 ### Batch comparison
 
 **Control**:

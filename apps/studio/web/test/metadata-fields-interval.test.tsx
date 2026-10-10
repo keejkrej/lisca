@@ -108,6 +108,10 @@ describe("MetadataFields interval field across assay switches", () => {
       expect(labelFree.hasAttribute("disabled")).toBe(true);
       expect(labelFree.textContent).toContain("Cytotoxicity timeseries");
       expect(labelFree.textContent).toContain("Brightfield");
+      const engagement = screen.getByRole("button", { name: /Killing \(engagement\)/ });
+      expect(engagement.hasAttribute("disabled")).toBe(false);
+      expect(engagement.textContent).toContain("Engager counts");
+      expect(engagement.textContent).toContain("Fluorescence");
     });
   });
 });

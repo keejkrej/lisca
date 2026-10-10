@@ -2199,6 +2199,7 @@
       "enum": [
         "transfection",
         "killing",
+        "killing-engagement",
         "lnp-binding"
       ]
     },

@@ -49,6 +49,20 @@ export function resetStudioAnalysisRunForTests(): void {
   nextToken = 0;
 }
 
+/**
+ * A cached latest-analysis payload may be an older failure with no result
+ * files. Adopting it while a run is queued or in flight replaces the live
+ * progress with that failure.
+ */
+export function shouldAdoptCachedAnalysisProgress(options: {
+  hasStoredResultFiles: boolean;
+  runActive: boolean;
+  liveStatus: AnalysisProgress["status"] | null;
+}): boolean {
+  if (options.hasStoredResultFiles || options.runActive) return false;
+  return options.liveStatus !== "queued" && options.liveStatus !== "running";
+}
+
 function isTerminal(status: AnalysisProgress["status"]): boolean {
   return status === "completed" || status === "error";
 }

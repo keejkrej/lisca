@@ -47,6 +47,7 @@ export const DEFAULT_FOLDER_SOURCE_TEMPLATE = FOLDER_SOURCE_TEMPLATE_PRESETS[0];
 export const ASSAY_TYPE = {
   TRANSFECTION: "transfection",
   KILLING: "killing",
+  KILLING_ENGAGEMENT: "killing-engagement",
   LNP_BINDING: "lnp-binding",
 } as const;
 
@@ -56,7 +57,11 @@ export type TransfectionAssayType = typeof ASSAY_TYPE.TRANSFECTION;
 export type KillingAssayType = typeof ASSAY_TYPE.KILLING;
 
 /** Assay types selectable in the wizard today. */
-export const ENABLED_STUDIO_ASSAY_IDS = [ASSAY_TYPE.TRANSFECTION, ASSAY_TYPE.KILLING] as const;
+export const ENABLED_STUDIO_ASSAY_IDS = [
+  ASSAY_TYPE.TRANSFECTION,
+  ASSAY_TYPE.KILLING,
+  ASSAY_TYPE.KILLING_ENGAGEMENT,
+] as const;
 
 export type EnabledStudioAssayId = (typeof ENABLED_STUDIO_ASSAY_IDS)[number];
 
@@ -69,6 +74,7 @@ export type EnabledStudioAssayId = (typeof ENABLED_STUDIO_ASSAY_IDS)[number];
 export const ASSAY_DEFAULT_INTERVAL_MINUTES: Partial<Record<StudioAssayType, number>> = {
   [ASSAY_TYPE.TRANSFECTION]: 10,
   [ASSAY_TYPE.KILLING]: 5,
+  [ASSAY_TYPE.KILLING_ENGAGEMENT]: 5,
 };
 
 /**

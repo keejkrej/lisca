@@ -98,7 +98,7 @@ export function fixtureUsage(): string {
     "  aligned    + bbox/PosN.csv and align/PosN.json",
     "  cropped    + roi/PosN/ stacks and index.json",
     "  annotated  + annotations/labels.json and one frame annotation per ROI",
-    "  analyzed   + analysis/PosN/*.csv (transfection) or traces/ + results/ (killing)",
+    "  analyzed   + analysis/PosN/*.csv and results/<sample>/ plots",
     "",
     "Examples:",
     "  # Only test align (source + assay.json, no boxes yet)",

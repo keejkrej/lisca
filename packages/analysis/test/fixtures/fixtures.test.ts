@@ -34,14 +34,13 @@ describe("analysis fixtures", () => {
     const fixture = buildKillingFixture();
     expect(fixture.plots.map((plot) => plot.fileName)).toEqual([
       "traces.png",
-      "kill_curve.png",
-      "death_times.png",
+      "traces_summary.png",
     ]);
     expect(fixture.plots.every((plot) => plot.src?.startsWith("data:image/png;base64,"))).toBe(
       true,
     );
     const { tracePlots, parameterPlots } = loadFixturePlots(fixture);
     expect(tracePlots).toHaveLength(1);
-    expect(parameterPlots).toHaveLength(2);
+    expect(parameterPlots).toHaveLength(1);
   });
 });

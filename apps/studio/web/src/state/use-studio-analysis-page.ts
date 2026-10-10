@@ -4,6 +4,7 @@ import { createEffect } from "solid-js";
 
 import { analysisResultsAtom, analysisResultsIdleAtom } from "../atoms/studio-analysis-atoms";
 import { useStudioAnnotateStore } from "./studio-annotate-store";
+import { shouldAdoptCachedAnalysisProgress, studioAnalysisRunActive } from "./studio-analysis-run";
 import { useStudioStore } from "./studio-store";
 
 export type StudioAnalysisPage = {
@@ -28,7 +29,16 @@ export function useStudioAnalysisPage(): StudioAnalysisPage {
   });
 
   createEffect(() => {
-    if (hasStoredResultFiles()) return;
+    const liveStatus = annotateStore.analysisProgress?.status ?? null;
+    if (
+      !shouldAdoptCachedAnalysisProgress({
+        hasStoredResultFiles: hasStoredResultFiles(),
+        runActive: studioAnalysisRunActive(),
+        liveStatus,
+      })
+    ) {
+      return;
+    }
     const results = resultData(resultsQueryResult());
     if (!results) return;
 

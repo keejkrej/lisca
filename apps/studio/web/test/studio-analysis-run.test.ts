@@ -7,6 +7,7 @@ import {
   resetStudioAnalysisRunForTests,
   runStudioAnalysis,
   scheduleStudioAnalysis,
+  shouldAdoptCachedAnalysisProgress,
   studioAnalysisRunActive,
   type StudioAnalysisRunDeps,
 } from "../src/state/studio-analysis-run";
@@ -132,5 +133,38 @@ describe("studio analysis run", () => {
     expect(scheduled).toBe(false);
     releaseStudioAnalysisRun(token!);
     expect(studioAnalysisRunActive()).toBe(false);
+  });
+});
+
+describe("cached analysis progress", () => {
+  it("does not replace a live run with an older result", () => {
+    expect(
+      shouldAdoptCachedAnalysisProgress({
+        hasStoredResultFiles: false,
+        runActive: true,
+        liveStatus: "queued",
+      }),
+    ).toBe(false);
+    expect(
+      shouldAdoptCachedAnalysisProgress({
+        hasStoredResultFiles: false,
+        runActive: false,
+        liveStatus: "running",
+      }),
+    ).toBe(false);
+    expect(
+      shouldAdoptCachedAnalysisProgress({
+        hasStoredResultFiles: true,
+        runActive: false,
+        liveStatus: null,
+      }),
+    ).toBe(false);
+    expect(
+      shouldAdoptCachedAnalysisProgress({
+        hasStoredResultFiles: false,
+        runActive: false,
+        liveStatus: null,
+      }),
+    ).toBe(true);
   });
 });

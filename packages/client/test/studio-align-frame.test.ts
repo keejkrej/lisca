@@ -25,6 +25,7 @@ describe("studio align frame", () => {
 
   it("uses the first frame for killing and the last frame for transfection", () => {
     expect(studioAlignFrameDefault("killing")).toBe("first");
+    expect(studioAlignFrameDefault("killing-engagement")).toBe("first");
     expect(studioAlignFrameDefault("transfection")).toBe("last");
     expect(studioAlignFrameDefault(null)).toBe("last");
 

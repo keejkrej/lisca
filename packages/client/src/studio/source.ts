@@ -45,11 +45,13 @@ function firstOrZero(values: readonly number[] | undefined): number {
 
 export type StudioAlignFrameDefault = "first" | "last";
 
-/** Killing starts on the first frame. Every other assay starts on the last. */
+/** Killing assays start on the first frame. Every other assay starts on the last. */
 export function studioAlignFrameDefault(
   assayId: string | null | undefined,
 ): StudioAlignFrameDefault {
-  return assayId === ASSAY_TYPE.KILLING ? "first" : "last";
+  return assayId === ASSAY_TYPE.KILLING || assayId === ASSAY_TYPE.KILLING_ENGAGEMENT
+    ? "first"
+    : "last";
 }
 
 export function defaultStudioAlignTime(

@@ -348,28 +348,33 @@ function writeAnalysisOutputs(write: WriteRel, assay: FixtureAssay): void {
 
   for (const pos of positions) {
     const rows = [
-      "roi,t,p_dead",
+      "roi,t,area,background,sum,corrected",
       ...rois.flatMap((roi) =>
-        times.map((t) => `${roi},${t},${(0.08 * roi + 0.3 * t).toFixed(2)}`),
+        times.map((t) => {
+          const area = roiWidth * roiHeight;
+          const background = 10;
+          const sum = 40 + roi * 10 + t * 40 + pos * 5;
+          const corrected = sum - area * background;
+          return `${roi},${t},${area},${background.toFixed(1)},${sum.toFixed(1)},${corrected.toFixed(1)}`;
+        }),
       ),
     ];
-    write(join("traces", `Pos${pos}`, `ch${signalChannel}.csv`), `${rows.join("\n")}\n`);
+    write(join("analysis", `Pos${pos}`, `ch${signalChannel}.csv`), `${rows.join("\n")}\n`);
   }
-  writeKillingResults(write);
-  for (const plot of KILLING_PLOTS) {
-    const [r, g, b] = colorFromName(plot.fileName);
-    write(join("results", plot.fileName), encodeRgbPng(32, 18, r, g, b));
+  for (const sampleDir of killingSampleDirnames()) {
+    for (const plot of KILLING_PLOTS) {
+      const [r, g, b] = colorFromName(plot.fileName);
+      write(join("results", sampleDir, plot.fileName), encodeRgbPng(32, 18, r, g, b));
+    }
   }
+}
+
+function killingSampleDirnames(): string[] {
+  return KILLING_FIXTURE_SAMPLES.map((sample) => filesystemSafeSampleName(sample.name));
 }
 
 function transfectionSampleDirname(): string {
   return filesystemSafeSampleName(TRANSFECTION_FIXTURE_SAMPLE);
-}
-
-function killingSampleForPosition(pos: number): string {
-  const sample = KILLING_FIXTURE_SAMPLES.find((entry) => entry.position === pos);
-  if (!sample) throw new Error(`no killing fixture sample for Pos${pos}`);
-  return sample.name;
 }
 
 /** Match lisca-transfection `filesystem_safe_sample_name` for `results/<sample>/`. */
@@ -440,39 +445,6 @@ function writeTransfectionPlots(write: WriteRel): void {
   }
 }
 
-function writeKillingResults(write: WriteRel): void {
-  const { positions, rois, times } = FIXTURE_LAYOUT;
-  const predictions = ["t,crop,p_dead,label,pos,sample"];
-  const cleaned = ["t,crop,label,pos,sample"];
-  const death = ["crop,death_time,pos,sample"];
-  const curve = ["t,n_alive,sample"];
-
-  for (const pos of positions) {
-    const sample = killingSampleForPosition(pos);
-    for (const roi of rois) {
-      for (const t of times) {
-        const pDead = 0.08 * roi + 0.3 * t;
-        const label = pDead >= 0.5;
-        predictions.push(`${t},${roi},${pDead.toFixed(2)},${label},${pos},${sample}`);
-        cleaned.push(`${t},${roi},${label},${pos},${sample}`);
-      }
-      death.push(`${roi},${times[times.length - 1]},${pos},${sample}`);
-    }
-  }
-  for (const { name: sample } of KILLING_FIXTURE_SAMPLES) {
-    let alive = 2;
-    for (const t of times) {
-      curve.push(`${t},${alive},${sample}`);
-      alive = Math.max(0, alive - 1);
-    }
-  }
-
-  write("results/predictions.csv", `${predictions.join("\n")}\n`);
-  write("results/predictions_cleaned.csv", `${cleaned.join("\n")}\n`);
-  write("results/death_times.csv", `${death.join("\n")}\n`);
-  write("results/kill_curve.csv", `${curve.join("\n")}\n`);
-}
-
 function fillRect(
   pixels: Uint8Array,
   width: number,
@@ -520,10 +492,9 @@ export function expectedKeyPaths(assay: FixtureAssay, stage: FixtureStage): stri
       );
     } else {
       paths.push(
-        `traces/Pos1/ch${FIXTURE_LAYOUT.signalChannel}.csv`,
-        "results/traces.png",
-        "results/kill_curve.csv",
-        "results/death_times.png",
+        `analysis/Pos1/ch${FIXTURE_LAYOUT.signalChannel}.csv`,
+        `results/${killingSampleDirnames()[0]}/traces.png`,
+        `results/${killingSampleDirnames()[0]}/traces_summary.png`,
       );
     }
   }

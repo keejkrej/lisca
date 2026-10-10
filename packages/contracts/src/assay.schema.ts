@@ -11,11 +11,14 @@ import { F64, U32 } from "./schema/primitives";
  */
 
 /** Assay kind (root `type`). Distinct from `data.type` (source kind). */
-export const AssayTypeSchema = Schema.Literals(["transfection", "killing", "lnp-binding"]).annotate(
-  {
-    identifier: "AssayType",
-  },
-);
+export const AssayTypeSchema = Schema.Literals([
+  "transfection",
+  "killing",
+  "killing-engagement",
+  "lnp-binding",
+]).annotate({
+  identifier: "AssayType",
+});
 
 export const AssayIntervalUnitSchema = Schema.Literals(["second", "minute", "hour"]).annotate({
   identifier: "AssayIntervalUnit",

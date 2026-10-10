@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vite-plus/test";
 
 import {
+  STUDIO_TASK_CENTER_OPEN_HOLD_MS,
+  studioTaskCenterOpenIsHeld,
+} from "../src/components/studio-task-center-open";
+import {
   filterStudioTasks,
   taskMatchesStudioTaskScope,
   studioTaskCenterCopy,
@@ -39,6 +43,12 @@ describe("studio task scope", () => {
       emptyTitle: "No crop tasks yet",
       emptyMessage: "Long-running crop computations will appear here.",
     });
+    expect(studioTaskCenterOpenIsHeld(1_000, 1_000 + STUDIO_TASK_CENTER_OPEN_HOLD_MS - 1)).toBe(
+      true,
+    );
+    expect(studioTaskCenterOpenIsHeld(1_000, 1_000 + STUDIO_TASK_CENTER_OPEN_HOLD_MS)).toBe(false);
+    expect(studioTaskCenterOpenIsHeld(0, 1_000)).toBe(false);
+
     expect(studioTaskCenterCopy("analysis")).toEqual({
       label: "Tasks",
       title: "Tasks",

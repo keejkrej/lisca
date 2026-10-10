@@ -21,6 +21,11 @@ const ASSAY_CHOICE_DETAIL: Record<
     description: "Cytotoxicity timeseries",
     readout: "Fluorescence",
   },
+  "killing-engagement": {
+    title: "Killing (engagement)",
+    description: "Engager counts",
+    readout: "Fluorescence",
+  },
   "lnp-binding": {
     title: "LNP binding",
     description: "Nanoparticle binding over time",

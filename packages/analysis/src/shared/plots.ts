@@ -1,9 +1,9 @@
-import { KILLING_PLOTS, type KillingPlotSpec } from "../assays/killing/catalog";
+import { ENGAGEMENT_PLOTS, KILLING_PLOTS, type KillingPlotSpec } from "../assays/killing/catalog";
 import { TRANSFECTION_PLOTS, type TransfectionPlotSpec } from "../assays/transfection/catalog";
 
 export type ResultPlotSection = "traces" | "parameters";
 
-export type ResultAssayKind = "transfection" | "killing" | "unknown";
+export type ResultAssayKind = "transfection" | "killing" | "killing-engagement" | "unknown";
 
 export type ResultPlotSpec = TransfectionPlotSpec | KillingPlotSpec;
 
@@ -21,6 +21,15 @@ export type ResultFileRef = {
   fileName: string;
   path: string;
 };
+
+const ENGAGEMENT_MARKERS = new Set([
+  "engagement_traces.png",
+  "engagement_traces_shared_y.png",
+  "engagement_traces_summary.png",
+  "engagement_traces_summary_shared_y.png",
+  "engagement_counts.csv",
+  "engagement_summary.csv",
+]);
 
 const KILLING_MARKERS = new Set([
   "kill_curve.csv",
@@ -44,19 +53,21 @@ export function isPlotFile(file: ResultFileRef): boolean {
 }
 
 export function inferResultAssayKind(files: ResultFileRef[]): ResultAssayKind {
+  if (files.some((file) => ENGAGEMENT_MARKERS.has(file.fileName))) return "killing-engagement";
   if (files.some((file) => KILLING_MARKERS.has(file.fileName))) return "killing";
   if (files.some((file) => TRANSFECTION_MARKERS.has(file.fileName))) return "transfection";
   return "unknown";
 }
 
 export function catalogForAssay(assay: ResultAssayKind): readonly ResultPlotSpec[] {
+  if (assay === "killing-engagement") return ENGAGEMENT_PLOTS;
   if (assay === "killing") return KILLING_PLOTS;
   return TRANSFECTION_PLOTS;
 }
 
 export function resultSectionLabel(section: ResultPlotSection, assay: ResultAssayKind): string {
   if (section === "traces") return "Traces";
-  if (assay === "killing") return "Survival";
+  if (assay === "killing" || assay === "killing-engagement") return "Compare";
   return "Parameters";
 }
 
@@ -65,12 +76,14 @@ export function resultSectionInstruction(
   assay: ResultAssayKind,
 ): string {
   if (section === "traces") {
+    if (assay === "killing-engagement") return "Engager count for each cell.";
     return assay === "killing"
-      ? "Death-probability traces (P(dead)) for each sample."
+      ? "Fluorescence time series for each cell."
       : "Intensity, area, and fitted traces for each sample.";
   }
+  if (assay === "killing-engagement") return "Mean engager count for each sample.";
   return assay === "killing"
-    ? "Survival curve and death-time distributions."
+    ? "Mean fluorescence for each sample."
     : "Fitted parameters: mRNA lifetime τ_mRNA, AUC, expression rate m0 k_TL, and onset time t0.";
 }
 

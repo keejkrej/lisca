@@ -2,6 +2,7 @@
 //! another `assayId`, then register it in `run`.
 
 pub mod killing;
+pub mod killing_engagement;
 pub mod transfection;
 
 use std::path::PathBuf;
@@ -13,12 +14,14 @@ use crate::protocol::{AnalysisCsvFile, AnalysisProgress, AssayJsonFile, AssayTyp
 enum SupportedAssay {
     Transfection,
     Killing,
+    KillingEngagement,
 }
 
 fn dispatch(assay_id: AssayType) -> Result<SupportedAssay, AnalysisError> {
     match assay_id {
         AssayType::Transfection => Ok(SupportedAssay::Transfection),
         AssayType::Killing => Ok(SupportedAssay::Killing),
+        AssayType::KillingEngagement => Ok(SupportedAssay::KillingEngagement),
         AssayType::LnpBinding => Err(AnalysisError::UnsupportedAssay { assay_id }),
     }
 }
@@ -40,6 +43,11 @@ where
         }
         SupportedAssay::Killing => {
             killing::run(workspace_path, request_id, assay_json, update_progress)
+                .await
+                .map_err(AnalysisError::Failed)
+        }
+        SupportedAssay::KillingEngagement => {
+            killing_engagement::run(workspace_path, request_id, assay_json, update_progress)
                 .await
                 .map_err(AnalysisError::Failed)
         }

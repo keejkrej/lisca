@@ -106,6 +106,9 @@ fn build_analysis_task(
     match assay.type_ {
         AssayType::Transfection => build_transfection_task(scheduler, workspace, assay),
         AssayType::Killing => build_killing_task(scheduler, workspace, assay, request_id),
+        AssayType::KillingEngagement => {
+            build_engagement_task(scheduler, workspace, assay, request_id)
+        }
         assay_id => {
             let step = analysis_step(
                 format!("analysis/unsupported/{assay_id}"),
@@ -294,7 +297,7 @@ fn build_killing_task(
     scheduler: &lisca_server::TaskScheduler,
     workspace: PathBuf,
     assay: AssayJsonFile,
-    request_id: &str,
+    _request_id: &str,
 ) -> Result<lisca::protocol::TaskDetail, lisca_server::SchedulerError> {
     use lisca::analysis::{
         assays::killing,
@@ -319,19 +322,6 @@ fn build_killing_task(
     };
     let interval = parse_interval_minutes(assay.interval.value, Some(assay.interval.unit.as_str()))
         .unwrap_or(1.0);
-    let safe_request_id = request_id
-        .chars()
-        .map(|character| {
-            if character.is_ascii_alphanumeric() || matches!(character, '-' | '_') {
-                character
-            } else {
-                '_'
-            }
-        })
-        .collect::<String>();
-    let staging_root = workspace
-        .join(".analysis-staging")
-        .join(format!("killing-{safe_request_id}"));
     let mut steps = Vec::new();
 
     let prepare = analysis_step(
@@ -342,89 +332,26 @@ fn build_killing_task(
     let prepare_id = prepare.step_id().to_string();
     steps.push(prepare);
 
-    let mut predict_ids = Vec::new();
-    let mut shard_paths = Vec::new();
-    // A predict step owns an ONNX session and a decoded batch. Weight equal to
-    // the scheduler capacity keeps the next position queued until this one
-    // drops both. Running one position per core stalled an 8 GB machine.
-    let predict_weight = scheduler.capacity();
+    // One step per Position measures the signal channel of each existing crop.
+    // There is no classifier session, so these steps stay at weight 1.
+    let mut trace_ids = Vec::new();
     for position in mapping.positions() {
-        let shard_mapping = Arc::new(mapping.for_position(position));
-        let shard_path = staging_root.join(format!("Pos{position}"));
-        shard_paths.push(shard_path.clone());
-        let step_workspace = workspace.clone();
-        let step_shard = shard_path;
-        let step = StepSpec::new(
-            format!("analysis/killing/predict/Pos{position}"),
-            predict_weight,
-            move |context| {
-                let step_workspace = step_workspace.clone();
-                let step_shard = step_shard.clone();
-                let shard_mapping = shard_mapping.clone();
-                async move {
-                    context.checkpoint()?;
-                    let cancel_context = context.clone();
-                    let progress_context = context.clone();
-                    let outcome = tokio::task::spawn_blocking(move || {
-                        // spawn_blocking keeps running after the task is cancelled,
-                        // so the batch loop has to observe the flag and return.
-                        let is_cancelled = || cancel_context.is_cancellation_requested();
-                        let on_frames = |completed, total| {
-                            let _ = progress_context.report_work_progress(
-                                "frame",
-                                completed,
-                                total,
-                                Some("predict".to_string()),
-                                None,
-                            );
-                        };
-                        let model = killing::resolve_model_path(&step_workspace)?;
-                        killing::run_predict_shard_controlled(
-                            &step_workspace,
-                            &step_shard,
-                            &shard_mapping,
-                            &model,
-                            &killing::PredictControl {
-                                is_cancelled: &is_cancelled,
-                                on_frames: &on_frames,
-                            },
-                        )
-                    })
-                    .await
-                    .map_err(|error| {
-                        StepFailure::new("analysis_worker_failed", error.to_string())
-                    })?;
-                    match outcome {
-                        Err(killing::PredictFailure::Cancelled) => Err(StepFailure::cancelled()),
-                        Err(killing::PredictFailure::Failed(message)) => {
-                            context.checkpoint()?;
-                            Err(StepFailure::new("analysis_stage_failed", message))
-                        }
-                        Ok(()) => context.checkpoint(),
-                    }
-                }
-            },
-        )
-        .with_dependencies([prepare_id.clone()]);
-        predict_ids.push(step.step_id().to_string());
-        steps.push(step);
+        let shard = Arc::new(mapping.for_position(position));
+        let traces_workspace = workspace.clone();
+        let traces = analysis_step(
+            format!("analysis/killing/traces/Pos{position}"),
+            vec![prepare_id.clone()],
+            Arc::new(move || killing::run_position_traces(&traces_workspace, &shard, position)),
+        );
+        trace_ids.push(traces.step_id().to_string());
+        steps.push(traces);
     }
 
-    let merge_workspace = workspace.clone();
-    let merge_shards = shard_paths.clone();
-    let merge = analysis_step(
-        "analysis/killing/merge-predictions",
-        predict_ids,
-        Arc::new(move || killing::merge_prediction_shards(&merge_workspace, &merge_shards)),
-    );
-    let merge_id = merge.step_id().to_string();
-    steps.push(merge);
-
     let plot_traces_workspace = workspace.clone();
-    let plot_traces_mapping = mapping.clone();
+    let plot_traces_mapping = mapping;
     let plot_traces = analysis_step(
         "analysis/killing/plot-traces",
-        vec![merge_id.clone()],
+        trace_ids,
         Arc::new(move || {
             killing::run_plot_traces_stage(&plot_traces_workspace, &plot_traces_mapping, interval)
         }),
@@ -432,54 +359,119 @@ fn build_killing_task(
     let plot_traces_id = plot_traces.step_id().to_string();
     steps.push(plot_traces);
 
-    let clean_workspace = workspace.clone();
-    let clean_mapping = mapping.clone();
-    let clean = analysis_step(
-        "analysis/killing/clean",
-        vec![merge_id],
-        Arc::new(move || killing::run_clean_stage(&clean_workspace, &clean_mapping)),
-    );
-    let clean_id = clean.step_id().to_string();
-    steps.push(clean);
-
-    let kill_workspace = workspace.clone();
-    let kill_mapping = mapping.clone();
-    let plot_kill = analysis_step(
-        "analysis/killing/plot-kill",
-        vec![clean_id.clone()],
-        Arc::new(move || killing::run_plot_kill_stage(&kill_workspace, &kill_mapping, interval)),
-    );
-    let plot_kill_id = plot_kill.step_id().to_string();
-    steps.push(plot_kill);
-
-    let death_workspace = workspace.clone();
-    let death_mapping = mapping;
-    let plot_death = analysis_step(
-        "analysis/killing/plot-death-times",
-        vec![clean_id],
-        Arc::new(move || {
-            killing::run_plot_death_times_stage(&death_workspace, &death_mapping, interval)
-        }),
-    );
-    let plot_death_id = plot_death.step_id().to_string();
-    steps.push(plot_death);
-
     let finalize_workspace = workspace.clone();
-    let finalize_staging = staging_root;
     steps.push(analysis_step(
         "analysis/killing/finalize",
-        vec![plot_traces_id, plot_kill_id, plot_death_id],
-        Arc::new(move || {
-            analysis::workspace_analysis_manifest(&finalize_workspace)?;
-            if finalize_staging.exists() {
-                fs::remove_dir_all(&finalize_staging).map_err(|error| error.to_string())?;
-            }
-            Ok(())
-        }),
+        vec![plot_traces_id],
+        Arc::new(move || analysis::workspace_analysis_manifest(&finalize_workspace).map(|_| ())),
     ));
 
     scheduler.submit(TaskSpec::new(
         "analysis/killing",
+        workspace.to_string_lossy(),
+        true,
+        steps,
+    ))
+}
+
+fn build_engagement_task(
+    scheduler: &lisca_server::TaskScheduler,
+    workspace: PathBuf,
+    assay: AssayJsonFile,
+    _request_id: &str,
+) -> Result<lisca::protocol::TaskDetail, lisca_server::SchedulerError> {
+    use lisca::analysis::{
+        assays::killing_engagement,
+        sample::{build_sample_mapping, parse_interval_minutes},
+    };
+
+    let mapping = match build_sample_mapping(&assay) {
+        Ok(mapping) => Arc::new(mapping),
+        Err(message) => {
+            let step = analysis_step(
+                "analysis/killing-engagement/prepare",
+                Vec::new(),
+                Arc::new(move || Err(message.clone())),
+            );
+            return scheduler.submit(TaskSpec::new(
+                "analysis/killing-engagement",
+                workspace.to_string_lossy(),
+                true,
+                vec![step],
+            ));
+        }
+    };
+    let interval = parse_interval_minutes(assay.interval.value, Some(assay.interval.unit.as_str()))
+        .unwrap_or(1.0);
+    let mut steps = Vec::new();
+    let prepare = analysis_step(
+        "analysis/killing-engagement/prepare",
+        Vec::new(),
+        Arc::new(move || Ok(())),
+    );
+    let prepare_id = prepare.step_id().to_string();
+    steps.push(prepare);
+
+    let mut count_ids = Vec::new();
+    let count_weight = scheduler.capacity();
+    for position in mapping.positions() {
+        let step_mapping = Arc::new(mapping.for_position(position));
+        let step_workspace = workspace.clone();
+        let step = StepSpec::new(
+            format!("analysis/killing-engagement/count/Pos{position}"),
+            count_weight,
+            move |context| {
+                let step_workspace = step_workspace.clone();
+                let step_mapping = step_mapping.clone();
+                async move {
+                    context.checkpoint()?;
+                    let outcome = tokio::task::spawn_blocking(move || {
+                        killing_engagement::run_position(
+                            &step_workspace,
+                            &step_mapping,
+                            position,
+                            interval,
+                        )
+                    })
+                    .await
+                    .map_err(|error| {
+                        StepFailure::new("analysis_worker_failed", error.to_string())
+                    })?;
+                    outcome
+                        .map_err(|message| StepFailure::new("analysis_stage_failed", message))?;
+                    context.checkpoint()
+                }
+            },
+        )
+        .with_dependencies([prepare_id.clone()]);
+        count_ids.push(step.step_id().to_string());
+        steps.push(step);
+    }
+
+    let plot_workspace = workspace.clone();
+    let summary_mapping = std::sync::Arc::clone(&mapping);
+    let plot_mapping = mapping;
+    let plot = analysis_step(
+        "analysis/killing-engagement/plot-traces",
+        count_ids,
+        Arc::new(move || {
+            killing_engagement::run_plot_traces(&plot_workspace, &plot_mapping, interval)
+        }),
+    );
+    let plot_id = plot.step_id().to_string();
+    steps.push(plot);
+
+    let summary_workspace = workspace.clone();
+    steps.push(analysis_step(
+        "analysis/killing-engagement/finalize",
+        vec![plot_id],
+        Arc::new(move || {
+            killing_engagement::write_summary(&summary_workspace, &summary_mapping)?;
+            analysis::workspace_analysis_manifest(&summary_workspace).map(|_| ())
+        }),
+    ));
+    scheduler.submit(TaskSpec::new(
+        "analysis/killing-engagement",
         workspace.to_string_lossy(),
         true,
         steps,
@@ -744,7 +736,11 @@ mod tests {
 
     #[tokio::test]
     async fn assay_tasks_expose_real_fan_out_and_fan_in_graphs() {
-        for assay_id in [AssayType::Transfection, AssayType::Killing] {
+        for assay_id in [
+            AssayType::Transfection,
+            AssayType::Killing,
+            AssayType::KillingEngagement,
+        ] {
             let state = TestState::new();
             let workspace = graph_workspace(assay_id);
             let assay = load_assay_json(&workspace).unwrap();
@@ -754,6 +750,7 @@ mod tests {
             let prefix = match assay_id {
                 AssayType::Transfection => "analysis/transfection",
                 AssayType::Killing => "analysis/killing",
+                AssayType::KillingEngagement => "analysis/killing-engagement",
                 _ => unreachable!(),
             };
             let position_step_count = detail
@@ -761,7 +758,9 @@ mod tests {
                 .iter()
                 .filter(|step| {
                     step.step_kind.starts_with(&format!("{prefix}/segment/Pos"))
-                        || step.step_kind.starts_with(&format!("{prefix}/predict/Pos"))
+                        || (assay_id == AssayType::Killing
+                            && step.step_kind.starts_with(&format!("{prefix}/traces/Pos")))
+                        || step.step_kind.starts_with(&format!("{prefix}/count/Pos"))
                 })
                 .count();
             assert_eq!(position_step_count, 2);
@@ -770,10 +769,16 @@ mod tests {
                 .iter()
                 .find(|step| {
                     step.step_kind == "analysis/transfection/auc"
-                        || step.step_kind.ends_with("/merge-predictions")
+                        || step.step_kind == "analysis/killing/plot-traces"
+                        || step.step_kind == "analysis/killing-engagement/plot-traces"
                 })
                 .unwrap();
             assert_eq!(fan_in.dependencies.len(), 2);
+            if assay_id == AssayType::Killing {
+                assert!(detail.steps.iter().all(|step| {
+                    !step.step_kind.contains("predict") && !step.step_kind.contains("clean")
+                }));
+            }
             if assay_id == AssayType::Transfection {
                 // Traces fan out per Position, each waiting on its own segment Step.
                 for position in [0, 1] {

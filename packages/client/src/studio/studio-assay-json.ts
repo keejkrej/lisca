@@ -25,6 +25,7 @@ import { analysisChannelsFromSamples } from "./sample-positions";
 export const ASSAY_CHOICE_LABEL: Record<StudioAssayType, string> = {
   [ASSAY_TYPE.TRANSFECTION]: "Transfection",
   [ASSAY_TYPE.KILLING]: "Killing",
+  [ASSAY_TYPE.KILLING_ENGAGEMENT]: "Killing (engagement)",
   [ASSAY_TYPE.LNP_BINDING]: "LNP binding",
 };
 
