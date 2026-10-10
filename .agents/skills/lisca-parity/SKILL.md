@@ -152,12 +152,12 @@ documented or re-run; docs list the stage.
 
 ## Quick map (see docs for full table)
 
-| Assay id         | Goal source (sibling)                       | Rust                                                         | Parity CLI            |
-| ---------------- | ------------------------------------------- | ------------------------------------------------------------ | --------------------- |
-| `transfection`   | `lisca-transfection-assay` (`transfection`) | git crate `lisca-transfection` + thin `assays/transfection/` | `lisca-analyze`       |
-| `killing-death-reporter` | `lisca-killing-assay`    | git crate `lisca-killing` + thin dispatch | `lisca-analyze killing-death-reporter` |
-| `killing-engagement` | `lisca-killing-assay`    | git crate `lisca-killing` + thin dispatch | `lisca-analyze killing-engagement`   |
-| binding (future)     | `../lisca-binding-assay` | (not registered until mature)             | —                                    |
+| Assay id                 | Goal source (sibling)                       | Rust                                                         | Parity CLI                             |
+| ------------------------ | ------------------------------------------- | ------------------------------------------------------------ | -------------------------------------- |
+| `transfection`           | `lisca-transfection-assay` (`transfection`) | git crate `lisca-transfection` + thin `assays/transfection/` | `lisca-analyze`                        |
+| `killing-death-reporter` | `lisca-killing-assay`                       | git crate `lisca-killing` + thin dispatch                    | `lisca-analyze killing-death-reporter` |
+| `killing-engagement`     | `lisca-killing-assay`                       | git crate `lisca-killing` + thin dispatch                    | `lisca-analyze killing-engagement`     |
+| binding (future)         | `../lisca-binding-assay`                    | (not registered until mature)                                | —                                      |
 
 ## Completion checklist
 

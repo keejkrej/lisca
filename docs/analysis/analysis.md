@@ -61,10 +61,10 @@ mature assays. ROI stacks under `roi/` come from **Studio crop**, CLI (`lisca-cr
 or the notebooks zip (`lisca.services.crop` in `python/`) — not from the light Aligner shell. The running workflow
 depends on `assay.json` → root `type`:
 
-| Assay          | Goal source (not implementation reference)                                                                                    | Pipeline                                                                                       |
-| -------------- | ----------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| `transfection` | [`lisca-transfection-assay`](https://github.com/keejkrej/lisca-transfection-assay) — Python + Rust crate imported via git URL | segment → traces → AUC → fit (+ plots) in `lisca-transfection`; Studio ONNX segment stays here |
-| `killing-death-reporter` | Death reporter. Signal-channel fluorescence in each ROI crop. No classifier and no fit. | traces → plot-traces |
+| Assay                    | Goal source (not implementation reference)                                                                                    | Pipeline                                                                                       |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `transfection`           | [`lisca-transfection-assay`](https://github.com/keejkrej/lisca-transfection-assay) — Python + Rust crate imported via git URL | segment → traces → AUC → fit (+ plots) in `lisca-transfection`; Studio ONNX segment stays here |
+| `killing-death-reporter` | Death reporter. Signal-channel fluorescence in each ROI crop. No classifier and no fit.                                       | traces → plot-traces                                                                           |
 
 Numeric stages and PNG plots for transfection run in the imported
 [`lisca-transfection`](https://github.com/keejkrej/lisca-transfection-assay) crate
@@ -221,11 +221,11 @@ analysis/
     killing.rs + killing/
 ```
 
-| Module                                | Goal                                                              |
-| ------------------------------------- | ----------------------------------------------------------------- |
-| `assays/transfection/`                | Dispatch into `lisca-transfection`; Studio ONNX adapter           |
-| `assays/transfection/segment_onnx.rs` | Studio ONNX adapter; weights via `LISCA_PATTERN_SEG_MODEL` / HF   |
-| `lisca-transfection` (git)            | Otsu, traces, AUC, kinetic fit, PNG plots, sample XLSX publishers |
+| Module                                | Goal                                                                       |
+| ------------------------------------- | -------------------------------------------------------------------------- |
+| `assays/transfection/`                | Dispatch into `lisca-transfection`; Studio ONNX adapter                    |
+| `assays/transfection/segment_onnx.rs` | Studio ONNX adapter; weights via `LISCA_PATTERN_SEG_MODEL` / HF            |
+| `lisca-transfection` (git)            | Otsu, traces, AUC, kinetic fit, PNG plots, sample XLSX publishers          |
 | `assays/killing/`                     | Dispatch into `lisca-killing`; kill-curve and death-time figures stay here |
 
 Adding a new assay type: create `assays/<name>.rs` plus `assays/<name>/`, implement `run` (async) and optionally `run_sync`, then register in `assays.rs`.

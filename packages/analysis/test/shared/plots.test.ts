@@ -13,8 +13,12 @@ import {
 
 describe("inferResultAssayKind", () => {
   it("detects killing from kill-curve PNGs", () => {
-    expect(inferResultAssayKind([{ fileName: "kill_curve.png", path: "" }])).toBe("killing-death-reporter");
-    expect(inferResultAssayKind([{ fileName: "death_times.csv", path: "" }])).toBe("killing-death-reporter");
+    expect(inferResultAssayKind([{ fileName: "kill_curve.png", path: "" }])).toBe(
+      "killing-death-reporter",
+    );
+    expect(inferResultAssayKind([{ fileName: "death_times.csv", path: "" }])).toBe(
+      "killing-death-reporter",
+    );
   });
 
   it("detects transfection from AUC or fit plot artifacts", () => {

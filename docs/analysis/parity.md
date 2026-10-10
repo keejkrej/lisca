@@ -11,11 +11,11 @@ named for the product. Transfection's stage CLI is the historical shape for
 that assay only. Killing (death reporter) is `killing-death-reporter` on
 `lisca-analyze` and in `assay.json`.
 
-| Sibling package (R&D + prod kernels)                                               | Role                                                                                                                                                                                                       |
-| ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`lisca-transfection-assay`](https://github.com/keejkrej/lisca-transfection-assay) | Transfection analysis: Python `transfection` + Rust `lisca-transfection` (git URL). Parity: that repo’s [`docs/parity.md`](https://github.com/keejkrej/lisca-transfection-assay/blob/main/docs/parity.md). |
+| Sibling package (R&D + prod kernels)                                               | Role                                                                                                                                                                                                          |
+| ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`lisca-transfection-assay`](https://github.com/keejkrej/lisca-transfection-assay) | Transfection analysis: Python `transfection` + Rust `lisca-transfection` (git URL). Parity: that repo’s [`docs/parity.md`](https://github.com/keejkrej/lisca-transfection-assay/blob/main/docs/parity.md).    |
 | [`lisca-killing-assay`](https://github.com/keejkrej/lisca-killing-assay)           | Death-reporter fluorescence, fluorescent engagement, and the killing classifier (predict, clean, kill curve): Python `killing` + Rust `lisca-killing` (git URL). Label-free viability stays in that repo too. |
-| `lisca-binding-assay` (planned)                                                    | Binding / LNP-style assays before Studio registration                                                                                                                                                      |
+| `lisca-binding-assay` (planned)                                                    | Binding / LNP-style assays before Studio registration                                                                                                                                                         |
 
 **Crop** (`lisca-crop`, ND2/CZI, bbox → `roi/`) stays in this monorepo. It is
 shared across assays and is not part of `lisca-transfection-assay`.
@@ -39,13 +39,13 @@ workflow: [`/lisca-parity`](../../.agents/skills/lisca-parity/SKILL.md).
 
 ## Roles
 
-| Layer                                             | Responsibility                                                                      |
-| ------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| **Goal source** (Python `lisca-*-assay`)                 | Scientific definitions, output paths, CSV columns, and plot names. Flags in this file are transfection stage flags. |
-| **Imported crate** (`lisca-transfection`, `lisca-killing`) | Idiomatic Rust kernels. Studio and `lisca-analyze` call the crate.                                                                                    |
-| **In-tree port** (`crates/lisca`)                        | Crop, plus killing dispatch and plots.                                                                                                                 |
-| **Parity cage**                                          | Transfection shell-out tests stay in the sidecar. Killing unit tests are `pytest` and `cargo test -p lisca-killing` in the side repo, plus the Lisca dispatch tests. Killing does not gain a shell-out cage. |
-| **Studio UI** (`@lisca/analysis`, Studio web)     | Consume workspace outputs; chart catalogs must match file/column contracts          |
+| Layer                                                      | Responsibility                                                                                                                                                                                               |
+| ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Goal source** (Python `lisca-*-assay`)                   | Scientific definitions, output paths, CSV columns, and plot names. Flags in this file are transfection stage flags.                                                                                          |
+| **Imported crate** (`lisca-transfection`, `lisca-killing`) | Idiomatic Rust kernels. Studio and `lisca-analyze` call the crate.                                                                                                                                           |
+| **In-tree port** (`crates/lisca`)                          | Crop, plus killing dispatch and plots.                                                                                                                                                                       |
+| **Parity cage**                                            | Transfection shell-out tests stay in the sidecar. Killing unit tests are `pytest` and `cargo test -p lisca-killing` in the side repo, plus the Lisca dispatch tests. Killing does not gain a shell-out cage. |
+| **Studio UI** (`@lisca/analysis`, Studio web)              | Consume workspace outputs; chart catalogs must match file/column contracts                                                                                                                                   |
 
 **Not required:** matching Python module trees, NumPy evaluation order, process
 pools, or bitwise float identity.
@@ -80,12 +80,12 @@ pools, or bitwise float identity.
 
 ## Assay map
 
-| Studio `assayId`                                        | Goal source + Rust                                                           | This repo                                                             | Parity CLI                            | Notes                                                              |
-| ------------------------------------------------------- | ---------------------------------------------------------------------------- | --------------------------------------------------------------------- | ------------------------------------- | ------------------------------------------------------------------ |
-| `transfection` (Studio wire id; science = transfection) | `lisca-transfection-assay` (`transfection` CLI + `lisca-transfection` crate) | Thin dispatch in `analysis/assays/transfection/` + local ONNX segment | `lisca-analyze` (calls the git crate) | Crop stays here. Python+Rust parity: sidecar `docs/parity.md`.     |
-| `killing-death-reporter`                                | `lisca-killing-assay` (`lisca-killing` + `killing.core` / `killing.services`) | Thin dispatch and plots in `analysis/assays/killing/` | `lisca-analyze killing-death-reporter` | Per-cell traces and sample-mean figures. The command and `assay.json` type are both `killing-death-reporter`. Analyze does not run the classifier. The kill curve is `lisca_killing::run_clean` / `killing.services.classifier.run_clean`, library only. |
-| `killing-engagement`                                    | `lisca-killing-assay` (`lisca-killing` + `killing.core` / `killing.services`) | Thin dispatch and plots in `analysis/assays/killing_engagement.rs` | `lisca-analyze killing-engagement` | Spot counts. Tumor touch is recorded and is not proof of contact. |
-| `lnp-binding` / binding                                 | future `lisca-binding-assay`                                                 | none until mature                                                     | —                                     | Closed enum: do not half-register                                  |
+| Studio `assayId`                                        | Goal source + Rust                                                            | This repo                                                             | Parity CLI                             | Notes                                                                                                                                                                                                                                                    |
+| ------------------------------------------------------- | ----------------------------------------------------------------------------- | --------------------------------------------------------------------- | -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `transfection` (Studio wire id; science = transfection) | `lisca-transfection-assay` (`transfection` CLI + `lisca-transfection` crate)  | Thin dispatch in `analysis/assays/transfection/` + local ONNX segment | `lisca-analyze` (calls the git crate)  | Crop stays here. Python+Rust parity: sidecar `docs/parity.md`.                                                                                                                                                                                           |
+| `killing-death-reporter`                                | `lisca-killing-assay` (`lisca-killing` + `killing.core` / `killing.services`) | Thin dispatch and plots in `analysis/assays/killing/`                 | `lisca-analyze killing-death-reporter` | Per-cell traces and sample-mean figures. The command and `assay.json` type are both `killing-death-reporter`. Analyze does not run the classifier. The kill curve is `lisca_killing::run_clean` / `killing.services.classifier.run_clean`, library only. |
+| `killing-engagement`                                    | `lisca-killing-assay` (`lisca-killing` + `killing.core` / `killing.services`) | Thin dispatch and plots in `analysis/assays/killing_engagement.rs`    | `lisca-analyze killing-engagement`     | Spot counts. Tumor touch is recorded and is not proof of contact.                                                                                                                                                                                        |
+| `lnp-binding` / binding                                 | future `lisca-binding-assay`                                                  | none until mature                                                     | —                                      | Closed enum: do not half-register                                                                                                                                                                                                                        |
 
 Adding a Studio assay id is a **cross-cutting** change (`@lisca/contracts`,
 Rust, generated types). Unsupported ids fail explicitly — see `PRODUCT.md`.
@@ -221,10 +221,10 @@ nothing else. Interval and assay type come from `assay.json`.
 any other flag exit 1. There is no `fluorescence`, `clean`, `predict`, or
 `label-free` command. `killing` alone is neither a command nor an assay id.
 
-| Command | Writes |
-| --- | --- |
-| `killing-death-reporter` | Fluorescence CSVs, `results/<sample>/traces.xlsx`, and `traces.png`, `traces_shared_y.png`, `traces_summary.png`, `traces_summary_shared_y.png` |
-| `killing-engagement` | `analysis/Pos{n}/engagement.csv`, `analysis/Pos{n}/engagement_summary.csv`, the engagement workbooks, and `engagement_traces.png`, `engagement_traces_shared_y.png`, `engagement_traces_summary.png`, `engagement_traces_summary_shared_y.png` |
+| Command                  | Writes                                                                                                                                                                                                                                         |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `killing-death-reporter` | Fluorescence CSVs, `results/<sample>/traces.xlsx`, and `traces.png`, `traces_shared_y.png`, `traces_summary.png`, `traces_summary_shared_y.png`                                                                                                |
+| `killing-engagement`     | `analysis/Pos{n}/engagement.csv`, `analysis/Pos{n}/engagement_summary.csv`, the engagement workbooks, and `engagement_traces.png`, `engagement_traces_shared_y.png`, `engagement_traces_summary.png`, `engagement_traces_summary_shared_y.png` |
 
 ```sh
 ./target/release/lisca-analyze killing-death-reporter ~/data/killing_pi
