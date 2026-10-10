@@ -81,9 +81,9 @@ export function resultSectionInstruction(
       ? "Fluorescence time series for each cell."
       : "Intensity, area, and fitted traces for each sample.";
   }
-  if (assay === "killing-engagement") return "Mean engager count for each sample, on one figure.";
+  if (assay === "killing-engagement") return "Mean engager count for each sample.";
   return assay === "killing"
-    ? "Mean fluorescence for each sample, on one figure."
+    ? "Mean fluorescence for each sample."
     : "Fitted parameters: mRNA lifetime τ_mRNA, AUC, expression rate m0 k_TL, and onset time t0.";
 }
 

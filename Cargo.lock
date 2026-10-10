@@ -2506,7 +2506,7 @@ dependencies = [
 [[package]]
 name = "mplot"
 version = "0.1.0"
-source = "git+https://github.com/keejkrej/mplot-rs#ff19d1d5e2146750cf9224c680aa53774d03bc28"
+source = "git+https://github.com/keejkrej/mplot-rs#c87d52263e669540e90978a85b1bc30ba96b6189"
 dependencies = [
  "num-traits",
  "plotters",

@@ -439,7 +439,7 @@ mod scheduler_stage_tests {
     /// nested traces, so the crash would happen BEFORE the traces
     /// is merged). This test reproduces that exact production payload via
     /// `write_csv` and asserts the merge folds the CSVs (skipping xlsx)
-    /// and `run_plot_traces_stage` renders `results/traces.png`.
+    /// and `run_plot_traces_stage` renders `results/<sample>/traces.png`.
     #[test]
     fn merge_skips_binary_xlsx_sidecars_and_renders_traces() {
         use crate::analysis::csv_io::write_csv;
@@ -521,11 +521,19 @@ mod scheduler_stage_tests {
             segmentation: 0,
         }]);
 
+        fs::create_dir_all(workspace.join("analysis/Pos1")).unwrap();
+        fs::copy(
+            workspace.join("traces/Pos1/ch0.csv"),
+            workspace.join("analysis/Pos1/ch0.csv"),
+        )
+        .unwrap();
         run_plot_traces_stage(&workspace, &mapping, 30.0).unwrap();
         assert!(
-            workspace.join("results/traces.png").is_file(),
-            "traces.png must be produced once traces/ survives the merge"
+            workspace.join("results/A/traces.png").is_file(),
+            "per-sample traces.png must be produced from analysis/Pos1/ch0.csv"
         );
+        assert!(workspace.join("results/A/traces.xlsx").is_file());
+        assert!(!workspace.join("results/traces.png").exists());
         fs::remove_dir_all(root).unwrap();
     }
 }

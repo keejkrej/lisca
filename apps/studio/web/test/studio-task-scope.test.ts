@@ -46,9 +46,7 @@ describe("studio task scope", () => {
     expect(studioTaskCenterOpenIsHeld(1_000, 1_000 + STUDIO_TASK_CENTER_OPEN_HOLD_MS - 1)).toBe(
       true,
     );
-    expect(studioTaskCenterOpenIsHeld(1_000, 1_000 + STUDIO_TASK_CENTER_OPEN_HOLD_MS)).toBe(
-      false,
-    );
+    expect(studioTaskCenterOpenIsHeld(1_000, 1_000 + STUDIO_TASK_CENTER_OPEN_HOLD_MS)).toBe(false);
     expect(studioTaskCenterOpenIsHeld(0, 1_000)).toBe(false);
 
     expect(studioTaskCenterCopy("analysis")).toEqual({

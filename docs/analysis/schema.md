@@ -26,9 +26,8 @@ and ln(2)/β. Writers use the names below.
   roi/Pos{n}/index.json
   roi/Pos{n}/Roi{k}.tif
   mask/Pos{n}/
-  analysis/Pos{n}/
-  traces/Pos{n}/        # killing only
-  results/
+  analysis/Pos{n}/      # CSV only
+  results/<sample>/     # XLSX and PNG only
 ```
 
 Constants: `bbox/`, `roi/`, `align/`, `mask/`, `analysis/`, `results/`, `assay.json`.
@@ -108,16 +107,19 @@ Cropped stacks live under `roi/Pos{n}/`:
 Python readers: `lisca.core.workspace.load_position_index` (other packages should
 import this instead of re-parsing). Path helper: `roi/Pos{n}/index.json`.
 
-## `analysis/Pos{n}/` (CSV only; written by transfection sidecar)
+## `analysis/Pos{n}/` (CSV only)
 
-Pos is the folder name. Folder name `analysis/` is owned here; the sidecar
-writes these tables.
+Pos is the folder name. Folder name `analysis/` is owned here. Transfection,
+death reporter, and engagement write these tables. There is no `.xlsx` beside
+the CSV.
 
-| File        | Columns                                                                                                      |
-| ----------- | ------------------------------------------------------------------------------------------------------------ |
-| `ch{c}.csv` | `roi`, `t`, `area`, `background`, `sum`, `corrected`                                                         |
-| `auc.csv`   | `roi`, `auc`                                                                                                 |
-| `fit.csv`   | `roi`, `baseline_intensity`, `onset_time`, `expression_rate`, `mrna_lifetime`, `protein_lifetime`, `success` |
+| File                     | Columns                                                                                                      |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------ |
+| `ch{c}.csv`              | `roi`, `t`, `area`, `background`, `sum`, `corrected`                                                         |
+| `auc.csv`                | `roi`, `auc`                                                                                                 |
+| `fit.csv`                | `roi`, `baseline_intensity`, `onset_time`, `expression_rate`, `mrna_lifetime`, `protein_lifetime`, `success` |
+| `engagement.csv`         | `roi`, `t`, `minutes`, `tumor_cells`, `t_cells`, `engagements`                                               |
+| `engagement_summary.csv` | `roi`, `frames`, `engagements_mean`, `tumor_cells_mean`, `t_cells_mean`                                      |
 
 `channel` on `auc.csv` / `fit.csv` only if that Pos has more than one signal
 channel.
@@ -127,29 +129,28 @@ channel.
 No `sample` column, no CSV under `results/`. The folder is the Sample: its
 filesystem-safe name, prefixed with the 0-based assay index (`{index}_{safe}`)
 only when two Sample names sanitize to the same folder. Folder name `results/`
-is owned here; transfection packs are written by the sidecar. Killing still
-writes `results/` tables in this repo until its sidecar exists — see
-[Killing `traces/` and `results/`](#killing-traces-and-results-in-tree-until-the-killing-sidecar-exists).
+is owned here. Death reporter and engagement use the same pack layout, with
+different file names so one workspace can hold both.
 
-| File          | Columns                                                                                                             |
-| ------------- | ------------------------------------------------------------------------------------------------------------------- |
-| `traces.xlsx` | `pos`, `roi`, `t`, `area`, `background`, `sum`, `corrected`                                                         |
-| `auc.xlsx`    | `pos`, `roi`, `auc`                                                                                                 |
-| `fit.xlsx`    | `pos`, `roi`, `baseline_intensity`, `onset_time`, `expression_rate`, `mrna_lifetime`, `protein_lifetime`, `success` |
+| File                      | Columns                                                                                                             |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `traces.xlsx`             | `pos`, `roi`, `t`, `area`, `background`, `sum`, `corrected`                                                         |
+| `auc.xlsx`                | `pos`, `roi`, `auc`                                                                                                 |
+| `fit.xlsx`                | `pos`, `roi`, `baseline_intensity`, `onset_time`, `expression_rate`, `mrna_lifetime`, `protein_lifetime`, `success` |
+| `engagement.xlsx`         | `pos`, `roi`, `t`, `minutes`, `tumor_cells`, `t_cells`, `engagements`                                               |
+| `engagement_summary.xlsx` | `pos`, `roi`, `frames`, `engagements_mean`, `tumor_cells_mean`, `t_cells_mean`                                      |
 
 `channel` only if that sample has more than one signal channel.
 
-## Killing `traces/` and `results/` (in-tree until the killing sidecar exists)
+## Historical `traces/`
 
-| File                      | Columns                                              |
-| ------------------------- | ---------------------------------------------------- |
-| `traces/Pos{n}/ch{m}.csv` | `roi`, `t`, `area`, `background`, `sum`, `corrected` |
-
-Sample identity comes from `samples[].name` and which Positions that Sample lists. The comparison figures put one panel per Sample. Older killing Workspaces wrote `timeseries/Pos{n}/`;
-`migrate_workspace` (migration `killing_traces_dir`) renames `timeseries/` to
-`traces/` when `traces/` is absent. When both exist, an empty `timeseries/` or
-one with the same files and bytes as `traces/` is removed; otherwise the
-migration fails and the user merges them by hand.
+The live death reporter writes `analysis/Pos{n}/ch{m}.csv`, not `traces/`.
+Older killing Workspaces wrote `timeseries/Pos{n}/`. `migrate_workspace`
+(migration `killing_traces_dir`) renames `timeseries/` to `traces/` when
+`traces/` is absent. When both exist, an empty `timeseries/` or one with the
+same files and bytes as `traces/` is removed; otherwise the migration fails
+and the user merges them by hand. The dormant classifier still reads and
+writes `traces/Pos{n}/ch{m}.csv`. That path is not the fluorescence product.
 
 ## Migration order
 

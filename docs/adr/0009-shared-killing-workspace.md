@@ -7,11 +7,13 @@
 
 Death reporter, label-free, and engagement share one Workspace and one set of
 ROIs. Each kind writes its own results. Engagement counts go to
-`traces/engagement/` and `results/engagement_counts.csv` /
-`results/engagement_summary.csv`. Engager-count figures are
-`results/engagement_traces.png` and `results/engagement_traces_summary.png`
-(plus `_shared_y` companions). They do not replace
-`traces/Pos{n}/ch{m}.csv` or the death-reporter files under `results/`.
+`analysis/Pos{n}/engagement.csv` and `analysis/Pos{n}/engagement_summary.csv`.
+Per-sample tables are `results/<sample>/engagement.xlsx` and
+`results/<sample>/engagement_summary.xlsx`. Engager-count figures are
+`results/<sample>/engagement_traces.png` and
+`results/<sample>/engagement_traces_summary.png` (plus `_shared_y` companions).
+They do not replace `analysis/Pos{n}/ch{m}.csv` or the death-reporter files
+`results/<sample>/traces.xlsx` and `results/<sample>/traces*.png`.
 
 ## Why
 
@@ -30,7 +32,7 @@ Rejected alternatives:
 ## Looks like a bug when
 
 - Label-free stays off the Studio assay picker. Engagement is selectable.
-- A death-reporter Workspace grows `results/engagement_*.csv` only after an
-  engagement run. Those files are not cytotoxicity traces.
+- A death-reporter Workspace grows `results/<sample>/engagement.xlsx` only after
+  an engagement run. Those files are not cytotoxicity traces.
 - Re-running death reporter does not delete engagement files, and an engagement
-  run does not delete `traces/Pos{n}/ch{m}.csv`.
+  run does not delete `analysis/Pos{n}/ch{m}.csv` or `results/<sample>/traces.xlsx`.

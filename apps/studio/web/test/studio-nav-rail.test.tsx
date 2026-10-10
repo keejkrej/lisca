@@ -104,7 +104,10 @@ vi.mock("@lisca/client/session/task-center", () => ({
   subscribeTaskCenterTasks: mocks.subscribe,
 }));
 
-import { clearStudioTaskCenterOpen, openStudioTaskCenter } from "../src/components/studio-task-center-open";
+import {
+  clearStudioTaskCenterOpen,
+  openStudioTaskCenter,
+} from "../src/components/studio-task-center-open";
 import { StudioNavRail } from "../src/components/studio-nav-rail";
 import { StudioTopBar } from "../src/components/studio-top-bar";
 

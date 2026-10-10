@@ -112,25 +112,29 @@ and `analysis/transfection/traces/Pos{n}` (one Step per Position; Rust entry poi
 Death reporter (`assayId` `killing`) measures fluorescence in each existing ROI crop. It does not segment, detect cells, fit a curve, or run a classifier. The signal channel comes from `analysis.channels.signal`. Each crop plane at z=0 uses the same full-frame reduction as transfection `analysis.skipSegment`: area is the pixel count, background is the 10th percentile, and corrected fluorescence is the sum minus area times background.
 
 ```
-assay.json → traces (per Position) → plot-traces
+assay.json → analysis/Pos{n}/ch{m}.csv → results/<sample>/traces.xlsx + one PNG per sample
 ```
 
 Studio steps: `analysis/killing/traces/Pos{n}` (one per Position), then
-`analysis/killing/plot-traces`, then finalize. `traces.png` is every cell, one
-panel per sample. `traces_summary.png` is the mean, median, and interquartile
-range of those cells, so samples can be compared on one figure.
+`analysis/killing/plot-traces`, then finalize. Each PNG is one sample.
+`traces.png` is every cell. `traces_summary.png` is the mean, median, and
+interquartile range. `_shared_y` uses one scale across samples. Studio places
+the same-named files next to each other. The Excel file is the table to replot.
 
 ### Killing outputs
 
-| Path                                                                | Role                                                                             |
-| ------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| `traces/Pos{n}/ch{m}.csv`                                           | Per-cell fluorescence (`roi`, `t`, `area`, `background`, `sum`, `corrected`)     |
-| `results/traces.png`, `results/traces_shared_y.png`                 | Per-cell fluorescence, one panel per sample                                      |
-| `results/traces_summary.png`, `results/traces_summary_shared_y.png` | Mean, median, and interquartile range of that fluorescence, one panel per sample |
+| Path                                                                 | Role                                                                         |
+| -------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `analysis/Pos{n}/ch{m}.csv`                                          | Per-cell fluorescence (`roi`, `t`, `area`, `background`, `sum`, `corrected`) |
+| `results/<sample>/traces.xlsx`                                       | Those rows for the sample, with a `pos` column                               |
+| `results/<sample>/traces.png`, `traces_shared_y.png`                 | Per-cell fluorescence for that sample                                        |
+| `results/<sample>/traces_summary.png`, `traces_summary_shared_y.png` | Mean, median, and interquartile range of that fluorescence                   |
 
-`ch{m}` is a signal channel, not the segmentation channel. Older killing
-Workspaces wrote `timeseries/Pos{n}/`; the `killing_traces_dir` migration renames
-it to `traces/` on open (see [Workspace migrations](#workspace-migrations)).
+`ch{m}` is a signal channel, not the segmentation channel. There is no CSV under
+`results/` and no subplot grid. Older killing Workspaces wrote
+`timeseries/Pos{n}/`; the `killing_traces_dir` migration renames it to `traces/`
+on open (see [Workspace migrations](#workspace-migrations)). The live writer does
+not use `traces/`.
 
 ### Engagement
 
@@ -145,16 +149,19 @@ spot touches the brightfield tumor mask. The gallery plots `t_cells`.
 Studio offers the card in the picker. See
 [ADR-0009](../adr/0009-shared-killing-workspace.md).
 
-| Path                                    | Role                                              |
-| --------------------------------------- | ------------------------------------------------- |
-| `traces/engagement/Pos{n}.csv`          | Per-frame `tumor_cells`, `t_cells`, `engagements` |
-| `results/engagement_counts.csv`         | Those rows for every Position                     |
-| `results/engagement_summary.csv`        | Mean counts per ROI                               |
-| `results/engagement_traces.png`         | Per-cell engager counts, one panel per sample     |
-| `results/engagement_traces_summary.png` | Mean, median, and interquartile range             |
+| Path                                             | Role                                              |
+| ------------------------------------------------ | ------------------------------------------------- |
+| `analysis/Pos{n}/engagement.csv`                 | Per-frame `tumor_cells`, `t_cells`, `engagements` |
+| `analysis/Pos{n}/engagement_summary.csv`         | Mean counts per ROI                               |
+| `results/<sample>/engagement.xlsx`               | Those rows for the sample, with a `pos` column    |
+| `results/<sample>/engagement_summary.xlsx`       | Mean counts per ROI, with a `pos` column          |
+| `results/<sample>/engagement_traces.png`         | Per-cell engager counts for that sample           |
+| `results/<sample>/engagement_traces_summary.png` | Mean, median, and interquartile range             |
 
-Shared-y companions use the same names with `_shared_y`. These files do not
-replace `results/traces.png` or `traces/Pos{n}/ch{m}.csv`.
+Shared-y companions use the same names with `_shared_y`. Filenames stay off
+`traces.png` and `traces.xlsx`, so a death-reporter run on the same workspace
+keeps `analysis/Pos{n}/ch{m}.csv` and `results/<sample>/traces.*`. There is no
+CSV under `results/`.
 
 ## Workspace I/O
 
@@ -170,7 +177,7 @@ alias — `migrate_workspace` rewrites it on open (see [Workspace migrations](#w
 | `bbox/PosN.csv`          | ROI boxes (`roi,x,y,w,h`). See [`schema.md`](./schema.md).                                                                          |
 | `roi/PosN/`              | Cropped ROI stacks + slim `index.json` — see [`schema.md`](./schema.md)                                                             |
 | `mask/PosN/`             | Per-frame segmentation masks (`uint8` TIFF stacks)                                                                                  |
-| `analysis/` / `results/` | Shared folder names. Table columns: [`schema.md`](./schema.md). Killing tables stay in-tree until that sidecar exists.              |
+| `analysis/` / `results/` | Shared folder names. Table columns: [`schema.md`](./schema.md). CSV only under `analysis/`; XLSX and PNG under `results/<sample>/`. |
 
 There is no `traces/` folder for transfection (its Traces are `analysis/Pos{n}/ch{m}.csv`), no combined results tables, and no CSV under `results/` for transfection. Studio results UI displays PNG files; it does not re-render plots from CSVs.
 

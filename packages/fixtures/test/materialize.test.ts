@@ -140,14 +140,18 @@ describe("workspace fixture smoke", () => {
   it("writes killing analysis CSVs and every catalog PNG name", () => {
     const out = tempOut("kill-analyzed");
     materializeFixture({ assay: "killing", stage: "analyzed", out, force: true });
-    expect(read(out, "traces/Pos1/ch1.csv").split("\n")[0]).toBe(
+    expect(read(out, "analysis/Pos1/ch1.csv").split("\n")[0]).toBe(
       "roi,t,area,background,sum,corrected",
     );
+    expect(existsSync(join(out, "traces"))).toBe(false);
     expect(existsSync(join(out, "results/predictions.csv"))).toBe(false);
     expect(existsSync(join(out, "results/kill_curve.csv"))).toBe(false);
     expect(existsSync(join(out, "results/death_times.csv"))).toBe(false);
-    for (const plot of KILLING_PLOTS) {
-      expect(existsSync(join(out, "results", plot.fileName))).toBe(true);
+    expect(existsSync(join(out, "results/traces.png"))).toBe(false);
+    for (const sampleDir of ["Control_(fixture)", "CAR-T_1_4_(fixture)"]) {
+      for (const plot of KILLING_PLOTS) {
+        expect(existsSync(join(out, "results", sampleDir, plot.fileName))).toBe(true);
+      }
     }
     expect(existsSync(join(out, "timeseries"))).toBe(false);
   });
@@ -161,7 +165,7 @@ describe("workspace fixture smoke", () => {
     const positions = assay.samples.map((sample) => sample.positions);
     expect(positions).toEqual(["1", "2"]);
     for (const position of ["1", "2"]) {
-      expect(read(out, `traces/Pos${position}/ch1.csv`).split("\n")[0]).toBe(
+      expect(read(out, `analysis/Pos${position}/ch1.csv`).split("\n")[0]).toBe(
         "roi,t,area,background,sum,corrected",
       );
     }

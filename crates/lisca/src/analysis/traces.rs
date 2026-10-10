@@ -18,7 +18,7 @@ pub(crate) struct TracePanel {
 
 pub(crate) type TracePointGroup = BTreeMap<i64, Vec<(f64, f64)>>;
 
-/// Discover `<dir>/Pos{n}/ch{n}.csv` files (killing: `traces/`).
+/// Discover `<dir>/Pos{n}/ch{n}.csv` files (death reporter and transfection: `analysis/`).
 pub(crate) fn discover_trace_csvs(dir: &Path) -> Result<Vec<PathBuf>, String> {
     if !dir.is_dir() {
         return Err(format!("Expected trace directory at {}", dir.display()));

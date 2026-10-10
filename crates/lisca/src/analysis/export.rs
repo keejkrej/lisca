@@ -32,6 +32,17 @@ pub fn write_csv_and_xlsx(
     xlsx_result
 }
 
+pub(crate) fn write_xlsx_only(
+    path: &Path,
+    headers: &[&str],
+    rows: &[Vec<String>],
+) -> Result<(), String> {
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent).map_err(|error| error.to_string())?;
+    }
+    write_xlsx(path, headers, rows)
+}
+
 fn write_xlsx(path: &Path, headers: &[&str], rows: &[Vec<String>]) -> Result<(), String> {
     let mut workbook = Workbook::new();
     let worksheet = workbook.add_worksheet();

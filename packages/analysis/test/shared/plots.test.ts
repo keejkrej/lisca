@@ -209,7 +209,7 @@ describe("resultSectionInstruction", () => {
       "Fitted parameters: mRNA lifetime τ_mRNA, AUC, expression rate m0 k_TL, and onset time t0.",
     );
     expect(resultSectionInstruction("parameters", "killing")).toBe(
-      "Mean fluorescence for each sample, on one figure.",
+      "Mean fluorescence for each sample.",
     );
   });
 });

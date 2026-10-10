@@ -449,6 +449,7 @@ fn build_engagement_task(
     }
 
     let plot_workspace = workspace.clone();
+    let summary_mapping = std::sync::Arc::clone(&mapping);
     let plot_mapping = mapping;
     let plot = analysis_step(
         "analysis/killing-engagement/plot-traces",
@@ -465,7 +466,7 @@ fn build_engagement_task(
         "analysis/killing-engagement/finalize",
         vec![plot_id],
         Arc::new(move || {
-            killing_engagement::write_summary(&summary_workspace)?;
+            killing_engagement::write_summary(&summary_workspace, &summary_mapping)?;
             analysis::workspace_analysis_manifest(&summary_workspace).map(|_| ())
         }),
     ));

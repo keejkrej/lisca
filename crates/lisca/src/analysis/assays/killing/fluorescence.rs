@@ -36,7 +36,7 @@ pub fn run_traces(workspace: &Path, mapping: &SampleMapping) -> Result<(), Strin
 
 /// One Position (the Studio `analysis/killing/traces/Pos{n}` step).
 ///
-/// Writes `traces/Pos{n}/ch{m}.csv` for each signal channel on that Position.
+/// Writes `analysis/Pos{n}/ch{m}.csv` for each signal channel on that Position.
 /// The segmentation channel is not read.
 pub fn run_position_traces(
     workspace: &Path,
@@ -59,7 +59,7 @@ pub fn run_position_traces(
             validate_channel_index(&index, signal_channel)?;
             let rows = measure_signal(&pos_dir, &index, signal_channel)?;
             let output = workspace
-                .join("traces")
+                .join("analysis")
                 .join(format!("Pos{position}"))
                 .join(format!("ch{signal_channel}.csv"));
             write_metric_csv(&output, &rows)?;
@@ -215,13 +215,14 @@ mod tests {
 
         run_position_traces(root, &mapping, 1).unwrap();
 
-        let csv_path = root.join("traces/Pos1/ch1.csv");
+        let csv_path = root.join("analysis/Pos1/ch1.csv");
         let (headers, rows) = read_csv(&csv_path).unwrap();
         assert_eq!(
             headers,
             ["roi", "t", "area", "background", "sum", "corrected"]
         );
-        assert!(!root.join("traces/Pos1/ch0.csv").exists());
+        assert!(!root.join("analysis/Pos1/ch0.csv").exists());
+        assert!(!root.join("analysis/Pos1/ch1.xlsx").exists());
         let expected = full_frame_roi_stats(&[1.0, 2.0, 3.0, 40.0]);
         assert_eq!(rows[0][0], "0");
         assert_eq!(rows[0][1], "0");
@@ -244,11 +245,19 @@ mod tests {
 
         super::super::run_sync(root, &assay).unwrap();
 
-        assert!(root.join("traces/Pos1/ch1.csv").is_file());
-        assert!(root.join("traces/Pos2/ch1.csv").is_file());
-        assert!(root.join("results/traces.png").is_file());
-        assert!(root.join("results/traces_summary.png").is_file());
-        assert!(root.join("results/traces_summary_shared_y.png").is_file());
+        assert!(root.join("analysis/Pos1/ch1.csv").is_file());
+        assert!(root.join("analysis/Pos2/ch1.csv").is_file());
+        assert!(root.join("results/low/traces.png").is_file());
+        assert!(root.join("results/low/traces_summary.png").is_file());
+        assert!(root
+            .join("results/low/traces_summary_shared_y.png")
+            .is_file());
+        assert!(root.join("results/high/traces.png").is_file());
+        assert!(root.join("results/low/traces.xlsx").is_file());
+        assert!(root.join("results/high/traces.xlsx").is_file());
+        assert!(!root.join("results/traces.png").exists());
+        assert!(!root.join("results/low/area.png").exists());
+        assert!(!root.join("traces").exists());
         assert!(!root.join("results/predictions.csv").exists());
         assert!(!root.join("results/kill_curve.csv").exists());
         assert!(!root.join("results/death_times.csv").exists());

@@ -5,7 +5,7 @@
 //! non-empty and unique within the assay. The mapping keeps assay order.
 //! Mirrors `lisca_transfection::sample` (separate type; converted at the seam).
 
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeMap, HashMap, HashSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -187,6 +187,62 @@ pub fn load_mapping_for_workspace(
     let assay_json: AssayJsonFile = serde_json::from_str(&contents)
         .map_err(|error| format!("invalid assay.json {}: {error}", path.display()))?;
     build_sample_mapping(&assay_json)
+}
+
+/// Folder name under `results/` for a Sample. Matches the transfection pack
+/// sanitizer: forbidden path characters and whitespace become `_`.
+pub fn filesystem_safe_sample_name(name: &str) -> String {
+    let mut text = String::new();
+    let mut last_underscore = false;
+    for ch in name.trim().chars() {
+        let replacement = match ch {
+            '<' | '>' | ':' | '"' | '/' | '\\' | '|' | '?' | '*' => Some('_'),
+            c if c.is_control() => Some('_'),
+            c if c.is_whitespace() => Some('_'),
+            _ => None,
+        };
+        if let Some(repl) = replacement {
+            if !last_underscore && !text.is_empty() {
+                text.push(repl);
+                last_underscore = true;
+            }
+        } else {
+            text.push(ch);
+            last_underscore = false;
+        }
+    }
+    let trimmed = text.trim_matches(|c: char| c == '_' || c == '.' || c == ' ');
+    let trimmed = trimmed.trim_start_matches('.');
+    if trimmed.is_empty() {
+        "sample".to_string()
+    } else {
+        trimmed.to_string()
+    }
+}
+
+/// `results/<dirname>/` per Sample index. Names that sanitize to the same
+/// dirname are prefixed with their 0-based assay index.
+pub fn sample_pack_dirnames(mapping: &SampleMapping) -> BTreeMap<usize, String> {
+    let sanitized: BTreeMap<usize, String> = mapping
+        .iter()
+        .enumerate()
+        .map(|(index, sample)| (index, filesystem_safe_sample_name(&sample.name)))
+        .collect();
+    let mut counts: HashMap<String, usize> = HashMap::new();
+    for name in sanitized.values() {
+        *counts.entry(name.clone()).or_default() += 1;
+    }
+    sanitized
+        .into_iter()
+        .map(|(index, name)| {
+            let dirname = if counts.get(&name).copied().unwrap_or(0) > 1 {
+                format!("{index}_{name}")
+            } else {
+                name
+            };
+            (index, dirname)
+        })
+        .collect()
 }
 
 pub fn parse_interval_minutes(amount: Option<f64>, unit: Option<&str>) -> Option<f64> {
@@ -381,6 +437,44 @@ mod tests {
         )
         .unwrap_err();
         assert!(err.contains("unknown sample \"KO\""), "{err}");
+    }
+
+    #[test]
+    fn sample_pack_dirnames_match_the_transfection_sanitizer() {
+        let mapping = SampleMapping(vec![
+            SampleAnalysis {
+                name: "Control (fixture)".into(),
+                positions: vec![1],
+                signal: vec![1],
+                segmentation: 0,
+            },
+            SampleAnalysis {
+                name: "CAR-T 1:4 (fixture)".into(),
+                positions: vec![2],
+                signal: vec![1],
+                segmentation: 0,
+            },
+            SampleAnalysis {
+                name: "A:B".into(),
+                positions: vec![3],
+                signal: vec![1],
+                segmentation: 0,
+            },
+            SampleAnalysis {
+                name: "A_B".into(),
+                positions: vec![4],
+                signal: vec![1],
+                segmentation: 0,
+            },
+        ]);
+        let names = sample_pack_dirnames(&mapping);
+        assert_eq!(names.get(&0).map(String::as_str), Some("Control_(fixture)"));
+        assert_eq!(
+            names.get(&1).map(String::as_str),
+            Some("CAR-T_1_4_(fixture)")
+        );
+        assert_eq!(names.get(&2).map(String::as_str), Some("2_A_B"));
+        assert_eq!(names.get(&3).map(String::as_str), Some("3_A_B"));
     }
 
     #[test]

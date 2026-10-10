@@ -8,22 +8,22 @@ iteration.
 Each stage is a real directory Studio or the CLI can open: `assay.json`,
 `bbox/`, `align/`, `roi/PosN/`, `annotations/`, transfection
 `analysis/PosN/{chC,auc,fit}.csv` plus `results/` (workspace boxplots and
-`results/<sample>/` packs), and killing `traces/PosN/chN.csv` plus flat
-`results/*.{csv,png}`. Filenames match the pipelines.
+`results/<sample>/` packs), and killing `analysis/PosN/chN.csv` plus
+`results/<sample>/*.png`. Filenames match the pipelines.
 
 Images are tiny (16×16 source PNGs, 4×4 ROI TIFFs, 32×18 plot PNGs) and labeled
 as sample data (`FIXTURE.txt`, assay names end with `(fixture)`).
 
 ## Stages
 
-| Stage       | What you get                                                                                            |
-| ----------- | ------------------------------------------------------------------------------------------------------- |
-| `source`    | Templated image folder only (`Pos{p}/img_channel{c}_position{p}_time{t}_z{z}.png`)                      |
-| `assay`     | Workspace + valid `assay.json` + `source/` (no alignment)                                               |
-| `aligned`   | + `bbox/PosN.csv` and `align/PosN.json`                                                                 |
-| `cropped`   | + `roi/PosN/index.json` and `RoiN.tif` stacks                                                           |
-| `annotated` | + `annotations/labels.json` and one frame annotation per ROI                                            |
-| `analyzed`  | Transfection: `analysis/PosN/*.csv` and `results/<sample>/` packs. Killing: `traces/` + flat `results/` |
+| Stage       | What you get                                                                                                      |
+| ----------- | ----------------------------------------------------------------------------------------------------------------- |
+| `source`    | Templated image folder only (`Pos{p}/img_channel{c}_position{p}_time{t}_z{z}.png`)                                |
+| `assay`     | Workspace + valid `assay.json` + `source/` (no alignment)                                                         |
+| `aligned`   | + `bbox/PosN.csv` and `align/PosN.json`                                                                           |
+| `cropped`   | + `roi/PosN/index.json` and `RoiN.tif` stacks                                                                     |
+| `annotated` | + `annotations/labels.json` and one frame annotation per ROI                                                      |
+| `analyzed`  | `analysis/PosN/*.csv` and per-sample PNGs under `results/<sample>/`. Transfection also writes workspace boxplots. |
 
 Stages are cumulative except `source`, which is not a workspace. Skip ahead by
 picking the stage **before** the step you want to test.
@@ -80,12 +80,10 @@ const { out } = materializeFixture({
 - ROI stacks: `roi/PosN/RoiN.tif` + slim `index.json` (`axisOrder: TCZYX`)
 - Alignment: `bbox/PosN.csv` (`roi,x,y,w,h`) and `align/PosN.json`
 - Transfection analysis CSVs: `analysis/PosN/chC.csv` (`roi,t,area,background,sum,corrected`), `auc.csv` (`roi,auc`), `fit.csv` (`roi,baseline_intensity,onset_time,expression_rate,mrna_lifetime,protein_lifetime,success`)
-- Killing traces: `traces/PosN/chN.csv` (`roi,t,area,background,sum,corrected`)
-  carry a `sample` column holding the sample name from `assay.json`
-- Transfection plots: workspace boxplots at `results/*.png` and per-sample PNGs
-  at `results/<sample>/` from the `@lisca/analysis` catalog. Killing plots stay
-  flat under `results/`. Studio displays these PNGs; it does not re-render
-  charts from CSVs.
+- Killing traces: `analysis/PosN/chN.csv` (`roi,t,area,background,sum,corrected`)
+- Transfection and killing plots: per-sample PNGs at `results/<sample>/` from
+  the `@lisca/analysis` catalog. Transfection boxplots stay at `results/*.png`.
+  Studio displays these PNGs; it does not re-render charts from CSVs.
 
 ## Tests
 

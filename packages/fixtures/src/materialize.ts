@@ -359,12 +359,18 @@ function writeAnalysisOutputs(write: WriteRel, assay: FixtureAssay): void {
         }),
       ),
     ];
-    write(join("traces", `Pos${pos}`, `ch${signalChannel}.csv`), `${rows.join("\n")}\n`);
+    write(join("analysis", `Pos${pos}`, `ch${signalChannel}.csv`), `${rows.join("\n")}\n`);
   }
-  for (const plot of KILLING_PLOTS) {
-    const [r, g, b] = colorFromName(plot.fileName);
-    write(join("results", plot.fileName), encodeRgbPng(32, 18, r, g, b));
+  for (const sampleDir of killingSampleDirnames()) {
+    for (const plot of KILLING_PLOTS) {
+      const [r, g, b] = colorFromName(plot.fileName);
+      write(join("results", sampleDir, plot.fileName), encodeRgbPng(32, 18, r, g, b));
+    }
   }
+}
+
+function killingSampleDirnames(): string[] {
+  return KILLING_FIXTURE_SAMPLES.map((sample) => filesystemSafeSampleName(sample.name));
 }
 
 function transfectionSampleDirname(): string {
@@ -486,9 +492,9 @@ export function expectedKeyPaths(assay: FixtureAssay, stage: FixtureStage): stri
       );
     } else {
       paths.push(
-        `traces/Pos1/ch${FIXTURE_LAYOUT.signalChannel}.csv`,
-        "results/traces.png",
-        "results/traces_summary.png",
+        `analysis/Pos1/ch${FIXTURE_LAYOUT.signalChannel}.csv`,
+        `results/${killingSampleDirnames()[0]}/traces.png`,
+        `results/${killingSampleDirnames()[0]}/traces_summary.png`,
       );
     }
   }

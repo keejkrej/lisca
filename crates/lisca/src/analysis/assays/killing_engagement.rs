@@ -4,8 +4,9 @@
 //! from the first signal channel (CMRA). Every ROI in a position shares one
 //! fluorescence scale: the background, plus a fixed number of noise widths.
 //! A peanut of two touching engagers is split into two circles. Counts are
-//! written under `traces/engagement/` and `results/engagement_*.csv` so a
-//! death-reporter run on the same workspace keeps `traces/Pos{n}/ch{m}.csv`.
+//! written under `analysis/Pos{n}/engagement.csv` and
+//! `results/<sample>/engagement.xlsx` so a death-reporter run on the same
+//! workspace keeps `analysis/Pos{n}/ch{m}.csv` and `results/<sample>/traces.xlsx`.
 
 use std::cmp::Ordering;
 use std::collections::{BTreeSet, BinaryHeap};
@@ -222,7 +223,7 @@ pub fn run_sync(workspace: &Path, assay_json: &AssayJsonFile) -> Result<(), Stri
     for position in mapping.positions() {
         run_position(workspace, &mapping, position, interval)?;
     }
-    write_summary(workspace)
+    write_summary(workspace, &mapping)
 }
 
 pub fn run_position(
@@ -233,132 +234,128 @@ pub fn run_position(
 ) -> Result<(), String> {
     let pos_dir = position_dir(workspace, position)?;
     let index = read_position_index(&pos_dir)?;
-    let mut rows = Vec::new();
-    for sample in mapping
+    let owners: Vec<_> = mapping
         .iter()
         .filter(|sample| sample.positions.contains(&position))
-    {
-        let signal = *sample.signal.first().ok_or_else(|| {
-            format!(
-                "sample {} has no signal channel for engagement",
-                sample.name
-            )
-        })?;
-        validate_channel_index(&index, sample.segmentation)?;
-        validate_channel_index(&index, signal)?;
-        let mut histogram = FluorescenceHistogram::new();
-        for roi_crop in &index.rois {
-            let stack = crate::analysis::roi_stack::RoiStack::load(
-                &pos_dir.join(&roi_crop.file_name),
-                roi_crop.shape,
-            )?;
-            for stack_t in 0..index.time_count {
-                let signal_frame = roi_frame_2d(&stack, &index.axis_order, stack_t, signal, 0)?;
-                histogram.sample(signal_frame.as_slice());
-            }
+        .collect();
+    let sample = match owners.as_slice() {
+        [sample] => *sample,
+        [] => return Err(format!("no sample in assay.json lists Pos{position}")),
+        _ => return Err(format!("Pos{position} is listed by more than one sample")),
+    };
+    let mut rows = Vec::new();
+    let signal = *sample.signal.first().ok_or_else(|| {
+        format!(
+            "sample {} has no signal channel for engagement",
+            sample.name
+        )
+    })?;
+    validate_channel_index(&index, sample.segmentation)?;
+    validate_channel_index(&index, signal)?;
+    let mut histogram = FluorescenceHistogram::new();
+    for roi_crop in &index.rois {
+        let stack = crate::analysis::roi_stack::RoiStack::load(
+            &pos_dir.join(&roi_crop.file_name),
+            roi_crop.shape,
+        )?;
+        for stack_t in 0..index.time_count {
+            let signal_frame = roi_frame_2d(&stack, &index.axis_order, stack_t, signal, 0)?;
+            histogram.sample(signal_frame.as_slice());
         }
-        let scale = histogram.scale();
-        for roi_crop in &index.rois {
-            let stack = crate::analysis::roi_stack::RoiStack::load(
-                &pos_dir.join(&roi_crop.file_name),
-                roi_crop.shape,
+    }
+    let scale = histogram.scale();
+    for roi_crop in &index.rois {
+        let stack = crate::analysis::roi_stack::RoiStack::load(
+            &pos_dir.join(&roi_crop.file_name),
+            roi_crop.shape,
+        )?;
+        for stack_t in 0..index.time_count {
+            let source_t = index.time_indices[stack_t as usize];
+            let tumor = roi_frame_2d(&stack, &index.axis_order, stack_t, sample.segmentation, 0)?;
+            let tcells = roi_frame_2d(&stack, &index.axis_order, stack_t, signal, 0)?;
+            let counts = count_engagements(
+                &tumor_mask(tumor.as_slice()),
+                &mask_with_scale(tcells.as_slice(), scale),
+                tumor.width,
+                tumor.height,
             )?;
-            for stack_t in 0..index.time_count {
-                let source_t = index.time_indices[stack_t as usize];
-                let tumor =
-                    roi_frame_2d(&stack, &index.axis_order, stack_t, sample.segmentation, 0)?;
-                let tcells = roi_frame_2d(&stack, &index.axis_order, stack_t, signal, 0)?;
-                let counts = count_engagements(
-                    &tumor_mask(tumor.as_slice()),
-                    &mask_with_scale(tcells.as_slice(), scale),
-                    tumor.width,
-                    tumor.height,
-                )?;
-                rows.push(EngagementRow {
-                    sample: sample.name.clone(),
-                    pos: position,
-                    roi: roi_crop.roi,
-                    t: source_t,
-                    minutes: source_t as f64 * interval_minutes,
-                    counts,
-                });
-            }
+            rows.push(EngagementRow {
+                pos: position,
+                roi: roi_crop.roi,
+                t: source_t,
+                minutes: source_t as f64 * interval_minutes,
+                counts,
+            });
         }
     }
     if rows.is_empty() {
         return Err(format!("position {position} has no ROI frames to score"));
     }
-    rows.sort_by(|left, right| {
-        left.sample
-            .cmp(&right.sample)
-            .then(left.roi.cmp(&right.roi))
-            .then(left.t.cmp(&right.t))
-    });
+    rows.sort_by(|left, right| left.roi.cmp(&right.roi).then(left.t.cmp(&right.t)));
     write_rows(&trace_path(workspace, position), &rows)
 }
 
-pub fn write_summary(workspace: &Path) -> Result<(), String> {
-    let dir = workspace.join("traces/engagement");
-    let mut rows = Vec::new();
-    if dir.is_dir() {
-        let mut paths = fs::read_dir(&dir)
-            .map_err(|error| error.to_string())?
-            .map(|entry| {
-                entry
-                    .map(|entry| entry.path())
-                    .map_err(|error| error.to_string())
-            })
-            .collect::<Result<Vec<_>, _>>()?;
-        paths.sort();
-        for path in paths {
-            if path.extension().is_some_and(|ext| ext == "csv") {
-                rows.extend(read_rows(&path)?);
-            }
+pub fn write_summary(workspace: &Path, mapping: &SampleMapping) -> Result<(), String> {
+    let csvs = discover_engagement_csvs(&workspace.join("analysis"))?;
+    let dirnames = crate::analysis::sample::sample_pack_dirnames(mapping);
+    let mut traces: std::collections::BTreeMap<usize, Vec<Vec<String>>> =
+        std::collections::BTreeMap::new();
+    let mut summaries: std::collections::BTreeMap<usize, Vec<Vec<String>>> =
+        std::collections::BTreeMap::new();
+
+    for path in csvs {
+        let position = engagement_position(&path)?;
+        let sample = mapping
+            .iter()
+            .position(|sample| sample.positions.contains(&position))
+            .ok_or_else(|| format!("No sample owns Pos{position} ({})", path.display()))?;
+        let rows = read_rows(&path, position)?;
+        let summary_rows = summarize_rows(&rows);
+        let summary_path = path
+            .parent()
+            .ok_or_else(|| format!("engagement csv has no directory: {}", path.display()))?
+            .join("engagement_summary.csv");
+        write_summary_csv(&summary_path, &summary_rows)?;
+        for row in &rows {
+            traces.entry(sample).or_default().push(trace_xlsx_row(row));
+        }
+        for row in &summary_rows {
+            summaries
+                .entry(sample)
+                .or_default()
+                .push(summary_xlsx_row(row));
         }
     }
-    let counts_path = workspace.join("results/engagement_counts.csv");
-    write_rows(&counts_path, &rows)?;
-    let mut groups = Vec::<SummaryRow>::new();
-    for row in &rows {
-        if let Some(group) = groups.iter_mut().find(|group| {
-            group.sample == row.sample && group.pos == row.pos && group.roi == row.roi
-        }) {
-            group.frames += 1;
-            group.engagements += f64::from(row.counts.engagements);
-            group.tumor_cells += f64::from(row.counts.tumor_cells);
-            group.t_cells += f64::from(row.counts.t_cells);
-        } else {
-            groups.push(SummaryRow {
-                sample: row.sample.clone(),
-                pos: row.pos,
-                roi: row.roi,
-                frames: 1,
-                engagements: f64::from(row.counts.engagements),
-                tumor_cells: f64::from(row.counts.tumor_cells),
-                t_cells: f64::from(row.counts.t_cells),
-            });
-        }
-    }
-    let summary_path = workspace.join("results/engagement_summary.csv");
-    if let Some(parent) = summary_path.parent() {
-        fs::create_dir_all(parent).map_err(|error| error.to_string())?;
-    }
-    let mut body =
-        String::from("sample,pos,roi,frames,engagements_mean,tumor_cells_mean,t_cells_mean\n");
-    for group in groups {
-        let frames = group.frames as f64;
-        body.push_str(&format!(
-            "{},{},{},{},{:.4},{:.4},{:.4}\n",
-            csv_field(&group.sample),
-            group.pos,
-            group.roi,
-            group.frames,
-            group.engagements / frames,
-            group.tumor_cells / frames,
-            group.t_cells / frames,
-        ));
-    }
-    fs::write(&summary_path, body).map_err(|error| error.to_string())
+
+    publish_sample_xlsx(
+        workspace,
+        &dirnames,
+        &mut traces,
+        "engagement",
+        &[
+            "pos",
+            "roi",
+            "t",
+            "minutes",
+            "tumor_cells",
+            "t_cells",
+            "engagements",
+        ],
+    )?;
+    publish_sample_xlsx(
+        workspace,
+        &dirnames,
+        &mut summaries,
+        "engagement_summary",
+        &[
+            "pos",
+            "roi",
+            "frames",
+            "engagements_mean",
+            "tumor_cells_mean",
+            "t_cells_mean",
+        ],
+    )
 }
 
 pub async fn run<F>(
@@ -391,7 +388,6 @@ where
 }
 
 struct EngagementRow {
-    sample: String,
     pos: u32,
     roi: u32,
     t: u32,
@@ -400,7 +396,6 @@ struct EngagementRow {
 }
 
 struct SummaryRow {
-    sample: String,
     pos: u32,
     roi: u32,
     frames: u32,
@@ -411,97 +406,182 @@ struct SummaryRow {
 
 fn trace_path(workspace: &Path, position: u32) -> PathBuf {
     workspace
-        .join("traces/engagement")
-        .join(format!("Pos{position}.csv"))
+        .join("analysis")
+        .join(format!("Pos{position}"))
+        .join("engagement.csv")
 }
 
 fn write_rows(path: &Path, rows: &[EngagementRow]) -> Result<(), String> {
-    if let Some(parent) = path.parent() {
-        fs::create_dir_all(parent).map_err(|error| error.to_string())?;
-    }
-    let mut body = String::from("sample,pos,roi,t,minutes,tumor_cells,t_cells,engagements\n");
-    for row in rows {
-        body.push_str(&format!(
-            "{},{},{},{},{:.4},{},{},{}\n",
-            csv_field(&row.sample),
-            row.pos,
-            row.roi,
-            row.t,
-            row.minutes,
-            row.counts.tumor_cells,
-            row.counts.t_cells,
-            row.counts.engagements,
-        ));
-    }
-    fs::write(path, body).map_err(|error| error.to_string())
+    let headers = [
+        "roi",
+        "t",
+        "minutes",
+        "tumor_cells",
+        "t_cells",
+        "engagements",
+    ];
+    let body = rows
+        .iter()
+        .map(|row| {
+            vec![
+                row.roi.to_string(),
+                row.t.to_string(),
+                format!("{:.4}", row.minutes),
+                row.counts.tumor_cells.to_string(),
+                row.counts.t_cells.to_string(),
+                row.counts.engagements.to_string(),
+            ]
+        })
+        .collect::<Vec<_>>();
+    crate::analysis::csv_io::write_csv_only(path, &headers, &body)
 }
 
-fn read_rows(path: &Path) -> Result<Vec<EngagementRow>, String> {
-    let text = fs::read_to_string(path).map_err(|error| format!("{}: {error}", path.display()))?;
-    let mut rows = Vec::new();
-    for (index, line) in text.lines().enumerate() {
-        if index == 0 || line.trim().is_empty() {
-            continue;
-        }
-        let fields = split_csv(line);
-        if fields.len() != 8 {
-            return Err(format!(
-                "{} line {}: expected 8 columns",
-                path.display(),
-                index + 1
-            ));
-        }
-        rows.push(EngagementRow {
-            sample: fields[0].clone(),
-            pos: fields[1].parse().map_err(|error| format!("{error}"))?,
-            roi: fields[2].parse().map_err(|error| format!("{error}"))?,
-            t: fields[3].parse().map_err(|error| format!("{error}"))?,
-            minutes: fields[4].parse().map_err(|error| format!("{error}"))?,
+fn read_rows(path: &Path, position: u32) -> Result<Vec<EngagementRow>, String> {
+    let (headers, rows) = crate::analysis::csv_io::read_csv(path)?;
+    let column = |name: &str| {
+        crate::analysis::csv_io::column_index(&headers, name)
+            .ok_or_else(|| format!("{} is missing {name}", path.display()))
+    };
+    let roi = column("roi")?;
+    let t = column("t")?;
+    let minutes = column("minutes")?;
+    let tumor_cells = column("tumor_cells")?;
+    let t_cells = column("t_cells")?;
+    let engagements = column("engagements")?;
+    let mut parsed = Vec::with_capacity(rows.len());
+    for row in &rows {
+        let cell = |index: usize| -> Result<&str, String> {
+            row.get(index)
+                .map(String::as_str)
+                .ok_or_else(|| format!("{} has a short row", path.display()))
+        };
+        let number = |index: usize| -> Result<u32, String> {
+            cell(index)?
+                .parse()
+                .map_err(|error| format!("{}: {error}", path.display()))
+        };
+        parsed.push(EngagementRow {
+            pos: position,
+            roi: number(roi)?,
+            t: number(t)?,
+            minutes: cell(minutes)?
+                .parse()
+                .map_err(|error| format!("{}: {error}", path.display()))?,
             counts: EngagementCounts {
-                tumor_cells: fields[5].parse().map_err(|error| format!("{error}"))?,
-                t_cells: fields[6].parse().map_err(|error| format!("{error}"))?,
-                engagements: fields[7].parse().map_err(|error| format!("{error}"))?,
+                tumor_cells: number(tumor_cells)?,
+                t_cells: number(t_cells)?,
+                engagements: number(engagements)?,
             },
         });
     }
-    Ok(rows)
+    Ok(parsed)
 }
 
-fn split_csv(line: &str) -> Vec<String> {
-    let mut fields = Vec::new();
-    let mut current = String::new();
-    let mut quoted = false;
-    let mut chars = line.chars().peekable();
-    while let Some(character) = chars.next() {
-        if quoted {
-            if character == '"' {
-                if chars.peek() == Some(&'"') {
-                    chars.next();
-                    current.push('"');
-                } else {
-                    quoted = false;
-                }
-            } else {
-                current.push(character);
-            }
-        } else if character == '"' && current.is_empty() {
-            quoted = true;
-        } else if character == ',' {
-            fields.push(std::mem::take(&mut current));
+fn summarize_rows(rows: &[EngagementRow]) -> Vec<SummaryRow> {
+    let mut groups = Vec::<SummaryRow>::new();
+    for row in rows {
+        if let Some(group) = groups
+            .iter_mut()
+            .find(|group| group.pos == row.pos && group.roi == row.roi)
+        {
+            group.frames += 1;
+            group.engagements += f64::from(row.counts.engagements);
+            group.tumor_cells += f64::from(row.counts.tumor_cells);
+            group.t_cells += f64::from(row.counts.t_cells);
         } else {
-            current.push(character);
+            groups.push(SummaryRow {
+                pos: row.pos,
+                roi: row.roi,
+                frames: 1,
+                engagements: f64::from(row.counts.engagements),
+                tumor_cells: f64::from(row.counts.tumor_cells),
+                t_cells: f64::from(row.counts.t_cells),
+            });
         }
     }
-    fields.push(current);
-    fields
+    groups
 }
 
-fn csv_field(value: &str) -> String {
-    if value.contains([',', '"', '\n']) {
-        format!("\"{}\"", value.replace('"', "\"\""))
-    } else {
-        value.to_string()
+fn write_summary_csv(path: &Path, rows: &[SummaryRow]) -> Result<(), String> {
+    let headers = [
+        "roi",
+        "frames",
+        "engagements_mean",
+        "tumor_cells_mean",
+        "t_cells_mean",
+    ];
+    let body = rows
+        .iter()
+        .map(|row| {
+            let frames = row.frames as f64;
+            vec![
+                row.roi.to_string(),
+                row.frames.to_string(),
+                format!("{:.4}", row.engagements / frames),
+                format!("{:.4}", row.tumor_cells / frames),
+                format!("{:.4}", row.t_cells / frames),
+            ]
+        })
+        .collect::<Vec<_>>();
+    crate::analysis::csv_io::write_csv_only(path, &headers, &body)
+}
+
+fn trace_xlsx_row(row: &EngagementRow) -> Vec<String> {
+    vec![
+        row.pos.to_string(),
+        row.roi.to_string(),
+        row.t.to_string(),
+        format!("{:.4}", row.minutes),
+        row.counts.tumor_cells.to_string(),
+        row.counts.t_cells.to_string(),
+        row.counts.engagements.to_string(),
+    ]
+}
+
+fn summary_xlsx_row(row: &SummaryRow) -> Vec<String> {
+    let frames = row.frames as f64;
+    vec![
+        row.pos.to_string(),
+        row.roi.to_string(),
+        row.frames.to_string(),
+        format!("{:.4}", row.engagements / frames),
+        format!("{:.4}", row.tumor_cells / frames),
+        format!("{:.4}", row.t_cells / frames),
+    ]
+}
+
+fn publish_sample_xlsx(
+    workspace: &Path,
+    dirnames: &std::collections::BTreeMap<usize, String>,
+    frames: &mut std::collections::BTreeMap<usize, Vec<Vec<String>>>,
+    kind: &str,
+    headers: &[&str],
+) -> Result<(), String> {
+    if frames.is_empty() {
+        return Err(format!("no engagement rows to publish as {kind}.xlsx"));
     }
+    for (sample, rows) in frames.iter_mut() {
+        let dirname = dirnames
+            .get(sample)
+            .ok_or_else(|| format!("no results folder for sample {sample}"))?;
+        rows.sort_by(|left, right| {
+            let number = |row: &[String], index: usize| {
+                row.get(index)
+                    .and_then(|value| value.parse::<i64>().ok())
+                    .unwrap_or(0)
+            };
+            number(left, 0)
+                .cmp(&number(right, 0))
+                .then(number(left, 1).cmp(&number(right, 1)))
+                .then(number(left, 2).cmp(&number(right, 2)))
+        });
+        let output = workspace
+            .join("results")
+            .join(dirname)
+            .join(format!("{kind}.xlsx"));
+        crate::analysis::export::write_xlsx_only(&output, headers, rows)?;
+    }
+    Ok(())
 }
 
 fn otsu_threshold(pixels: &[f64]) -> Option<f64> {
@@ -881,19 +961,24 @@ pub fn run_plot_traces(
     if interval_minutes <= 0.0 {
         return Err(format!("interval must be > 0, got {interval_minutes}"));
     }
-    let csvs = discover_engagement_csvs(&workspace.join("traces/engagement"))?;
+    let csvs = discover_engagement_csvs(&workspace.join("analysis"))?;
     let panels = load_engagement_panels(&csvs, "t_cells", mapping)?;
     if panels.is_empty() {
         return Err("no engagement traces to plot".to_string());
     }
-    let results_dir = workspace.join("results");
-    fs::create_dir_all(&results_dir).map_err(|error| error.to_string())?;
-    crate::analysis::plot::write_metric_plots(
+    let dirnames = crate::analysis::sample::sample_pack_dirnames(mapping);
+    crate::analysis::plot::write_per_sample_metric_plots(
         &panels,
-        &results_dir.join("engagement_traces.png"),
+        |sample| {
+            let dirname = dirnames
+                .get(&sample)
+                .map(String::as_str)
+                .unwrap_or("sample");
+            workspace.join("results").join(dirname)
+        },
+        "engagement_traces",
         "engagers",
         interval_minutes,
-        None,
         mapping,
     )
 }
@@ -904,22 +989,25 @@ fn discover_engagement_csvs(dir: &Path) -> Result<Vec<PathBuf>, String> {
     }
     let mut csvs = Vec::new();
     for entry in fs::read_dir(dir).map_err(|error| error.to_string())? {
-        let path = entry.map_err(|error| error.to_string())?.path();
-        let stem = path
-            .file_stem()
-            .and_then(|stem| stem.to_str())
-            .unwrap_or("");
-        if path.extension().is_some_and(|ext| ext == "csv")
-            && stem.starts_with("Pos")
-            && stem[3..].chars().all(|c| c.is_ascii_digit())
-        {
+        let pos_dir = entry.map_err(|error| error.to_string())?.path();
+        if !pos_dir.is_dir() {
+            continue;
+        }
+        let Some(name) = pos_dir.file_name().and_then(|name| name.to_str()) else {
+            continue;
+        };
+        if !(name.starts_with("Pos") && name[3..].chars().all(|c| c.is_ascii_digit())) {
+            continue;
+        }
+        let path = pos_dir.join("engagement.csv");
+        if path.is_file() {
             csvs.push(path);
         }
     }
     csvs.sort();
     if csvs.is_empty() {
         return Err(format!(
-            "No engagement traces (expected Pos{{n}}.csv) in {}",
+            "No engagement traces (expected Pos{{n}}/engagement.csv) in {}",
             dir.display()
         ));
     }
@@ -967,11 +1055,12 @@ fn load_engagement_panels(
 }
 
 fn engagement_position(path: &Path) -> Result<u32, String> {
-    path.file_stem()
-        .and_then(|stem| stem.to_str())
-        .and_then(|stem| stem.strip_prefix("Pos"))
+    path.parent()
+        .and_then(|parent| parent.file_name())
+        .and_then(|name| name.to_str())
+        .and_then(|name| name.strip_prefix("Pos"))
         .and_then(|rest| rest.parse().ok())
-        .ok_or_else(|| format!("Expected Pos{{n}}.csv, got {}", path.display()))
+        .ok_or_else(|| format!("Expected Pos{{n}}/engagement.csv, got {}", path.display()))
 }
 
 fn unique_labels(labels: &[u32]) -> u32 {
@@ -1346,15 +1435,15 @@ mod tests {
                 .as_nanos()
         ));
         let _ = fs::remove_dir_all(&root);
-        fs::create_dir_all(root.join("traces/engagement")).unwrap();
+        fs::create_dir_all(root.join("analysis/Pos41")).unwrap();
         fs::write(
-            root.join("traces/engagement/Pos41.csv"),
+            root.join("analysis/Pos41/engagement.csv"),
             "\
-sample,pos,roi,t,minutes,tumor_cells,t_cells,engagements
-CMRA_0_1,41,0,0,0.0000,1,0,0
-CMRA_0_1,41,0,5,13.7500,1,3,1
-CMRA_0_1,41,1,0,0.0000,1,1,0
-CMRA_0_1,41,1,5,13.7500,1,2,0
+roi,t,minutes,tumor_cells,t_cells,engagements
+0,0,0.0000,1,0,0
+0,5,13.7500,1,3,1
+1,0,0.0000,1,1,0
+1,5,13.7500,1,2,0
 ",
         )
         .unwrap();
@@ -1365,17 +1454,28 @@ CMRA_0_1,41,1,5,13.7500,1,2,0
             segmentation: 0,
         }]);
         run_plot_traces(&root, &mapping, 2.75).unwrap();
-        assert!(root.join("results/engagement_traces.png").is_file());
+        write_summary(&root, &mapping).unwrap();
         assert!(root
-            .join("results/engagement_traces_summary_shared_y.png")
+            .join("results/CMRA_0_1/engagement_traces.png")
             .is_file());
+        assert!(root
+            .join("results/CMRA_0_1/engagement_traces_summary_shared_y.png")
+            .is_file());
+        assert!(root.join("results/CMRA_0_1/engagement.xlsx").is_file());
+        assert!(root
+            .join("results/CMRA_0_1/engagement_summary.xlsx")
+            .is_file());
+        assert!(root.join("analysis/Pos41/engagement_summary.csv").is_file());
         assert!(!root.join("results/traces.png").exists());
+        assert!(!root.join("results/engagement_traces.png").exists());
+        assert!(!root.join("results/engagement_counts.csv").exists());
+        assert!(!root.join("results/engagement_summary.csv").exists());
         fs::remove_dir_all(root).unwrap();
     }
 
     /// Full CMRA plate. Ignored so `cargo test` does not rewrite a local dataset.
     #[test]
-    #[ignore = "writes traces/engagement and results/engagement_*.png under /Users/jack/data/killing_tcell"]
+    #[ignore = "writes analysis/PosN/engagement.csv and results/<sample>/ under /Users/jack/data/killing_tcell"]
     fn killing_tcell_engagement_writes_count_plots() {
         let root = PathBuf::from("/Users/jack/data/killing_tcell");
         if !root.join("roi/Pos41/index.json").is_file() {
@@ -1390,10 +1490,14 @@ CMRA_0_1,41,1,5,13.7500,1,2,0
         let mapping = build_sample_mapping(&assay).unwrap();
         run_sync(&root, &assay).unwrap();
         run_plot_traces(&root, &mapping, interval).unwrap();
-        assert!(root.join("results/engagement_traces.png").is_file());
         assert!(root
-            .join("results/engagement_traces_summary_shared_y.png")
+            .join("results/CMRA_0_1/engagement_traces.png")
             .is_file());
+        assert!(root
+            .join("results/CMRA_1_2/engagement_traces_summary_shared_y.png")
+            .is_file());
+        assert!(root.join("results/CMRA_0_1/engagement.xlsx").is_file());
+        assert!(!root.join("results/engagement_counts.csv").exists());
         assert_eq!(fs::read(assay_path).unwrap(), before);
     }
 
@@ -1417,6 +1521,7 @@ CMRA_0_1,41,1,5,13.7500,1,2,0
         }]);
         let error = run_position(&root, &mapping, 41, 2.75).unwrap_err();
         assert!(error.contains("No ROI directory"), "{error}");
+        assert!(!root.join("analysis/Pos41").exists());
         assert!(!root.join("traces/Pos41").exists());
         assert!(!root.join("results/predictions.csv").exists());
         fs::remove_dir_all(root).unwrap();

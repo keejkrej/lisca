@@ -16,11 +16,9 @@ export const AssayTypeSchema = Schema.Literals([
   "killing",
   "killing-engagement",
   "lnp-binding",
-]).annotate(
-  {
-    identifier: "AssayType",
-  },
-);
+]).annotate({
+  identifier: "AssayType",
+});
 
 export const AssayIntervalUnitSchema = Schema.Literals(["second", "minute", "hour"]).annotate({
   identifier: "AssayIntervalUnit",
