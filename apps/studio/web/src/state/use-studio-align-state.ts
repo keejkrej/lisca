@@ -155,6 +155,7 @@ export function useStudioAlignState(): StudioAlignState {
   const folderTemplate = useStudioStore((state) => state.folderTemplate);
   const workspacePath = useStudioStore((state) => state.workspacePath);
   const samples = useStudioStore((state) => state.samples);
+  const segmentationChannel = useStudioStore((state) => state.segmentationChannel);
   const dataSourceKind = useStudioStore((state) => state.dataSourceKind);
   const assayId = useStudioStore((state) => state.assayId);
   const [preparingCrop, setPreparingCrop] = createSignal(false);
@@ -170,7 +171,9 @@ export function useStudioAlignState(): StudioAlignState {
     }),
   );
   const activeWorkspacePath = createMemo(() => workspacePath().trim() || null);
-  const brightfieldChannel = createMemo(() => studioSegmentationChannel(samples()));
+  const brightfieldChannel = createMemo(() =>
+    studioSegmentationChannel(samples(), segmentationChannel()),
+  );
   const assayPositions = createMemo(() => collectAssayPositions({ samples: samples() }));
   const alignPositionsForScan = (scan: WorkspaceScan | null) =>
     scan ? filterScanPositionsForAssay(scan.positions, assayPositions()) : [];

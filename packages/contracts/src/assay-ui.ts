@@ -113,11 +113,11 @@ export type StudioAssaySampleRow = {
    */
   positions: string;
   /**
-   * Segmentation channel and comma-separated signal channels for this sample (UI).
-   * Persisted under `analysis.channels` / `analysis.sampleChannels`, not on the sample row.
+   * Optional override of the assay segmentation channel. Empty inherits `analysis.channels`.
+   * Persisted under `analysis.sampleChannels` when it differs from the assay channel.
    */
   segmentation: string;
-  /** e.g. `"1"` or `"1,2"`. */
+  /** Optional override. Empty inherits the assay signal channels. e.g. `"1"` or `"1,2"`. */
   signal: string;
 };
 

@@ -20,7 +20,7 @@ import {
 import type { AssaySampleRow } from "@lisca/contracts";
 import * as Result from "effect/Result";
 
-import { analysisChannelsFromSamples } from "./sample-positions";
+import { analysisChannelsFromSamples, assayChannelDefaultsFromAnalysis } from "./sample-positions";
 
 export const ASSAY_CHOICE_LABEL: Record<StudioAssayType, string> = {
   [ASSAY_TYPE.TRANSFECTION]: "Transfection",
@@ -128,6 +128,7 @@ export function buildStudioAssayJson({
   intervalUnit,
   samples,
   analysis,
+  channelDefaults,
   sampleRowToDisk,
 }: {
   assayId: StudioAssayType;
@@ -140,9 +141,11 @@ export function buildStudioAssayJson({
   intervalUnit: StudioIntervalUnit;
   samples: StudioAssaySampleRow[];
   analysis?: AssayAnalysisConfig | null;
+  /** Typed assay-wide segmentation and signal channels. Card fields are overrides. */
+  channelDefaults: { segmentation: string; signal: string };
   sampleRowToDisk: (row: StudioAssaySampleRow) => AssaySampleRow;
 }): StudioAssayJson {
-  const derivedChannels = analysisChannelsFromSamples(samples);
+  const derivedChannels = analysisChannelsFromSamples(channelDefaults, samples);
   // Overrides are keyed by sample name: once channels are derived from the rows, drop any
   // previous `sampleChannels` so a renamed sample never leaves a stale override behind.
   const { sampleChannels: _previousOverrides, ...analysisWithoutOverrides } = analysis ?? {};
@@ -209,6 +212,7 @@ export function parseStudioAssayJson(
     intervalUnit: root.interval.unit,
     samples,
     analysis: root.analysis,
+    channelDefaults: assayChannelDefaultsFromAnalysis(root.analysis),
     sampleRowToDisk,
   });
 }

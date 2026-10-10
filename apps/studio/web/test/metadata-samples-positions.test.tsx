@@ -14,17 +14,26 @@ function renderSamples(positions: string) {
     samples: initial.samples.map((row, index) => (index === 0 ? { ...row, positions } : row)),
   };
   let stored = () => state.samples[0]!;
+  let channels = () => ({
+    segmentation: state.segmentationChannel,
+    signal: state.signalChannel,
+  });
   render(() => (
     <RegistryProvider initialValues={[[studioWizardAtom, state] as const]}>
       {(() => {
         const wizard = useAtomValue(() => studioWizardAtom);
         stored = () => wizard().samples[0]!;
+        channels = () => ({
+          segmentation: wizard().segmentationChannel,
+          signal: wizard().signalChannel,
+        });
         return <MetadataSamples />;
       })()}
     </RegistryProvider>
   ));
   return {
     stored: () => stored(),
+    channels: () => channels(),
     positions: screen.getAllByRole("textbox", { name: "Positions" })[0] as HTMLInputElement,
   };
 }
@@ -79,27 +88,51 @@ describe("MetadataSamples columns", () => {
     expect(screen.getAllByRole("textbox", { name: "Name" })).toHaveLength(2);
   });
 
-  it("edits the segmentation channel", async () => {
-    const { stored } = renderSamples("");
+  it("edits the assay channels and keeps card fields as overrides", async () => {
+    const { stored, channels } = renderSamples("");
     const segmentation = screen.getAllByRole("textbox", {
       name: "Segmentation channel",
-    })[0] as HTMLInputElement;
-    expect(screen.getAllByText("Segmentation channel")).toHaveLength(2);
-    expect(screen.getAllByText("Signal channel")).toHaveLength(2);
+    });
+    const signal = screen.getAllByRole("textbox", { name: "Signal channel" });
+    expect(segmentation).toHaveLength(3);
+    expect(signal).toHaveLength(3);
+    expect(screen.getAllByText("Segmentation channel")).toHaveLength(3);
+    expect(screen.getAllByText("Signal channel")).toHaveLength(3);
     expect(screen.queryByRole("tooltip")).toBeNull();
     expect(screen.queryByRole("button", { name: "Name details" })).toBeNull();
     const positionDetails = screen.getAllByRole("button", { name: "Positions details" });
     expect(positionDetails).toHaveLength(2);
     expect(screen.queryByRole("button", { name: "Position start details" })).toBeNull();
-    expect(screen.getAllByRole("button", { name: "Segmentation channel details" })).toHaveLength(2);
-    expect(screen.getAllByRole("button", { name: "Signal channel details" })).toHaveLength(2);
+    const segmentationDetails = screen.getAllByRole("button", {
+      name: "Segmentation channel details",
+    });
+    expect(segmentationDetails).toHaveLength(3);
+    expect(screen.getAllByRole("button", { name: "Signal channel details" })).toHaveLength(3);
     (positionDetails[0] as HTMLButtonElement).focus();
     await waitFor(() => {
       expect(screen.getByRole("tooltip").textContent).toBe(
         "Counting starts at 1. Type 1-5, 21-25, 28 and press Enter.",
       );
     });
-    fireEvent.change(segmentation, { target: { value: "2" } });
+    (segmentationDetails[0] as HTMLButtonElement).focus();
+    await waitFor(() => {
+      expect(screen.getByRole("tooltip").textContent).toBe(
+        "Channel used to find cells. Used for every sample unless a card overrides it.",
+      );
+    });
+    (segmentationDetails[1] as HTMLButtonElement).focus();
+    await waitFor(() => {
+      expect(screen.getByRole("tooltip").textContent).toBe(
+        "Override for this sample only. Leave empty to use the assay segmentation channel.",
+      );
+    });
+
+    fireEvent.input(segmentation[0]!, { target: { value: "0" } });
+    fireEvent.input(signal[0]!, { target: { value: "1,2" } });
+    fireEvent.input(segmentation[1]!, { target: { value: "2" } });
+    expect(channels().segmentation).toBe("0");
+    expect(channels().signal).toBe("1,2");
     expect(stored().segmentation).toBe("2");
+    expect(stored().signal).toBe("");
   });
 });

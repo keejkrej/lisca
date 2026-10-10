@@ -21,6 +21,7 @@ function build(samples: StudioAssaySampleRow[], analysis?: BuildInput["analysis"
     intervalUnit: "minute",
     samples,
     analysis,
+    channelDefaults: { segmentation: "0", signal: "1" },
   });
 }
 

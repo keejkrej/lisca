@@ -13,7 +13,7 @@ export function instructionForStep(step: StudioStep): string {
     return "Open a saved assay, or pick an assay type and press New to start a blank one.";
   }
   if (step === "metadata") {
-    return "Choose the image source, workspace folder, and time between frames. Name each sample and the positions it covers.";
+    return "Choose the image source, workspace folder, and time between frames. Set the segmentation and signal channels, then name each sample and the positions it covers.";
   }
   if (step === "alignPattern") {
     return "Drag the grid onto the micropattern, exclude empty patterns, then press Save. Once every position is saved, press Crop.";

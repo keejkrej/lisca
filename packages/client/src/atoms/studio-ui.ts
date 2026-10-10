@@ -28,10 +28,12 @@ import {
   parseStudioAssayJson as parseStudioAssayJsonCore,
 } from "../studio/studio-assay-json";
 import {
+  assayChannelDefaultsFromAnalysis,
   formatSamplePositions,
   normalizeStoredPositions,
   sampleRowFromDisk,
   sampleRowToDisk,
+  withoutInheritedChannelOverrides,
 } from "../studio/sample-positions";
 import {
   isBasicInfoDirty as isBasicInfoDirtyCore,
@@ -97,6 +99,7 @@ export function buildStudioAssayJson({
   intervalUnit,
   samples,
   analysis,
+  channelDefaults,
 }: {
   assayId: AssayId;
   name: string;
@@ -108,6 +111,7 @@ export function buildStudioAssayJson({
   intervalUnit: IntervalUnit;
   samples: BasicInfoSampleRow[];
   analysis?: AssayAnalysisConfig | null;
+  channelDefaults: { segmentation: string; signal: string };
 }): StudioAssayJson {
   return buildStudioAssayJsonCore({
     assayId,
@@ -120,6 +124,7 @@ export function buildStudioAssayJson({
     intervalUnit,
     samples,
     analysis,
+    channelDefaults,
     sampleRowToDisk,
   });
 }
@@ -139,6 +144,10 @@ export type StudioWizardState = {
   intervalValue: number | null;
   intervalUnit: IntervalUnit;
   samples: BasicInfoSampleRow[];
+  /** Assay-wide segmentation channel, as typed. Sample cards may override it. */
+  segmentationChannel: string;
+  /** Assay-wide signal channels, comma-separated. Sample cards may override them. */
+  signalChannel: string;
   /** Assay-dependent analysis params (max onset for transfection; segmentation for transfection and killing). */
   analysis: AssayAnalysisConfig | null;
   basicInfoSavedSnapshot: string | null;
@@ -157,6 +166,8 @@ export function buildStudioAssayJsonFromWizard(
     | "intervalValue"
     | "intervalUnit"
     | "samples"
+    | "segmentationChannel"
+    | "signalChannel"
     | "analysis"
   >,
 ): StudioAssayJson {
@@ -171,6 +182,10 @@ export function buildStudioAssayJsonFromWizard(
     intervalUnit: state.intervalUnit,
     samples: state.samples,
     analysis: state.analysis,
+    channelDefaults: {
+      segmentation: state.segmentationChannel,
+      signal: state.signalChannel,
+    },
   });
 }
 
@@ -186,6 +201,8 @@ export function serializeBasicInfoSnapshot(
     | "intervalValue"
     | "intervalUnit"
     | "samples"
+    | "segmentationChannel"
+    | "signalChannel"
     | "analysis"
   >,
 ): string {
@@ -251,11 +268,39 @@ function mergeStudioState(persisted: unknown, current: StudioWizardState): Studi
     subfolder: persistedState.info1?.folderSubfolderTemplate ?? current.folderTemplate.subfolder,
     filename: persistedState.info1?.folderFilenameTemplate ?? current.folderTemplate.filename,
   };
-  const samples = persistedState.samples
+  const loadedSamples = persistedState.samples
     ? cloneSamples(persistedState.samples)
     : persistedState.info3?.samples
       ? cloneSamples(persistedState.info3.samples)
       : current.samples;
+  const hasChannelFields =
+    typeof persistedState.segmentationChannel === "string" ||
+    typeof persistedState.signalChannel === "string";
+  let segmentationChannel = current.segmentationChannel;
+  let signalChannel = current.signalChannel;
+  let samples = loadedSamples;
+  if (hasChannelFields) {
+    segmentationChannel =
+      typeof persistedState.segmentationChannel === "string"
+        ? persistedState.segmentationChannel
+        : "";
+    signalChannel =
+      typeof persistedState.signalChannel === "string" ? persistedState.signalChannel : "";
+  } else {
+    const fromAnalysis = assayChannelDefaultsFromAnalysis(persistedState.analysis);
+    if (fromAnalysis.segmentation || fromAnalysis.signal) {
+      segmentationChannel = fromAnalysis.segmentation;
+      signalChannel = fromAnalysis.signal;
+    } else {
+      const first = loadedSamples.find((row) => row.segmentation.trim() || row.signal.trim());
+      segmentationChannel = first?.segmentation ?? "";
+      signalChannel = first?.signal ?? "";
+    }
+    samples = withoutInheritedChannelOverrides(loadedSamples, {
+      segmentation: segmentationChannel,
+      signal: signalChannel,
+    });
+  }
 
   let intervalValue = current.intervalValue;
   if (persistedState.intervalValue !== undefined) {
@@ -286,6 +331,8 @@ function mergeStudioState(persisted: unknown, current: StudioWizardState): Studi
     intervalValue,
     intervalUnit,
     samples,
+    segmentationChannel,
+    signalChannel,
     analysis:
       persistedState.analysis !== undefined
         ? (analysisConfigForAssay(assayId, persistedState.analysis) ?? null)
@@ -311,6 +358,8 @@ function createInitialWizardData(): StudioWizardState {
     intervalValue: defaultIntervalMinutesForAssay(DEFAULT_ASSAY_ID),
     intervalUnit: "minute",
     samples: [emptySampleRow("sample:0"), emptySampleRow("sample:1")],
+    segmentationChannel: "",
+    signalChannel: "",
     analysis: initialAnalysis,
     basicInfoSavedSnapshot: null,
   };
@@ -385,6 +434,7 @@ export const studioWizardActions = {
         ...sampleRowFromDisk(row, assayJson.analysis),
       })),
     );
+    const channelDefaults = assayChannelDefaultsFromAnalysis(assayJson.analysis);
     const nextAnalysis = analysisConfigForAssay(nextAssayId, assayJson.analysis) ?? null;
     patchStudioWizard(set, {
       assayId: nextAssayId,
@@ -397,6 +447,8 @@ export const studioWizardActions = {
       intervalValue: assayJson.interval.value,
       intervalUnit: assayJson.interval.unit,
       samples,
+      segmentationChannel: channelDefaults.segmentation,
+      signalChannel: channelDefaults.signal,
       analysis: nextAnalysis,
       basicInfoSavedSnapshot: JSON.stringify(
         buildStudioAssayJson({
@@ -410,6 +462,7 @@ export const studioWizardActions = {
           intervalUnit: assayJson.interval.unit,
           samples,
           analysis: nextAnalysis,
+          channelDefaults,
         }),
       ),
     });
