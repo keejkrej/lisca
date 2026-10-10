@@ -832,10 +832,11 @@ checksum = "914a755b7c2d4af2bdcff7ce1739e2db9a1b81a9b07123d8015786ae03c0980d"
 
 [[package]]
 name = "czi"
-version = "0.2.0"
-source = "git+https://github.com/keejkrej/czi-rs#ea070149699644a190958f8b5f11e6afec8806f1"
+version = "1.0.0"
+source = "git+https://github.com/keejkrej/czi-rs?rev=19b54c0e4d4278e1b781388a76930b8a01170014#19b54c0e4d4278e1b781388a76930b8a01170014"
 dependencies = [
  "roxmltree",
+ "serde",
  "thiserror 1.0.69",
  "zstd",
 ]
@@ -2519,8 +2520,8 @@ dependencies = [
  "lisca-killing",
  "lisca-transfection",
  "lisca-workspace",
- "mlab",
- "mplot",
+ "marray",
+ "mplot 1.0.0",
  "nd2",
  "ndarray 0.17.2",
  "ndarray-stats 0.7.0",
@@ -2590,7 +2591,7 @@ dependencies = [
  "image 0.25.10",
  "imageproc",
  "mlab",
- "mplot",
+ "mplot 0.1.0",
  "ndarray 0.16.1",
  "ndarray-ndimage",
  "rayon",
@@ -2652,6 +2653,20 @@ dependencies = [
  "log",
  "tendril",
  "web_atoms",
+]
+
+[[package]]
+name = "marray"
+version = "1.0.0"
+source = "git+https://github.com/keejkrej/marray-rs?rev=af67ac2d833f55e069f286022d0a0de0b9547bfb#af67ac2d833f55e069f286022d0a0de0b9547bfb"
+dependencies = [
+ "nalgebra 0.33.3",
+ "ndarray 0.16.1",
+ "num-traits",
+ "rand 0.8.6",
+ "rand_distr",
+ "rustfft",
+ "special",
 ]
 
 [[package]]
@@ -2777,6 +2792,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "mplot"
+version = "1.0.0"
+source = "git+https://github.com/keejkrej/mplot-rs?rev=b5f3690f7410fa67709621b564b51272f5b3b6e9#b5f3690f7410fa67709621b564b51272f5b3b6e9"
+dependencies = [
+ "num-traits",
+ "plotters",
+ "svg2pdf",
+]
+
+[[package]]
 name = "muda"
 version = "0.20.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2841,8 +2866,8 @@ dependencies = [
 
 [[package]]
 name = "nd2"
-version = "0.2.0"
-source = "git+https://github.com/keejkrej/nd2-rs#599c14d19bbeb5314ba841674717022f3379b28d"
+version = "1.0.0"
+source = "git+https://github.com/keejkrej/nd2-rs?rev=67f1f15e3e72d742111558396a9b008de2de8d98#67f1f15e3e72d742111558396a9b008de2de8d98"
 dependencies = [
  "byteorder",
  "flate2",

@@ -32,7 +32,7 @@ uuid.workspace = true
 csv.workspace = true
 rayon.workspace = true
 mplot = { workspace = true, optional = true }
-mlab = { workspace = true, features = ["np", "sp"] }
+marray = { workspace = true, features = ["np", "sp"] }
 ndarray.workspace = true
 ndarray-stats.workspace = true
 lisca-transfection = { workspace = true, optional = true }
