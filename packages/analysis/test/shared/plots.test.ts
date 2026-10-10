@@ -13,8 +13,8 @@ import {
 
 describe("inferResultAssayKind", () => {
   it("detects killing from kill-curve PNGs", () => {
-    expect(inferResultAssayKind([{ fileName: "kill_curve.png", path: "" }])).toBe("killing");
-    expect(inferResultAssayKind([{ fileName: "death_times.csv", path: "" }])).toBe("killing");
+    expect(inferResultAssayKind([{ fileName: "kill_curve.png", path: "" }])).toBe("killing-death-reporter");
+    expect(inferResultAssayKind([{ fileName: "death_times.csv", path: "" }])).toBe("killing-death-reporter");
   });
 
   it("detects transfection from AUC or fit plot artifacts", () => {
@@ -161,7 +161,7 @@ describe("collectResultPlots", () => {
         { kind: "plot", fileName: "traces.png", path: "/traces.png" },
         { kind: "plot", fileName: "traces_summary.png", path: "/traces_summary.png" },
       ],
-      "killing",
+      "killing-death-reporter",
     );
     expect(plots[0]?.title).toBe("Fluorescence traces");
     expect(plots[1]?.title).toBe("Mean fluorescence");
@@ -183,7 +183,7 @@ describe("collectResultPlots", () => {
 
 describe("result sections", () => {
   it("labels Compare for killing sample means", () => {
-    expect(resultSectionLabel("parameters", "killing")).toBe("Compare");
+    expect(resultSectionLabel("parameters", "killing-death-reporter")).toBe("Compare");
     expect(resultSectionLabel("parameters", "transfection")).toBe("Parameters");
   });
 
@@ -208,7 +208,7 @@ describe("resultSectionInstruction", () => {
     expect(resultSectionInstruction("parameters", "transfection")).toBe(
       "Fitted parameters: mRNA lifetime τ_mRNA, AUC, expression rate m0 k_TL, and onset time t0.",
     );
-    expect(resultSectionInstruction("parameters", "killing")).toBe(
+    expect(resultSectionInstruction("parameters", "killing-death-reporter")).toBe(
       "Mean fluorescence for each sample.",
     );
   });

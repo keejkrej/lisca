@@ -92,7 +92,7 @@ mod tests {
 
     fn assay_json() -> String {
         r#"{
-            "type": "killing",
+            "type": "killing-death-reporter",
             "name": "fluorescence",
             "workspace": { "path": "" },
             "data": { "type": "folder", "path": "", "template": { "subfolder": "", "filename": "" } },

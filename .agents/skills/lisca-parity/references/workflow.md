@@ -55,16 +55,19 @@ cargo test -p lisca-transfection   # in ../lisca-transfection-assay
 ## Extending `lisca-analyze`
 
 New assays do not grow a dedicated bin and do not get assay-qualified stage
-subcommands. Extend `lisca-analyze` with one command whose name is the Studio
-wire id and whose only argument is the workspace. The diff recipe above shells
-out for transfection only.
+subcommands. Extend `lisca-analyze` with one command per enabled assay. The
+name is the product name, and the only argument is the workspace. The diff
+recipe above shells out for transfection only.
 
 Killing:
 
 ```sh
-lisca-analyze killing WORKSPACE
+lisca-analyze killing-death-reporter WORKSPACE
 lisca-analyze killing-engagement WORKSPACE
 ```
+
+`killing-death-reporter` is the command and the `assay.json` type. `killing`
+alone is neither a command nor an assay id.
 
 No `--interval` and no `--assay`. A future Python comparison imports
 `killing.services`. This note does not add that comparison.

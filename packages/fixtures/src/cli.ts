@@ -87,7 +87,7 @@ export function fixtureUsage(): string {
     "Materialize a sample LISCA image source or half-finished workspace.",
     "",
     "Usage:",
-    "  pnpm run fixture:workspace -- --assay <transfection|killing> --stage <stage> --out <dir> [--force]",
+    "  pnpm run fixture:workspace -- --assay <transfection|killing-death-reporter> --stage <stage> --out <dir> [--force]",
     "",
     `Assays:  ${FIXTURE_ASSAYS.join(", ")}`,
     `Stages:  ${FIXTURE_STAGES.join(", ")}`,
@@ -105,13 +105,13 @@ export function fixtureUsage(): string {
     "  pnpm run fixture:workspace -- --assay transfection --stage assay --out /tmp/tf-align",
     "",
     "  # Only test crop (alignment already saved)",
-    "  pnpm run fixture:workspace -- --assay killing --stage aligned --out /tmp/kill-crop",
+    "  pnpm run fixture:workspace -- --assay killing-death-reporter --stage aligned --out /tmp/kill-crop",
     "",
     "  # Only test analysis (ROI stacks present, no results yet)",
     "  pnpm run fixture:workspace -- --assay transfection --stage cropped --out /tmp/tf-analyze",
     "",
     "  # Open a finished workspace / review Rust PNG filenames",
-    "  pnpm run fixture:workspace -- --assay killing --stage analyzed --out /tmp/kill-done",
+    "  pnpm run fixture:workspace -- --assay killing-death-reporter --stage analyzed --out /tmp/kill-done",
   ].join("\n");
 }
 

@@ -47,7 +47,7 @@ kernels. Transfection Python↔Rust comparisons belong in the sidecar
 
 ## Phase 1 — Map the goal source
 
-1. Identify the assay id (`transfection`, `killing`, `killing-engagement`) and
+1. Identify the assay id (`transfection`, `killing-death-reporter`, `killing-engagement`) and
    sibling package (`../lisca-transfection-assay`, `../lisca-killing-assay`).
 2. Inventory output paths and CSV columns from the library. For killing, use
    `killing.core` and `killing.services`, not a product CLI. Transfection may
@@ -57,7 +57,8 @@ kernels. Transfection Python↔Rust comparisons belong in the sidecar
    `lisca-transfection` (thin dispatch under
    `crates/lisca/src/analysis/assays/transfection/`). Killing kernels are the
    git crate `lisca-killing`. Dispatch is `assays/killing/` and
-   `assays/killing_engagement.rs`. Parity CLI is `lisca-analyze killing` and
+   `assays/killing_engagement.rs`. Parity CLI is
+   `lisca-analyze killing-death-reporter` (`assay.json` type `killing-death-reporter`) and
    `lisca-analyze killing-engagement`, workspace path only. Transfection stages
    stay on `lisca-analyze` under their existing names.
 
@@ -117,8 +118,9 @@ passes on a known-good stage (paste invocation + verdict).
   fit grid sizes), and **edge semantics** (inclusive position ranges, onset
   cap).
 - Transfection stage names stay (`segment`, `traces`, `auc`, `fit`, …).
-  A new assay extends `lisca-analyze` with the Studio wire id and does not
-  grow a side-repo product CLI.
+  A new assay extends `lisca-analyze` with one product-named command and does
+  not grow a side-repo product CLI. Killing (death reporter) is
+  `killing-death-reporter`, which is also the wire id.
 
 Common failure class: **grid refine windows**, median pooling order, mask
 foreground definition, time = `t * interval` units. Diff distributions by
@@ -153,7 +155,7 @@ documented or re-run; docs list the stage.
 | Assay id         | Goal source (sibling)                       | Rust                                                         | Parity CLI            |
 | ---------------- | ------------------------------------------- | ------------------------------------------------------------ | --------------------- |
 | `transfection`   | `lisca-transfection-assay` (`transfection`) | git crate `lisca-transfection` + thin `assays/transfection/` | `lisca-analyze`       |
-| `killing`              | `lisca-killing-assay`    | git crate `lisca-killing` + thin dispatch | `lisca-analyze killing`              |
+| `killing-death-reporter` | `lisca-killing-assay`    | git crate `lisca-killing` + thin dispatch | `lisca-analyze killing-death-reporter` |
 | `killing-engagement` | `lisca-killing-assay`    | git crate `lisca-killing` + thin dispatch | `lisca-analyze killing-engagement`   |
 | binding (future)     | `../lisca-binding-assay` | (not registered until mature)             | —                                    |
 

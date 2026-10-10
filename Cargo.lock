@@ -2331,7 +2331,7 @@ dependencies = [
 [[package]]
 name = "lisca-killing"
 version = "0.1.0"
-source = "git+https://github.com/keejkrej/lisca-killing-assay?rev=99deb27c9bc6140303797e631c679c544616406c#99deb27c9bc6140303797e631c679c544616406c"
+source = "git+https://github.com/keejkrej/lisca-killing-assay?rev=75861fafe9ca671cb98f4a3a9df89918a3d6d9c4#75861fafe9ca671cb98f4a3a9df89918a3d6d9c4"
 dependencies = [
  "csv",
  "image 0.25.10",

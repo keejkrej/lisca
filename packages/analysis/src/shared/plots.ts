@@ -3,7 +3,11 @@ import { TRANSFECTION_PLOTS, type TransfectionPlotSpec } from "../assays/transfe
 
 export type ResultPlotSection = "traces" | "parameters";
 
-export type ResultAssayKind = "transfection" | "killing" | "killing-engagement" | "unknown";
+export type ResultAssayKind =
+  | "transfection"
+  | "killing-death-reporter"
+  | "killing-engagement"
+  | "unknown";
 
 export type ResultPlotSpec = TransfectionPlotSpec | KillingPlotSpec;
 
@@ -54,20 +58,20 @@ export function isPlotFile(file: ResultFileRef): boolean {
 
 export function inferResultAssayKind(files: ResultFileRef[]): ResultAssayKind {
   if (files.some((file) => ENGAGEMENT_MARKERS.has(file.fileName))) return "killing-engagement";
-  if (files.some((file) => KILLING_MARKERS.has(file.fileName))) return "killing";
+  if (files.some((file) => KILLING_MARKERS.has(file.fileName))) return "killing-death-reporter";
   if (files.some((file) => TRANSFECTION_MARKERS.has(file.fileName))) return "transfection";
   return "unknown";
 }
 
 export function catalogForAssay(assay: ResultAssayKind): readonly ResultPlotSpec[] {
   if (assay === "killing-engagement") return ENGAGEMENT_PLOTS;
-  if (assay === "killing") return KILLING_PLOTS;
+  if (assay === "killing-death-reporter") return KILLING_PLOTS;
   return TRANSFECTION_PLOTS;
 }
 
 export function resultSectionLabel(section: ResultPlotSection, assay: ResultAssayKind): string {
   if (section === "traces") return "Traces";
-  if (assay === "killing" || assay === "killing-engagement") return "Compare";
+  if (assay === "killing-death-reporter" || assay === "killing-engagement") return "Compare";
   return "Parameters";
 }
 
@@ -77,12 +81,12 @@ export function resultSectionInstruction(
 ): string {
   if (section === "traces") {
     if (assay === "killing-engagement") return "Engager count for each cell.";
-    return assay === "killing"
+    return assay === "killing-death-reporter"
       ? "Fluorescence time series for each cell."
       : "Intensity, area, and fitted traces for each sample.";
   }
   if (assay === "killing-engagement") return "Mean engager count for each sample.";
-  return assay === "killing"
+  return assay === "killing-death-reporter"
     ? "Mean fluorescence for each sample."
     : "Fitted parameters: mRNA lifetime τ_mRNA, AUC, expression rate m0 k_TL, and onset time t0.";
 }

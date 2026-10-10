@@ -7,8 +7,9 @@ Most **analysis science** is developed outside this monorepo, in focused
 workspace paths, CSV columns, and scientific definitions, trusted on real
 experiments), this repo **imports** it rather than keeping a second copy of the
 pipeline. Once Studio enables the assay, `lisca-analyze` grows one command
-named for the Studio wire id. Transfection's stage CLI is the historical shape
-for that assay only.
+named for the product. Transfection's stage CLI is the historical shape for
+that assay only. Killing (death reporter) is `killing-death-reporter` on
+`lisca-analyze` and in `assay.json`.
 
 | Sibling package (R&D + prod kernels)                                               | Role                                                                                                                                                                                                       |
 | ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -82,7 +83,7 @@ pools, or bitwise float identity.
 | Studio `assayId`                                        | Goal source + Rust                                                           | This repo                                                             | Parity CLI                            | Notes                                                              |
 | ------------------------------------------------------- | ---------------------------------------------------------------------------- | --------------------------------------------------------------------- | ------------------------------------- | ------------------------------------------------------------------ |
 | `transfection` (Studio wire id; science = transfection) | `lisca-transfection-assay` (`transfection` CLI + `lisca-transfection` crate) | Thin dispatch in `analysis/assays/transfection/` + local ONNX segment | `lisca-analyze` (calls the git crate) | Crop stays here. Python+Rust parity: sidecar `docs/parity.md`.     |
-| `killing`                                               | `lisca-killing-assay` (`lisca-killing` + `killing.core` / `killing.services`) | Thin dispatch and plots in `analysis/assays/killing/` | `lisca-analyze killing` | Per-cell traces and sample-mean figures. Analyze does not run the classifier. The kill curve is `lisca_killing::run_clean` / `killing.services.classifier.run_clean`, library only. |
+| `killing-death-reporter`                                | `lisca-killing-assay` (`lisca-killing` + `killing.core` / `killing.services`) | Thin dispatch and plots in `analysis/assays/killing/` | `lisca-analyze killing-death-reporter` | Per-cell traces and sample-mean figures. The command and `assay.json` type are both `killing-death-reporter`. Analyze does not run the classifier. The kill curve is `lisca_killing::run_clean` / `killing.services.classifier.run_clean`, library only. |
 | `killing-engagement`                                    | `lisca-killing-assay` (`lisca-killing` + `killing.core` / `killing.services`) | Thin dispatch and plots in `analysis/assays/killing_engagement.rs` | `lisca-analyze killing-engagement` | Spot counts. Tumor touch is recorded and is not proof of contact. |
 | `lnp-binding` / binding                                 | future `lisca-binding-assay`                                                 | none until mature                                                     | —                                     | Closed enum: do not half-register                                  |
 
@@ -93,7 +94,7 @@ Cargo (this workspace):
 
 ```toml
 lisca-transfection = { git = "https://github.com/keejkrej/lisca-transfection-assay", rev = "9eda2a7dd62c73cc8fd36071762a043f436462db" }
-lisca-killing = { git = "https://github.com/keejkrej/lisca-killing-assay", rev = "99deb27c9bc6140303797e631c679c544616406c" }
+lisca-killing = { git = "https://github.com/keejkrej/lisca-killing-assay", rev = "75861fafe9ca671cb98f4a3a9df89918a3d6d9c4" }
 ```
 
 Python extra (`python/pyproject.toml`, `analysis` extra):
@@ -214,18 +215,19 @@ Details and examples: [`analysis.md`](./analysis.md) § Parity CLI.
 
 ### Killing: `lisca-analyze`
 
-`killing` and `killing-engagement` take a workspace path and nothing else.
-Interval and assay type come from `assay.json`. `--interval`, `--assay`, and
+`killing-death-reporter` and `killing-engagement` take a workspace path and
+nothing else. Interval and assay type come from `assay.json`.
+`killing-death-reporter` requires type `killing-death-reporter`. `--interval`, `--assay`, and
 any other flag exit 1. There is no `fluorescence`, `clean`, `predict`, or
-`label-free` command.
+`label-free` command. `killing` alone is neither a command nor an assay id.
 
 | Command | Writes |
 | --- | --- |
-| `killing` | Fluorescence CSVs, `results/<sample>/traces.xlsx`, and `traces.png`, `traces_shared_y.png`, `traces_summary.png`, `traces_summary_shared_y.png` |
+| `killing-death-reporter` | Fluorescence CSVs, `results/<sample>/traces.xlsx`, and `traces.png`, `traces_shared_y.png`, `traces_summary.png`, `traces_summary_shared_y.png` |
 | `killing-engagement` | `analysis/Pos{n}/engagement.csv`, `analysis/Pos{n}/engagement_summary.csv`, the engagement workbooks, and `engagement_traces.png`, `engagement_traces_shared_y.png`, `engagement_traces_summary.png`, `engagement_traces_summary_shared_y.png` |
 
 ```sh
-./target/release/lisca-analyze killing ~/data/killing_pi
+./target/release/lisca-analyze killing-death-reporter ~/data/killing_pi
 ./target/release/lisca-analyze killing-engagement ~/data/killing_tcell
 ```
 
@@ -291,8 +293,9 @@ They are not a licence to transliterate Python line-by-line.
 2. Depend on that crate via git URL (no cycle back to this repo). Keep crop
    here until it is truly shared infrastructure.
 3. Register in `assays.rs` + contracts enum when ready for Studio.
-4. Extend `lisca-analyze` with one command per Studio wire id. The command
-   takes a workspace path only and calls the imported crate.
+4. Extend `lisca-analyze` with one command per enabled assay. The command
+   names the product and takes a workspace path only. Killing (death reporter)
+   is `killing-death-reporter`, which is also the `assay.json` type.
 5. Run synthetic + one real workspace differential before enabling in
    `ENABLED_STUDIO_ASSAY_IDS`.
 

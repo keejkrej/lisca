@@ -24,7 +24,7 @@ describe("studio align frame", () => {
   beforeEach(() => clearStudioAlignFrameMemory());
 
   it("uses the first frame for killing and the last frame for transfection", () => {
-    expect(studioAlignFrameDefault("killing")).toBe("first");
+    expect(studioAlignFrameDefault("killing-death-reporter")).toBe("first");
     expect(studioAlignFrameDefault("killing-engagement")).toBe("first");
     expect(studioAlignFrameDefault("transfection")).toBe("last");
     expect(studioAlignFrameDefault(null)).toBe("last");
@@ -69,7 +69,7 @@ describe("studio align frame", () => {
     const killing = studioAlignFrameMemoryKey({
       workspacePath: "/data/run",
       source: { kind: "nd2", path: "/data/run.nd2" },
-      assayId: "killing",
+      assayId: "killing-death-reporter",
     });
     const transfection = studioAlignFrameMemoryKey({
       workspacePath: "/data/run",

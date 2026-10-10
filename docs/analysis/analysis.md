@@ -48,7 +48,7 @@ PNGs above.
 pnpm run fixture:workspace -- --assay transfection --stage cropped --out /tmp/tf-analyze
 
 # Only test align
-pnpm run fixture:workspace -- --assay killing --stage assay --out /tmp/kill-align
+pnpm run fixture:workspace -- --assay killing-death-reporter --stage assay --out /tmp/kill-align
 ```
 
 Stages: `source`, `assay`, `aligned`, `cropped`, `annotated`, `analyzed`.
@@ -64,7 +64,7 @@ depends on `assay.json` → root `type`:
 | Assay          | Goal source (not implementation reference)                                                                                    | Pipeline                                                                                       |
 | -------------- | ----------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
 | `transfection` | [`lisca-transfection-assay`](https://github.com/keejkrej/lisca-transfection-assay) — Python + Rust crate imported via git URL | segment → traces → AUC → fit (+ plots) in `lisca-transfection`; Studio ONNX segment stays here |
-| `killing`      | Death reporter. Signal-channel fluorescence in each ROI crop. No classifier and no fit.                                       | traces → plot-traces                                                                           |
+| `killing-death-reporter` | Death reporter. Signal-channel fluorescence in each ROI crop. No classifier and no fit. | traces → plot-traces |
 
 Numeric stages and PNG plots for transfection run in the imported
 [`lisca-transfection`](https://github.com/keejkrej/lisca-transfection-assay) crate
@@ -113,7 +113,7 @@ and `analysis/transfection/traces/Pos{n}` (one Step per Position; Rust entry poi
 
 ## Killing pipeline
 
-Death reporter (`assayId` `killing`) measures fluorescence in each existing ROI crop. It does not segment, detect cells, fit a curve, or run a classifier. The signal channel comes from `analysis.channels.signal`. Each crop plane at z=0 uses the same full-frame reduction as transfection `analysis.skipSegment`: area is the pixel count, background is the 10th percentile, and corrected fluorescence is the sum minus area times background.
+Death reporter (`assayId` `killing-death-reporter`) measures fluorescence in each existing ROI crop. It does not segment, detect cells, fit a curve, or run a classifier. The signal channel comes from `analysis.channels.signal`. Each crop plane at z=0 uses the same full-frame reduction as transfection `analysis.skipSegment`: area is the pixel count, background is the 10th percentile, and corrected fluorescence is the sum minus area times background.
 
 ```
 assay.json → analysis/Pos{n}/ch{m}.csv → results/<sample>/traces.xlsx + one PNG per sample
@@ -279,7 +279,7 @@ Summary — full process, tolerances table, and lifecycle in [`parity.md`](./par
 
 ## Parity CLI (`lisca-analyze`)
 
-Transfection stages are shaped like sibling [`lisca-transfection-assay`](https://github.com/keejkrej/lisca-transfection-assay) so the same workspace can be driven from either side. Those stages call the git crate (plus local ONNX segment). `killing` and `killing-engagement` take a workspace path only. Process and side-by-side recipe: [`parity.md`](./parity.md).
+Transfection stages are shaped like sibling [`lisca-transfection-assay`](https://github.com/keejkrej/lisca-transfection-assay) so the same workspace can be driven from either side. Those stages call the git crate (plus local ONNX segment). `killing-death-reporter` and `killing-engagement` take a workspace path only. `killing-death-reporter` requires `assay.json` type `killing-death-reporter`. Process and side-by-side recipe: [`parity.md`](./parity.md).
 
 ```sh
 cargo build -p lisca --release --bin lisca-analyze
@@ -297,11 +297,11 @@ cargo build -p lisca --release --bin lisca-analyze
 ./target/release/lisca-analyze pipeline ~/data/TF84
 
 # Killing assays (workspace path only; no --interval, no --assay)
-./target/release/lisca-analyze killing ~/data/killing_pi
+./target/release/lisca-analyze killing-death-reporter ~/data/killing_pi
 ./target/release/lisca-analyze killing-engagement ~/data/killing_tcell
 ```
 
-`killing` writes fluorescence CSVs, `results/<sample>/traces.xlsx`, and `traces.png`, `traces_shared_y.png`, `traces_summary.png`, `traces_summary_shared_y.png`. `killing-engagement` writes `engagement.csv`, `engagement_summary.csv`, the engagement workbooks, and `engagement_traces.png`, `engagement_traces_shared_y.png`, `engagement_traces_summary.png`, `engagement_traces_summary_shared_y.png`.
+`killing-death-reporter` writes fluorescence CSVs, `results/<sample>/traces.xlsx`, and `traces.png`, `traces_shared_y.png`, `traces_summary.png`, `traces_summary_shared_y.png`. `killing-engagement` writes `engagement.csv`, `engagement_summary.csv`, the engagement workbooks, and `engagement_traces.png`, `engagement_traces_shared_y.png`, `engagement_traces_summary.png`, `engagement_traces_summary_shared_y.png`.
 
 Transfection `--interval` / `--max-onset-minutes` may be omitted when `assay.json` has `interval` and optional `analysis.maxOnsetMinutes`. `--assay` defaults to `<workspace>/assay.json`. Plot commands also accept transfection-style paths (`…/analysis`, `…/analysis/PosN/auc.csv`, `…/analysis/PosN/fit.csv`). Those flags are transfection stage options.
 

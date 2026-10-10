@@ -1,6 +1,7 @@
 //! Assay analysis CLI. Transfection stages dispatch into `lisca-transfection`.
-//! `killing` and `killing-engagement` dispatch into the killing assay and take
-//! a workspace path only.
+//! `killing-death-reporter` and `killing-engagement` dispatch into the killing
+//! assay and take a workspace path only. `killing-death-reporter` requires
+//! `assay.json` type `killing-death-reporter`.
 //!
 //! `--backend onnx` uses the local Studio ONNX segmenter; Otsu and all
 //! downstream transfection stages come from the sidecar crate.
@@ -9,7 +10,7 @@
 //! cargo run -p lisca --bin lisca-analyze -- --help
 //! cargo run -p lisca --release --bin lisca-analyze -- auc ~/data/TF84
 //! cargo run -p lisca --release --bin lisca-analyze -- pipeline ~/data/TF84
-//! cargo run -p lisca --bin lisca-analyze -- killing ~/data/killing_pi
+//! cargo run -p lisca --bin lisca-analyze -- killing-death-reporter ~/data/killing_pi
 //! cargo run -p lisca --bin lisca-analyze -- killing-engagement ~/data/killing_tcell
 //! ```
 //!
@@ -59,7 +60,7 @@ fn run() -> Result<(), String> {
         "plot-auc" => cmd_plot_auc(rest),
         "plot-fit" => cmd_plot_fit(rest),
         "pipeline" | "analyze" | "all" => cmd_pipeline(rest),
-        "killing" => cmd_killing(rest),
+        "killing-death-reporter" => cmd_killing_death_reporter(rest),
         "killing-engagement" => cmd_killing_engagement(rest),
         other => Err(format!(
             "unknown command {other:?}\n\nRun `lisca-analyze --help` for usage."
@@ -72,16 +73,17 @@ fn print_help() {
         "\
 lisca-analyze — assay CLI
   segment | traces | auc | fit | plot-traces | plot-auc | plot-fit | pipeline
-  killing <workspace>
+  killing-death-reporter <workspace>
   killing-engagement <workspace>
 
-Transfection stages call `lisca-transfection`. `killing` and `killing-engagement`
-call the killing dispatch and take a workspace path only. This binary does not
+Transfection stages call `lisca-transfection`. `killing-death-reporter` and
+`killing-engagement` call the killing dispatch and take a workspace path only.
+`killing-death-reporter` requires assay.json type `killing-death-reporter`. This binary does not
 run the classifier and has no `fluorescence`, `clean`, or `predict` command.
 
 Usage:
   lisca-analyze <command> [options] <workspace>
-  lisca-analyze killing <workspace>
+  lisca-analyze killing-death-reporter <workspace>
   lisca-analyze killing-engagement <workspace>
 
 Commands (transfection stage names):
@@ -95,16 +97,17 @@ Commands (transfection stage names):
   pipeline          Full Studio order from assay.json
                     (aliases: analyze, all)
 
-  killing           Killing (death reporter): fluorescence CSVs, traces.xlsx,
+  killing-death-reporter
+                    Killing (death reporter): fluorescence CSVs, traces.xlsx,
                     traces.png, traces_shared_y.png, traces_summary.png,
-                    traces_summary_shared_y.png
+                    traces_summary_shared_y.png. assay.json type `killing-death-reporter`.
   killing-engagement
                     Killing (engagement): engagement.csv, engagement_summary.csv,
                     the engagement workbooks, engagement_traces.png,
                     engagement_traces_shared_y.png, engagement_traces_summary.png,
                     engagement_traces_summary_shared_y.png
 
-Transfection stage options (not accepted by killing or killing-engagement):
+Transfection stage options (not accepted by killing-death-reporter or killing-engagement):
   --assay PATH            assay.json (default: <workspace>/assay.json)
   --interval MINUTES      frame interval (default: assay.json interval.value/unit)
   --max-onset-minutes N   fit onset time t0 search cap (default: assay analysis.maxOnsetMinutes
@@ -126,7 +129,7 @@ Parallel stages always use available CPU cores (no --jobs).
 Examples:
   lisca-analyze auc ~/data/TF84
   lisca-analyze pipeline ~/data/TF84
-  lisca-analyze killing ~/data/killing_pi
+  lisca-analyze killing-death-reporter ~/data/killing_pi
   lisca-analyze killing-engagement ~/data/killing_tcell
 "
     );
@@ -289,16 +292,18 @@ fn cmd_pipeline(args: &[String]) -> Result<(), String> {
     })
 }
 
-fn cmd_killing(args: &[String]) -> Result<(), String> {
-    let workspace = killing_workspace(args, "killing")?;
+fn cmd_killing_death_reporter(args: &[String]) -> Result<(), String> {
+    let workspace = killing_workspace(args, "killing-death-reporter")?;
     let assay = load_assay_json(&workspace)?;
-    if assay.type_ != AssayType::Killing {
+    if assay.type_ != AssayType::KillingDeathReporter {
         return Err(format!(
-            "lisca-analyze killing requires assay.json type killing, found {}",
+            "lisca-analyze killing-death-reporter requires assay.json type killing-death-reporter, found {}",
             assay.type_
         ));
     }
-    timed("killing", || killing::run_sync(&workspace, &assay))
+    timed("killing-death-reporter", || {
+        killing::run_sync(&workspace, &assay)
+    })
 }
 
 fn cmd_killing_engagement(args: &[String]) -> Result<(), String> {
@@ -570,21 +575,21 @@ mod tests {
         let killing_on_transfection = tempfile::tempdir().unwrap();
         let root = killing_on_transfection.path();
         write_assay(root, "transfection", "2.75");
-        let error = cmd_killing(&[root.display().to_string()]).unwrap_err();
+        let error = cmd_killing_death_reporter(&[root.display().to_string()]).unwrap_err();
         assert_eq!(
             error,
-            "lisca-analyze killing requires assay.json type killing, found transfection"
+            "lisca-analyze killing-death-reporter requires assay.json type killing-death-reporter, found transfection"
         );
         assert!(!root.join("analysis").exists());
         assert!(!root.join("results").exists());
 
         let engagement_on_killing = tempfile::tempdir().unwrap();
         let root = engagement_on_killing.path();
-        write_assay(root, "killing", "2.75");
+        write_assay(root, "killing-death-reporter", "2.75");
         let error = cmd_killing_engagement(&[root.display().to_string()]).unwrap_err();
         assert_eq!(
             error,
-            "lisca-analyze killing-engagement requires assay.json type killing-engagement, found killing"
+            "lisca-analyze killing-engagement requires assay.json type killing-engagement, found killing-death-reporter"
         );
         assert!(!root.join("analysis").exists());
         assert!(!root.join("results").exists());
@@ -594,8 +599,8 @@ mod tests {
     fn missing_or_non_positive_interval_writes_nothing() {
         let missing = tempfile::tempdir().unwrap();
         let root = missing.path();
-        write_assay(root, "killing", "null");
-        let error = cmd_killing(&[root.display().to_string()]).unwrap_err();
+        write_assay(root, "killing-death-reporter", "null");
+        let error = cmd_killing_death_reporter(&[root.display().to_string()]).unwrap_err();
         assert_eq!(error, "invalid interval.value/unit in assay.json");
         assert!(!root.join("analysis").exists());
 
@@ -610,12 +615,12 @@ mod tests {
     #[test]
     fn dashed_arguments_are_rejected_before_the_workspace_is_read() {
         assert_eq!(
-            cmd_killing(&["--interval".into(), "10".into()]).unwrap_err(),
-            "killing takes only a workspace path"
+            cmd_killing_death_reporter(&["--interval".into(), "10".into()]).unwrap_err(),
+            "killing-death-reporter takes only a workspace path"
         );
         assert_eq!(
-            cmd_killing(&["--interval=10".into()]).unwrap_err(),
-            "killing takes only a workspace path"
+            cmd_killing_death_reporter(&["--interval=10".into()]).unwrap_err(),
+            "killing-death-reporter takes only a workspace path"
         );
         assert_eq!(
             cmd_killing_engagement(&["--assay".into(), "/tmp/other.json".into(), "/tmp/ws".into()])
