@@ -18,6 +18,7 @@
   },
   "bundle": {
     "active": true,
+    "createUpdaterArtifacts": false,
     "targets": ["dmg", "nsis", "deb"],
     "resources": {
       "resources/": ""
@@ -29,5 +30,13 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ]
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEQ2NEMyQjUxMzlDMkQwQTAKUldTZzBNSTVVU3RNMW9QWlNYTDBNZDQ2U2t6b3ZpejZGYkRUMjVOTkU0L2N5ay9vZkRsZG05cTAK",
+      "endpoints": [
+        "https://github.com/keejkrej/lisca/releases/download/annotator-update/latest.json"
+      ]
+    }
   }
 }

@@ -8,6 +8,7 @@ license = "MIT OR Apache-2.0"
 [dependencies]
 annotator-server = { path = "../../server" }
 lisca-tauri = { path = "../../../../crates/lisca-tauri" }
+serde_json = { workspace = true }
 tauri = { workspace = true }
 
 [build-dependencies]

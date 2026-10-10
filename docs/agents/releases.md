@@ -1,16 +1,23 @@
 # Desktop releases
 
-LiSCA uses one release train for Studio. A public tag such as `v0.3.2` ships Studio
-installers for macOS, Windows, and Linux at version `0.3.2`. Local
-`pnpm run dist:aligner` and `pnpm run dist:annotator` remain available for those apps.
+Each desktop app has its own version and its own release. A tag ships one app for macOS, Windows, and Linux:
+
+| Tag                         | App       |
+| --------------------------- | --------- |
+| `vX.Y.Z` or `studio-vX.Y.Z` | Studio    |
+| `aligner-vX.Y.Z`            | Aligner   |
+| `annotator-vX.Y.Z`          | Annotator |
+
+Local `pnpm run dist:studio`, `dist:aligner`, and `dist:annotator` stay available and do not publish a release.
 
 ## Versioning policy
 
-- Use [Semantic Versioning](https://semver.org/) and prefix Git tags with `v`.
-- Keep the release-bearing Studio desktop manifests in lockstep:
-  - `apps/studio/desktop/package.json`
-  - `apps/studio/desktop/src-tauri/Cargo.toml`
-  - `apps/studio/desktop/src-tauri/tauri.conf.json`
+- Use [Semantic Versioning](https://semver.org/). Studio tags are `vX.Y.Z` or `studio-vX.Y.Z`. Aligner tags are `aligner-vX.Y.Z`. Annotator tags are `annotator-vX.Y.Z`.
+- Bump only the three desktop manifests of the app you are releasing:
+  - `apps/<app>/desktop/package.json`
+  - `apps/<app>/desktop/src-tauri/Cargo.toml`
+  - `apps/<app>/desktop/src-tauri/tauri.conf.json`
+- Leave the other apps at their own versions. A Studio release does not ship Aligner or Annotator.
 - Do not give private web apps, servers, helper packages, or shared crates an empty version bump. Their
   versions move only if they are published independently or their own package-version policy requires
   it.
@@ -24,19 +31,23 @@ installers for macOS, Windows, and Linux at version `0.3.2`. Local
   problem on `main` and publish the next patch version.
 
 The release workflow runs `scripts/check-release-version.ts` before it creates a GitHub Release. A tag
-whose version differs from any of the three Studio desktop manifest fields fails without publishing artifacts.
+whose version differs from any of that app's three desktop manifest fields fails without publishing artifacts.
 
 ## Release procedure
 
-1. Choose the next SemVer version from the latest stable GitHub Release.
-2. Update the three Studio desktop manifest fields above to the version without the `v` prefix.
-3. Run:
+1. Choose the app and the next SemVer version from that app's latest stable GitHub Release.
+2. Update that app's three desktop manifest fields to the version without the tag prefix.
+3. Run the check for that tag:
 
    ```sh
    node --experimental-strip-types scripts/check-release-version.ts vX.Y.Z
+   node --experimental-strip-types scripts/check-release-version.ts aligner-vX.Y.Z
+   node --experimental-strip-types scripts/check-release-version.ts annotator-vX.Y.Z
    pnpm run fmt:check
    pnpm run check
    ```
+
+   Run the one command whose tag you are about to push.
 
 4. Commit and push the version plus release changes to `main`.
 5. Wait for the `Checks` workflow on that exact commit to succeed.
@@ -47,15 +58,23 @@ whose version differs from any of the three Studio desktop manifest fields fails
    git push origin refs/tags/vX.Y.Z
    ```
 
-7. Wait for the three `Release` matrix jobs (Studio on macOS, Windows, and Linux) to succeed, then
-   verify that the GitHub Release contains one DMG, one NSIS installer, and one Debian package.
+   Use `studio-vX.Y.Z`, `aligner-vX.Y.Z`, or `annotator-vX.Y.Z` for those apps. `vX.Y.Z` is Studio.
+
+7. Wait for the three package jobs and `publish-updater-manifest` to succeed. The versioned GitHub
+   Release contains one DMG, one NSIS installer, and one Debian package, plus the updater signatures.
+   Tauri names the macOS updater archive `<Product>.app.tar.gz` with no architecture. The macOS
+   package job copies it to `<Product>_aarch64.app.tar.gz` before upload, because that runner is
+   Apple silicon. The app's feed (`studio-update`, `aligner-update`, or `annotator-update`) then
+   holds `latest.json`. That feed release is not the GitHub Latest release.
 
 ## Channels
 
 Two channels. There is no nightly. One machine has one install, and that install is one channel.
 
-- **Stable** is a `v*` tag. `.github/workflows/release.yml` publishes the GitHub Release. A stable install looks for updates on that release feed only. It does not look at test artifacts.
+- **Stable** is a product tag (`v*`, `studio-v*`, `aligner-v*`, or `annotator-v*`). `.github/workflows/release.yml` publishes that app's GitHub Release and its update feed. An installed app checks its own feed once at startup. It downloads nothing until the user chooses Install. Settings can turn the check off. It does not look at test artifacts or at the other apps' feeds.
 - **Test** is `.github/workflows/desktop-build.yml` (`Desktop build`, `workflow_dispatch`). It packages Studio with the same signing and notarization and uploads an Actions artifact. It does not create a tag, a GitHub Release, or an updater manifest. A test install looks for nothing. Replace it by installing another artifact by hand.
+
+Updater signatures use the `TAURI_SIGNING_PRIVATE_KEY` and `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` Actions secrets. The matching public key is in each app's `tauri.conf.json`. Keep a copy of the private key outside the repo. Losing it means installed apps cannot verify a later update.
 
 Run Desktop build from the Actions tab on the branch you want to try. The `os` input is `macos` (default), `windows`, `linux`, or `all`.
 

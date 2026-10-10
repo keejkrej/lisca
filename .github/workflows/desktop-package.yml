@@ -104,6 +104,9 @@ jobs:
           APPLE_ID: ${{ runner.os == 'macOS' && secrets.APPLE_ID || '' }}
           APPLE_PASSWORD: ${{ runner.os == 'macOS' && secrets.APPLE_PASSWORD || '' }}
           APPLE_TEAM_ID: ${{ runner.os == 'macOS' && secrets.APPLE_TEAM_ID || '' }}
+          LISCA_UPDATER_ARTIFACTS: ${{ inputs.upload_target == 'release' && '1' || '' }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ inputs.upload_target == 'release' && secrets.TAURI_SIGNING_PRIVATE_KEY || '' }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ inputs.upload_target == 'release' && secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD || '' }}
         run: pnpm run dist:${{ matrix.product }}
 
       # Tauri 2.11 leaves the signed DMG itself unnotarized (tauri-apps/tauri#15822), so submit
@@ -199,6 +202,56 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: gh release upload "${GITHUB_REF_NAME}" "${{ steps.installer.outputs.source }}" --clobber
+
+      # The DMG is the install file. macOS updates use the signed .app.tar.gz.
+      # Tauri names that archive "<Product>.app.tar.gz" with no architecture.
+      # macos-latest is Apple silicon, so stamp _aarch64 before upload.
+      # Windows and Linux updates use the NSIS installer and the .deb, plus each .sig.
+      - name: Upload updater artifacts
+        if: inputs.upload_target == 'release'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          dest="apps/${{ matrix.product }}/desktop/release"
+          files=()
+          case "${RUNNER_OS}" in
+            macOS)
+              archives=("${dest}"/macos/*.app.tar.gz)
+              if [ "${#archives[@]}" -ne 1 ]; then
+                echo "Expected one macOS updater archive under ${dest}/macos, found ${#archives[@]}" >&2
+                find "${dest}" -type f >&2 || true
+                exit 1
+              fi
+              archive="${archives[0]}"
+              if [ ! -f "${archive}.sig" ]; then
+                echo "Missing signature ${archive}.sig" >&2
+                exit 1
+              fi
+              stamped="${archive%.app.tar.gz}_aarch64.app.tar.gz"
+              cp "${archive}" "${stamped}"
+              cp "${archive}.sig" "${stamped}.sig"
+              files=("${stamped}" "${stamped}.sig")
+              ;;
+            Windows)
+              files=("${dest}"/nsis/*.exe.sig)
+              ;;
+            Linux)
+              files=("${dest}"/deb/*.deb.sig)
+              ;;
+            *)
+              echo "unsupported OS ${RUNNER_OS}" >&2
+              exit 1
+              ;;
+          esac
+          if [ "${#files[@]}" -eq 0 ]; then
+            echo "Expected updater signatures under ${dest}" >&2
+            find "${dest}" -type f >&2 || true
+            exit 1
+          fi
+          gh release upload "${GITHUB_REF_NAME}" "${files[@]}" --clobber
 
       - name: Upload test artifact
         if: inputs.upload_target == 'artifact'

@@ -1,4 +1,9 @@
-import { ConnectionStatus, ShellThemeToggle, useShellServer } from "@lisca/ui/shell";
+import {
+  ConnectionStatus,
+  DesktopUpdateSettings,
+  ShellThemeToggle,
+  useShellServer,
+} from "@lisca/ui/shell";
 import { useAtomSet, useAtomValue } from "@effect/atom-solid";
 import { Show } from "solid-js";
 
@@ -42,6 +47,7 @@ export function StudioTopBar(props: { showExpert?: boolean }) {
       </span>
       <div class="flex items-center gap-2">
         <ConnectionStatus state={server.state} onRetry={server.retry} />
+        <DesktopUpdateSettings />
         <ShellThemeToggle class="size-7" />
       </div>
     </div>

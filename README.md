@@ -8,7 +8,7 @@ Three apps share that workspace:
 - **Aligner** fits each field to the micropattern grid and writes ROI boxes.
 - **Annotator** outlines cells and assigns phenotype labels on those ROIs.
 
-Studio includes the Aligner and Annotator flows. GitHub Releases publish Studio installers.
+Studio includes the Aligner and Annotator flows. GitHub Releases publish one desktop app per tag.
 
 ## Repository
 

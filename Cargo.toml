@@ -66,4 +66,5 @@ lisca-killing = { git = "https://github.com/keejkrej/lisca-killing-assay", rev =
 tauri = "2"
 tauri-build = "2"
 tauri-plugin-dialog = "2"
+tauri-plugin-updater = "2"
 
