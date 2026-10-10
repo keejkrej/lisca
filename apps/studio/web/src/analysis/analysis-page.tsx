@@ -42,7 +42,8 @@ export default function AnalysisPage() {
   const assayId = useStudioStore((state) => state.assayId);
   const assayKind = createMemo((): ResultAssayKind => {
     const id = assayId();
-    if (id === "killing" || id === "transfection" || id === "killing-engagement") return id;
+    if (id === "killing-death-reporter" || id === "transfection" || id === "killing-engagement")
+      return id;
     return inferResultAssayKind(analysisResultFiles());
   });
   const isDesktop = liscaDesktopBridge() !== null;

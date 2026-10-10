@@ -13,7 +13,7 @@ import { F64, U32 } from "./schema/primitives";
 /** Assay kind (root `type`). Distinct from `data.type` (source kind). */
 export const AssayTypeSchema = Schema.Literals([
   "transfection",
-  "killing",
+  "killing-death-reporter",
   "killing-engagement",
   "lnp-binding",
 ]).annotate({

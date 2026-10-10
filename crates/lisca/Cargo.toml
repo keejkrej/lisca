@@ -13,7 +13,7 @@ workspace = true
 [features]
 default = ["studio"]
 smart = ["dep:ort"]
-studio = ["smart", "dep:mplot", "dep:lisca-transfection", "dep:rust_xlsxwriter"]
+studio = ["smart", "dep:mplot", "dep:lisca-transfection", "dep:lisca-killing"]
 
 [dependencies]
 axum.workspace = true
@@ -32,10 +32,10 @@ uuid.workspace = true
 csv.workspace = true
 rayon.workspace = true
 mplot = { workspace = true, optional = true }
-rust_xlsxwriter = { workspace = true, optional = true }
 ndarray.workspace = true
 ndarray-stats.workspace = true
 lisca-transfection = { workspace = true, optional = true }
+lisca-killing = { workspace = true, optional = true, features = ["onnx"] }
 lisca-workspace.workspace = true
 ort = { workspace = true, optional = true }
 

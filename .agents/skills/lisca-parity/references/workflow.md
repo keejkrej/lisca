@@ -52,8 +52,22 @@ cargo test -p lisca-transfection   # in ../lisca-transfection-assay
 - Background = mask-complement mean vs quartile hacks (use segment masks).
 - Pooled protein degradation median over failed fits.
 
-## Expanding the CLI
+## Extending `lisca-analyze`
 
-New assay stages should grow **parity subcommands** on a dedicated bin (or
-extend `lisca-analyze` with assay-qualified names) so agents never need the
-Studio HTTP server to run a differential loop.
+New assays do not grow a dedicated bin and do not get assay-qualified stage
+subcommands. Extend `lisca-analyze` with one command per enabled assay. The
+name is the product name, and the only argument is the workspace. The diff
+recipe above shells out for transfection only.
+
+Killing:
+
+```sh
+lisca-analyze killing-death-reporter WORKSPACE
+lisca-analyze killing-engagement WORKSPACE
+```
+
+`killing-death-reporter` is the command and the `assay.json` type. `killing`
+alone is neither a command nor an assay id.
+
+No `--interval` and no `--assay`. A future Python comparison imports
+`killing.services`. This note does not add that comparison.

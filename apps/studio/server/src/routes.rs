@@ -105,7 +105,9 @@ fn build_analysis_task(
 ) -> Result<lisca::protocol::TaskDetail, lisca_server::SchedulerError> {
     match assay.type_ {
         AssayType::Transfection => build_transfection_task(scheduler, workspace, assay),
-        AssayType::Killing => build_killing_task(scheduler, workspace, assay, request_id),
+        AssayType::KillingDeathReporter => {
+            build_killing_task(scheduler, workspace, assay, request_id)
+        }
         AssayType::KillingEngagement => {
             build_engagement_task(scheduler, workspace, assay, request_id)
         }
@@ -738,7 +740,7 @@ mod tests {
     async fn assay_tasks_expose_real_fan_out_and_fan_in_graphs() {
         for assay_id in [
             AssayType::Transfection,
-            AssayType::Killing,
+            AssayType::KillingDeathReporter,
             AssayType::KillingEngagement,
         ] {
             let state = TestState::new();
@@ -749,7 +751,7 @@ mod tests {
                     .unwrap();
             let prefix = match assay_id {
                 AssayType::Transfection => "analysis/transfection",
-                AssayType::Killing => "analysis/killing",
+                AssayType::KillingDeathReporter => "analysis/killing",
                 AssayType::KillingEngagement => "analysis/killing-engagement",
                 _ => unreachable!(),
             };
@@ -758,7 +760,7 @@ mod tests {
                 .iter()
                 .filter(|step| {
                     step.step_kind.starts_with(&format!("{prefix}/segment/Pos"))
-                        || (assay_id == AssayType::Killing
+                        || (assay_id == AssayType::KillingDeathReporter
                             && step.step_kind.starts_with(&format!("{prefix}/traces/Pos")))
                         || step.step_kind.starts_with(&format!("{prefix}/count/Pos"))
                 })
@@ -774,7 +776,7 @@ mod tests {
                 })
                 .unwrap();
             assert_eq!(fan_in.dependencies.len(), 2);
-            if assay_id == AssayType::Killing {
+            if assay_id == AssayType::KillingDeathReporter {
                 assert!(detail.steps.iter().all(|step| {
                     !step.step_kind.contains("predict") && !step.step_kind.contains("clean")
                 }));

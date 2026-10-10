@@ -3,7 +3,7 @@ import type { StudioAnalysisCsvFile } from "@lisca/contracts";
 import type { ResultAssayKind, ResultPlot, ResultPlotSection } from "../shared/plots";
 import { FIXTURE_PNG_DATA_URLS } from "./png-data";
 
-export type FixtureAssayId = "transfection" | "killing";
+export type FixtureAssayId = "transfection" | "killing-death-reporter";
 
 export type AnalysisFixture = {
   id: FixtureAssayId;
@@ -95,7 +95,7 @@ export function buildKillingFixture(): AnalysisFixture {
     plotFile("traces_summary", "Mean fluorescence", "parameters"),
   ];
   return {
-    id: "killing",
+    id: "killing-death-reporter",
     title: "Killing (fixture)",
     description:
       "Fixture killing workspace showing the PNG plots analysis writes (per-cell fluorescence and the mean for each sample). Images are sample placeholders.",
@@ -108,7 +108,7 @@ export function buildKillingFixture(): AnalysisFixture {
 
 export const ANALYSIS_FIXTURES: Record<FixtureAssayId, () => AnalysisFixture> = {
   transfection: buildTransfectionFixture,
-  killing: buildKillingFixture,
+  "killing-death-reporter": buildKillingFixture,
 };
 
 export function listAnalysisFixtures(): AnalysisFixture[] {

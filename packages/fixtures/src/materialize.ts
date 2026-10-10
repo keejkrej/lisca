@@ -20,7 +20,7 @@ import {
 
 import { colorFromName, encodeGrayPng, encodeGrayTiffPages, encodeRgbPng } from "./images";
 
-export const FIXTURE_ASSAYS = ["transfection", "killing"] as const;
+export const FIXTURE_ASSAYS = ["transfection", "killing-death-reporter"] as const;
 export const FIXTURE_STAGES = [
   "source",
   "assay",
@@ -286,7 +286,7 @@ function roiPage(channel: number, time: number, roi: number): Uint8Array {
 
 function writeAnnotations(write: WriteRel, assay: FixtureAssay): void {
   const labels =
-    assay === "killing"
+    assay === "killing-death-reporter"
       ? [
           { id: "alive", name: "Alive (fixture)", color: "#22c55e" },
           { id: "dead", name: "Dead (fixture)", color: "#ef4444" },

@@ -50,7 +50,7 @@ def load_assays() -> None:
     global _loaded
     if _loaded:
         return
-    from apoptosis.inference import register  # ty: ignore[unresolved-import]
+    from killing.inference import register  # ty: ignore[unresolved-import]
 
     register(register_model, register_task)
     _loaded = True

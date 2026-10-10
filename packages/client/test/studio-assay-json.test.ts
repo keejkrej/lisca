@@ -11,7 +11,7 @@ function row(id: string, name: string, segmentation: string, signal: string): St
 
 function build(samples: StudioAssaySampleRow[], analysis?: BuildInput["analysis"]) {
   return buildStudioAssayJson({
-    assayId: ASSAY_TYPE.KILLING,
+    assayId: ASSAY_TYPE.KILLING_DEATH_REPORTER,
     name: "Run",
     dataSourceKind: "nd2",
     dataPath: "/data/run.nd2",

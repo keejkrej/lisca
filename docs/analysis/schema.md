@@ -149,7 +149,7 @@ Older killing Workspaces wrote `timeseries/Pos{n}/`. `migrate_workspace`
 (migration `killing_traces_dir`) renames `timeseries/` to `traces/` when
 `traces/` is absent. When both exist, an empty `timeseries/` or one with the
 same files and bytes as `traces/` is removed; otherwise the migration fails
-and the user merges them by hand. The dormant classifier still reads and
+and the user merges them by hand. The classifier in `lisca-killing` still reads and
 writes `traces/Pos{n}/ch{m}.csv`. That path is not the fluorescence product.
 
 ## Migration order

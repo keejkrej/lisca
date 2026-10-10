@@ -81,7 +81,7 @@ Official references: [Serve](https://tailscale.com/kb/1242/tailscale-serve) and
 
 - Add both viable and dead PNG/JPEG examples in Studio (up to 128 per set, 2 MB
   per image). Use per-frame 1st/99th percentile normalization, matching the default
-  imported apoptosis experiment. Examples should depict the intended cell, without
+  imported killing experiment. Examples should depict the intended cell, without
   neighboring cells. References remain on the server as vectors and labels.
 - Choose a new set name to revise references. The encoder is never fine-tuned.
   Collection names and vectors are immutable so an analysis cannot change halfway

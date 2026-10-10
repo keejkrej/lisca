@@ -1942,7 +1942,7 @@ impl ::std::convert::From<::std::vec::Vec<u32>> for AssaySignalChannels {
 #[doc = "  \"type\": \"string\","]
 #[doc = "  \"enum\": ["]
 #[doc = "    \"transfection\","]
-#[doc = "    \"killing\","]
+#[doc = "    \"killing-death-reporter\","]
 #[doc = "    \"killing-engagement\","]
 #[doc = "    \"lnp-binding\""]
 #[doc = "  ]"]
@@ -1964,8 +1964,8 @@ impl ::std::convert::From<::std::vec::Vec<u32>> for AssaySignalChannels {
 pub enum AssayType {
     #[serde(rename = "transfection")]
     Transfection,
-    #[serde(rename = "killing")]
-    Killing,
+    #[serde(rename = "killing-death-reporter")]
+    KillingDeathReporter,
     #[serde(rename = "killing-engagement")]
     KillingEngagement,
     #[serde(rename = "lnp-binding")]
@@ -1975,7 +1975,7 @@ impl ::std::fmt::Display for AssayType {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
             Self::Transfection => f.write_str("transfection"),
-            Self::Killing => f.write_str("killing"),
+            Self::KillingDeathReporter => f.write_str("killing-death-reporter"),
             Self::KillingEngagement => f.write_str("killing-engagement"),
             Self::LnpBinding => f.write_str("lnp-binding"),
         }
@@ -1986,7 +1986,7 @@ impl ::std::str::FromStr for AssayType {
     fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
         match value {
             "transfection" => Ok(Self::Transfection),
-            "killing" => Ok(Self::Killing),
+            "killing-death-reporter" => Ok(Self::KillingDeathReporter),
             "killing-engagement" => Ok(Self::KillingEngagement),
             "lnp-binding" => Ok(Self::LnpBinding),
             _ => Err("invalid value".into()),

@@ -48,8 +48,8 @@ describe("basic info leave guard snapshot", () => {
     };
     expect(isStudioWizardDirty(state)).toBe(true);
 
-    studioWizardActions.newAssay(set, "killing");
-    expect(state.assayId).toBe("killing");
+    studioWizardActions.newAssay(set, "killing-death-reporter");
+    expect(state.assayId).toBe("killing-death-reporter");
     expect(state.name).toBe("");
     expect(state.workspacePath).toBe("");
     expect(state.basicInfoSavedSnapshot).toBeNull();
