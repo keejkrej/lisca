@@ -10,6 +10,7 @@ import type {
   CropRoiResponse,
   FrameRequest,
   HostListDirectoryResult,
+  HostWindowsDrivesResponse,
   LoadedRoiFrameAnnotation,
   TaskDetail,
   TaskSummary,
@@ -35,6 +36,7 @@ import type { ClientEffect } from "../infra/runtime";
 export type HostPort = {
   listDirectory(path: string | null): ClientEffect<HostListDirectoryResult>;
   userHomeDirectory(): ClientEffect<string>;
+  windowsDrives(): ClientEffect<HostWindowsDrivesResponse>;
   createDirectory(parentPath: string, name: string): ClientEffect<CreateDirectoryResponse>;
 };
 

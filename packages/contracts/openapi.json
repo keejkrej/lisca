@@ -105,6 +105,48 @@
         }
       }
     },
+    "/fs/windows-drives": {
+      "get": {
+        "tags": [
+          "fs"
+        ],
+        "operationId": "fs.windowsDrives",
+        "parameters": [],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "HostWindowsDrivesResponse",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HostWindowsDrivesResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RequestError",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestErrorEncoded"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedEncoded"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/fs/read-text": {
       "get": {
         "tags": [
@@ -2227,6 +2269,41 @@
         },
         "required": [
           "path"
+        ],
+        "additionalProperties": false
+      },
+      "HostDrive": {
+        "type": "object",
+        "properties": {
+          "letter": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "letter",
+          "path"
+        ],
+        "additionalProperties": false
+      },
+      "HostWindowsDrivesResponse": {
+        "type": "object",
+        "properties": {
+          "windows": {
+            "type": "boolean"
+          },
+          "drives": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HostDrive"
+            }
+          }
+        },
+        "required": [
+          "windows",
+          "drives"
         ],
         "additionalProperties": false
       },

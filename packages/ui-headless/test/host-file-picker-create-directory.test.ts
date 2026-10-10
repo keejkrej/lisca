@@ -19,6 +19,7 @@ function makeHostPort(overrides: Partial<HostFilePickerOperations> = {}): HostFi
     userHomeDirectory: vi.fn(async () => "/home/user"),
     listDirectory: vi.fn(async () => homeListing),
     createDirectory: vi.fn(async () => "/home/user/new-folder"),
+    windowsDrives: vi.fn(async () => ({ windows: false, drives: [] })),
     ...overrides,
   };
 }

@@ -20,6 +20,10 @@ export type BasicInfoSnapshotState = {
   intervalValue: number | null;
   intervalUnit: StudioIntervalUnit;
   samples: StudioAssaySampleRow[];
+  /** Assay-wide segmentation channel, as typed. Sample rows may override it. */
+  segmentationChannel: string;
+  /** Assay-wide signal channels, comma-separated. Sample rows may override them. */
+  signalChannel: string;
   /** Assay-dependent analysis options (e.g. transfection maxOnsetMinutes). */
   analysis: AssayAnalysisConfig | null;
 };
@@ -45,6 +49,10 @@ export function serializeBasicInfoSnapshot(state: BasicInfoSnapshotState): strin
       intervalUnit: state.intervalUnit,
       samples: state.samples,
       analysis: state.analysis,
+      channelDefaults: {
+        segmentation: state.segmentationChannel,
+        signal: state.signalChannel,
+      },
       sampleRowToDisk,
     }),
   );

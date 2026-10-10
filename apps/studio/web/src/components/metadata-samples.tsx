@@ -44,9 +44,52 @@ export function MetadataSamples() {
           Samples
         </h2>
         <p class="text-[13px] leading-[18px] text-muted-foreground">
-          Each card is one sample: a unique name, the positions it covers, and segmentation vs
-          signal channels.
+          Each card is one sample: a unique name and the positions it covers. Set the segmentation
+          and signal channels once for the assay. A card can override them.
         </p>
+      </div>
+      <div class="grid w-full min-w-0 grid-cols-1 gap-4 sm:grid-cols-2">
+        <SampleField
+          hint="Channel used to find cells. Used for every sample unless a card overrides it."
+          label="Segmentation channel"
+        >
+          {(fieldId) => (
+            <Input
+              id={fieldId}
+              autocomplete="off"
+              aria-label="Segmentation channel"
+              class="h-8 w-full px-3 font-mono text-[13px]"
+              inputMode="numeric"
+              name="assay-segmentation-channel"
+              value={wizard().segmentationChannel}
+              onInput={(event) =>
+                studioWizardActions.patchWizard(setWizard, {
+                  segmentationChannel: event.currentTarget.value,
+                })
+              }
+            />
+          )}
+        </SampleField>
+        <SampleField
+          hint="Channel measured for intensity. Separate extra channels with a comma. Used for every sample unless a card overrides it."
+          label="Signal channel"
+        >
+          {(fieldId) => (
+            <Input
+              id={fieldId}
+              autocomplete="off"
+              aria-label="Signal channel"
+              class="h-8 w-full px-3 font-mono text-[13px]"
+              name="assay-signal-channel"
+              value={wizard().signalChannel}
+              onInput={(event) =>
+                studioWizardActions.patchWizard(setWizard, {
+                  signalChannel: event.currentTarget.value,
+                })
+              }
+            />
+          )}
+        </SampleField>
       </div>
       <div class="grid w-full min-w-0 grid-cols-[repeat(auto-fill,minmax(min(100%,17.5rem),1fr))] gap-4">
         <For each={samples().map((row) => row.id)}>
@@ -131,7 +174,10 @@ function SampleCard(props: {
             />
           )}
         </SampleField>
-        <SampleField hint="Channel used to find cells." label="Segmentation channel">
+        <SampleField
+          hint="Override for this sample only. Leave empty to use the assay segmentation channel."
+          label="Segmentation channel"
+        >
           {(fieldId) => (
             <Input
               id={fieldId}
@@ -141,12 +187,12 @@ function SampleCard(props: {
               inputMode="numeric"
               name={`samples.${props.index}.segmentation-channel`}
               value={props.row.segmentation}
-              onChange={(event) => props.onChange({ segmentation: event.currentTarget.value })}
+              onInput={(event) => props.onChange({ segmentation: event.currentTarget.value })}
             />
           )}
         </SampleField>
         <SampleField
-          hint="Channel measured for intensity. Separate extra channels with a comma."
+          hint="Override for this sample only. Leave empty to use the assay signal channel. Separate extra channels with a comma."
           label="Signal channel"
         >
           {(fieldId) => (
@@ -157,7 +203,7 @@ function SampleCard(props: {
               class="h-8 w-full px-3 font-mono text-[13px]"
               name={`samples.${props.index}.signal-channels`}
               value={props.row.signal}
-              onChange={(event) => props.onChange({ signal: event.currentTarget.value })}
+              onInput={(event) => props.onChange({ signal: event.currentTarget.value })}
             />
           )}
         </SampleField>

@@ -38,7 +38,7 @@ describe("assay validation", () => {
         signal: row.signal || "1",
       }),
     );
-    expect(validAssaySamples(samples)).toBe(true);
+    expect(validAssaySamples(samples, { segmentation: "0", signal: "1" })).toBe(true);
   });
 
   it("reports missing assay and incomplete steps", () => {
@@ -51,6 +51,8 @@ describe("assay validation", () => {
       intervalValue: initial.intervalValue,
       intervalUnit: initial.intervalUnit,
       samples: initial.samples,
+      segmentationChannel: initial.segmentationChannel,
+      signalChannel: initial.signalChannel,
     });
     expect(result.ok).toBe(false);
     if (!result.ok) {
@@ -77,6 +79,8 @@ describe("assay validation", () => {
       intervalValue: 5,
       intervalUnit: "minute",
       samples,
+      segmentationChannel: "0",
+      signalChannel: "1",
     });
     expect(result.ok).toBe(true);
   });
@@ -90,12 +94,16 @@ describe("assay validation", () => {
       intervalValue: 5,
       intervalUnit: "minute",
       samples: [sampleRow("sample:0", "Control"), sampleRow("sample:1", "   ")],
+      segmentationChannel: "0",
+      signalChannel: "1",
     });
     expect(result).toEqual({
       ok: false,
       errors: ["Sample row 2: sample name must be non-empty."],
     });
-    expect(validAssaySamples([sampleRow("sample:0", "   ")])).toBe(false);
+    expect(
+      validAssaySamples([sampleRow("sample:0", "   ")], { segmentation: "0", signal: "1" }),
+    ).toBe(false);
   });
 
   it("reports duplicate sample names compared after trimming", () => {
@@ -105,7 +113,7 @@ describe("assay validation", () => {
       sampleRow("sample:2", "Treated"),
     ];
     expect(duplicateSampleNames(samples)).toEqual(["Control"]);
-    expect(validAssaySamples(samples)).toBe(false);
+    expect(validAssaySamples(samples, { segmentation: "0", signal: "1" })).toBe(false);
     const result = validateAssayForAnalysis({
       assayId: ASSAY_TYPE.TRANSFECTION,
       name: "Run A",
@@ -114,6 +122,8 @@ describe("assay validation", () => {
       intervalValue: 5,
       intervalUnit: "minute",
       samples,
+      segmentationChannel: "0",
+      signalChannel: "1",
     });
     expect(result).toEqual({
       ok: false,

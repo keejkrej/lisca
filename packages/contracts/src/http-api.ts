@@ -16,6 +16,7 @@ import {
   CreateDirectoryResponseSchema,
   FramePayloadSchema,
   HomeDirectoryResponseSchema,
+  HostWindowsDrivesResponseSchema,
   HostListDirectoryQuerySchema,
   HostListDirectoryResultSchema,
   LatestAnalysisQuerySchema,
@@ -113,6 +114,12 @@ const fsGroup = HttpApiGroup.make("fs")
   .add(
     HttpApiEndpoint.get("userHomeDirectory", "/fs/home", {
       success: HomeDirectoryResponseSchema,
+      error: [RequestError, Unauthorized],
+    }),
+  )
+  .add(
+    HttpApiEndpoint.get("windowsDrives", "/fs/windows-drives", {
+      success: HostWindowsDrivesResponseSchema,
       error: [RequestError, Unauthorized],
     }),
   )

@@ -45,16 +45,31 @@ export function duplicateSampleNames(samples: readonly { name: string }[]): stri
   return [...duplicates];
 }
 
-export function validAssaySamples(samples: StudioAssaySampleRow[]): boolean {
+function validChannelOverride(value: string, parse: (raw: string) => unknown): boolean {
+  return value.trim() === "" || parse(value) != null;
+}
+
+export function validAssayChannels(channels: { segmentation: string; signal: string }): boolean {
   return (
+    parseNonNegativeInteger(channels.segmentation) != null &&
+    parseSignalChannels(channels.signal) != null
+  );
+}
+
+export function validAssaySamples(
+  samples: StudioAssaySampleRow[],
+  channels: { segmentation: string; signal: string },
+): boolean {
+  return (
+    validAssayChannels(channels) &&
     samples.length > 0 &&
     duplicateSampleNames(samples).length === 0 &&
     samples.every(
       (row) =>
         row.name.trim().length > 0 &&
         isValidStoredPositions(row.positions) &&
-        parseNonNegativeInteger(row.segmentation) != null &&
-        parseSignalChannels(row.signal) != null,
+        validChannelOverride(row.segmentation, parseNonNegativeInteger) &&
+        validChannelOverride(row.signal, parseSignalChannels),
     )
   );
 }
@@ -69,6 +84,8 @@ export function validateAssayForAnalysis(input: {
   intervalValue: number | null;
   intervalUnit: StudioIntervalUnit;
   samples: StudioAssaySampleRow[];
+  segmentationChannel: string;
+  signalChannel: string;
 }): AssayValidationResult {
   const errors: string[] = [];
 
@@ -96,15 +113,24 @@ export function validateAssayForAnalysis(input: {
         `${rowLabel}: positions must be whole numbers from 1. Separate ranges with a comma.`,
       );
     }
-    if (parseNonNegativeInteger(row.segmentation) == null) {
-      errors.push(`${rowLabel}: segmentation channel must be a non-negative integer.`);
+    if (!validChannelOverride(row.segmentation, parseNonNegativeInteger)) {
+      errors.push(`${rowLabel}: segmentation channel override must be a non-negative integer.`);
     }
-    if (parseSignalChannels(row.signal) == null) {
+    if (!validChannelOverride(row.signal, parseSignalChannels)) {
       errors.push(
-        `${rowLabel}: signal must be a non-empty comma-separated list of non-negative integers.`,
+        `${rowLabel}: signal channel override must be a non-empty comma-separated list of non-negative integers.`,
       );
     }
   });
+
+  if (parseNonNegativeInteger(input.segmentationChannel) == null) {
+    errors.push("Segmentation channel must be a non-negative integer.");
+  }
+  if (parseSignalChannels(input.signalChannel) == null) {
+    errors.push(
+      "Signal channel must be a non-empty comma-separated list of non-negative integers.",
+    );
+  }
 
   for (const name of duplicateSampleNames(input.samples)) {
     errors.push(`Sample name "${name}" is used by more than one sample; names must be unique.`);

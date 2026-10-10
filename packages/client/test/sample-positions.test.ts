@@ -102,7 +102,7 @@ describe("sample positions", () => {
     });
   });
 
-  test("loads UI rows without an override from the analysis defaults", () => {
+  test("leaves the card channels empty when the sample uses the assay channels", () => {
     expect(
       sampleRowFromDisk(
         { name: "plain", positions: "1" },
@@ -111,15 +111,15 @@ describe("sample positions", () => {
           sampleChannels: [{ sample: "other", segmentation: 2, signal: [3] }],
         },
       ),
-    ).toMatchObject({ name: "plain", segmentation: "0", signal: "1" });
+    ).toMatchObject({ name: "plain", segmentation: "", signal: "" });
   });
 
-  test("derives analysis channel defaults and per-sample overrides keyed by name", () => {
+  test("writes assay channels once and keeps only card overrides", () => {
     expect(
-      analysisChannelsFromSamples([
-        { name: "a", segmentation: "0", signal: "1" },
-        { name: " b ", segmentation: "0", signal: "1,2" },
-        { name: "c", segmentation: "3", signal: "1" },
+      analysisChannelsFromSamples({ segmentation: "0", signal: "1" }, [
+        { name: "a", segmentation: "", signal: "" },
+        { name: " b ", segmentation: "", signal: "1,2" },
+        { name: "c", segmentation: "3", signal: "" },
         { name: "d", segmentation: "0", signal: "1" },
         { name: "  ", segmentation: "4", signal: "5" },
       ]),

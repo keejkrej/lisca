@@ -27,7 +27,12 @@ function parseChannel(value: string): number | null {
   return Number.isInteger(channel) && channel >= 0 ? channel : null;
 }
 
-export function studioSegmentationChannel(samples: StudioAssaySampleRow[]): number {
+export function studioSegmentationChannel(
+  samples: StudioAssaySampleRow[],
+  sharedSegmentation = "",
+): number {
+  const shared = parseChannel(sharedSegmentation);
+  if (shared != null) return shared;
   for (const row of samples) {
     const channel = parseChannel(row.segmentation);
     if (channel != null) return channel;

@@ -1,4 +1,4 @@
-import type { HostFsEntry, HostListDirectoryResult } from "@lisca/contracts";
+import type { HostDrive, HostFsEntry, HostListDirectoryResult } from "@lisca/contracts";
 import {
   liscaLocalStorage,
   readStorageJson,
@@ -56,6 +56,33 @@ export function favoriteLabel(path: string): string {
 }
 
 /** Chip label for a recent pick: an `assay.json` is named after its folder. */
+/** The drive whose letter prefixes `path`, or null for a non-Windows path. */
+export function driveForPath(
+  path: string | null | undefined,
+  drives: readonly HostDrive[],
+): HostDrive | null {
+  if (!path) return null;
+  const match = /^([A-Za-z]):/.exec(path);
+  const letter = match?.[1];
+  if (!letter) return null;
+  const normalized = `${letter.toUpperCase()}:`;
+  return drives.find((drive) => drive.letter.toUpperCase() === normalized) ?? null;
+}
+
+/** Label for the desktop native dialog. The ellipsis is omitted on purpose. */
+export function nativeFilePickerLabel(platform: string, windowsHost: boolean): string {
+  if (windowsHost || /win/i.test(platform)) return "Open in Explorer";
+  if (/mac/i.test(platform)) return "Open in Finder";
+  return "Open in Files";
+}
+
+export function nativePickerExtensions(mode: HostFilePickerMode): string[] {
+  if (mode === "nd2_file") return ["nd2"];
+  if (mode === "czi_file") return ["czi"];
+  if (mode === "assay_json_file") return ["json"];
+  return [];
+}
+
 export function recentLabel(path: string): string {
   const name = favoriteLabel(path);
   if (name.toLowerCase() !== "assay.json") return name;
@@ -96,6 +123,9 @@ export function useHostFilePickerState(options: () => UseHostFilePickerStateOpti
   const [selectedFile, setSelectedFile] = createSignal<HostFsEntry | null>(null);
   const [showHidden, setShowHidden] = createSignal(false);
   const [favorites, setFavorites] = createSignal<string[]>(readFavoritePaths());
+  const [windowsHost, setWindowsHost] = createSignal(false);
+  const [drives, setDrives] = createSignal<HostDrive[]>([]);
+  const [pickingNative, setPickingNative] = createSignal(false);
   const loadPath = async (path: string | null) => {
     const { hostPort } = options();
     setLoading(true);
@@ -126,7 +156,22 @@ export function useHostFilePickerState(options: () => UseHostFilePickerStateOpti
     setError(null);
     setShowHidden(false);
     setFavorites(readFavoritePaths());
+    setWindowsHost(false);
+    setDrives([]);
     setLoading(true);
+    void hostPort
+      .windowsDrives()
+      .then((result) => {
+        if (cancelled) return;
+        setWindowsHost(result.windows);
+        setDrives(result.windows ? result.drives : []);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setWindowsHost(false);
+          setDrives([]);
+        }
+      });
     void (async () => {
       try {
         const home = await hostPort.userHomeDirectory();
@@ -156,6 +201,8 @@ export function useHostFilePickerState(options: () => UseHostFilePickerStateOpti
   });
   const dirMode = createMemo(() => isDirectoryMode(options().mode));
   const canGoUp = createMemo(() => canGoUpFromList(list()));
+  const currentDrive = createMemo(() => driveForPath(list()?.path, drives()));
+  const canOpenNative = createMemo(() => Boolean(options().hostPort.openNativePicker));
   const locationLabel = createMemo(() => hostFilePickerLocationLabel(list()));
   const entries = createMemo(() => visibleEntries(list()?.entries ?? [], showHidden()));
   const hiddenCount = createMemo(
@@ -175,6 +222,32 @@ export function useHostFilePickerState(options: () => UseHostFilePickerStateOpti
   };
   const openFavorite = (path: string) => {
     void loadPath(path);
+  };
+  const selectDrive = (path: string) => {
+    if (path === currentDrive()?.path) return;
+    void loadPath(path);
+  };
+  const openNative = async () => {
+    const { hostPort, mode, onPickDirectory, onPickFile, onOpenChange } = options();
+    const pick = hostPort.openNativePicker;
+    if (!pick || pickingNative()) return;
+    setPickingNative(true);
+    setError(null);
+    try {
+      const path = await pick({
+        directory: isDirectoryMode(mode),
+        directoryPath: list()?.path ?? null,
+        extensions: nativePickerExtensions(mode),
+      });
+      if (!path) return;
+      if (isDirectoryMode(mode)) onPickDirectory(path);
+      else onPickFile(path);
+      onOpenChange(false);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : String(cause));
+    } finally {
+      setPickingNative(false);
+    }
   };
   const goUp = () => {
     const currentList = list();
@@ -266,6 +339,13 @@ export function useHostFilePickerState(options: () => UseHostFilePickerStateOpti
     dirMode,
     canGoUp,
     locationLabel,
+    windowsHost,
+    drives,
+    currentDrive,
+    selectDrive,
+    canOpenNative,
+    pickingNative,
+    openNative,
     entries,
     hiddenCount,
     showHidden,

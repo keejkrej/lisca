@@ -14,8 +14,8 @@ use axum::{
 use serde::Deserialize;
 
 use crate::protocol::{
-    CreateDirectoryRequest, CreateDirectoryResponse, HomeDirectoryResponse, HostFsEntry,
-    HostListDirectoryResult, ReadTextFileResponse,
+    CreateDirectoryRequest, CreateDirectoryResponse, HomeDirectoryResponse, HostDrive, HostFsEntry,
+    HostListDirectoryResult, HostWindowsDrivesResponse, ReadTextFileResponse,
 };
 
 use super::error::FsError;
@@ -43,6 +43,7 @@ where
     Router::new()
         .route("/fs/list", get(list_directory_handler))
         .route("/fs/home", get(home_directory_handler))
+        .route("/fs/windows-drives", get(windows_drives_handler))
         .route("/fs/read-text", get(read_text_file_handler))
         // Raw bytes, outside the JSON HttpApi. See ADR-0002.
         .route("/fs/file", get(read_file_handler))
@@ -74,6 +75,54 @@ async fn list_directory_handler(
 async fn home_directory_handler() -> Result<Json<HomeDirectoryResponse>, FsError> {
     let home = user_home_directory().ok_or_else(|| FsError::new("home directory not found"))?;
     Ok(Json(HomeDirectoryResponse { path: home }))
+}
+
+async fn windows_drives_handler() -> Json<HostWindowsDrivesResponse> {
+    Json(windows_drives())
+}
+
+fn windows_drives() -> HostWindowsDrivesResponse {
+    HostWindowsDrivesResponse {
+        windows: cfg!(windows),
+        drives: list_windows_drives(),
+    }
+}
+
+#[cfg(windows)]
+#[link(name = "kernel32")]
+extern "system" {
+    fn GetLogicalDrives() -> u32;
+}
+
+/// Letters present in a `GetLogicalDrives` bitmask. Bit 0 is `A:`.
+fn drives_from_mask(mask: u32) -> Vec<HostDrive> {
+    let mut drives = Vec::new();
+    for index in 0u32..26 {
+        if mask & (1 << index) == 0 {
+            continue;
+        }
+        let letter = char::from(b'A' + u8::try_from(index).expect("drive letter"));
+        drives.push(HostDrive {
+            letter: format!("{letter}:"),
+            path: format!("{letter}:\\"),
+        });
+    }
+    drives
+}
+
+fn list_windows_drives() -> Vec<HostDrive> {
+    drives_from_mask(windows_drive_mask())
+}
+
+#[cfg(windows)]
+fn windows_drive_mask() -> u32 {
+    // The bitmask does not open the drives, so empty removable slots stay quiet.
+    unsafe { GetLogicalDrives() }
+}
+
+#[cfg(not(windows))]
+fn windows_drive_mask() -> u32 {
+    0
 }
 
 async fn read_text_file_handler(
@@ -425,6 +474,33 @@ mod tests {
     use super::*;
 
     static FS_ROOTS_LOCK: Mutex<()> = Mutex::new(());
+
+    #[test]
+    fn drive_mask_lists_set_letters_only() {
+        // Bits 2, 3, and 4 are C, D, and E. Bit 0 would be A.
+        let drives = drives_from_mask(0b1_1100);
+        let letters: Vec<_> = drives.iter().map(|drive| drive.letter.as_str()).collect();
+        assert_eq!(letters, ["C:", "D:", "E:"]);
+        assert_eq!(drives[0].path, "C:\\");
+        assert_eq!(drives[2].path, "E:\\");
+        assert!(drives_from_mask(0).is_empty());
+    }
+
+    #[test]
+    fn windows_drives_follow_the_host_platform() {
+        let result = windows_drives();
+        if cfg!(windows) {
+            assert!(result.windows);
+            assert!(result.drives.iter().all(|drive| {
+                drive.letter.ends_with(':')
+                    && drive.letter.len() == 2
+                    && drive.path.starts_with(&drive.letter)
+            }));
+        } else {
+            assert!(!result.windows);
+            assert!(result.drives.is_empty());
+        }
+    }
 
     #[test]
     fn normalize_local_path_resolves_parent_segments() {

@@ -67,6 +67,39 @@
         "path"
       ]
     },
+    "HostDrive": {
+      "type": "object",
+      "properties": {
+        "letter": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "letter",
+        "path"
+      ]
+    },
+    "HostWindowsDrivesResponse": {
+      "type": "object",
+      "properties": {
+        "windows": {
+          "type": "boolean"
+        },
+        "drives": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/HostDrive"
+          }
+        }
+      },
+      "required": [
+        "windows",
+        "drives"
+      ]
+    },
     "ReadTextFileResponse": {
       "type": "object",
       "properties": {

@@ -195,11 +195,13 @@ where
         let authority = context.runtime_authority_mut();
         authority.__allow_command("lisca_request".to_string(), ExecutionContext::Local);
         authority.__allow_command("lisca_save_file".to_string(), ExecutionContext::Local);
+        authority.__allow_command("lisca_pick_path".to_string(), ExecutionContext::Local);
         for url in ["http://127.0.0.1:*", "http://localhost:*"] {
             if let Ok(pattern) = url.parse::<RemoteUrlPattern>() {
                 let context = ExecutionContext::Remote { url: pattern };
                 authority.__allow_command("lisca_request".to_string(), context.clone());
-                authority.__allow_command("lisca_save_file".to_string(), context);
+                authority.__allow_command("lisca_save_file".to_string(), context.clone());
+                authority.__allow_command("lisca_pick_path".to_string(), context);
             }
         }
     }
@@ -207,7 +209,7 @@ where
     let reopen_config = config.clone();
     let app = tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
-        .invoke_handler(tauri::generate_handler![lisca_request, lisca_save_file])
+        .invoke_handler(tauri::generate_handler![lisca_request, lisca_save_file, lisca_pick_path])
         .setup(move |app| {
             if config.product == "studio" {
                 if let Some(model) = resolve_kill_model_path(app) {
@@ -281,6 +283,56 @@ async fn lisca_request(
     request: IpcRequest,
 ) -> Result<IpcResponse, String> {
     dispatch_request(backend.router.clone(), request).await
+}
+
+/// Native open dialog for the in-app file picker. Resolves to `None` when the user cancels.
+#[tauri::command]
+async fn lisca_pick_path<R: tauri::Runtime>(
+    app: tauri::AppHandle<R>,
+    request: PickPathRequest,
+) -> Result<Option<String>, String> {
+    tauri::async_runtime::spawn_blocking(move || pick_native_path(&app, request))
+        .await
+        .map_err(|error| format!("picker worker failed: {error}"))?
+}
+
+fn pick_native_path<R: tauri::Runtime>(
+    app: &tauri::AppHandle<R>,
+    request: PickPathRequest,
+) -> Result<Option<String>, String> {
+    let mut dialog = app.dialog().file();
+    if let Some(directory) = request.directory_path.as_deref().map(Path::new) {
+        if directory.is_dir() {
+            dialog = dialog.set_directory(directory);
+        }
+    }
+    let picked = if request.directory {
+        dialog.blocking_pick_folder()
+    } else {
+        let dialog = if request.extensions.is_empty() {
+            dialog
+        } else {
+            let extensions: Vec<&str> = request.extensions.iter().map(String::as_str).collect();
+            dialog.add_filter("Files", &extensions)
+        };
+        dialog.blocking_pick_file()
+    };
+    let Some(target) = picked else {
+        return Ok(None);
+    };
+    let path = target
+        .into_path()
+        .map_err(|error| format!("invalid path: {error}"))?;
+    Ok(Some(path.to_string_lossy().to_string()))
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct PickPathRequest {
+    directory: bool,
+    directory_path: Option<String>,
+    #[serde(default)]
+    extensions: Vec<String>,
 }
 
 /// Ask where to save, then write the file. Resolves to `None` when the user cancels.
@@ -411,7 +463,8 @@ fn create_window<R: tauri::Runtime, M: Manager<R>>(
         r#"window.liscaDesktop = Object.freeze({{
             product: {:?},
             request: (request) => window.__TAURI_INTERNALS__.invoke("lisca_request", {{ request }}),
-            saveFile: (request) => window.__TAURI_INTERNALS__.invoke("lisca_save_file", {{ request }})
+            saveFile: (request) => window.__TAURI_INTERNALS__.invoke("lisca_save_file", {{ request }}),
+            pickPath: (request) => window.__TAURI_INTERNALS__.invoke("lisca_pick_path", {{ request }})
         }});"#,
         config.product
     );

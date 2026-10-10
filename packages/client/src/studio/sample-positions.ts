@@ -219,31 +219,82 @@ export function resolveSampleChannels(
   return null;
 }
 
-/** Derive on-disk analysis channel fields from UI sample rows. */
+/** Assay-wide channel text for the metadata fields above the sample cards. */
+export function assayChannelDefaultsFromAnalysis(
+  analysis: AssayAnalysisConfig | null | undefined,
+): { segmentation: string; signal: string } {
+  if (!analysis?.channels) return { segmentation: "", signal: "" };
+  return {
+    segmentation: String(analysis.channels.segmentation),
+    signal: formatSignalChannels(analysis.channels.signal),
+  };
+}
+
+function channelTextMatches(row: string, shared: string): boolean {
+  if (row.trim() === "") return false;
+  const left = parseNonNegativeInteger(row);
+  const right = parseNonNegativeInteger(shared);
+  if (left != null && right != null) return left === right;
+  return row.trim() === shared.trim();
+}
+
+function channelListMatches(row: string, shared: string): boolean {
+  if (row.trim() === "") return false;
+  const left = parseSignalChannels(row);
+  const right = parseSignalChannels(shared);
+  if (left && right) return signalChannelsEqual(left, right);
+  return row.trim() === shared.trim();
+}
+
+/** Clear sample channel text that repeats the assay default. An empty field stays empty. */
+export function withoutInheritedChannelOverrides<
+  T extends { segmentation: string; signal: string },
+>(samples: readonly T[], defaults: { segmentation: string; signal: string }): T[] {
+  return samples.map((row) => ({
+    ...row,
+    segmentation: channelTextMatches(row.segmentation, defaults.segmentation)
+      ? ""
+      : row.segmentation,
+    signal: channelListMatches(row.signal, defaults.signal) ? "" : row.signal,
+  }));
+}
+
+/**
+ * Derive on-disk `analysis.channels` from the assay fields, and `sampleChannels`
+ * from card text that differs. An empty card field inherits that assay channel.
+ */
 export function analysisChannelsFromSamples(
+  defaults: { segmentation: string; signal: string },
   samples: readonly {
     name: string;
     segmentation: string;
     signal: string;
   }[],
 ): Pick<AssayAnalysisConfig, "channels" | "sampleChannels"> {
-  const rows: { sample: string; segmentation: number; signal: [number, ...number[]] }[] = [];
+  const defaultSegmentation = parseNonNegativeInteger(defaults.segmentation);
+  const defaultSignal = parseSignalChannels(defaults.signal);
+  if (defaultSegmentation == null || defaultSignal == null) return {};
+
+  const channels = { segmentation: defaultSegmentation, signal: defaultSignal };
+  const sampleChannels: {
+    sample: string;
+    segmentation: number;
+    signal: [number, ...number[]];
+  }[] = [];
   for (const row of samples) {
     const sample = row.name.trim();
     if (!sample) continue;
-    const segmentation = parseNonNegativeInteger(row.segmentation);
-    const signal = parseSignalChannels(row.signal);
-    if (segmentation == null || signal == null) continue;
-    rows.push({ sample, segmentation, signal });
+    const rowSegmentation: number | null =
+      row.segmentation.trim() === ""
+        ? defaultSegmentation
+        : parseNonNegativeInteger(row.segmentation);
+    const rowSignal: [number, ...number[]] | null =
+      row.signal.trim() === "" ? defaultSignal : parseSignalChannels(row.signal);
+    if (rowSegmentation == null || rowSignal == null) continue;
+    if (rowSegmentation !== defaultSegmentation || !signalChannelsEqual(rowSignal, defaultSignal)) {
+      sampleChannels.push({ sample, segmentation: rowSegmentation, signal: rowSignal });
+    }
   }
-  if (rows.length === 0) return {};
-
-  const channels = { segmentation: rows[0]!.segmentation, signal: rows[0]!.signal };
-  const sampleChannels = rows.filter(
-    (row) =>
-      row.segmentation !== channels.segmentation ||
-      !signalChannelsEqual(row.signal, channels.signal),
-  );
   return {
     channels,
     ...(sampleChannels.length > 0 ? { sampleChannels } : {}),
@@ -266,12 +317,13 @@ export function sampleRowFromDisk(
   segmentation: string;
   signal: string;
 } {
-  const channels = resolveSampleChannels(analysis, record.name);
+  const name = record.name.trim();
+  const override = analysis?.sampleChannels?.find((entry) => entry.sample.trim() === name);
   return {
     name: record.name,
     positions: normalizeStoredPositions(record.positions),
-    segmentation: channels != null ? String(channels.segmentation) : "",
-    signal: channels != null ? formatSignalChannels(channels.signal) : "",
+    segmentation: override ? String(override.segmentation) : "",
+    signal: override ? formatSignalChannels(override.signal) : "",
   };
 }
 

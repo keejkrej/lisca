@@ -25,6 +25,9 @@ export function createHostPort(
         client.fs.userHomeDirectory().pipe(Effect.map((result) => result.path)),
       );
     },
+    windowsDrives() {
+      return toClientEffect(client.fs.windowsDrives());
+    },
     createDirectory(parentPath, name) {
       return toClientEffect(client.fs.createDirectory({ payload: { parentPath, name } }));
     },
