@@ -613,8 +613,8 @@ fn otsu_threshold(pixels: &[f64]) -> Option<f64> {
     let mut weight_background = 0.0;
     let mut best_variance = -1.0;
     let mut best_bin = 0usize;
-    for bin in 0..BINS {
-        weight_background += f64::from(histogram[bin]);
+    for (bin, count) in histogram.iter().enumerate() {
+        weight_background += f64::from(*count);
         if weight_background == 0.0 {
             continue;
         }
@@ -622,7 +622,7 @@ fn otsu_threshold(pixels: &[f64]) -> Option<f64> {
         if weight_foreground == 0.0 {
             break;
         }
-        sum_background += bin as f64 * f64::from(histogram[bin]);
+        sum_background += bin as f64 * f64::from(*count);
         let mean_background = sum_background / weight_background;
         let mean_foreground = (sum_all - sum_background) / weight_foreground;
         let between =
@@ -720,13 +720,13 @@ fn squared_distance_1d(values: &[f64]) -> Vec<f64> {
     }
     k = 0;
     let mut distance = vec![0.0; n];
-    for q in 0..n {
+    for (q, slot) in distance.iter_mut().enumerate() {
         while bounds[k + 1] < q as f64 {
             k += 1;
         }
         let origin = envelope[k] as f64;
         let delta = q as f64 - origin;
-        distance[q] = delta * delta + values[envelope[k]];
+        *slot = delta * delta + values[envelope[k]];
     }
     distance
 }
