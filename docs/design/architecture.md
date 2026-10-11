@@ -56,3 +56,4 @@ Stage geometry utilities are `w-rail`, `h-topbar`, `w-rail-content`, and `ml-rai
 - `pnpm --filter @lisca/design-tokens test` checks generated CSS.
 - `pnpm --filter @lisca/ui test` and `pnpm --filter @lisca/instrument test` cover shell and feature behavior.
 - `pnpm run lint` covers import direction.
+- `packages/web-app/app.css` `@source`s `@lisca/ui` and `@lisca/instrument`. Tailwind scans that file's directory and each app's Vite root, and it skips `node_modules`, so instrument utilities are invisible unless listed. `scripts/tailwind-sources.test.ts` fails when a rail class drops out of the scan.
