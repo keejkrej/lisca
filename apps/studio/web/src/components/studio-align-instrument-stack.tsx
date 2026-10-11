@@ -28,8 +28,8 @@ const RAIL_CLASS =
 
 /**
  * Shared Studio Align instrument stack for basic and expert modes.
- * Expert sections stack above the normal rail: Navigation → Contrast → Geometry,
- * then Grid → Drift → Tool → Selection → Action.
+ * Expert sections stack above the normal rail: Navigation → Contrast → Geometry → Drift,
+ * then Grid → Tool → Selection → Action.
  * Action follows the rail vocabulary: Save → Back → Next → Crop (primary, last).
  */
 export function StudioAlignInstrumentStack(props: { expert?: boolean }) {
@@ -92,21 +92,21 @@ export function StudioAlignInstrumentStack(props: { expert?: boolean }) {
       <Show when={props.expert}>
         <StudioAlignNav />
         {gridRail("geometry")}
+        <AlignDriftRail
+          assayDefaultTime={state.assayDefaultTime ?? null}
+          disabled={disabled()}
+          drift={state.drift ?? null}
+          frame={state.frame}
+          time={state.selection.time}
+          times={state.scan?.times}
+          onClearDrift={state.clearDrift}
+          onClearKeyframe={state.clearKeyframe}
+          onDeltaChange={state.setDriftDelta}
+          onSetKeyframe={state.setKeyframe}
+          onSetReference={state.setReference}
+        />
       </Show>
       {gridRail("grid")}
-      <AlignDriftRail
-        assayDefaultTime={state.assayDefaultTime ?? null}
-        disabled={disabled()}
-        drift={state.drift ?? null}
-        frame={state.frame}
-        time={state.selection.time}
-        timeLabels={state.scan?.timeLabels}
-        times={state.scan?.times}
-        onClearDrift={state.clearDrift}
-        onClearKeyframe={state.clearKeyframe}
-        onSetKeyframe={state.setKeyframe}
-        onSetReference={state.setReference}
-      />
       <AlignToolSection
         mode={state.toolMode}
         spacingZoomLocked={state.spacingZoomLocked}

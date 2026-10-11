@@ -78,6 +78,7 @@ export function useAlignCanvas() {
     setGrid: (next: AlignGridState | ((current: AlignGridState) => AlignGridState)) =>
       state().setGrid(next),
     adjustTranslation: (dx: number, dy: number) => state().adjustTranslation(dx, dy),
+    setDriftDelta: (dx: number, dy: number) => state().setDriftDelta(dx, dy),
     commitCanvas: (
       preview: AlignGridState,
       intent: AlignGridPointerIntent,

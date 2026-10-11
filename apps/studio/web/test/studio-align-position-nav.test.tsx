@@ -123,6 +123,7 @@ describe("Studio Align position buttons", () => {
     expect(screen.queryByText("Position")).toBeNull();
     expect(screen.queryByText("Z plane")).toBeNull();
     expect(screen.queryByText("Contrast")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Drift" })).toBeNull();
   });
 
   it("enables Back and disables Next on the last position", () => {
@@ -144,6 +145,8 @@ describe("Studio Align position buttons", () => {
     expect(screen.getByText("Frame")).toBeTruthy();
     expect(screen.getByText("Z plane")).toBeTruthy();
     expect(screen.getByText("Contrast")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Drift" })).toBeTruthy();
+    expect(screen.getByRole("spinbutton", { name: "dx" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Back" }).hasAttribute("disabled")).toBe(false);
     expect(screen.getByRole("button", { name: "Next" }).hasAttribute("disabled")).toBe(false);
   });

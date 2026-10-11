@@ -108,6 +108,35 @@ export function isAlignDriftTranslationEditable(
   return keyframes.some((keyframe) => keyframe.time === time);
 }
 
+/**
+ * Stores an absolute correction at `time`.
+ * A matching interpolated value is left unchanged. A new value creates the pin,
+ * and the first correction supplies a reference when one is not already set.
+ */
+export function setAlignDriftDelta(
+  drift: AlignDrift | null,
+  time: number,
+  assayDefaultTime: number | null,
+  dx: number,
+  dy: number,
+): AlignDrift | null {
+  if (!isAcquisitionTime(time) || !Number.isFinite(dx) || !Number.isFinite(dy)) return drift;
+  const current = interpolateAlignDrift(drift, time);
+  if (current.dx === dx && current.dy === dy) return drift;
+  const referenceTime =
+    drift?.referenceTime ??
+    (assayDefaultTime != null && isAcquisitionTime(assayDefaultTime) ? assayDefaultTime : time);
+  const base: AlignDrift = drift ?? {
+    referenceTime,
+    interpolation: "linear",
+    keyframes: [],
+  };
+  const anchored = base.referenceTime === referenceTime ? base : { ...base, referenceTime };
+  const keyframes = anchored.keyframes.filter((keyframe) => keyframe.time !== time);
+  keyframes.push({ time, dx, dy });
+  return normalizeAlignDrift({ ...anchored, keyframes });
+}
+
 export function adjustAlignDriftTranslation(
   grid: AlignGridState,
   drift: AlignDrift | null,

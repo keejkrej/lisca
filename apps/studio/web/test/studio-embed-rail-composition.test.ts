@@ -10,23 +10,26 @@ describe("Studio Align instrument stack composition", () => {
   const navSource = readSource("../src/components/studio-align-nav.tsx");
   const routeSource = readSource("../src/routes/align.tsx");
 
-  it("stacks Navigation, Contrast, and Geometry above Grid, Tool, Selection, and Action", () => {
+  it("stacks Navigation, Contrast, Geometry, and Drift above Grid, Tool, Selection, and Action", () => {
     const expertBlock =
       stackSource.match(/<Show when=\{props\.expert\}>([\s\S]*?)<\/Show>/)?.[1] ?? "";
     expect(expertBlock).toMatch(/<StudioAlignNav\s*\/>/);
     expect(expertBlock).toMatch(/gridRail\("geometry"\)/);
+    expect(expertBlock).toMatch(/<AlignDriftRail/);
     expect(expertBlock).not.toMatch(
       /<AlignSelectionRail|<AlignToolSection|title="Action"|gridRail\("grid"\)/,
     );
 
     const navIdx = stackSource.indexOf("<StudioAlignNav");
     const geometryIdx = stackSource.indexOf('gridRail("geometry")');
+    const driftIdx = stackSource.indexOf("<AlignDriftRail");
     const gridIdx = stackSource.indexOf('{gridRail("grid")}');
     const toolIdx = stackSource.indexOf("<AlignToolSection");
     const selectionIdx = stackSource.indexOf("<AlignSelectionRail");
     const actionIdx = stackSource.indexOf('title="Action"');
     expect(navIdx).toBeLessThan(geometryIdx);
-    expect(geometryIdx).toBeLessThan(gridIdx);
+    expect(geometryIdx).toBeLessThan(driftIdx);
+    expect(driftIdx).toBeLessThan(gridIdx);
     expect(gridIdx).toBeLessThan(toolIdx);
     expect(toolIdx).toBeLessThan(selectionIdx);
     expect(selectionIdx).toBeLessThan(actionIdx);
@@ -136,7 +139,7 @@ describe("Studio Annotate instrument stack composition", () => {
 });
 
 describe("Studio right-rail flattened section contract", () => {
-  it("documents Align order Instruction → Nav → Contrast → Geometry → Grid → Tool → Selection → Action", () => {
+  it("documents Align order Instruction → Nav → Contrast → Geometry → Drift → Grid → Tool → Selection → Action", () => {
     const rightPanel = readSource("../src/components/studio-right-panel.tsx");
     const instruction = readSource("../src/components/studio-instruction-section.tsx");
     const stack = readSource("../src/components/studio-align-instrument-stack.tsx");
