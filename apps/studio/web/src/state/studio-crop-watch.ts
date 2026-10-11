@@ -6,6 +6,7 @@ import { studioClient } from "../api/studio-port";
 type RefreshRoi = (workspacePath: string) => void;
 
 let refreshRoi: RefreshRoi = () => {};
+let onCropSettled: (progress: CropRoiProgress, workspacePath: string) => void = () => {};
 const cropStops = new Map<string, () => void>();
 
 /** The work-session gate registers this so a finished crop reloads the ROI scan. */
@@ -13,6 +14,20 @@ export function bindStudioCropRefresh(refresh: RefreshRoi): () => void {
   refreshRoi = refresh;
   return () => {
     if (refreshRoi === refresh) refreshRoi = () => {};
+  };
+}
+
+/**
+ * Align unmounts when Crop opens Annotate, so its progress subscription stops
+ * before the task finishes. The settled event clears the running flag that
+ * disables Crop on the next visit.
+ */
+export function bindStudioCropSettled(
+  listener: (progress: CropRoiProgress, workspacePath: string) => void,
+): () => void {
+  onCropSettled = listener;
+  return () => {
+    if (onCropSettled === listener) onCropSettled = () => {};
   };
 }
 
@@ -37,6 +52,7 @@ export function watchStudioCrop(requestId: string, workspacePath: string): void 
     const finish = cropStops.get(key);
     cropStops.delete(key);
     finish?.();
+    onCropSettled(progress, workspacePath);
     if (progress.status === "completed") refreshStudioRoi(workspacePath);
   });
   cropStops.set(key, stop);

@@ -162,6 +162,8 @@ export function createAlignUiActions(persist: AlignUiPersist, behavior: AlignUiB
     ) {
       patchAlignUi(set, persist, (state) => {
         if (state.workspacePath === workspacePath) return state;
+        // Crop progress belongs to the workspace that started it. Leaving it
+        // set keeps Crop disabled after opening another assay.
         if (behavior.clearSourceOnWorkspaceChange) {
           return {
             ...state,
@@ -172,6 +174,7 @@ export function createAlignUiActions(persist: AlignUiPersist, behavior: AlignUiB
             appliedAlignStateKey: null,
             loadedFrameSelection: null,
             frame: null,
+            cropProgress: null,
             error: null,
             status: null,
           };
@@ -181,6 +184,7 @@ export function createAlignUiActions(persist: AlignUiPersist, behavior: AlignUiB
           workspacePath,
           appliedAlignStateKey: null,
           frame: null,
+          cropProgress: null,
           error: null,
           status: null,
         };
