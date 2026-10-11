@@ -55,7 +55,7 @@ vi.mock("@lisca/smart/segment", () => ({
   },
 }));
 
-vi.mock("@lisca/ui/features", () => ({
+vi.mock("@lisca/instrument", () => ({
   AnnotationCanvas: (props: AnnotationCanvasProps) => {
     mocks.annotationCanvasProps = props;
     return null;

@@ -60,7 +60,7 @@ Transfection stage names match `lisca-transfection`. Killing commands take a wor
 
 ## Project structure
 
-Product applications live under `apps/{aligner,annotator,studio}/`, each split into SolidJS `web/`, Rust `server/`, and Tauri `desktop/`. Shared TypeScript belongs in `packages/`: contracts and schemas in `contracts`, client I/O in `client`, reusable logic in `utils` and `ui-headless`, and rendered components in `ui`. Rust libraries are in `crates/`. Python utilities, ROI crop (`lisca.services.crop`), and training code are in `python/`. Canonical Jupyter notebooks for Hub and zip users live under `notebooks/` (independent SemVer; tags `notebooks-v*`). Keep documentation in the matching `docs/<domain>/` directory. Product model artifacts (Smart exclude, Smart segment) belong in `models/`. Shared brand assets belong in `assets/brand/`. Assay weights belong on Hugging Face or in the assay repository. See `models/README.md`.
+Product applications live under `apps/{aligner,annotator,studio}/`, each split into SolidJS `web/`, Rust `server/`, and Tauri `desktop/`. Shared TypeScript belongs in `packages/`: contracts and schemas in `contracts`, client I/O in `client`, reusable logic in `utils` and `ui-headless`, visual tokens in `design-tokens`, Zaidan primitives, patterns, and the app shell in `ui`, and align, annotate, and task-center UI in `instrument`. The ownership map is `docs/design/architecture.md`. Rust libraries are in `crates/`. Python utilities, ROI crop (`lisca.services.crop`), and training code are in `python/`. Canonical Jupyter notebooks for Hub and zip users live under `notebooks/` (independent SemVer; tags `notebooks-v*`). Keep documentation in the matching `docs/<domain>/` directory. Product model artifacts (Smart exclude, Smart segment) belong in `models/`. Shared brand assets belong in `assets/brand/`. Assay weights belong on Hugging Face or in the assay repository. See `models/README.md`.
 
 Wire types are Effect Schemas in `packages/contracts`. After a schema change, regenerate with `pnpm --filter @lisca/contracts generate` and run `cargo test -p lisca`.
 
@@ -78,7 +78,7 @@ JavaScript workspace tasks are plain `pnpm run` scripts. Per-app dev, build, and
 
 ## Coding style
 
-TypeScript is strict, with two-space indentation, extensionless imports, kebab-case filenames, and PascalCase components and types. Network access stays in `@lisca/client`. Framework-independent behavior belongs in `@lisca/utils` or `@lisca/ui-headless`. Rust uses `snake_case` modules and functions, `PascalCase` types, and `cargo fmt`. Python targets 3.11+, 88-character lines, and is checked by Ruff and `ty`.
+TypeScript is strict, with two-space indentation, extensionless imports, kebab-case filenames, and PascalCase components and types. Network access stays in `@lisca/client`. Framework-independent behavior belongs in `@lisca/utils` or `@lisca/ui-headless`. Shared primitives, patterns, and the shell belong in `@lisca/ui`. Rendered product workflows belong in `@lisca/instrument`. Rust uses `snake_case` modules and functions, `PascalCase` types, and `cargo fmt`. Python targets 3.11+, 88-character lines, and is checked by Ruff and `ty`.
 
 ## Testing
 

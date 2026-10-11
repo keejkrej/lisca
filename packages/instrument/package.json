@@ -1,0 +1,35 @@
+{
+  "name": "@lisca/instrument",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "test": "vp test run",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@kobalte/core": "catalog:",
+    "@lisca/contracts": "workspace:*",
+    "@lisca/ui": "workspace:*",
+    "@lisca/ui-headless": "workspace:*",
+    "@lisca/utils": "workspace:*",
+    "lucide-solid": "^1.31.0",
+    "phosphor-icons-solid": "catalog:"
+  },
+  "devDependencies": {
+    "@solidjs/testing-library": "catalog:",
+    "jsdom": "^26.1.0",
+    "solid-js": "catalog:",
+    "typescript": "catalog:",
+    "vite-plugin-solid": "catalog:",
+    "vitest": "catalog:"
+  },
+  "peerDependencies": {
+    "solid-js": "^1.9.0"
+  }
+}

@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, render } from "@solidjs/testing-library";
 import { afterEach, describe, expect, it } from "vite-plus/test";
 
-import { PanelSection } from "../src/shell/regions/panel-section";
+import { PanelSection } from "../src/patterns/regions/panel-section";
 
 afterEach(cleanup);
 

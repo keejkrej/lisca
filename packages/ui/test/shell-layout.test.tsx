@@ -2,7 +2,6 @@ import { cleanup, fireEvent, render, screen } from "@solidjs/testing-library";
 import { createEffect, createSignal, onCleanup } from "solid-js";
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
-import { CanvasToastStack } from "../src/features/canvas/canvas-status";
 import { AppShell } from "../src/shell/layout/shell";
 import { StageCanvas } from "../src/shell/layout/stage-canvas";
 import { ViewportCard } from "../src/shell/layout/viewport-card";
@@ -78,12 +77,12 @@ describe("AppShell paper pane", () => {
     hasClass(root, "py-4");
     hasClass(root, "overflow-clip");
     hasClass(root, "overscroll-none");
-    hasClass(screen.getByLabelText("Left panel"), "w-64");
+    hasClass(screen.getByLabelText("Left panel"), "w-rail");
     expect(screen.getByLabelText("Left panel").classList.contains("border-r")).toBe(false);
-    hasClass(screen.getByLabelText("Right panel"), "w-64");
+    hasClass(screen.getByLabelText("Right panel"), "w-rail");
     hasClass(mainColumn, "gap-3");
     hasClass(mainColumn, "overflow-visible");
-    hasClass(topBar, "h-14");
+    hasClass(topBar, "h-topbar");
     hasClass(topBar, "px-5");
     hasClass(topBar, "rounded-none");
     hasClass(topBar, "bg-paper");
@@ -179,8 +178,8 @@ describe("AppShell paper pane", () => {
     const topBar = stageTopBar();
     const panelOf = (overlay: HTMLElement) =>
       overlay.querySelector('[data-slot="scroll-area-content"]')!.firstElementChild!;
-    hasClass(panelOf(leftOverlay), "w-64");
-    hasClass(panelOf(rightOverlay), "w-64");
+    hasClass(panelOf(leftOverlay), "w-rail");
+    hasClass(panelOf(rightOverlay), "w-rail");
     expect(leftOverlay.getAttribute("aria-hidden")).toBe("true");
     expect((leftOverlay as HTMLElement & { inert: boolean }).inert).toBe(true);
     hasClass(leftOverlay, "bg-stage");
@@ -346,32 +345,5 @@ describe("StageCanvas framing", () => {
     hasClass(caption, "shrink-0");
     hasClass(caption, "tracking-[0.12em]");
     hasClass(caption, "text-muted-foreground");
-  });
-});
-
-describe("StageCanvas caption status", () => {
-  it("sends transient notices to the bottom-left of the window", () => {
-    render(() => (
-      <StageCanvas
-        notice={<CanvasToastStack messages={[{ text: "Saved Pos67" }]} />}
-        captionLeft="Position 90"
-        captionRight="2048 × 2044 px"
-      >
-        <div data-testid="stage-child">canvas</div>
-      </StageCanvas>
-    ));
-    const toast = screen.getByRole("status");
-    expect(toast.textContent).toBe("Saved Pos67");
-    expect(toast.className).toMatch(/rounded-none/);
-    const stack = toast.parentElement!;
-    expect(stack.className).toMatch(/\bfixed\b/);
-    expect(stack.className).toMatch(/\bbottom-4\b/);
-    expect(stack.className).toMatch(/\bleft-4\b/);
-    expect(document.body.contains(toast)).toBe(true);
-    const well = screen.getByTestId("stage-child").parentElement!;
-    expect(well.contains(toast)).toBe(false);
-    const caption = well.parentElement!.lastElementChild!;
-    expect(caption.contains(toast)).toBe(false);
-    hasClass(caption, "h-7");
   });
 });

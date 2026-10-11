@@ -2,7 +2,7 @@ import {
   createTaskCenterGateway,
   subscribeTaskCenterTasks,
 } from "@lisca/client/session/task-center";
-import { TaskCenter } from "@lisca/ui/shell";
+import { TaskCenter } from "@lisca/instrument";
 import { useRouterState } from "@tanstack/solid-router";
 import { Show, createEffect, createSignal } from "solid-js";
 

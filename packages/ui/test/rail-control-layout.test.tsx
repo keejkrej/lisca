@@ -7,8 +7,8 @@ import {
   RailFieldPair,
   RailSectionStack,
   RailSidebar,
-} from "../src/shell/regions/rail-control-layout";
-import { SidebarStack } from "../src/shell/regions/sidebar-stack";
+} from "../src/patterns/regions/rail-control-layout";
+import { SidebarStack } from "../src/patterns/regions/sidebar-stack";
 
 afterEach(cleanup);
 
@@ -31,8 +31,8 @@ describe("instrument rail control layout", () => {
     expect(rail.style.scrollbarGutter).toBe("");
     expect(stack?.getAttribute("data-slot")).toBe("rail-section-stack");
     expect(stack?.classList.contains("my-auto")).toBe(true);
-    expect(stack?.classList.contains("ml-7")).toBe(true);
-    expect(stack?.classList.contains("w-[200px]")).toBe(true);
+    expect(stack?.classList.contains("ml-rail-inset")).toBe(true);
+    expect(stack?.classList.contains("w-rail-content")).toBe(true);
     expect(stack?.classList.contains("shrink-0")).toBe(true);
   });
 

@@ -1,0 +1,22 @@
+{
+  "name": "@lisca/design-tokens",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/tokens.ts",
+      "import": "./src/tokens.ts"
+    },
+    "./variables.css": "./generated/variables.css"
+  },
+  "scripts": {
+    "generate": "node --experimental-strip-types --import ./scripts/register-ts-ext.mjs scripts/generate.ts",
+    "test": "vp test run",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

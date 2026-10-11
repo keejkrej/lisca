@@ -6,7 +6,7 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from "@lisca/ui/components";
+} from "@lisca/ui/primitives";
 import { useAtomSet, useAtomValue } from "@effect/atom-solid";
 import {
   commitDisplayPositionDraft,

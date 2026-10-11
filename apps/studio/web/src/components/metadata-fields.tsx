@@ -5,7 +5,7 @@ import {
   type AssaySegmentationMode,
   type StudioDataSourceKind,
 } from "@lisca/contracts/assay";
-import type { HostFilePickerMode } from "@lisca/ui/features";
+import type { HostFilePickerMode } from "@lisca/instrument";
 import {
   Field,
   FieldLabel,
@@ -23,14 +23,14 @@ import {
   RadioGroupItem,
   SelectTrigger,
   SelectValue,
-} from "@lisca/ui/components";
+} from "@lisca/ui/primitives";
 import {
   FolderSourceParseModal,
   HostFilePickerDialog,
   PathPickerField,
   SourcePickerField,
-} from "@lisca/ui/features";
-import type { HostFilePickerOperations } from "@lisca/ui/features";
+} from "@lisca/instrument";
+import type { HostFilePickerOperations } from "@lisca/instrument";
 import { defaultMaxOnsetMinutesForAssay } from "@lisca/client/studio-assay-json";
 import { recentSourceByPath, recentSourcePickerItems } from "@lisca/client/session/recent-memory";
 import { useAtomSet, useAtomValue } from "@effect/atom-solid";

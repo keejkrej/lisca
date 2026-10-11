@@ -9,7 +9,7 @@ import {
   type CropConfirmState,
   type VariationExcludePreview,
 } from "@lisca/client/use-align-state-core";
-import { useCanvasResourceTransaction } from "@lisca/ui/features";
+import { useCanvasResourceTransaction } from "@lisca/instrument";
 import { useShellWorkspace } from "@lisca/ui/shell";
 import * as Result from "effect/Result";
 import { createEffect, createSignal, onCleanup, type Accessor } from "solid-js";

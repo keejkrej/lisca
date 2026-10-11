@@ -44,7 +44,12 @@ const UI_FEATURE_DOMAINS = new Set([
   "contrast",
   "host",
   "navigation",
+  "task-center",
 ]);
+
+const STYLE_RECIPES = new Set(["buttonVariants", "fieldVariants", "toggleVariants"]);
+
+const FOUNDATION_PACKAGES = new Set(["@lisca/design-tokens", "@lisca/ui", "@lisca/ui-headless"]);
 
 function normalizePath(value) {
   const slashPath = value.replaceAll("\\", "/");
@@ -176,7 +181,10 @@ function importPathTarget(importer, specifier, workspaceIndex, importerWorkspace
   if (specifier.startsWith(".")) {
     return normalizePath(path.resolve(path.dirname(importer), specifier));
   }
-  if (specifier.startsWith("@/") && importerWorkspace?.name === "@lisca/ui") {
+  if (
+    specifier.startsWith("@/") &&
+    (importerWorkspace?.name === "@lisca/ui" || importerWorkspace?.name === "@lisca/instrument")
+  ) {
     return normalizePath(path.join(importerWorkspace.root, "src", specifier.slice(2)));
   }
   const workspaceName = workspaceNameFromSpecifier(specifier);
@@ -286,7 +294,19 @@ function checkImportBoundaries({ filename, specifier, names = [], workspaceIndex
     }
   }
 
-  const uiFeaturesRoot = path.join(workspaceIndex.root, "packages", "ui", "src", "features");
+  const recipeOwner =
+    importerWorkspace?.name === "@lisca/ui" || importerWorkspace?.name === "@lisca/instrument";
+  if (!recipeOwner) {
+    for (const name of names) {
+      if (!STYLE_RECIPES.has(name)) continue;
+      diagnostics.push({
+        messageId: "styleRecipe",
+        data: { name },
+      });
+    }
+  }
+
+  const uiFeaturesRoot = path.join(workspaceIndex.root, "packages", "instrument", "src");
   const uiSourceRoot = path.join(workspaceIndex.root, "packages", "ui", "src");
   const sourceDomain = uiFeatureDomain(importer, uiFeaturesRoot);
   const pathTarget = importPathTarget(importer, specifier, workspaceIndex, importerWorkspace);
@@ -324,6 +344,17 @@ function checkImportBoundaries({ filename, specifier, names = [], workspaceIndex
   }
 
   if (
+    importerWorkspace &&
+    importedWorkspace?.name === "@lisca/instrument" &&
+    FOUNDATION_PACKAGES.has(importerWorkspace.name)
+  ) {
+    diagnostics.push({
+      messageId: "foundationImportsFeature",
+      data: { importer: importerWorkspace.name },
+    });
+  }
+
+  if (
     !packageToApp &&
     importerWorkspace &&
     importedWorkspace &&
@@ -351,6 +382,10 @@ const importBoundariesRule = {
         "UI feature domain '{{sourceDomain}}' cannot import '{{targetDomain}}'. Only align/annotate may import canvas.",
       uiFeatureRootBarrel:
         "UI feature domain '{{sourceDomain}}' cannot import the @lisca/ui root barrel. Import the owning feature module directly.",
+      foundationImportsFeature:
+        "Foundation package '{{importer}}' cannot import @lisca/instrument. Feature UI depends on the design system, not the other way around.",
+      styleRecipe:
+        "Import {{name}} only from @lisca/ui or @lisca/instrument. Application code renders the control.",
       packageToApp: "Shared package files cannot import app code ('{{specifier}}').",
       undeclaredWorkspace:
         "Workspace package '{{imported}}' is not declared in '{{importer}}' package.json.",

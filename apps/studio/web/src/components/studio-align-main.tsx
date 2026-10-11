@@ -5,7 +5,7 @@ import {
   CanvasToastStack,
   useAlignCanvasPointerHandlers,
   useCanvasTransientStatus,
-} from "@lisca/ui/features";
+} from "@lisca/instrument";
 import { StageCanvas, ViewportCard } from "@lisca/ui/shell";
 import { createMemo } from "solid-js";
 

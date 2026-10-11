@@ -4,17 +4,19 @@ Shared libraries under `packages/*`. Apps import these via workspace protocol (`
 
 ## Package map
 
-| Package              | Role                                                                                                                               |
-| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| `@lisca/contracts`   | Wire + on-disk assay schemas (Effect Schema). Subpath `@lisca/contracts/assay` for wizard/UI assay types.                          |
-| `@lisca/utils`       | Framework-free client logic: imaging helpers, storage adapters, annotation tools, shortcuts, task-center and picker models.        |
-| `@lisca/client`      | Effect runtime, HTTP/WS ports, session hooks, studio assay JSON helpers, Effect Atom query layers.                                 |
-| `@lisca/analysis`    | Pure Studio results model: Rust PNG plot catalog, sectioning, and assay constants.                                                 |
-| `@lisca/fixtures`    | On-disk sample sources and half-finished workspaces for e2e / agent tests (`pnpm run fixture:workspace`).                          |
-| `@lisca/ui-headless` | Solid-coupled non-DOM state and interaction logic, plus the structural types and policies that directly support those modules.     |
-| `@lisca/ui`          | SolidJS web imaging UI (zaidan/Kobalte + Tailwind). Re-exports shared UI types through `@lisca/ui/features`.                       |
-| `@lisca/web-app`     | Vite web shell: app mount (`createLiscaWebApp`), shared CSS entry, host operations.                                                |
-| `@lisca/smart`       | Browser ML via transformers.js: `./segment` (SAM masks), `./segment/browser` (hook), `./exclude/browser` (ResNet smart exclusion). |
+| Package                | Role                                                                                                                                           |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@lisca/contracts`     | Wire + on-disk assay schemas (Effect Schema). Subpath `@lisca/contracts/assay` for wizard/UI assay types.                                      |
+| `@lisca/utils`         | Framework-free client logic: imaging helpers, storage adapters, annotation tools, shortcuts, task-center and picker models.                    |
+| `@lisca/client`        | Effect runtime, HTTP/WS ports, session hooks, studio assay JSON helpers, Effect Atom query layers.                                             |
+| `@lisca/analysis`      | Pure Studio results model: Rust PNG plot catalog, sectioning, and assay constants.                                                             |
+| `@lisca/fixtures`      | On-disk sample sources and half-finished workspaces for e2e / agent tests (`pnpm run fixture:workspace`).                                      |
+| `@lisca/design-tokens` | Canonical colors, type, radius, and stage geometry. `pnpm --filter @lisca/design-tokens generate` writes `generated/variables.css`.            |
+| `@lisca/ui-headless`   | Solid-coupled non-DOM state and interaction logic, plus the structural types and policies that directly support those modules.                 |
+| `@lisca/ui`            | Zaidan primitives (`@lisca/ui/primitives`, `@lisca/ui/button`), shared patterns (`@lisca/ui/patterns`), and the app shell (`@lisca/ui/shell`). |
+| `@lisca/instrument`    | Align, annotate, canvas, contrast, host, navigation, and task-center UI. Public entry is `@lisca/instrument`.                                  |
+| `@lisca/web-app`       | Vite web shell: app mount (`createLiscaWebApp`), shared CSS entry, host operations.                                                            |
+| `@lisca/smart`         | Browser ML via transformers.js: `./segment` (SAM masks), `./segment/browser` (hook), `./exclude/browser` (ResNet smart exclusion).             |
 
 Desktop Tauri wrappers live under `apps/*/desktop`, not in `packages/*`.
 
@@ -84,7 +86,7 @@ Barrel: `@lisca/utils` re-exports all modules.
 
 ## UI type re-exports
 
-Apps should import UI-facing types re-exported by `@lisca/ui/features`. Framework-free APIs that are not UI component contracts come from `@lisca/utils`; apps should not reach into `@lisca/ui-headless/*` for them.
+Apps should import UI-facing types re-exported by `@lisca/instrument`, such as `AnnotationMode`, `HostFilePickerMode`, and `cropConfirmCopy`. Framework-free APIs that are not UI component contracts come from `@lisca/utils`; apps should not reach into `@lisca/ui-headless/*` for them.
 
 Examples: `AnnotationMode`, `HostFilePickerMode`, `cropConfirmCopy`.
 

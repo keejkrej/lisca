@@ -14,8 +14,9 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
-} from "@lisca/ui/components";
-import { DialogSurface, ModalScrim, StartupUpdateCheck } from "@lisca/ui/shell";
+} from "@lisca/ui/primitives";
+import { StartupUpdateCheck } from "@lisca/ui/shell";
+import { DialogSurface, ModalScrim } from "@lisca/ui/patterns";
 import IconGearRegular from "phosphor-icons-solid/IconGearRegular";
 import IconXRegular from "phosphor-icons-solid/IconXRegular";
 import { createSignal, Show } from "solid-js";

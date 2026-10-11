@@ -29,11 +29,11 @@ describe("StudioRightPanel", () => {
     expect(rail?.classList.contains("px-7")).toBe(false);
     expect(scroll?.querySelector('[data-slot="scroll-area-scrollbar"]')).not.toBeNull();
     expect((scroll as HTMLElement | null)?.style.scrollbarGutter).toBe("");
-    expect(scroll?.classList.contains("w-[200px]")).toBe(false);
+    expect(scroll?.classList.contains("w-rail-content")).toBe(false);
     expect(scroll?.classList.contains("justify-center")).toBe(false);
     expect(stack?.classList.contains("my-auto")).toBe(true);
-    expect(stack?.classList.contains("ml-7")).toBe(true);
-    expect(stack?.classList.contains("w-[200px]")).toBe(true);
+    expect(stack?.classList.contains("ml-rail-inset")).toBe(true);
+    expect(stack?.classList.contains("w-rail-content")).toBe(true);
     expect(stack?.classList.contains("gap-4")).toBe(true);
     expect(screen.getAllByText("Instruction")).toHaveLength(2);
     expect(screen.getByText("Expert controls")).toBeTruthy();

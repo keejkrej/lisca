@@ -5,7 +5,7 @@ import type {
 } from "@lisca/contracts";
 import { useAnnotateStateCore } from "@lisca/client/use-annotate-state-core";
 import { logClientEvent } from "@lisca/client/client-log";
-import { useCanvasResourceTransaction, useCanvasTransientStatus } from "@lisca/ui/features";
+import { useCanvasResourceTransaction, useCanvasTransientStatus } from "@lisca/instrument";
 import { useAtom } from "@effect/atom-solid";
 import { Effect } from "effect";
 import { createEffect } from "solid-js";

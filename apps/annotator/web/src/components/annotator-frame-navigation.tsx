@@ -1,4 +1,4 @@
-import { RoiFrameNavigation } from "@lisca/ui/features";
+import { RoiFrameNavigation } from "@lisca/instrument";
 
 import { useAnnotateNav } from "../state/annotate-page-selectors";
 

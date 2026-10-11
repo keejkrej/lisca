@@ -1,4 +1,4 @@
-import { LabelCreationDialog } from "@lisca/ui/features";
+import { LabelCreationDialog } from "@lisca/instrument";
 import { AppShell } from "@lisca/ui/shell";
 import { createFileRoute } from "@tanstack/solid-router";
 
@@ -27,7 +27,7 @@ function AnnotatePageContent() {
   return (
     <AppShell>
       <AppShell.Body>
-        <AppShell.Left widthClass="w-64">
+        <AppShell.Left widthClass="w-rail">
           <StudioLeft />
         </AppShell.Left>
         <AppShell.MainColumn>
@@ -38,7 +38,7 @@ function AnnotatePageContent() {
             <StudioAnnotateMain />
           </AppShell.Main>
         </AppShell.MainColumn>
-        <AppShell.Right widthClass="w-64">
+        <AppShell.Right widthClass="w-rail">
           <StudioRightPanel instruction={instructionForAnnotate}>
             <StudioAnnotateInstrumentStack />
           </StudioRightPanel>

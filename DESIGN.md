@@ -10,7 +10,7 @@ colors:
   foreground: "#171717"
   ink: "#171717"
   muted: "#F5F5F5"
-  stage: "#F5F5F5"
+  stage: "#FAFAFA"
   muted-foreground: "#6B6B6B"
   border: "#E5E5E5"
   rule: "#E5E5E5"
@@ -173,14 +173,15 @@ Studio, Aligner, and Annotator share this language. Reuse the same shell, sectio
 
 ## Colors
 
-- **Stage and muted (`#F5F5F5`):** the desktop surround and low-emphasis surfaces.
-- **Background and paper (`#FFFFFF`):** the top bar, sheets, inputs, and canvas framing.
+- **Muted (`#F5F5F5`):** low-emphasis surfaces such as secondary fills.
+- **Stage surround:** `#FAFAFA` in light mode and `#0A0A0A` in dark mode (`--instrument-stage`).
+- **Paper:** `#FFFFFF` in light mode and `#030303` in dark mode (`--instrument-paper`). The top bar, sheets, inputs, and canvas framing use paper and background.
 - **Foreground and ink (`#171717`):** default text, icons, and navigation carets.
 - **Primary (`#252525`) / primary foreground (`#FAFAFA`):** unscoped chrome. Studio, Aligner, and Annotator remap `--primary`, `--ring`, and `--sidebar-primary` to that app's brand.
-- **Brand accents:** one icon color per app, used sparingly on filled primary actions, focus rings, selected nav/tool, and pressed Show/Edit/Expert toggles. Outline actions, body text, section titles, and rails stay ink/stage. Do not tint rail backgrounds.
-  - **Studio mint** with ink foreground. Dark mode and the icon use `#3DDC97`. Light mode uses `#00AB69` so the fill clears 3:1 on white. Distinct from GFP.
-  - **Aligner blue** with ink foreground. Dark mode and the icon use `#4EA3FF`. Light mode uses `#4298F3`. White-on-blue fails 12px AA, so the label stays ink.
-  - **Annotator coral** with ink foreground. Dark mode and the icon use `#F24B4B`. Light mode uses `#E94244`, deepened on white with ink on the fill still above 4.5:1. White-on-coral fails 12px AA. Distinct from destructive.
+- **Brand accents:** one icon color per app, used sparingly on filled primary actions, focus rings, selected nav/tool, and pressed Show/Edit/Expert toggles. Outline actions, body text, section titles, and rails stay ink/stage. Do not tint rail backgrounds. The same icon hex is the runtime fill in both color schemes. `brand-*-light` in the frontmatter is the unused `brandOnWhite` record.
+  - **Studio mint** with ink foreground. Both schemes and the icon use `#3DDC97`. Distinct from GFP.
+  - **Aligner blue** with ink foreground. Both schemes and the icon use `#4EA3FF`. White-on-blue fails 12px AA, so the label stays ink.
+  - **Annotator coral** with ink foreground. Both schemes and the icon use `#F24B4B`. Ink on the fill stays above 4.5:1. White-on-coral fails 12px AA. Distinct from destructive.
 - **Muted foreground (`#6B6B6B`):** metadata and secondary values; never primary labels. It remains AA-readable on the muted stage.
 - **Border and rule (`#E5E5E5`):** control outlines and quiet separators.
 - **Destructive (`#DC2626`):** irreversible or error states only. Do not restyle it as Annotator coral, and do not use Annotator coral on error toasts.
@@ -214,7 +215,7 @@ Every instrument surface is square: radius is 0px on sheets, dialogs, cards, inp
 
 ## Components
 
-Use the installed Zaidan Lyra catalog through `@lisca/ui/components` before creating a new primitive. Product code must not deep-import registry files or hand-roll a control already covered by the catalog. Keep LiSCA behavior and composition in shared feature or shell modules; refresh registry-owned primitives through `packages/ui/components.json` instead of editing their generated implementation ad hoc.
+Use the installed Zaidan Lyra catalog through `@lisca/ui/primitives` or a focused path such as `@lisca/ui/button` before creating a new primitive. Product code must not deep-import registry files or hand-roll a control already covered by the catalog. Keep product workflows in `@lisca/instrument` and shared presentation in `@lisca/ui/patterns` or `@lisca/ui/shell`. Refresh registry-owned primitives through `packages/ui/components.json` instead of editing their generated implementation ad hoc.
 
 State controls and actions must be distinguishable before interaction. **Show** and **Edit** are toggles: always render a persistent state indicator, set `aria-pressed`, and use the brand fill only when on. Save, Reset, Auto Range, Undo, and exclusion commands are momentary actions: never leave them looking selected.
 
@@ -245,7 +246,7 @@ Action is the final rail section. Output-path and included/excluded count labels
 - Do use a named action pair for exactly two short product-authored commands with one task scope.
 - Do preserve the 200px rail measure and 8px paired-field gutter across all three apps.
 - Do expose toggle state persistently and give every icon-only control an accessible name.
-- Do check `@lisca/ui/components` before adding a product-local primitive.
+- Do check `@lisca/ui/primitives` before adding a product-local primitive.
 - Do keep image navigation, overlays, and hit testing on the same viewport transform.
 - Do use each app's icon color only on primary CTAs, focus, selected nav/tool, and pressed toggles.
 - Don't use fallback or mixed font families inside the application interface.

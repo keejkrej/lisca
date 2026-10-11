@@ -27,23 +27,23 @@ new RuleTester({ cwd: repoRoot }).run("lisca-boundaries/imports", rule, {
     },
     {
       name: "allows align to import shared canvas infrastructure",
-      filename: repoFile("packages", "ui", "src", "features", "align", "fixture.ts"),
+      filename: repoFile("packages", "instrument", "src", "align", "fixture.ts"),
       code: 'import { CanvasStatusMessageStack } from "../canvas/canvas-status";',
     },
     {
       name: "allows a feature to import shell code",
-      filename: repoFile("packages", "ui", "src", "features", "host", "fixture.ts"),
-      code: 'import { ModalScrim } from "../../shell/modal/modal-scrim";',
+      filename: repoFile("packages", "instrument", "src", "host", "fixture.ts"),
+      code: 'import { ModalScrim } from "@lisca/ui/patterns";',
     },
     {
       name: "allows a declared relative sibling workspace import",
-      filename: repoFile("packages", "ui", "src", "features", "host", "fixture.ts"),
-      code: 'import type { HostFilePickerMode } from "../../../../utils/src/host";',
+      filename: repoFile("packages", "instrument", "src", "host", "fixture.ts"),
+      code: 'import type { HostFilePickerMode } from "../../../utils/src/host";',
     },
     {
       name: "allows the UI alias within the same feature domain",
-      filename: repoFile("packages", "ui", "src", "features", "host", "fixture.ts"),
-      code: 'import { HostFilePickerRow } from "@/features/host/host-file-picker-row";',
+      filename: repoFile("packages", "instrument", "src", "host", "fixture.ts"),
+      code: 'import { HostFilePickerRow } from "@/host/host-file-picker-row";',
     },
     {
       name: "allows a nonliteral dynamic import without guessing its target",
@@ -96,7 +96,7 @@ new RuleTester({ cwd: repoRoot }).run("lisca-boundaries/imports", rule, {
     },
     {
       name: "rejects cross-domain UI feature imports",
-      filename: repoFile("packages", "ui", "src", "features", "host", "fixture.ts"),
+      filename: repoFile("packages", "instrument", "src", "host", "fixture.ts"),
       code: 'import { AlignGrid } from "../align/align-grid";',
       errors: [{ messageId: "uiFeatureDomain" }],
     },
@@ -128,8 +128,8 @@ new RuleTester({ cwd: repoRoot }).run("lisca-boundaries/imports", rule, {
     },
     {
       name: "rejects UI alias imports across feature domains",
-      filename: repoFile("packages", "ui", "src", "features", "host", "fixture.ts"),
-      code: 'import { AlignGrid } from "@/features/align/align-grid";',
+      filename: repoFile("packages", "instrument", "src", "host", "fixture.ts"),
+      code: 'import { AlignGrid } from "@/align/align-grid";',
       errors: [{ messageId: "uiFeatureDomain" }],
     },
     {
@@ -158,27 +158,27 @@ new RuleTester({ cwd: repoRoot }).run("lisca-boundaries/imports", rule, {
     },
     {
       name: "rejects self-package deep imports across UI domains",
-      filename: repoFile("packages", "ui", "src", "features", "host", "fixture.ts"),
-      code: 'import { AlignGrid } from "@lisca/ui/src/features/align/align-grid";',
+      filename: repoFile("packages", "instrument", "src", "host", "fixture.ts"),
+      code: 'import { AlignGrid } from "@lisca/instrument/src/align/align-grid";',
       errors: [{ messageId: "deepPackageImport" }, { messageId: "uiFeatureDomain" }],
     },
     {
       name: "rejects self-package public feature-barrel imports from a domain",
-      filename: repoFile("packages", "ui", "src", "features", "host", "fixture.ts"),
-      code: 'import { AlignGrid } from "@lisca/ui/features";',
+      filename: repoFile("packages", "instrument", "src", "host", "fixture.ts"),
+      code: 'import { AlignGrid } from "@lisca/instrument";',
       errors: [{ messageId: "uiFeatureDomain" }],
     },
     {
       name: "rejects the self-package root barrel from a UI feature domain",
-      filename: repoFile("packages", "ui", "src", "features", "host", "fixture.ts"),
+      filename: repoFile("packages", "instrument", "src", "host", "fixture.ts"),
       code: 'import { AppShell } from "@lisca/ui";',
       errors: [{ messageId: "uiFeatureRootBarrel" }],
     },
     {
       name: "rejects a relative UI root barrel from a feature domain",
-      filename: repoFile("packages", "ui", "src", "features", "host", "fixture.ts"),
-      code: 'import { AppShell } from "../../index";',
-      errors: [{ messageId: "uiFeatureRootBarrel" }],
+      filename: repoFile("packages", "instrument", "src", "host", "fixture.ts"),
+      code: 'import { AppShell } from "../index";',
+      errors: [{ messageId: "uiFeatureDomain" }],
     },
     {
       name: "checks named re-export sources",
@@ -282,13 +282,25 @@ new RuleTester({ cwd: repoRoot }).run("lisca-boundaries/imports", rule, {
       code: 'import * as Contracts from "@lisca/contracts"; const Alias = <typeof Contracts>(Contracts!); void Alias.ASSAY_TYPE;',
       errors: [{ messageId: "assayUiImport" }],
     },
+    {
+      name: "rejects foundation imports of instrument feature UI",
+      filename: repoFile("packages", "ui", "src", "shell", "layout", "shell.tsx"),
+      code: 'import { AlignCanvas } from "@lisca/instrument";',
+      errors: [{ messageId: "foundationImportsFeature" }, { messageId: "undeclaredWorkspace" }],
+    },
+    {
+      name: "rejects application imports of button style recipes",
+      filename: repoFile("apps", "studio", "web", "src", "fixture.ts"),
+      code: 'import { buttonVariants } from "@lisca/ui/button";',
+      errors: [{ messageId: "styleRecipe" }],
+    },
   ],
 });
 
 describe("boundary path normalization", () => {
   it("normalizes both Windows and POSIX separators", () => {
     expect(normalizePath("packages\\ui\\src\\features")).not.toContain("\\");
-    expect(normalizePath("packages/ui/src/features")).not.toContain("\\");
+    expect(normalizePath("packages/instrument/src")).not.toContain("\\");
     expect(normalizePath("C:\\repo\\packages\\ui")).toBe("C:/repo/packages/ui");
   });
 });

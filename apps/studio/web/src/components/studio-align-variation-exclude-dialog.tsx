@@ -1,4 +1,4 @@
-import { VariationExcludeDialog } from "@lisca/ui/features";
+import { VariationExcludeDialog } from "@lisca/instrument";
 
 import { useStudioAlignPage } from "../state/studio-align-page-context";
 

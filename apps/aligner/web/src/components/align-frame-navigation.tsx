@@ -4,7 +4,7 @@ import {
   selectedAxisIndex,
   stepNavigationValue,
   toAxisNavigationOptions,
-} from "@lisca/ui/features";
+} from "@lisca/instrument";
 import { clamp } from "@lisca/utils";
 import { createMemo } from "solid-js";
 import { useAlignNav } from "../state/align-page-selectors";

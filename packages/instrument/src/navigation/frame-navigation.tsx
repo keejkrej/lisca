@@ -1,0 +1,241 @@
+import {
+  findNavigationOptionIndex,
+  formatNavigationOptionDisplayLabel,
+  stepNavigationValue,
+  toNavigationOptions,
+  type NavigationOption,
+  type NavigationValue,
+} from "@lisca/utils";
+import { useSliderStepperField } from "@lisca/ui-headless/slider-stepper-field";
+import IconCaretLeftRegular from "phosphor-icons-solid/IconCaretLeftRegular";
+import IconCaretRightRegular from "phosphor-icons-solid/IconCaretRightRegular";
+import { Show } from "solid-js";
+
+import { Button } from "@lisca/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@lisca/ui/select";
+import { Field, FieldLabel } from "@lisca/ui/field";
+import { Slider } from "@lisca/ui/slider";
+import { Section } from "@lisca/ui/patterns";
+
+export type { NavigationOption, NavigationValue };
+export { findNavigationOptionIndex, stepNavigationValue, toNavigationOptions };
+
+type SelectNavigationFieldProps<T extends NavigationValue> = {
+  label: string;
+  value: T;
+  options: NavigationOption<T>[];
+  onChange: (value: T) => void;
+  disabled?: boolean;
+  previousDisabled?: boolean;
+  nextDisabled?: boolean;
+  onPrevious: () => void;
+  onNext: () => void;
+};
+
+type SliderNavigationFieldProps = {
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  step: number;
+  valueLabel?: string;
+  axisValues?: readonly number[];
+  axisLabels?: readonly string[];
+  onChange?: (value: number) => void;
+  onCommit?: (value: number) => void;
+  disabled?: boolean;
+  previousDisabled?: boolean;
+  nextDisabled?: boolean;
+  onPrevious: () => void;
+  onNext: () => void;
+};
+
+export type SelectNavigationControlProps<T extends NavigationValue> = Omit<
+  SelectNavigationFieldProps<T>,
+  "label"
+>;
+
+export type SliderNavigationControlProps = Omit<SliderNavigationFieldProps, "label">;
+
+type NavigationStepButtonProps = {
+  direction: "previous" | "next";
+  disabled?: boolean;
+  label: string;
+  onClick: () => void;
+};
+
+function NavigationStepButton(props: NavigationStepButtonProps) {
+  const isPrevious = () => props.direction === "previous";
+
+  return (
+    <Button
+      aria-label={`${isPrevious() ? "Previous" : "Next"} ${props.label}`}
+      class="size-8 p-0 text-foreground"
+      disabled={props.disabled}
+      size="icon-sm"
+      type="button"
+      variant="outline"
+      onClick={props.onClick}
+    >
+      <Show when={isPrevious()} fallback={<IconCaretRightRegular class="size-4" />}>
+        <IconCaretLeftRegular class="size-4" />
+      </Show>
+    </Button>
+  );
+}
+
+export function SelectStepperField<T extends NavigationValue>(
+  props: SelectNavigationFieldProps<T>,
+) {
+  return (
+    <Field class="min-w-0 w-full">
+      <FieldLabel>{props.label}</FieldLabel>
+      <div class="grid w-full grid-cols-[2rem_minmax(0,1fr)_2rem] items-center gap-2">
+        <NavigationStepButton
+          direction="previous"
+          disabled={props.previousDisabled}
+          label={props.label}
+          onClick={props.onPrevious}
+        />
+        <Select<T>
+          class="flex items-center"
+          disabled={props.disabled}
+          options={props.options.map((opt) => opt.value)}
+          optionValue={(opt) => opt}
+          optionTextValue={(opt) =>
+            formatNavigationOptionDisplayLabel(
+              props.options.find((o) => o.value === opt)?.label ?? "",
+            )
+          }
+          itemComponent={(itemProps) => (
+            <SelectItem item={itemProps.item}>
+              {formatNavigationOptionDisplayLabel(
+                props.options.find((o) => o.value === itemProps.item.rawValue)?.label ?? "",
+              )}
+            </SelectItem>
+          )}
+          placement="bottom-start"
+          value={props.value}
+          // Kobalte echoes onChange when the controlled value/options update; only forward real changes
+          // so selection patches (e.g. Position resetting ROI) cannot re-trigger themselves forever.
+          onChange={(next) => next != null && next !== props.value && props.onChange(next as T)}
+        >
+          <SelectTrigger aria-label={props.label} size="sm" class="w-full min-w-0 text-sm">
+            <SelectValue<T>>
+              {(state) =>
+                formatNavigationOptionDisplayLabel(
+                  props.options.find((o) => o.value === state.selectedOption())?.label ?? "",
+                )
+              }
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent />
+        </Select>
+        <NavigationStepButton
+          direction="next"
+          disabled={props.nextDisabled}
+          label={props.label}
+          onClick={props.onNext}
+        />
+      </div>
+    </Field>
+  );
+}
+
+export function SliderStepperField(props: SliderNavigationFieldProps) {
+  const field = useSliderStepperField(() => ({
+    value: props.value,
+    axisValues: props.axisValues,
+    axisLabels: props.axisLabels,
+    valueLabel: props.valueLabel,
+  }));
+  const commitValue = () => props.onCommit ?? props.onChange;
+
+  return (
+    <Field class="min-w-0 w-full">
+      <FieldLabel class="w-full justify-between">
+        <span>{props.label}</span>
+        <Show when={field.displayLabel()}>
+          <span class="font-normal text-muted-foreground">{field.displayLabel()}</span>
+        </Show>
+      </FieldLabel>
+      <div class="grid w-full grid-cols-[2rem_minmax(0,1fr)_2rem] items-center gap-2">
+        <NavigationStepButton
+          direction="previous"
+          disabled={props.previousDisabled}
+          label={props.label}
+          onClick={props.onPrevious}
+        />
+        <Slider
+          aria-label={props.label}
+          aria-valuetext={field.ariaValueText()}
+          controlClassName="data-[orientation=horizontal]:!min-w-0"
+          disabled={props.disabled}
+          max={props.max}
+          min={props.min}
+          step={props.step}
+          value={field.draftValue()}
+          onValueChange={field.setDraftValue}
+          onValueCommitted={(value) => {
+            field.setDraftValue(value);
+            commitValue()?.(value);
+          }}
+        />
+        <NavigationStepButton
+          direction="next"
+          disabled={props.nextDisabled}
+          label={props.label}
+          onClick={props.onNext}
+        />
+      </div>
+    </Field>
+  );
+}
+
+export type FrameNavigationProps<T extends NavigationValue> = {
+  position?: SelectNavigationControlProps<T>;
+  channel?: SelectNavigationControlProps<T>;
+  frame?: SliderNavigationControlProps;
+  zPlane?: SliderNavigationControlProps;
+  roi?: SelectNavigationControlProps<T>;
+  class?: string;
+  sectionTitle?: string;
+  sectionDescription?: string;
+  sectionClassName?: string;
+  sectionContentClassName?: string;
+  sectionAppearance?: "framed" | "rail";
+};
+
+/** Shared stack in a {@link Section} card: optional position, channel, frame (slider), Z (slider), ROI — render only props you pass. */
+export function FrameNavigation<T extends NavigationValue>(props: FrameNavigationProps<T>) {
+  return (
+    <Section
+      appearance={props.sectionAppearance}
+      contentClassName={props.sectionContentClassName}
+      description={props.sectionDescription}
+      title={props.sectionTitle ?? "Navigation"}
+      class={props.sectionClassName}
+    >
+      <div
+        class={
+          props.class ??
+          (props.sectionAppearance === "rail" ? "min-w-0 space-y-2" : "min-w-0 space-y-3")
+        }
+      >
+        <Show when={props.position}>
+          {(position) => <SelectStepperField label="Position" {...position()} />}
+        </Show>
+        <Show when={props.roi}>{(roi) => <SelectStepperField label="ROI" {...roi()} />}</Show>
+        <Show when={props.channel}>
+          {(channel) => <SelectStepperField label="Channel" {...channel()} />}
+        </Show>
+        <Show when={props.frame}>
+          {(frame) => <SliderStepperField label="Frame" {...frame()} />}
+        </Show>
+        <Show when={props.zPlane}>
+          {(zPlane) => <SliderStepperField label="Z plane" {...zPlane()} />}
+        </Show>
+      </div>
+    </Section>
+  );
+}

@@ -1,4 +1,4 @@
-import { Spinner } from "@lisca/ui/components";
+import { Spinner } from "@lisca/ui/primitives";
 import { createFileRoute } from "@tanstack/solid-router";
 import { lazy, Suspense } from "solid-js";
 

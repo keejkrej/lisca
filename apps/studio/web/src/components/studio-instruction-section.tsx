@@ -1,4 +1,4 @@
-import { PanelSection } from "@lisca/ui/shell";
+import { PanelSection } from "@lisca/ui/patterns";
 
 export function StudioInstructionSection(props: { text: string }) {
   return (

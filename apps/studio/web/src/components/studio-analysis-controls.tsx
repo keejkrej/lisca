@@ -1,12 +1,7 @@
 import { resolveKeyboardShortcut } from "@lisca/utils";
-import { Button } from "@lisca/ui/components";
-import {
-  PanelSection,
-  RailControlStack,
-  dockToolLabel,
-  dockToolShortcuts,
-  type DockToolAction,
-} from "@lisca/ui/shell";
+import { Button } from "@lisca/ui/primitives";
+import { dockToolLabel, dockToolShortcuts, type DockToolAction } from "@lisca/ui/shell";
+import { PanelSection, RailControlStack } from "@lisca/ui/patterns";
 import { createEffect, For, onCleanup, Show } from "solid-js";
 
 function isEditableTarget(target: EventTarget | null): boolean {

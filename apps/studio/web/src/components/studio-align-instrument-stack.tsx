@@ -4,9 +4,9 @@ import {
   AlignGridRail,
   AlignSelectionRail,
   AlignToolSection,
-} from "@lisca/ui/features";
-import { Button } from "@lisca/ui/components";
-import { PanelSection, RailControlStack, RailSectionStack } from "@lisca/ui/shell";
+} from "@lisca/instrument";
+import { Button } from "@lisca/ui/primitives";
+import { PanelSection, RailControlStack, RailSectionStack } from "@lisca/ui/patterns";
 import { isAlignDriftTranslationEditable } from "@lisca/utils";
 import { Show, createMemo } from "solid-js";
 

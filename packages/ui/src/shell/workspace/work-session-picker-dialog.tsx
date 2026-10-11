@@ -8,8 +8,8 @@ import type { LiscaAppId } from "@lisca/utils";
 import { For, Show } from "solid-js";
 import { Button } from "../../components/ui/button";
 import { ScrollArea } from "../../components/ui/scroll-area";
-import { DialogSurface } from "../modal/dialog-surface";
-import { ModalScrim } from "../modal/modal-scrim";
+import { DialogSurface } from "../../patterns/modal/dialog-surface";
+import { ModalScrim } from "../../patterns/modal/modal-scrim";
 
 export type WorkSessionPickerDialogProps = {
   appId: LiscaAppId;

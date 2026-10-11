@@ -1,5 +1,5 @@
-import { Toggle } from "@lisca/ui/components";
-import { AlignStateToggleIndicator } from "@lisca/ui/features";
+import { Toggle } from "@lisca/ui/primitives";
+import { AlignStateToggleIndicator } from "@lisca/instrument";
 import { useAtomSet, useAtomValue } from "@effect/atom-solid";
 
 import { setStudioExpertMode, studioExpertModeAtom } from "../atoms/studio-expert-atoms";

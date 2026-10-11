@@ -3,9 +3,9 @@ import { createSignal, onMount, Show } from "solid-js";
 
 import { Button } from "../../components/ui/button";
 import { Toggle } from "../../components/ui/toggle";
-import { AlignStateToggleIndicator } from "../../features/align/align-state-toggle-indicator";
-import { DialogSurface } from "../modal/dialog-surface";
-import { ModalScrim } from "../modal/modal-scrim";
+import { DialogSurface } from "../../patterns/modal/dialog-surface";
+import { ModalScrim } from "../../patterns/modal/modal-scrim";
+import { AlignStateToggleIndicator } from "../../patterns/state-toggle-indicator";
 
 type UpdateBridge = {
   product?: string;

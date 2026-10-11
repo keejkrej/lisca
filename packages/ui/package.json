@@ -24,13 +24,21 @@
       "types": "./src/shell/index.ts",
       "import": "./src/shell/index.ts"
     },
-    "./features": {
-      "types": "./src/features/index.ts",
-      "import": "./src/features/index.ts"
+    "./patterns": {
+      "types": "./src/patterns/index.ts",
+      "import": "./src/patterns/index.ts"
     },
-    "./components": {
+    "./primitives": {
       "types": "./src/components/ui/index.ts",
       "import": "./src/components/ui/index.ts"
+    },
+    "./cn": {
+      "types": "./src/lib/utils.ts",
+      "import": "./src/lib/utils.ts"
+    },
+    "./*": {
+      "types": "./src/components/ui/*.tsx",
+      "import": "./src/components/ui/*.tsx"
     },
     "./theme.css": "./theme.css"
   },
@@ -48,7 +56,7 @@
     "@date-fns/tz": "^1.5.0",
     "@fontsource-variable/outfit": "^5.3.0",
     "@kobalte/core": "catalog:",
-    "@lisca/contracts": "workspace:*",
+    "@lisca/design-tokens": "workspace:*",
     "@lisca/ui-headless": "workspace:*",
     "@lisca/utils": "workspace:*",
     "class-variance-authority": "^0.7.1",

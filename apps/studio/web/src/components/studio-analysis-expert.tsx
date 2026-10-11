@@ -1,4 +1,4 @@
-import { PanelSection } from "@lisca/ui/shell";
+import { PanelSection } from "@lisca/ui/patterns";
 
 import { useStudioStore } from "../state/studio-store";
 import { useStudioAnalysisPage } from "../state/use-studio-analysis-page";

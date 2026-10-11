@@ -1,5 +1,5 @@
 import { ENABLED_STUDIO_ASSAY_IDS } from "@lisca/contracts/assay";
-import { Button, ComingSoonTooltip } from "@lisca/ui/components";
+import { Button, ComingSoonTooltip } from "@lisca/ui/primitives";
 import { useAtomSet, useAtomValue } from "@effect/atom-solid";
 import { For } from "solid-js";
 
