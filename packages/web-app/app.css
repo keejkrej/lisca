@@ -2,7 +2,12 @@
 @import "tailwindcss";
 @import "@lisca/ui/theme.css";
 @custom-variant dark (&:where(.dark, .dark *));
+/* Automatic detection follows this file. pnpm links workspace packages through
+   node_modules, which Tailwind skips, and each app's Vite root does not include
+   them. Instrument classes (rail grids, lock buttons, task-center widths) have
+   to be listed here or they never reach the stylesheet. */
 @source "../ui/src";
+@source "../instrument/src";
 
 /* One viewport. A scrollable document makes the macOS webview rubber-band the
    whole shell — rails, top bar, and sheet together. */
