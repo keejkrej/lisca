@@ -60,6 +60,7 @@ export default defineConfig({
       "**/routeTree.gen.ts",
       "pnpm-lock.yaml",
       "bun.lock",
+      "packages/design-tokens/generated/**",
     ],
     sortPackageJson: {},
   },

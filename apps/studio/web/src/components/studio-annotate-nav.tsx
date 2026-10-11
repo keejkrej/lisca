@@ -1,4 +1,4 @@
-import { ContrastControl, RoiFrameNavigation } from "@lisca/ui/features";
+import { ContrastControl, RoiFrameNavigation } from "@lisca/instrument";
 import { Show } from "solid-js";
 
 import { useStudioAnnotateNav } from "../state/studio-annotate-page-selectors";

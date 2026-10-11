@@ -2,7 +2,7 @@ import type { FrameResult } from "@lisca/utils";
 import { createEffect, onCleanup, onMount, splitProps } from "solid-js";
 
 import { cn } from "../../lib/utils";
-import { panelFrameClass } from "../regions/panel";
+import { panelFrameClass } from "../../patterns/regions/panel";
 
 const PANEL_INSET_PX = 8;
 

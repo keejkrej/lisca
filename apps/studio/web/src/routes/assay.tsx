@@ -1,4 +1,4 @@
-import { CanvasToastStack, HostFilePickerDialog } from "@lisca/ui/features";
+import { CanvasToastStack, HostFilePickerDialog } from "@lisca/instrument";
 import { AppShell } from "@lisca/ui/shell";
 import { createFileRoute } from "@tanstack/solid-router";
 import { useAtomSet, useAtomValue } from "@effect/atom-solid";
@@ -60,7 +60,7 @@ function AssayPage() {
   return (
     <AppShell>
       <AppShell.Body>
-        <AppShell.Left widthClass="w-64">
+        <AppShell.Left widthClass="w-rail">
           <StudioLeft />
         </AppShell.Left>
         <AppShell.MainColumn>
@@ -78,7 +78,7 @@ function AssayPage() {
             </AppShell.MainScroll>
           </AppShell.Main>
         </AppShell.MainColumn>
-        <AppShell.Right widthClass="w-64">
+        <AppShell.Right widthClass="w-rail">
           <StudioRightPanel instruction={() => instructionForStep("chooseAssay")}>
             <StudioAssayActions
               assayPickerOpen={assayPickerOpen()}

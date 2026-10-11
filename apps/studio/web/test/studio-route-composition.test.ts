@@ -23,7 +23,7 @@ describe("Studio workflow route composition", () => {
     expect(source).toMatch(/<StudioLeft\s*\/>/);
     expect(source).toMatch(/<AppShell\.TopBar>/);
     expect(source).toMatch(/<StudioTopBar(?:\s+showExpert)?\s*\/>/);
-    expect(source.match(/widthClass="w-64"/g)).toHaveLength(2);
+    expect(source.match(/widthClass="w-rail"/g)).toHaveLength(2);
     expect(source).not.toMatch(/<AppShell\.Dock>/);
     expect(source.indexOf("<AppShell.TopBar>")).toBeLessThan(source.indexOf("<AppShell.Main>"));
   });

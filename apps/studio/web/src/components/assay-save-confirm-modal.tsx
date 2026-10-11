@@ -1,5 +1,5 @@
-import { Button } from "@lisca/ui/components";
-import { DialogSurface, ModalScrim } from "@lisca/ui/shell";
+import { Button } from "@lisca/ui/primitives";
+import { DialogSurface, ModalScrim } from "@lisca/ui/patterns";
 import { Show } from "solid-js";
 
 export function AssaySaveConfirmModal(props: {

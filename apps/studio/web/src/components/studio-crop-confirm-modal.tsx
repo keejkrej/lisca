@@ -1,6 +1,6 @@
-import { cropConfirmCopy } from "@lisca/ui/features";
-import { Button, ScrollArea } from "@lisca/ui/components";
-import { DialogSurface, ModalScrim } from "@lisca/ui/shell";
+import { cropConfirmCopy } from "@lisca/instrument";
+import { Button, ScrollArea } from "@lisca/ui/primitives";
+import { DialogSurface, ModalScrim } from "@lisca/ui/patterns";
 import { Show } from "solid-js";
 
 import { useStudioAlignCrop } from "../state/studio-align-page-selectors";

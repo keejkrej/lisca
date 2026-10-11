@@ -1,5 +1,5 @@
-import { Button } from "@lisca/ui/components";
-import { PanelSection, RailControlStack } from "@lisca/ui/shell";
+import { Button } from "@lisca/ui/primitives";
+import { PanelSection, RailControlStack } from "@lisca/ui/patterns";
 
 import { useAlignNav } from "../state/align-page-selectors";
 

@@ -5,7 +5,7 @@ import {
   selectedAxisIndex,
   stepNavigationValue,
   toAxisNavigationOptions,
-} from "@lisca/ui/features";
+} from "@lisca/instrument";
 import { clamp } from "@lisca/utils";
 import { Show, createMemo } from "solid-js";
 

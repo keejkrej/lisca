@@ -1,5 +1,5 @@
-import { AlignToolSection, ContrastControl } from "@lisca/ui/features";
-import { RailSidebar } from "@lisca/ui/shell";
+import { AlignToolSection, ContrastControl } from "@lisca/instrument";
+import { RailSidebar } from "@lisca/ui/patterns";
 
 import { useAlignCanvas } from "../state/align-page-selectors";
 import { AlignFrameNavigation } from "./align-frame-navigation";

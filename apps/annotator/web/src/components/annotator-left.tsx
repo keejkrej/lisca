@@ -1,9 +1,5 @@
-import {
-  AnnotationToolGrid,
-  buildAnnotationToolActions,
-  ContrastControl,
-} from "@lisca/ui/features";
-import { PanelSection, RailSidebar } from "@lisca/ui/shell";
+import { AnnotationToolGrid, buildAnnotationToolActions, ContrastControl } from "@lisca/instrument";
+import { PanelSection, RailSidebar } from "@lisca/ui/patterns";
 import { Show } from "solid-js";
 
 import { useAnnotateDock, useAnnotateNav } from "../state/annotate-page-selectors";

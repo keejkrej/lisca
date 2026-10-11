@@ -1,4 +1,4 @@
-import { cn } from "@lisca/ui/components";
+import { cn } from "@lisca/ui/primitives";
 import { Link, useNavigate, useRouterState } from "@tanstack/solid-router";
 import { createEffect, For, onCleanup, Show, type JSX } from "solid-js";
 
@@ -160,7 +160,7 @@ export function StudioNavRail() {
 
   return (
     <nav aria-label="Primary" class="flex h-full min-h-0 flex-col justify-center py-2.5">
-      <div class="ml-7 flex w-[200px] min-w-0 shrink-0 flex-col gap-1">
+      <div class="ml-rail-inset flex w-rail-content min-w-0 shrink-0 flex-col gap-1">
         {endHint("up")}
         <For each={STUDIO_PAGES}>
           {(page) => (

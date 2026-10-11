@@ -1,6 +1,6 @@
-import { Button } from "@lisca/ui/components";
-import { CanvasToastStack, useCanvasTransientStatus } from "@lisca/ui/features";
-import { PanelSection, RailControlStack } from "@lisca/ui/shell";
+import { Button } from "@lisca/ui/primitives";
+import { CanvasToastStack, useCanvasTransientStatus } from "@lisca/instrument";
+import { PanelSection, RailControlStack } from "@lisca/ui/patterns";
 import { Show } from "solid-js";
 
 import {

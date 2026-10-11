@@ -1,5 +1,5 @@
 import { useAnnotateStateCore } from "@lisca/client/use-annotate-state-core";
-import { useCanvasResourceTransaction, useCanvasTransientStatus } from "@lisca/ui/features";
+import { useCanvasResourceTransaction, useCanvasTransientStatus } from "@lisca/instrument";
 import { useShellWorkspace } from "@lisca/ui/shell";
 
 import { annotatorClient, toErrorMessage } from "../api/annotator-port";

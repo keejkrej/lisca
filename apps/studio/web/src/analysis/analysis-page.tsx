@@ -1,5 +1,5 @@
-import { Button } from "@lisca/ui/components";
-import { CanvasToastStack, useCanvasTransientStatus } from "@lisca/ui/features";
+import { Button } from "@lisca/ui/primitives";
+import { CanvasToastStack, useCanvasTransientStatus } from "@lisca/instrument";
 import { AppShell } from "@lisca/ui/shell";
 import { AnalysisPlotGallery } from "./analysis-plot-gallery";
 import { createMemo, createResource, createSignal } from "solid-js";
@@ -157,7 +157,7 @@ export default function AnalysisPage() {
   return (
     <AppShell>
       <AppShell.Body>
-        <AppShell.Left widthClass="w-64">
+        <AppShell.Left widthClass="w-rail">
           <StudioLeft />
         </AppShell.Left>
         <AppShell.MainColumn>
@@ -205,7 +205,7 @@ export default function AnalysisPage() {
             </AppShell.MainScroll>
           </AppShell.Main>
         </AppShell.MainColumn>
-        <AppShell.Right widthClass="w-64">
+        <AppShell.Right widthClass="w-rail">
           <StudioRightPanel
             expert={() => (
               <>

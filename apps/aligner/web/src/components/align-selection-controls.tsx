@@ -2,7 +2,7 @@ import { runClientEffect } from "@lisca/client/runtime";
 import { createRequestSmartExcludeProvider, useSmartExclude } from "@lisca/smart/exclude/request";
 import { useVarExclude } from "@lisca/smart/var-exclude";
 import { createLocalVarExcludeProvider } from "@lisca/smart/var-exclude/local";
-import { AlignSelectionRail } from "@lisca/ui/features";
+import { AlignSelectionRail } from "@lisca/instrument";
 import { createMemo } from "solid-js";
 
 import { alignerClient } from "../api/aligner-port";

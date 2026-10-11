@@ -1,5 +1,5 @@
-import { AnnotationControlRail } from "@lisca/ui/features";
-import { RailSidebar } from "@lisca/ui/shell";
+import { AnnotationControlRail } from "@lisca/instrument";
+import { RailSidebar } from "@lisca/ui/patterns";
 
 import { useAnnotateLabels } from "../state/annotate-page-selectors";
 import { AnnotatorSaveSection } from "./annotator-save-section";

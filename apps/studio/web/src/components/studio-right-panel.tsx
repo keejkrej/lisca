@@ -1,7 +1,7 @@
 import type { JSX } from "solid-js";
 import { Show, createMemo } from "solid-js";
 import { useAtomValue } from "@effect/atom-solid";
-import { RailSidebar } from "@lisca/ui/shell";
+import { RailSidebar } from "@lisca/ui/patterns";
 
 import { studioExpertModeAtom } from "../atoms/studio-expert-atoms";
 import { StudioInstructionSection } from "./studio-instruction-section";

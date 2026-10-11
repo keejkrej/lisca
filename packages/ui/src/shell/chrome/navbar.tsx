@@ -6,7 +6,7 @@ import { Show } from "solid-js";
 import { ShellThemeToggle } from "../theme/shell-theme";
 import { ConnectionStatus } from "./connection-status";
 import { DesktopUpdateSettings } from "./update-settings";
-import { PathButton } from "./path-button";
+import { PathButton } from "../../patterns/chrome/path-button";
 import { useShellServer } from "../server/shell-server";
 import { useShellWorkspace } from "../workspace/workspace";
 import { cn } from "../../lib/utils";

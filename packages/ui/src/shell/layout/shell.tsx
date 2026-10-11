@@ -39,7 +39,7 @@ function ShellSidebarInner(props: {
   children?: JSX.Element;
   widthClass?: string;
 }) {
-  const widthClass = () => props.widthClass ?? "w-64";
+  const widthClass = () => props.widthClass ?? "w-rail";
   return (
     <aside
       aria-label={props.side === "left" ? "Left panel" : "Right panel"}
@@ -57,7 +57,7 @@ function useRegisterShellPanel(props: {
 }) {
   const layout = useShellLayout();
   const id = createUniqueId();
-  const widthClass = () => props.widthClass ?? "w-64";
+  const widthClass = () => props.widthClass ?? "w-rail";
 
   createEffect(() => {
     if (!layout.isPortrait) {
@@ -101,7 +101,7 @@ function AppShellTopBar(props: { children?: JSX.Element; class?: string }) {
   return (
     <div
       class={cn(
-        "flex h-14 w-full shrink-0 flex-col overflow-hidden px-5",
+        "flex h-topbar w-full shrink-0 flex-col overflow-hidden px-5",
         shellSheetSurface,
         props.class,
       )}
@@ -140,7 +140,7 @@ AppShellMainColumn.displayName = "AppShell.MainColumn";
 
 function AppShellLeft(props: {
   children?: JSX.Element;
-  /** Tailwind width utility; defaults to `w-64` (256px). */
+  /** Tailwind width utility; defaults to `w-rail` (256px). */
   widthClass?: string;
 }) {
   const content = resolveChildren(() => props.children);
@@ -159,7 +159,7 @@ AppShellLeft.displayName = "AppShell.Left";
 
 function AppShellRight(props: {
   children?: JSX.Element;
-  /** Tailwind width utility; defaults to `w-64` (256px). */
+  /** Tailwind width utility; defaults to `w-rail` (256px). */
   widthClass?: string;
 }) {
   const content = resolveChildren(() => props.children);

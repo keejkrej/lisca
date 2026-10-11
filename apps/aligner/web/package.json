@@ -12,6 +12,7 @@
     "@effect/atom-solid": "catalog:",
     "@lisca/client": "workspace:*",
     "@lisca/contracts": "workspace:*",
+    "@lisca/instrument": "workspace:*",
     "@lisca/smart": "workspace:*",
     "@lisca/ui": "workspace:*",
     "@lisca/utils": "workspace:*",

@@ -7,7 +7,7 @@ how the shell modules implement that contract; it does not define app-specific a
 
 ## Theme
 
-Edit colors in `packages/ui/theme.css`: CSS `z-*` component classes (button, input, field, select, toggle, etc.) and theme tokens (`--background`, `--border`, `--muted`, …).
+Edit colors in `packages/design-tokens/src/tokens.ts`, then run `pnpm --filter @lisca/design-tokens generate`. `packages/ui/theme.css` keeps the `z-*` component classes (button, input, field, select, toggle, etc.) and imports the generated variables.
 
 Studio, Aligner, and Annotator set `data-lisca-app` on the document root so `--primary`, `--ring`, and `--sidebar-primary` resolve to that app's icon color. GFP (`--instrument-gfp`) and destructive stay separate from brand chrome.
 
@@ -15,7 +15,7 @@ Do not scatter layout tint tokens (`railChrome`, `panel`, `stat`, etc.); shell s
 
 ## Instrument stage shell
 
-Studio, Aligner, and Annotator share one `AppShell`: muted stage surround, 16px gutters, floating paper main sheet, 256px rails, and a 56px `AppShell.TopBar`. There is no classic Header variant. The reference desktop is 1440×900 with fixed columns **256px / 928px / 256px** (`w-64` rails, no `w-72` overrides). The top bar and paper sheet are flat (`rounded-none border border-border`); rails stay flat.
+Studio, Aligner, and Annotator share one `AppShell`: muted stage surround, 16px gutters, floating paper main sheet, 256px rails, and a 56px `AppShell.TopBar`. There is no classic Header variant. The reference desktop is 1440×900 with fixed columns **256px / 928px / 256px** (`w-rail` rails, `h-topbar` top bar). The top bar and paper sheet are flat (`rounded-none border border-border`); rails stay flat. Frames come from `@lisca/ui/shell`. Rails, sections, and dialogs come from `@lisca/ui/patterns`.
 
 ```tsx
 <AppShell>
@@ -267,4 +267,4 @@ instrument stage:
 
 ## Out of scope
 
-Do not modify implementation code in `packages/ui/src/components/ui/`; add or refresh zaidan/shadcn primitives through `packages/ui/components.json`. A verified zero-consumer primitive may be removed together with its barrel and `theme.css` references. Shell and features may import the remaining primitives normally.
+Do not modify implementation code in `packages/ui/src/components/ui/`; add or refresh zaidan/shadcn primitives through `packages/ui/components.json`. A verified zero-consumer primitive may be removed together with its barrel and `theme.css` references. Shell, patterns, and `@lisca/instrument` may import the remaining primitives normally.

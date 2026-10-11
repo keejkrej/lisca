@@ -118,7 +118,7 @@ describe("Studio Annotate instrument stack composition", () => {
     expect(stackSource).toMatch(/<AnnotationControlRail\b/);
     expect(stackSource).toMatch(/title="Action"/);
     const controlRail = readSource(
-      "../../../../packages/ui/src/features/annotate/annotation-control-rail.tsx",
+      "../../../../packages/instrument/src/annotate/annotation-control-rail.tsx",
     );
     expect(controlRail.indexOf('title="Mode"')).toBeLessThan(
       controlRail.indexOf("{props.insertAfterMode}"),
@@ -151,7 +151,7 @@ describe("Studio right-rail flattened section contract", () => {
     expect(stack).toMatch(/AlignSelectionRail/);
     expect(stack).toMatch(/title="Action"/);
     // Geometry is owned by AlignGridRail (collapsible sibling of Grid).
-    expect(readSource("../../../../packages/ui/src/features/align/align-grid.tsx")).toMatch(
+    expect(readSource("../../../../packages/instrument/src/align/align-grid.tsx")).toMatch(
       /title="Geometry"/,
     );
   });
@@ -159,7 +159,7 @@ describe("Studio right-rail flattened section contract", () => {
   it("documents Annotate order Instruction → Nav → Contrast → Mode → Tool → Labels → Edit → Brush → Action", () => {
     const stack = readSource("../src/components/studio-annotate-instrument-stack.tsx");
     const controlRail = readSource(
-      "../../../../packages/ui/src/features/annotate/annotation-control-rail.tsx",
+      "../../../../packages/instrument/src/annotate/annotation-control-rail.tsx",
     );
 
     expect(stack).toMatch(/StudioAnnotateNav/);

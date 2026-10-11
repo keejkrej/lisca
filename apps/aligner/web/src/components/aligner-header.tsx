@@ -1,8 +1,4 @@
-import {
-  FolderSourceParseModal,
-  HostFilePickerDialog,
-  SourcePickerModal,
-} from "@lisca/ui/features";
+import { FolderSourceParseModal, HostFilePickerDialog, SourcePickerModal } from "@lisca/instrument";
 import type { AlignerSource } from "@lisca/contracts";
 import {
   readRecentMemory,
@@ -11,7 +7,7 @@ import {
   touchRecentMemory,
 } from "@lisca/client/session/recent-memory";
 import { ShellNavbar, useShellWorkspace } from "@lisca/ui/shell";
-import type { HostFilePickerMode } from "@lisca/ui/features";
+import type { HostFilePickerMode } from "@lisca/instrument";
 import { createSignal } from "solid-js";
 
 import { alignerHostOperations } from "../api/aligner-port";

@@ -1,5 +1,5 @@
-import { AlignDriftRail, AlignGridRail } from "@lisca/ui/features";
-import { RailSidebar } from "@lisca/ui/shell";
+import { AlignDriftRail, AlignGridRail } from "@lisca/instrument";
+import { RailSidebar } from "@lisca/ui/patterns";
 import { isAlignDriftTranslationEditable } from "@lisca/utils";
 
 import { useAlignCanvas } from "../state/align-page-selectors";

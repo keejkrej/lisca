@@ -1,5 +1,5 @@
 import { readRecentMemory, touchRecentMemory } from "@lisca/client/session/recent-memory";
-import { HostFilePickerDialog, LabelCreationDialog } from "@lisca/ui/features";
+import { HostFilePickerDialog, LabelCreationDialog } from "@lisca/instrument";
 import { AppShell } from "@lisca/ui/shell";
 
 import { annotatorHostOperations } from "../api/annotator-port";

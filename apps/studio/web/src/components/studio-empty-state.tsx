@@ -1,4 +1,4 @@
-import { Button } from "@lisca/ui/components";
+import { Button } from "@lisca/ui/primitives";
 import type { JSX } from "solid-js";
 import { Show } from "solid-js";
 

@@ -18,7 +18,7 @@ import {
   type VariationExcludePreview,
 } from "@lisca/client/align-session";
 import { useAlignSessionCore } from "@lisca/client/align-session/solid";
-import { useCanvasResourceTransaction } from "@lisca/ui/features";
+import { useCanvasResourceTransaction } from "@lisca/instrument";
 import { createDefaultAlignGrid, type AlignGridToolMode } from "@lisca/utils";
 import { useNavigate } from "@tanstack/solid-router";
 import { createEffect, createMemo, createSignal, on } from "solid-js";

@@ -2,10 +2,10 @@ import {
   AnnotationControlRail,
   AnnotationToolGrid,
   buildAnnotationToolActions,
-} from "@lisca/ui/features";
+} from "@lisca/instrument";
 import { useAtomValue } from "@effect/atom-solid";
-import { Button } from "@lisca/ui/components";
-import { PanelSection, RailControlStack } from "@lisca/ui/shell";
+import { Button } from "@lisca/ui/primitives";
+import { PanelSection, RailControlStack } from "@lisca/ui/patterns";
 import { Show } from "solid-js";
 
 import { studioExpertModeAtom } from "../atoms/studio-expert-atoms";

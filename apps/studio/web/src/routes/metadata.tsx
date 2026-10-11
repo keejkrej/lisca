@@ -18,7 +18,7 @@ function MetadataPage() {
   return (
     <AppShell>
       <AppShell.Body>
-        <AppShell.Left widthClass="w-64">
+        <AppShell.Left widthClass="w-rail">
           <StudioLeft />
         </AppShell.Left>
         <AppShell.MainColumn>
@@ -32,7 +32,7 @@ function MetadataPage() {
             </AppShell.MainScroll>
           </AppShell.Main>
         </AppShell.MainColumn>
-        <AppShell.Right widthClass="w-64">
+        <AppShell.Right widthClass="w-rail">
           <StudioRightPanel instruction={() => instructionForStep("metadata")}>
             <StudioMetadataActions />
           </StudioRightPanel>

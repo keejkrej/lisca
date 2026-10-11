@@ -1,7 +1,7 @@
 import { runClientEffect } from "@lisca/client/runtime";
 import { useSmartSegment } from "@lisca/smart/segment";
 import { createRequestSmartSegmentProvider } from "@lisca/smart/segment/request";
-import { AnnotationCanvas, CanvasToastStack } from "@lisca/ui/features";
+import { AnnotationCanvas, CanvasToastStack } from "@lisca/instrument";
 import { StageCanvas, ViewportCard } from "@lisca/ui/shell";
 import { createMemo, createSignal, Show } from "solid-js";
 

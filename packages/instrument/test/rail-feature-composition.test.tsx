@@ -1,0 +1,263 @@
+import { cleanup, fireEvent, render, screen, within } from "@solidjs/testing-library";
+import { createDefaultAlignGrid } from "@lisca/utils";
+import { createSignal } from "solid-js";
+import { afterEach, describe, expect, it } from "vite-plus/test";
+
+import { AlignSelectionRail } from "../src/align/align-selection-rail";
+import { AlignToolToolbar } from "../src/align/align-tools";
+import { AnnotationControlRail } from "../src/annotate/annotation-control-rail";
+import {
+  AnnotationToolGrid,
+  buildAnnotationToolActions,
+} from "../src/annotate/annotation-tool-grid";
+
+afterEach(cleanup);
+
+function sectionFor(name: string) {
+  const section = screen.getByRole("button", { name }).closest('[data-slot="panel"]');
+  expect(section).not.toBeNull();
+  return section as HTMLElement;
+}
+
+const selectionProps = {
+  excludedPatterns: [],
+  frame: null,
+  grid: createDefaultAlignGrid(),
+  manualExclusionEnabled: false,
+  showVariationExcludeDialog: false,
+  variationExcludePreview: null,
+  visibleCounts: { included: 0, excluded: 0 },
+  onApplyVariationExclude: () => undefined,
+  onCancelVariationExclude: () => undefined,
+  onExcludedPatternsChange: () => undefined,
+  onManualExclusionEnabledChange: () => undefined,
+  onSmartExclude: () => undefined,
+  onVariationExclude: () => undefined,
+  onVariationExcludeThresholdChange: () => undefined,
+};
+
+const annotationProps = {
+  activeLabelId: null,
+  annotation: {
+    current: { classificationLabelId: null, mask: new Uint8Array() },
+    dirty: false,
+    canUndo: false,
+    canRedo: false,
+    undo: () => undefined,
+    redo: () => undefined,
+    discard: () => undefined,
+    commit: () => undefined,
+  },
+  brushSize: 8,
+  canEdit: true,
+  frame: null,
+  labels: [],
+  mode: "classification" as const,
+  openLabelDialog: () => undefined,
+  overlayOpacity: 0.65,
+  setActiveLabelId: () => undefined,
+  setBrushSize: () => undefined,
+  setMode: () => undefined,
+  setOverlayOpacity: () => undefined,
+  workspacePath: "/workspace",
+};
+
+describe("stage rail feature composition", () => {
+  it("packs the Selection task cluster into three compact control pairs", () => {
+    render(() => <AlignSelectionRail {...selectionProps} sectionAppearance="rail" />);
+
+    const section = sectionFor("Selection");
+    const pairs = within(section).getAllByRole("group");
+    expect(pairs.map((pair) => pair.getAttribute("aria-label"))).toEqual([
+      "Selection editing",
+      "Bulk exclusion",
+      "Assisted exclusion",
+    ]);
+    expect(
+      pairs.map((pair) =>
+        within(pair)
+          .getAllByRole("button")
+          .map((button) => button.textContent),
+      ),
+    ).toEqual([
+      ["Edit", "Reset"],
+      ["Exclude all", "Edge exclude"],
+      ["Log-std exclude", "Smart exclude"],
+    ]);
+    const smartExclude = within(section).getByRole("button", { name: "Smart exclude" });
+    expect(smartExclude.hasAttribute("disabled")).toBe(true);
+    expect(smartExclude.hasAttribute("data-unavailable")).toBe(true);
+  });
+
+  it("stacks user-authored Labels while packing fixed Edit peers", () => {
+    render(() => <AnnotationControlRail {...annotationProps} sectionAppearance="rail" />);
+
+    const mode = sectionFor("Mode");
+    expect(mode.querySelectorAll('[data-rail-layout="stack"]')).toHaveLength(1);
+    expect(mode.querySelector('[data-rail-layout="stack"]')?.children).toHaveLength(1);
+    expect(within(mode).getByRole("button", { name: "Classification" })).toBeTruthy();
+
+    const labels = sectionFor("Labels");
+    expect(labels.querySelector('[data-rail-layout="stack"]')).not.toBeNull();
+    expect(labels.querySelector('[data-rail-layout="action-pair"]')).toBeNull();
+    expect(within(labels).getByRole("button", { name: "Edit labels" })).toBeTruthy();
+
+    const edit = sectionFor("Edit");
+    expect(
+      within(edit)
+        .getAllByRole("group")
+        .map((group) => group.getAttribute("aria-label")),
+    ).toEqual(["History", "Annotation cleanup"]);
+    expect(
+      within(edit)
+        .getAllByRole("group")
+        .flatMap((group) =>
+          within(group)
+            .getAllByRole("button")
+            .map((button) => button.textContent),
+        ),
+    ).toEqual(["Undo", "Redo", "Clear", "Discard"]);
+  });
+
+  it("keeps shortcut badges on the instrument font in both apps", () => {
+    const view = render(() => (
+      <>
+        <AlignToolToolbar layout="rail" mode="pan" onModeChange={() => undefined} />
+        <AnnotationToolGrid
+          canEditTools
+          layout="rail"
+          toolActions={buildAnnotationToolActions("brush", () => undefined, false)}
+        />
+      </>
+    ));
+
+    const shortcuts = view.container.querySelectorAll("kbd");
+    expect(shortcuts.length).toBeGreaterThan(0);
+    expect(
+      Array.from(shortcuts).every((shortcut) => shortcut.classList.contains("font-[inherit]")),
+    ).toBe(true);
+  });
+
+  it("highlights the label clicked in segmentation mode", () => {
+    const [activeLabelId, setActiveLabelId] = createSignal<string | null>("class-1");
+    render(() => (
+      <AnnotationControlRail
+        {...annotationProps}
+        activeLabelId={activeLabelId()}
+        labels={labelFixtures}
+        mode="segmentation"
+        sectionAppearance="rail"
+        setActiveLabelId={setActiveLabelId}
+      />
+    ));
+
+    const class2 = screen.getByRole("button", { name: "Class 2" });
+    fireEvent.click(class2);
+
+    expect(activeLabelId()).toBe("class-2");
+    expect(screen.getByRole("button", { name: "Class 1" }).getAttribute("style")).toContain(
+      "background-color: rgba(34, 197, 94, 0.08)",
+    );
+    expect(class2.getAttribute("aria-pressed")).toBe("true");
+    expect(class2.getAttribute("style")).toContain("background-color: rgb(59, 130, 246)");
+    expect(class2.getAttribute("style")).toContain("color: rgb(10, 10, 10)");
+    expect(class2.querySelector("svg")).not.toBeNull();
+  });
+
+  it("toggles the classification label and shows that choice", () => {
+    const [classificationLabelId, setClassificationLabelId] = createSignal<string | null>(null);
+    const annotation = {
+      get current() {
+        return { classificationLabelId: classificationLabelId(), mask: new Uint8Array() };
+      },
+      dirty: false,
+      canUndo: false,
+      canRedo: false,
+      undo: () => undefined,
+      redo: () => undefined,
+      discard: () => undefined,
+      commit: (value: { classificationLabelId: string | null; mask: Uint8Array }) => {
+        setClassificationLabelId(value.classificationLabelId);
+      },
+    };
+
+    render(() => (
+      <AnnotationControlRail
+        {...annotationProps}
+        annotation={annotation}
+        labels={labelFixtures}
+        mode="classification"
+        sectionAppearance="rail"
+      />
+    ));
+
+    const class1 = screen.getByRole("button", { name: "Class 1" });
+    fireEvent.keyDown(window, { code: "Digit1", key: "!", shiftKey: true });
+    expect(classificationLabelId()).toBe("class-1");
+    fireEvent.keyDown(window, { code: "Digit1", key: "!", shiftKey: true });
+    expect(classificationLabelId()).toBeNull();
+
+    fireEvent.click(class1);
+    expect(classificationLabelId()).toBe("class-1");
+    expect(class1.getAttribute("aria-pressed")).toBe("true");
+    expect(class1.getAttribute("style")).toContain("background-color: rgb(34, 197, 94)");
+    expect(class1.getAttribute("style")).toContain("color: rgb(10, 10, 10)");
+
+    fireEvent.click(class1);
+    expect(classificationLabelId()).toBeNull();
+    expect(class1.getAttribute("aria-pressed")).toBe("false");
+    expect(class1.getAttribute("style")).toContain("background-color: rgba(34, 197, 94, 0.08)");
+    expect(class1.querySelector("svg")).toBeNull();
+  });
+
+  it("toggles labels with Shift+digit and ignores blocked keys", () => {
+    const [activeLabelId, setActiveLabelId] = createSignal<string | null>(null);
+    const [canEdit, setCanEdit] = createSignal(true);
+    render(() => (
+      <AnnotationControlRail
+        {...annotationProps}
+        activeLabelId={activeLabelId()}
+        canEdit={canEdit()}
+        labels={labelFixtures}
+        mode="segmentation"
+        sectionAppearance="rail"
+        setActiveLabelId={setActiveLabelId}
+      />
+    ));
+
+    const class1 = screen.getByRole("button", { name: "Class 1" });
+    expect(class1.getAttribute("aria-keyshortcuts")).toBe("Shift+1");
+    expect(class1.querySelector("kbd")?.textContent).toBe("⇧1");
+    expect(screen.getByRole("button", { name: "Class 2" }).querySelector("kbd")?.textContent).toBe(
+      "⇧2",
+    );
+
+    fireEvent.keyDown(window, { code: "Digit1", key: "1", shiftKey: false });
+    expect(activeLabelId()).toBeNull();
+
+    fireEvent.keyDown(window, { code: "Digit2", key: "@", shiftKey: true });
+    expect(activeLabelId()).toBe("class-2");
+
+    const field = document.createElement("input");
+    document.body.appendChild(field);
+    fireEvent.keyDown(field, { code: "Digit1", key: "!", shiftKey: true });
+    expect(activeLabelId()).toBe("class-2");
+    field.remove();
+
+    const dialog = document.createElement("div");
+    dialog.setAttribute("role", "dialog");
+    document.body.appendChild(dialog);
+    fireEvent.keyDown(window, { code: "Digit1", key: "!", shiftKey: true });
+    expect(activeLabelId()).toBe("class-2");
+    dialog.remove();
+
+    setCanEdit(false);
+    fireEvent.keyDown(window, { code: "Digit1", key: "!", shiftKey: true });
+    expect(activeLabelId()).toBe("class-2");
+  });
+});
+
+const labelFixtures = [
+  { id: "class-1", name: "Class 1", color: "#22c55e" },
+  { id: "class-2", name: "Class 2", color: "#3b82f6" },
+];
