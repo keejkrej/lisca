@@ -8,7 +8,7 @@ export {
 } from "./chrome/navbar";
 export { PathButton } from "./chrome/path-button";
 export { ConnectionStatus, type ConnectionState } from "./chrome/connection-status";
-export { DesktopUpdateSettings } from "./chrome/update-settings";
+export { DesktopUpdateSettings, StartupUpdateCheck } from "./chrome/update-settings";
 export {
   ShellThemeProvider,
   ShellThemeToggle,
