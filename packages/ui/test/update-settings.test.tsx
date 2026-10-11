@@ -26,6 +26,7 @@ describe("DesktopUpdateSettings", () => {
     fireEvent.click(screen.getByRole("button", { name: "Settings" }));
 
     const toggle = await screen.findByRole("button", { name: "Check for updates on startup" });
+    expect(toggle.querySelector("[data-slot='instrument-toggle-indicator']")).toBeTruthy();
     expect(toggle.getAttribute("aria-pressed")).toBe("true");
     fireEvent.click(toggle);
     expect(setUpdateCheckEnabled).toHaveBeenCalledWith(false);
