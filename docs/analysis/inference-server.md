@@ -1,14 +1,16 @@
 # Remote image inference
 
-Studio's Analysis page has a **Label-free viability** panel. Connect it to a
-private inference server, choose a reference set, and upload ROI TIFF movies with
-their Position's `index.json`. The host loads the killing assay's frozen
-EmbeddingGemma 2 encoder and cosine kNN; the browser performs no neural
-inference in this flow. Results
-include frame-by-frame viable vote support, a retrospective one-transition fit,
-and CSV/JSON export. This is an explicit experimental workflow; it does not replace
-the existing Analyze task or migrate the older Smart exclude, Smart segment, or
-ONNX assay implementations.
+Studio does not connect to an inference server in this version. Settings has an
+Inference tab for the server address, a connection test, the models that server
+provides, and which assays are inference-ready. That tab is deferred with the
+other model features: no server ships, and no assay is inference-ready. The
+Analysis page does not ask for a server.
+
+The service below is for a later version. It loads the killing assay's frozen
+EmbeddingGemma 2 encoder and cosine kNN. The browser performs no neural
+inference. Results include frame-by-frame viable vote support, a retrospective
+one-transition fit, and CSV/JSON export. It does not replace the Analyze task
+or the deferred Smart exclude and Smart segment controls.
 
 ## Install on Spark
 
@@ -61,9 +63,10 @@ tailscale serve --bg http://127.0.0.1:8910
 tailscale serve status
 ```
 
-Enter the HTTPS origin shown by Serve and your token in Studio, then select
-**Test connection**. The URL is remembered locally; the token is kept only in page
-memory. Configure tailnet access rules for the devices/users who need inference.
+When the Inference tab is enabled, it will take the HTTPS origin shown by Serve
+and the server token. That tab is disabled in this version, so Studio does not
+store either value. Configure tailnet access rules for the devices and users who
+need inference.
 Check existing Serve configuration before assigning its HTTPS listener.
 
 **Tailscale Funnel** is different: it exposes a service to the public internet.
