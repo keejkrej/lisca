@@ -66,8 +66,13 @@ jobs:
             libayatana-appindicator3-dev \
             librsvg2-dev \
             libfontconfig1-dev \
-            fakeroot \
-            dpkg
+            file \
+            patchelf
+          if apt-cache show libfuse2 >/dev/null 2>&1; then
+            sudo apt-get install -y --no-install-recommends libfuse2
+          elif apt-cache show libfuse2t64 >/dev/null 2>&1; then
+            sudo apt-get install -y --no-install-recommends libfuse2t64
+          fi
 
       - name: Install JavaScript dependencies
         run: pnpm install --frozen-lockfile
@@ -180,8 +185,8 @@ jobs:
               ;;
             Linux)
               os=linux
-              files=("${dest}"/deb/*.deb)
-              ext=deb
+              files=("${dest}"/appimage/*.AppImage)
+              ext=AppImage
               ;;
             *) echo "unsupported OS ${RUNNER_OS}" >&2; exit 1 ;;
           esac
@@ -206,7 +211,7 @@ jobs:
       # The DMG is the install file. macOS updates use the signed .app.tar.gz.
       # Tauri names that archive "<Product>.app.tar.gz" with no architecture.
       # macos-latest is Apple silicon, so stamp _aarch64 before upload.
-      # Windows and Linux updates use the NSIS installer and the .deb, plus each .sig.
+      # Windows updates use the NSIS installer. Linux updates replace the AppImage.
       - name: Upload updater artifacts
         if: inputs.upload_target == 'release'
         shell: bash
@@ -239,7 +244,7 @@ jobs:
               files=("${dest}"/nsis/*.exe.sig)
               ;;
             Linux)
-              files=("${dest}"/deb/*.deb.sig)
+              files=("${dest}"/appimage/*.AppImage.sig)
               ;;
             *)
               echo "unsupported OS ${RUNNER_OS}" >&2

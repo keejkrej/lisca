@@ -19,7 +19,7 @@
   "bundle": {
     "active": true,
     "createUpdaterArtifacts": false,
-    "targets": ["dmg", "nsis", "deb"],
+    "targets": ["dmg", "nsis", "appimage"],
     "resources": {
       "resources/": ""
     },

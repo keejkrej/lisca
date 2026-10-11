@@ -56,12 +56,12 @@ jobs:
 
             | App | macOS | Windows | Linux |
             | --- | --- | --- | --- |
-            | ${{ steps.app.outputs.label }} | DMG | NSIS | deb |
+            | ${{ steps.app.outputs.label }} | DMG | NSIS | AppImage |
 
             macOS builds are signed with a Developer ID and notarized by Apple. Windows builds are not
             signed yet, so SmartScreen will warn.
 
-            Linux is Debian/Ubuntu `.deb` only. There is no AppImage, rpm, or pacman package.
+            Linux is an AppImage. It does not need root, and the app replaces that file when it updates.
 
   package:
     needs: release

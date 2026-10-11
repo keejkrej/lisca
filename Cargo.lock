@@ -5090,7 +5090,7 @@ dependencies = [
 
 [[package]]
 name = "studio-tauri"
-version = "0.4.12"
+version = "0.4.13"
 dependencies = [
  "lisca-tauri",
  "serde_json",

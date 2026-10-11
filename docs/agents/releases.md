@@ -62,11 +62,15 @@ whose version differs from any of that app's three desktop manifest fields fails
    Use `aligner-vX.Y.Z` or `annotator-vX.Y.Z` when releasing those apps. A bare `vX.Y.Z` tag does not publish a desktop app.
 
 7. Wait for the three package jobs and `publish-updater-manifest` to succeed. The versioned GitHub
-   Release contains one DMG, one NSIS installer, and one Debian package, plus the updater signatures.
+   Release contains one DMG, one NSIS installer, and one AppImage, plus the updater signatures.
    Tauri names the macOS updater archive `<Product>.app.tar.gz` with no architecture. The macOS
    package job copies it to `<Product>_aarch64.app.tar.gz` before upload, because that runner is
    Apple silicon. The app's feed (`studio-update`, `aligner-update`, or `annotator-update`) then
    holds `latest.json`. That feed release is not the GitHub Latest release.
+
+Linux updates replace the AppImage the user is running. `scripts/get-studio.sh` installs it at `~/.local/bin/lisca-studio` (Aligner and Annotator use their own file names). macOS installs into `~/Applications`. Windows runs the NSIS installer for the current user.
+
+Install Studio from a shell. macOS and Linux: `curl -fsSL https://raw.githubusercontent.com/keejkrej/lisca/main/scripts/get-studio.sh | bash`. Windows: `irm https://raw.githubusercontent.com/keejkrej/lisca/main/scripts/get-studio.ps1 | iex`. Pass `aligner` or `annotator` (`bash -s -- aligner`, or `$env:LISCA_APP = "aligner"` before the Windows one-liner) to install those apps.
 
 ## Channels
 
@@ -114,7 +118,7 @@ not force unrelated package-version bumps.
 Jupyter notebooks are their own SemVer train. They do not share a version with Studio, Aligner, or
 Annotator, and they must not be hooked into `.github/workflows/release.yml`.
 
-- Desktop tags: `studio-vX.Y.Z`, `aligner-vX.Y.Z`, and `annotator-vX.Y.Z`. Each publishes that app's installers (signed and notarized DMG, unsigned NSIS, deb).
+- Desktop tags: `studio-vX.Y.Z`, `aligner-vX.Y.Z`, and `annotator-vX.Y.Z`. Each publishes that app's installers (signed and notarized DMG, unsigned NSIS, AppImage).
 - Notebook tags: `notebooks-vX.Y.Z` on the **export commit** of branch `notebooks` (not `main`).
   Asset: `lisca-notebooks-X.Y.Z.zip`. Workflow: `.github/workflows/release-jupyternotebook.yml`.
 - Bump `notebooks/VERSION` (and `notebooks/pyproject.toml`) on **`main`**. Daily work never lands on
