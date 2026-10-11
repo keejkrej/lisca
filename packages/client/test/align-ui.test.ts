@@ -82,6 +82,35 @@ describe("align-ui actions", () => {
     expect(next.source).toBeNull();
   });
 
+  it("setWorkspacePath clears an in-progress crop so the next assay can crop", () => {
+    const studio = createAlignUiActions(persist, {
+      clearSourceOnWorkspaceChange: false,
+      preserveSelectionOnScan: true,
+      skipRedundantSourceSet: true,
+      includeApplySavedAlignState: true,
+    });
+    const running = {
+      ...createInitialAlignUiState(),
+      workspacePath: "/ws-a",
+      cropProgress: {
+        requestId: "crop-1",
+        status: "running" as const,
+        position: 0,
+        completedPositions: 0,
+        totalPositions: 1,
+        completedRois: 0,
+        totalRois: 1,
+        message: null,
+      },
+    };
+    const next = runReducer(running, (set) => studio.setWorkspacePath(set, "/ws-b"));
+    expect(next.workspacePath).toBe("/ws-b");
+    expect(next.cropProgress).toBeNull();
+
+    const same = runReducer(running, (set) => studio.setWorkspacePath(set, "/ws-a"));
+    expect(same.cropProgress?.requestId).toBe("crop-1");
+  });
+
   it("applyLoadedFrame applies saved align state when key differs", () => {
     const initialGrid = normalizeAlignGridState({ opacity: 0.2 });
     const savedGrid = normalizeAlignGridState({ opacity: 0.8 });

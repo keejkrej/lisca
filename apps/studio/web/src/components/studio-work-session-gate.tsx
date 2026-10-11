@@ -25,12 +25,12 @@ import {
   type StudioAnnotateStoreState,
 } from "../state/studio-annotate-store";
 import { StudioSessionContext } from "../state/studio-session-context";
-import { bindStudioCropRefresh } from "../state/studio-crop-watch";
+import { bindStudioCropRefresh, bindStudioCropSettled } from "../state/studio-crop-watch";
 import { parseStudioAssayJson, studioWizardActions, studioWizardAtom } from "../state/studio-store";
 
 export function StudioWorkSessionGate(props: { children?: JSX.Element }) {
   const workspace = useShellWorkspace();
-  const [, setAlignUi] = useAtom(() => studioAlignUiAtom);
+  const [alignUi, setAlignUi] = useAtom(() => studioAlignUiAtom);
   const [, setAnnotateUi] = useAtom(() => studioAnnotateUiAtom);
   const [, setWizard] = useAtom(() => studioWizardAtom);
   const pendingRunSubscription = createSubscriptionOwner();
@@ -38,7 +38,15 @@ export function StudioWorkSessionGate(props: { children?: JSX.Element }) {
   const releaseCropRefresh = bindStudioCropRefresh((workspacePath) => {
     void invalidateRoi(workspacePath);
   });
+  const releaseCropSettled = bindStudioCropSettled((progress, cropWorkspace) => {
+    const current = alignUi();
+    if (current.workspacePath !== cropWorkspace) return;
+    const activeId = current.cropProgress?.requestId;
+    if (activeId != null && activeId !== progress.requestId) return;
+    studioAlignUiActions.setCropProgress(setAlignUi, progress);
+  });
   onCleanup(releaseCropRefresh);
+  onCleanup(releaseCropSettled);
   const mockAssayPath = studioMockAssayPath();
 
   const attachPendingRuns = async (workspacePath: string) => {
