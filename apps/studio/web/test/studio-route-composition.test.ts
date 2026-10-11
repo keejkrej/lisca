@@ -68,7 +68,6 @@ describe("Studio workflow route composition", () => {
     const samplesSource = readSource("../src/components/metadata-samples.tsx");
     const analysisPageSource = readSource("../src/analysis/analysis-page.tsx");
     const analysisGallerySource = readSource("../src/analysis/analysis-plot-gallery.tsx");
-    const analysisDemoSource = readSource("../../demo/src/analysis-demo.tsx");
 
     expect(assayRouteSource).toMatch(/<AppShell\.MainScroll/);
     expect(metadataRouteSource).toMatch(/<AppShell\.MainScroll/);
@@ -76,9 +75,6 @@ describe("Studio workflow route composition", () => {
     expect(samplesSource).not.toMatch(/max-h-\[58vh\]/);
     expect(analysisPageSource).toMatch(/<AppShell\.MainScroll/);
     expect(analysisGallerySource).not.toMatch(/overflow-y-auto/);
-    expect(analysisDemoSource).toMatch(/<DemoShell>/);
-    expect(analysisDemoSource).not.toMatch(/<AppShell/);
-    expect(analysisDemoSource.match(/<DemoShell\.MainScroll/g)).toHaveLength(2);
   });
 
   it("reuses the standalone annotation rail and shared five-action tool grid", () => {

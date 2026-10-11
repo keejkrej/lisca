@@ -16,7 +16,7 @@ pnpm, Vite+, and Cargo monorepo.
 
 | Path                               | Contents                                                                |
 | ---------------------------------- | ----------------------------------------------------------------------- |
-| `apps/{aligner,annotator,studio}/` | SolidJS `web/`, Rust `server/`, Tauri `desktop/`, and demos             |
+| `apps/{aligner,annotator,studio}/` | SolidJS `web/`, Rust `server/`, and Tauri `desktop/`                    |
 | `packages/`                        | TypeScript contracts, client, UI, and workspace fixtures                |
 | `crates/`                          | Rust libraries, including the `lisca-analyze` and `lisca-crop` binaries |
 | `python/`                          | ROI crop, dataset building, and training                                |
@@ -85,14 +85,6 @@ pnpm run dist:annotator
 ```
 
 Release tags publish Studio only. See `docs/agents/releases.md`.
-
-Analysis demo, fixture plots and no workspace:
-
-```sh
-pnpm run dev:studio-demo
-```
-
-That serves [http://localhost:5177](http://localhost:5177). See `apps/studio/demo/README.md`.
 
 Materialize a sample workspace at a pipeline stage:
 

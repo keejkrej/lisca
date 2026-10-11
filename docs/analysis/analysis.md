@@ -7,7 +7,6 @@ Pure **results model** for the Studio web app. Layout mirrors Rust `analysis/ass
 - `shared/plots.ts` — catalog of Rust PNG artifacts, sectioning, assay inference
 - `assays/transfection/catalog.ts` — transfection plot filenames, labels, and workspace vs sample scope
 - `assays/killing/catalog.ts` — killing plot filenames and labels
-- `fixtures/` — placeholder PNGs with the same filenames the Rust pipeline writes
 
 The package is pure model logic. Studio-coupled atoms live in
 `apps/studio/web/src/atoms/studio-analysis-atoms.ts`, where the model is wired to the
@@ -25,23 +24,10 @@ Per-sample titles include the sample folder (for example
 Sections stay assay-aware: Traces / Parameters (transfection) vs Traces /
 Compare (killing). Compare is the mean fluorescence for each sample.
 
-## Analysis demo
-
-`apps/studio/demo` is a browser-only mock of the analysis page. It loads fixture PNGs
-for both shipping assays so the team can iterate on the gallery without a workspace.
-
-```sh
-pnpm run dev:studio-demo
-```
-
-Opens [http://localhost:5177](http://localhost:5177). Switch `transfection.fixture` /
-`killing.fixture` in the navbar. See `apps/studio/demo/README.md`.
-
 ## Workspace fixtures (e2e / agents)
 
 `@lisca/fixtures` writes a real on-disk source folder or workspace so tests and
-agents can skip earlier pipeline steps. This is separate from the analysis demo
-PNGs above.
+agents can skip earlier pipeline steps.
 
 ```sh
 # Only test analysis

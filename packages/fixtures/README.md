@@ -1,9 +1,7 @@
 # Workspace fixtures (`@lisca/fixtures`)
 
 On-disk **sample** image sources and half-finished workspaces for e2e tests and
-agents. These are not the Studio analysis demo (`apps/studio/demo` /
-`@lisca/analysis/fixtures`), which is browser-only placeholder PNGs for visual
-iteration.
+agents.
 
 Each stage is a real directory Studio or the CLI can open: `assay.json`,
 `bbox/`, `align/`, `roi/PosN/`, `annotations/`, transfection

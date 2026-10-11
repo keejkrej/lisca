@@ -41,7 +41,6 @@ pnpm run dev:studio          # web + server, port 18767
 pnpm run dev:aligner         # port 18765
 pnpm run dev:annotator       # port 18766
 pnpm run dev:studio-desktop
-pnpm run dev:studio-demo     # fixture plots, http://localhost:5177
 pnpm run dist:studio         # Studio installer
 pnpm run fixture:workspace -- --assay transfection --stage cropped --out ./tf-analyze
 ```
@@ -60,7 +59,7 @@ Transfection stage names match `lisca-transfection`. Killing commands take a wor
 
 ## Project structure
 
-Product applications live under `apps/{aligner,annotator,studio}/`, each split as applicable into SolidJS `web/`, Rust `server/`, Tauri `desktop/`, and demo packages. Shared TypeScript belongs in `packages/`: contracts and schemas in `contracts`, client I/O in `client`, reusable logic in `utils` and `ui-headless`, and rendered components in `ui`. Rust libraries are in `crates/`. Python utilities, ROI crop (`lisca.services.crop`), and training code are in `python/`. Canonical Jupyter notebooks for Hub and zip users live under `notebooks/` (independent SemVer; tags `notebooks-v*`). Keep documentation in the matching `docs/<domain>/` directory. Product model artifacts (Smart exclude, Smart segment) belong in `models/`. Shared brand assets belong in `assets/brand/`. Assay weights belong on Hugging Face or in the assay repository. See `models/README.md`.
+Product applications live under `apps/{aligner,annotator,studio}/`, each split into SolidJS `web/`, Rust `server/`, and Tauri `desktop/`. Shared TypeScript belongs in `packages/`: contracts and schemas in `contracts`, client I/O in `client`, reusable logic in `utils` and `ui-headless`, and rendered components in `ui`. Rust libraries are in `crates/`. Python utilities, ROI crop (`lisca.services.crop`), and training code are in `python/`. Canonical Jupyter notebooks for Hub and zip users live under `notebooks/` (independent SemVer; tags `notebooks-v*`). Keep documentation in the matching `docs/<domain>/` directory. Product model artifacts (Smart exclude, Smart segment) belong in `models/`. Shared brand assets belong in `assets/brand/`. Assay weights belong on Hugging Face or in the assay repository. See `models/README.md`.
 
 Wire types are Effect Schemas in `packages/contracts`. After a schema change, regenerate with `pnpm --filter @lisca/contracts generate` and run `cargo test -p lisca`.
 
