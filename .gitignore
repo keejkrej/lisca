@@ -34,6 +34,9 @@ apps/*/desktop/release/
 mcps/
 .repos/
 
+# Fixture workspace written by `pnpm run dev:studio-mock`.
+.mock/
+
 # ONNX weights are gitignored. Product models (Smart exclude/segment) live
 # under models/; assay brains resolve from HF / LISCA_*_MODEL (see models/README.md).
 models/**/model.onnx

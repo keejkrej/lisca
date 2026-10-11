@@ -55,6 +55,15 @@ pnpm run --filter @lisca/fixtures fixture -- --assay transfection --stage croppe
 `--out` must be empty unless you pass `--force`. The generator overwrites the
 files it writes; use a dedicated directory.
 
+Open that workspace in the real Studio web UI (port 18777) with:
+
+```sh
+pnpm run dev:studio-mock
+pnpm run dev:studio-mock -- --assay killing-death-reporter --stage cropped
+```
+
+The default is transfection at stage `analyzed`, written to `.mock/studio` and replaced each run. This is not a separate demo. See `docs/adr/0010-studio-browser-mock.md`.
+
 ## Library API (agents / e2e)
 
 ```ts

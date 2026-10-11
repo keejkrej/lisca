@@ -182,6 +182,10 @@ export function createLiscaViteConfig(options: {
   port: number;
   base?: string;
   backendPort?: number;
+  /** Fail instead of moving to the next port. Browser mock uses this so the printed URL stays put. */
+  strictPort?: boolean;
+  /** Open the dev URL in a browser. Browser mock uses this; ordinary dev does not. */
+  open?: boolean;
   /** Extra Vite plugins from the app. Untyped so Studio tsc does not compare two Vite copies. */
   plugins?: readonly unknown[];
   /** When set, favicon/icon files come from `assets/brand/apps/<product>/`. */
@@ -209,10 +213,12 @@ export function createLiscaViteConfig(options: {
     server: {
       host: true,
       port: options.port,
-      // Let Vite auto-increment when the preferred port is taken (another
-      // local app, a stale dev process). The desktop shell probes for the
-      // actual port — see `resolve_dev_url` in crates/lisca-tauri.
-      strictPort: false,
+      // Ordinary dev lets Vite auto-increment when the preferred port is taken
+      // (another local app, a stale dev process). The desktop shell probes for
+      // the actual port — see `resolve_dev_url` in crates/lisca-tauri.
+      // Browser mock pins the port so the URL in the script output is the UI.
+      strictPort: options.strictPort ?? false,
+      open: options.open ?? false,
       proxy: liscaDevProxy(backendPort),
     },
   });
