@@ -7,38 +7,29 @@ export function StudioAnnotateNav(props: { standard?: boolean }) {
   const nav = useStudioAnnotateNav();
 
   return (
-    <Show
-      when={!nav.workspaceMissing}
-      fallback={
-        <p class="text-destructive text-sm" role="alert">
-          Choose a workspace on the Metadata step first.
-        </p>
-      }
-    >
-      <>
-        <RoiFrameNavigation
-          changeSelection={nav.changeSelection}
-          standard={props.standard}
-          position={nav.position}
-          scan={nav.scan}
+    <>
+      <RoiFrameNavigation
+        changeSelection={nav.changeSelection}
+        standard={props.standard}
+        position={nav.position}
+        scan={nav.scan}
+        sectionAppearance="rail"
+        selection={nav.selection}
+        setSelection={nav.setSelection}
+      />
+      <Show when={!props.standard}>
+        <ContrastControl
+          aria-label="Contrast"
+          contrast={nav.contrast}
+          disabled={!nav.frame}
+          frame={nav.frame}
+          role="region"
           sectionAppearance="rail"
-          selection={nav.selection}
-          setSelection={nav.setSelection}
+          sectionClassName="min-h-0 shrink-0"
+          sectionContentClassName="flex min-h-0 flex-col"
+          onContrastChange={nav.setContrast}
         />
-        <Show when={!props.standard}>
-          <ContrastControl
-            aria-label="Contrast"
-            contrast={nav.contrast}
-            disabled={!nav.frame}
-            frame={nav.frame}
-            role="region"
-            sectionAppearance="rail"
-            sectionClassName="min-h-0 shrink-0"
-            sectionContentClassName="flex min-h-0 flex-col"
-            onContrastChange={nav.setContrast}
-          />
-        </Show>
-      </>
-    </Show>
+      </Show>
+    </>
   );
 }

@@ -3,6 +3,7 @@ import { createSignal, onMount, Show } from "solid-js";
 
 import { Button } from "../../components/ui/button";
 import { Toggle } from "../../components/ui/toggle";
+import { AlignStateToggleIndicator } from "../../features/align/align-state-toggle-indicator";
 import { DialogSurface } from "../modal/dialog-surface";
 import { ModalScrim } from "../modal/modal-scrim";
 
@@ -30,7 +31,7 @@ function desktopUpdateBridge(): UpdateBridge | null {
 }
 
 /**
- * Startup update check. The switch is on until it is turned off. The web app
+ * Startup update check. The checkbox is on until it is turned off. The web app
  * has no updater, so this panel only explains that the desktop app checks.
  */
 export function StartupUpdateCheck() {
@@ -67,13 +68,16 @@ export function StartupUpdateCheck() {
       <Show when={bridge}>
         <Toggle
           aria-label="Check for updates on startup"
-          class="h-7 gap-2 px-2.5 text-xs"
+          aria-pressed={enabled()}
+          class="h-8 w-fit gap-2 px-2.5 text-sm [&_.lisca-instrument-toggle-indicator]:inline-flex"
+          data-instrument-state-toggle=""
           pressed={enabled()}
           size="sm"
           variant="outline"
           onChange={change}
         >
-          Check for updates on startup
+          <AlignStateToggleIndicator pressed={enabled()} />
+          <span>Check for updates on startup</span>
         </Toggle>
       </Show>
       <Show when={error()}>

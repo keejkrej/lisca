@@ -14,7 +14,6 @@ import {
   commandShortcutKeys,
   useStudioCommandShortcut,
 } from "../navigation/use-studio-command-shortcut";
-import { useStudioAnnotatePage } from "../state/studio-annotate-page-context";
 import {
   useStudioAnnotateCanvas,
   useStudioAnnotateDock,
@@ -29,31 +28,19 @@ import { StudioAnnotateNav } from "./studio-annotate-nav";
  * Action follows the rail vocabulary: Save → Back → Next → Analyze (primary, last).
  */
 export function StudioAnnotateInstrumentStack() {
-  const { state } = useStudioAnnotatePage();
   const expertMode = useAtomValue(() => studioExpertModeAtom);
 
   return (
-    <Show
-      when={!state.workspaceMissing}
-      fallback={
-        <PanelSection appearance="rail" title="Annotate">
-          <p class="text-[13px] leading-[18px] text-muted-foreground">
-            Choose a workspace on the Metadata step first.
-          </p>
-        </PanelSection>
-      }
-    >
-      <>
-        <Show when={!expertMode()}>
-          <StudioAnnotateNav standard />
-        </Show>
-        <Show when={expertMode()}>
-          <StudioAnnotateNav />
-        </Show>
-        <StudioAnnotateControlSections />
-        <StudioAnnotateActionSection />
-      </>
-    </Show>
+    <>
+      <Show when={!expertMode()}>
+        <StudioAnnotateNav standard />
+      </Show>
+      <Show when={expertMode()}>
+        <StudioAnnotateNav />
+      </Show>
+      <StudioAnnotateControlSections />
+      <StudioAnnotateActionSection />
+    </>
   );
 }
 

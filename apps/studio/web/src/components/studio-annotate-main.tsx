@@ -3,7 +3,7 @@ import { useSmartSegment } from "@lisca/smart/segment";
 import { createRequestSmartSegmentProvider } from "@lisca/smart/segment/request";
 import { AnnotationCanvas, CanvasToastStack } from "@lisca/ui/features";
 import { StageCanvas, ViewportCard } from "@lisca/ui/shell";
-import { createMemo, createSignal, Match, Switch } from "solid-js";
+import { createMemo, createSignal, Show } from "solid-js";
 
 import { useStudioNavigate } from "../navigation/use-studio-navigate";
 import { studioClient } from "../api/studio-port";
@@ -59,58 +59,50 @@ export function StudioAnnotateMain() {
         : canvas.canvasToasts,
   );
 
+  const noCroppedRois = () => {
+    const scan = state.scan;
+    return !state.scanLoading && scan != null && scan.positions.length === 0;
+  };
+
   return (
-    <Switch
+    <Show
+      when={noCroppedRois()}
       fallback={
-        <>
-          <ViewportCard>
-            <StageCanvas
-              notice={<CanvasToastStack messages={toasts()} />}
-              captionLeft={`ROI ${nav.selection.roi ?? "—"} · Channel ${nav.selection.channel ?? "—"}`}
-              captionRight={
-                canvas.frame ? `${canvas.frame.width} × ${canvas.frame.height} px` : "No frame"
-              }
-            >
-              <AnnotationCanvas
-                activeLabelId={canvas.activeLabelId}
-                brushSize={canvas.brushSize}
-                class="h-full w-full"
-                disabled={!canvas.canEditSegmentation || smartSegment.busy()}
-                frame={canvas.frame}
-                labels={canvas.labels}
-                mask={canvas.annotation.current.mask}
-                overlayOpacity={canvas.overlayOpacity}
-                smartSegmentPrompts={smartSegment.prompts()}
-                tool={canvas.tool}
-                onMaskCommit={onMaskCommit}
-                onSmartSegmentClick={(click) => void smartSegment.handleClick(click)}
-                onSmartEraseClick={(click) => void smartSegment.handleEraseClick(click)}
-              />
-            </StageCanvas>
-          </ViewportCard>
-        </>
+        <ViewportCard>
+          <StageCanvas
+            notice={<CanvasToastStack messages={toasts()} />}
+            captionLeft={`ROI ${nav.selection.roi ?? "—"} · Channel ${nav.selection.channel ?? "—"}`}
+            captionRight={
+              canvas.frame ? `${canvas.frame.width} × ${canvas.frame.height} px` : "No frame"
+            }
+          >
+            <AnnotationCanvas
+              activeLabelId={canvas.activeLabelId}
+              brushSize={canvas.brushSize}
+              class="h-full w-full"
+              disabled={!canvas.canEditSegmentation || smartSegment.busy()}
+              frame={canvas.frame}
+              labels={canvas.labels}
+              mask={canvas.annotation.current.mask}
+              overlayOpacity={canvas.overlayOpacity}
+              smartSegmentPrompts={smartSegment.prompts()}
+              tool={canvas.tool}
+              onMaskCommit={onMaskCommit}
+              onSmartSegmentClick={(click) => void smartSegment.handleClick(click)}
+              onSmartEraseClick={(click) => void smartSegment.handleEraseClick(click)}
+            />
+          </StageCanvas>
+        </ViewportCard>
       }
     >
-      <Match when={state.workspaceMissing}>
-        <ViewportCard contentClass="relative max-w-[480px]">
-          <StudioEmptyState
-            actionLabel="Go to Metadata"
-            description="Choose a workspace on the Metadata step, then align and crop ROIs before annotating."
-            title="Workspace not set"
-            onAction={() => navigateTo("/metadata")}
-          />
-        </ViewportCard>
-      </Match>
-      <Match when={!state.scanLoading && state.scan && state.scan.positions.length === 0}>
-        <ViewportCard contentClass="relative max-w-[480px]">
-          <StudioEmptyState
-            actionLabel="Go to Align"
-            description="Align the grid and crop ROI images first. Annotation needs those ROI stacks."
-            title="No cropped ROIs"
-            onAction={() => navigateTo("/align")}
-          />
-        </ViewportCard>
-      </Match>
-    </Switch>
+      <ViewportCard contentClass="relative max-w-[480px]">
+        <StudioEmptyState
+          actionLabel="Go to Align"
+          description="Align the grid and crop ROI images first. Annotation needs those ROI stacks."
+          title="No cropped ROIs"
+          onAction={() => navigateTo("/align")}
+        />
+      </ViewportCard>
+    </Show>
   );
 }

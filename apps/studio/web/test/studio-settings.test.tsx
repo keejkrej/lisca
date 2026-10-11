@@ -34,6 +34,7 @@ describe("StudioSettings", () => {
   it("explains desktop update checks in the browser", () => {
     openSettings();
     expect(screen.getByRole("tab", { name: "Updates" }).getAttribute("aria-selected")).toBe("true");
+    expect(screen.getByRole("tablist").getAttribute("aria-orientation")).toBe("vertical");
     expect(screen.getByText(/desktop app checks for updates/i)).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Check for updates on startup" })).toBeNull();
   });
@@ -48,6 +49,7 @@ describe("StudioSettings", () => {
 
     openSettings();
     const toggle = await screen.findByRole("button", { name: "Check for updates on startup" });
+    expect(toggle.querySelector("[data-slot='instrument-toggle-indicator']")).toBeTruthy();
     expect(toggle.getAttribute("aria-pressed")).toBe("true");
     fireEvent.click(toggle);
     expect(setUpdateCheckEnabled).toHaveBeenCalledWith(false);

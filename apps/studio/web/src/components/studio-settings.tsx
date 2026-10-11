@@ -12,6 +12,7 @@ import {
 } from "@lisca/ui/components";
 import { DialogSurface, ModalScrim, StartupUpdateCheck } from "@lisca/ui/shell";
 import IconGearRegular from "phosphor-icons-solid/IconGearRegular";
+import IconXRegular from "phosphor-icons-solid/IconXRegular";
 import { createSignal, Show } from "solid-js";
 
 function InferenceSettings() {
@@ -90,31 +91,55 @@ export function StudioSettings() {
       </Button>
       <Show when={open()}>
         <ModalScrim>
-          <DialogSurface aria-labelledby="studio-settings-title" class="gap-4 p-5" maxWidth="lg">
-            <h2 id="studio-settings-title" class="font-medium text-foreground">
-              Settings
-            </h2>
-            <Tabs defaultValue="updates">
-              <TabsList class="grid w-full grid-cols-2">
-                <TabsTrigger class="px-3 py-1.5 text-sm" value="updates">
+          <DialogSurface
+            aria-labelledby="studio-settings-title"
+            class="gap-0 overflow-hidden p-0"
+            maxWidth="lg"
+          >
+            <div class="flex items-start justify-between gap-4 border-b border-border px-5 py-4">
+              <div class="space-y-1">
+                <h2 id="studio-settings-title" class="font-semibold text-foreground text-lg">
+                  Settings
+                </h2>
+                <p class="text-muted-foreground text-sm">
+                  Startup updates and the inference server.
+                </p>
+              </div>
+              <Button
+                aria-label="Close Settings"
+                size="icon-sm"
+                type="button"
+                variant="ghost"
+                onClick={() => setOpen(false)}
+              >
+                <IconXRegular />
+              </Button>
+            </div>
+            <Tabs class="min-h-72" defaultValue="updates" orientation="vertical">
+              <TabsList
+                class="w-40 shrink-0 items-stretch justify-start gap-0.5 border-r border-border bg-transparent px-3 py-3"
+                variant="line"
+              >
+                <TabsTrigger
+                  class="h-8 flex-none justify-start px-2 text-sm font-medium"
+                  value="updates"
+                >
                   Updates
                 </TabsTrigger>
-                <TabsTrigger class="px-3 py-1.5 text-sm" value="inference">
+                <TabsTrigger
+                  class="h-8 flex-none justify-start px-2 text-sm font-medium"
+                  value="inference"
+                >
                   Inference
                 </TabsTrigger>
               </TabsList>
-              <TabsContent class="pt-4" value="updates">
+              <TabsContent class="p-5" value="updates">
                 <StartupUpdateCheck />
               </TabsContent>
-              <TabsContent class="pt-4" value="inference">
+              <TabsContent class="p-5" value="inference">
                 <InferenceSettings />
               </TabsContent>
             </Tabs>
-            <div class="flex justify-end">
-              <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-                Close
-              </Button>
-            </div>
           </DialogSurface>
         </ModalScrim>
       </Show>
