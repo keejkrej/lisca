@@ -14,7 +14,6 @@ Shared libraries under `packages/*`. Apps import these via workspace protocol (`
 | `@lisca/ui-headless` | Solid-coupled non-DOM state and interaction logic, plus the structural types and policies that directly support those modules.     |
 | `@lisca/ui`          | SolidJS web imaging UI (zaidan/Kobalte + Tailwind). Re-exports shared UI types through `@lisca/ui/features`.                       |
 | `@lisca/web-app`     | Vite web shell: app mount (`createLiscaWebApp`), shared CSS entry, host operations.                                                |
-| `@lisca/web-demo`    | Browser-only demo helpers (`@lisca/web-demo/browser` — image load, contrast). Former `browser-frame` package.                      |
 | `@lisca/smart`       | Browser ML via transformers.js: `./segment` (SAM masks), `./segment/browser` (hook), `./exclude/browser` (ResNet smart exclusion). |
 
 Desktop Tauri wrappers live under `apps/*/desktop`, not in `packages/*`.
@@ -50,7 +49,6 @@ packages/analysis/src/
   assays/
     transfection/catalog.ts
     killing/catalog.ts
-  fixtures/         placeholder PNGs for the Studio analysis demo
 ```
 
 Studio owns its runtime-coupled analysis atoms and PNG gallery under
@@ -59,7 +57,6 @@ Studio owns its runtime-coupled analysis atoms and PNG gallery under
 ## `@lisca/fixtures`
 
 On-disk sample sources and half-finished workspaces for e2e / agent tests.
-Not the analysis-demo PNG placeholders.
 
 ```
 pnpm run fixture:workspace -- --assay transfection --stage cropped --out /tmp/tf
@@ -93,7 +90,7 @@ Examples: `AnnotationMode`, `HostFilePickerMode`, `cropConfirmCopy`.
 
 ## Removed / merged
 
-- **`browser-frame`** — merged into `@lisca/web-demo/browser`.
+- **`browser-frame`** and **`@lisca/web-demo`** — removed with the browser demos.
 - **`studio-result`** — renamed to `@lisca/analysis`.
 - **`segmentation`** — renamed to `@lisca/smart` (`segment` + `exclude` subpaths).
 - **`@lisca/storage`** — folded into `@lisca/utils/storage.ts`; adapter injection remains available from the utils barrel.

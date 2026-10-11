@@ -1,3 +1,0 @@
-import { createLiscaDemoViteConfig } from "@lisca/web-demo/vite";
-
-export default createLiscaDemoViteConfig({ port: 5177, product: "studio" });

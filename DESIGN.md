@@ -169,14 +169,14 @@ components:
 
 LiSCA should feel like a precise scientific instrument: quiet, legible, and direct. High-contrast neutral surfaces keep image data primary. Each product app borrows one accent from its icon — Studio mint, Aligner blue, Annotator coral — and uses it only on the highest-emphasis chrome. Restrained GFP green identifies biological signal, not general interaction. The stage shell and all instrument controls use Outfit Variable.
 
-Studio, Aligner, and Annotator share this language. Reuse the same shell, section, field, navigation, toggle, slider, and action primitives rather than introducing app-local variants. The instrument `AppShell` is that language. Local **mocks** (`pnpm run dev:mock`) fill it with static fixtures for layout iteration. Landing **demos** are a separate browser surface and may deviate.
+Studio, Aligner, and Annotator share this language. Reuse the same shell, section, field, navigation, toggle, slider, and action primitives rather than introducing app-local variants. The instrument `AppShell` is that language.
 
 ## Colors
 
 - **Stage and muted (`#F5F5F5`):** the desktop surround and low-emphasis surfaces.
 - **Background and paper (`#FFFFFF`):** the top bar, sheets, inputs, and canvas framing.
 - **Foreground and ink (`#171717`):** default text, icons, and navigation carets.
-- **Primary (`#252525`) / primary foreground (`#FAFAFA`):** unscoped and marketing chrome. Studio, Aligner, and Annotator remap `--primary`, `--ring`, and `--sidebar-primary` to that app's brand.
+- **Primary (`#252525`) / primary foreground (`#FAFAFA`):** unscoped chrome. Studio, Aligner, and Annotator remap `--primary`, `--ring`, and `--sidebar-primary` to that app's brand.
 - **Brand accents:** one icon color per app, used sparingly on filled primary actions, focus rings, selected nav/tool, and pressed Show/Edit/Expert toggles. Outline actions, body text, section titles, and rails stay ink/stage. Do not tint rail backgrounds.
   - **Studio mint** with ink foreground. Dark mode and the icon use `#3DDC97`. Light mode uses `#00AB69` so the fill clears 3:1 on white. Distinct from GFP.
   - **Aligner blue** with ink foreground. Dark mode and the icon use `#4EA3FF`. Light mode uses `#4298F3`. White-on-blue fails 12px AA, so the label stays ink.

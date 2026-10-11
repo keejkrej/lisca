@@ -44,21 +44,17 @@ describe("per-app brand tokens", () => {
     );
   });
 
-  it("sets data-lisca-app on each product document root and leaves landing unscoped", () => {
+  it("sets data-lisca-app on each product document root", () => {
     const roots = [
       ["apps/studio/web/index.html", "studio"],
-      ["apps/studio/demo/index.html", "studio"],
       ["apps/aligner/web/index.html", "aligner"],
-      ["apps/aligner/demo/index.html", "aligner"],
       ["apps/annotator/web/index.html", "annotator"],
-      ["apps/annotator/demo/index.html", "annotator"],
     ] as const;
 
     for (const [path, app] of roots) {
       expect(readRepo(path)).toContain(`data-lisca-app="${app}"`);
     }
 
-    expect(readRepo("apps/landing/web/index.html")).not.toContain("data-lisca-app");
     expect(readRepo("packages/web-app/src/create-lisca-web-app.tsx")).toMatch(
       /<ShellThemeProvider appId=\{appId\}>/,
     );

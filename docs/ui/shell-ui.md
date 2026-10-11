@@ -9,13 +9,13 @@ how the shell modules implement that contract; it does not define app-specific a
 
 Edit colors in `packages/ui/theme.css`: CSS `z-*` component classes (button, input, field, select, toggle, etc.) and theme tokens (`--background`, `--border`, `--muted`, …).
 
-Studio, Aligner, and Annotator set `data-lisca-app` on the document root so `--primary`, `--ring`, and `--sidebar-primary` resolve to that app's icon color. Landing stays unscoped ink. GFP (`--instrument-gfp`) and destructive stay separate from brand chrome.
+Studio, Aligner, and Annotator set `data-lisca-app` on the document root so `--primary`, `--ring`, and `--sidebar-primary` resolve to that app's icon color. GFP (`--instrument-gfp`) and destructive stay separate from brand chrome.
 
 Do not scatter layout tint tokens (`railChrome`, `panel`, `stat`, etc.); shell surfaces use `background` + `border`.
 
 ## Instrument stage shell
 
-Studio, Aligner, Annotator, and the instrument **mock** share one `AppShell`: muted stage surround, 16px gutters, floating paper main sheet, 256px rails, and a 56px `AppShell.TopBar`. There is no classic Header variant. The reference desktop is 1440×900 with fixed columns **256px / 928px / 256px** (`w-64` rails, no `w-72` overrides). The top bar and paper sheet are flat (`rounded-none border border-border`); rails stay flat.
+Studio, Aligner, and Annotator share one `AppShell`: muted stage surround, 16px gutters, floating paper main sheet, 256px rails, and a 56px `AppShell.TopBar`. There is no classic Header variant. The reference desktop is 1440×900 with fixed columns **256px / 928px / 256px** (`w-64` rails, no `w-72` overrides). The top bar and paper sheet are flat (`rounded-none border border-border`); rails stay flat.
 
 ```tsx
 <AppShell>
@@ -24,7 +24,7 @@ Studio, Aligner, Annotator, and the instrument **mock** share one `AppShell`: mu
       <RailSidebar>{/* nav + instrument */}</RailSidebar>
     </AppShell.Left>
     <AppShell.MainColumn>
-      <AppShell.TopBar>{/* ShellNavbar or mock chrome */}</AppShell.TopBar>
+      <AppShell.TopBar>{/* ShellNavbar */}</AppShell.TopBar>
       <AppShell.Main>
         <ViewportCard>
           <StageCanvas aspect="wide" captionLeft="…" captionRight="…">
@@ -132,7 +132,7 @@ Frame styling lives inside `panel.tsx` (`panelFrameClass`); not exported from th
 2. **Section variant** — `PanelSection appearance="rail"`
 3. **Body layout** — `RailControlStack` / `RailActionPair` / `RailFieldPair`
 
-**Classic sidebars and docks** (document/wizard leftovers, demos that have not migrated, or non-instrument panels):
+**Classic sidebars and docks** (document/wizard leftovers or non-instrument panels):
 
 1. **Region container** — `SidebarStack` or `DockStrip`
 2. **Section variant** — `PanelSection` or `DockSection`
@@ -264,12 +264,6 @@ instrument stage:
 3. **Apps use shell components** — do not import layout class strings; `DockSection` / `PanelSection` / `RailSidebar` own their placement styles.
 4. **Instrument chrome is stage rails** — 256px `RailSidebar`, `StageCanvas`, top-bar Expert; not bottom docks.
 5. **Read-only path chips** may use `bg-muted/20` (`ReadonlyPathField`) as the one subtle inset.
-
-## Demo vs mock
-
-Landing **demos** (`apps/*/demo`, ports 5175/5176/5177) are browser/marketing surfaces. They use demo-owned `DemoShell` chrome and may deviate from the instrument. They are not a second `AppShell` variant.
-
-The instrument **mock** (`apps/mock/web`, `pnpm run dev:mock`) composes the same paper-pane `AppShell` as the real apps, filled with static/fixture content so layout can be iterated without Tauri or a Rust server.
 
 ## Out of scope
 

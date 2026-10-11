@@ -4,7 +4,6 @@ name: Release
 #   studio-v* ships Studio, aligner-v* ships Aligner, annotator-v* ships Annotator.
 # Test installers come from Desktop build (workflow_dispatch) and are not releases
 # or auto-update sources.
-# Landing already deploys from deploy/landing via Render (pnpm run deploy:landing).
 # Notebook zips ship from notebooks-v* tags via release-jupyternotebook.yml, not this workflow.
 
 on:
