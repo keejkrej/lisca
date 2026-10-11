@@ -1,10 +1,23 @@
 import { cleanup, fireEvent, render, screen } from "@solidjs/testing-library";
-import { afterEach, describe, expect, it, vi } from "vite-plus/test";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
 import { StudioSettings } from "../src/components/studio-settings";
 
+beforeEach(() => {
+  vi.stubGlobal(
+    "matchMedia",
+    vi.fn((query: string) => ({
+      addEventListener: () => undefined,
+      matches: false,
+      media: query,
+      removeEventListener: () => undefined,
+    })),
+  );
+});
+
 afterEach(() => {
   cleanup();
+  vi.unstubAllGlobals();
   Reflect.deleteProperty(window, "liscaDesktop");
 });
 
@@ -16,7 +29,7 @@ function openSettings() {
 describe("StudioSettings", () => {
   it("keeps inference deferred when no server ships in this version", async () => {
     openSettings();
-    fireEvent.click(screen.getByRole("tab", { name: "Inference" }));
+    fireEvent.click(screen.getByRole("button", { name: "Inference" }));
 
     expect(screen.getAllByText(/no assay is inference-ready/i).length).toBeGreaterThan(0);
     expect(screen.getByText("None")).toBeTruthy();
@@ -26,17 +39,28 @@ describe("StudioSettings", () => {
     expect(url.disabled).toBe(true);
     expect(token.disabled).toBe(true);
     expect(testConnection.hasAttribute("disabled")).toBe(true);
-    expect(screen.getByRole("tab", { name: "Inference" }).getAttribute("aria-selected")).toBe(
-      "true",
+    expect(screen.getByRole("button", { name: "Inference" }).getAttribute("aria-current")).toBe(
+      "page",
     );
+    expect(screen.getByRole("button", { name: "Updates" }).getAttribute("aria-current")).toBeNull();
   });
 
   it("explains desktop update checks in the browser", () => {
-    openSettings();
-    expect(screen.getByRole("tab", { name: "Updates" }).getAttribute("aria-selected")).toBe("true");
-    expect(screen.getByRole("tablist").getAttribute("aria-orientation")).toBe("vertical");
+    render(() => <StudioSettings />);
+    const gear = screen.getByRole("button", { name: "Settings" });
+    expect(gear.className).toContain("z-button-variant-outline");
+    fireEvent.click(gear);
+    expect(screen.getByRole("button", { name: "Updates" }).getAttribute("aria-current")).toBe(
+      "page",
+    );
+    expect(screen.queryByRole("tablist")).toBeNull();
     expect(screen.getByText(/desktop app checks for updates/i)).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Check for updates on startup" })).toBeNull();
+    document.cookie = "sidebar_state=; path=/; max-age=0";
+    window.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "b", metaKey: true, bubbles: true, cancelable: true }),
+    );
+    expect(document.cookie).not.toContain("sidebar_state=");
   });
 
   it("saves the startup check from the Updates tab", async () => {

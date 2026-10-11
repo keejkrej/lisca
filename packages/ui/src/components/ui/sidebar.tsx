@@ -59,14 +59,17 @@ type SidebarProviderProps = ComponentProps<"div"> & {
   defaultOpen?: boolean;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  /** Bind Ctrl/Cmd+B. Dialog sidebars leave this off so the shortcut stays with the page. */
+  shortcut?: boolean;
 };
 
 const SidebarProvider = (props: SidebarProviderProps) => {
-  const mergedProps = mergeProps({ defaultOpen: true }, props);
+  const mergedProps = mergeProps({ defaultOpen: true, shortcut: true }, props);
   const [local, others] = splitProps(mergedProps, [
     "defaultOpen",
     "open",
     "onOpenChange",
+    "shortcut",
     "class",
     "style",
     "children",
@@ -100,6 +103,7 @@ const SidebarProvider = (props: SidebarProviderProps) => {
 
   // Adds a keyboard shortcut to toggle the sidebar.
   createEffect(() => {
+    if (!local.shortcut) return;
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === SIDEBAR_KEYBOARD_SHORTCUT && (event.metaKey || event.ctrlKey)) {
         event.preventDefault();

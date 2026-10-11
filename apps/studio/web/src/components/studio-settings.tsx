@@ -5,15 +5,22 @@ import {
   FieldGroup,
   FieldLabel,
   Input,
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarInset,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarProvider,
 } from "@lisca/ui/components";
 import { DialogSurface, ModalScrim, StartupUpdateCheck } from "@lisca/ui/shell";
 import IconGearRegular from "phosphor-icons-solid/IconGearRegular";
 import IconXRegular from "phosphor-icons-solid/IconXRegular";
 import { createSignal, Show } from "solid-js";
+
+type SettingsSection = "updates" | "inference";
 
 function InferenceSettings() {
   return (
@@ -73,6 +80,48 @@ function InferenceSettings() {
   );
 }
 
+function SettingsSections() {
+  const [section, setSection] = createSignal<SettingsSection>("updates");
+
+  return (
+    <SidebarProvider class="min-h-72" shortcut={false} style={{ "--sidebar-width": "10rem" }}>
+      <Sidebar class="h-auto border-r border-sidebar-border" collapsible="none">
+        <SidebarContent>
+          <SidebarGroup>
+            <SidebarGroupContent>
+              <SidebarMenu aria-label="Settings">
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    aria-current={section() === "updates" ? "page" : undefined}
+                    isActive={section() === "updates"}
+                    onClick={() => setSection("updates")}
+                  >
+                    Updates
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    aria-current={section() === "inference" ? "page" : undefined}
+                    isActive={section() === "inference"}
+                    onClick={() => setSection("inference")}
+                  >
+                    Inference
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        </SidebarContent>
+      </Sidebar>
+      <SidebarInset class="min-w-0 p-5">
+        <Show when={section() === "updates"} fallback={<InferenceSettings />}>
+          <StartupUpdateCheck />
+        </Show>
+      </SidebarInset>
+    </SidebarProvider>
+  );
+}
+
 /** Studio settings. Inference stays deferred until a server ships with the model tools. */
 export function StudioSettings() {
   const [open, setOpen] = createSignal(false);
@@ -84,7 +133,7 @@ export function StudioSettings() {
         class="size-7"
         size="icon"
         type="button"
-        variant="ghost"
+        variant="outline"
         onClick={() => setOpen(true)}
       >
         <IconGearRegular class="size-4" />
@@ -115,31 +164,7 @@ export function StudioSettings() {
                 <IconXRegular />
               </Button>
             </div>
-            <Tabs class="min-h-72" defaultValue="updates" orientation="vertical">
-              <TabsList
-                class="w-40 shrink-0 items-stretch justify-start gap-0.5 border-r border-border bg-transparent px-3 py-3"
-                variant="line"
-              >
-                <TabsTrigger
-                  class="h-8 flex-none justify-start px-2 text-sm font-medium"
-                  value="updates"
-                >
-                  Updates
-                </TabsTrigger>
-                <TabsTrigger
-                  class="h-8 flex-none justify-start px-2 text-sm font-medium"
-                  value="inference"
-                >
-                  Inference
-                </TabsTrigger>
-              </TabsList>
-              <TabsContent class="p-5" value="updates">
-                <StartupUpdateCheck />
-              </TabsContent>
-              <TabsContent class="p-5" value="inference">
-                <InferenceSettings />
-              </TabsContent>
-            </Tabs>
+            <SettingsSections />
           </DialogSurface>
         </ModalScrim>
       </Show>
