@@ -75,7 +75,10 @@ describe("updater manifest", () => {
 
   it("turns updater artifacts on only for a release build", () => {
     expect(tauriUpdaterBuildConfig(true)).toEqual({
-      bundle: { createUpdaterArtifacts: true },
+      bundle: {
+        createUpdaterArtifacts: true,
+        targets: ["app", "dmg", "nsis", "deb"],
+      },
     });
     expect(tauriUpdaterBuildConfig(false)).toEqual({
       plugins: { updater: { endpoints: [] } },

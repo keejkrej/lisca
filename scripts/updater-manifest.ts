@@ -39,7 +39,16 @@ export function updateChannelTag(product: DesktopProduct): string {
 
 /** Release builds sign updater artifacts. Every other build clears the feed. */
 export function tauriUpdaterBuildConfig(releaseArtifacts: boolean): Record<string, unknown> {
-  if (releaseArtifacts) return { bundle: { createUpdaterArtifacts: true } };
+  // The macOS updater archive is produced from the `app` target. A dmg-only
+  // bundle signs the disk image and then warns that no updater artifact exists.
+  if (releaseArtifacts) {
+    return {
+      bundle: {
+        createUpdaterArtifacts: true,
+        targets: ["app", "dmg", "nsis", "deb"],
+      },
+    };
+  }
   return { plugins: { updater: { endpoints: [] } } };
 }
 
