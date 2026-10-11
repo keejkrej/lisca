@@ -26,9 +26,9 @@ export function AlignerRight() {
         drift={canvas.drift}
         frame={canvas.frame}
         time={canvas.selection.time}
-        timeLabels={canvas.scan?.timeLabels}
         times={canvas.scan?.times}
         onClearDrift={canvas.clearDrift}
+        onDeltaChange={canvas.setDriftDelta}
         onClearKeyframe={canvas.clearKeyframe}
         onSetKeyframe={canvas.setKeyframe}
         onSetReference={canvas.setReference}

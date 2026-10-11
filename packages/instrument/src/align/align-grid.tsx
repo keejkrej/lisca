@@ -4,76 +4,15 @@ import { createEffect, createSignal, Show } from "solid-js";
 
 import { Button } from "@lisca/ui/button";
 import { Field, FieldLabel } from "@lisca/ui/field";
-import { Input } from "@lisca/ui/input";
 import { Toggle } from "@lisca/ui/toggle";
+
+import { AlignNumberInput } from "./align-number-input";
 
 import { Slider } from "@lisca/ui/slider";
 import { PanelSection } from "@lisca/ui/patterns";
 import { RailActionPair, RailControlStack, RailFieldPair } from "@lisca/ui/patterns";
 import { AlignGridShapeToggle } from "./align-grid-shape-toggle";
 import { AlignStateToggleIndicator } from "@lisca/ui/patterns";
-
-function AlignNumberInput(props: {
-  label: string;
-  value: number;
-  onCommit: (value: number) => void;
-  disabled?: boolean;
-  min?: number;
-  step?: string;
-}) {
-  const [draft, setDraft] = createSignal(formatNumber(props.value));
-  let skipBlurCommit = false;
-
-  createEffect(() => {
-    setDraft(formatNumber(props.value));
-  });
-
-  const revert = () => setDraft(formatNumber(props.value));
-  const commit = () => {
-    if (skipBlurCommit) {
-      skipBlurCommit = false;
-      revert();
-      return;
-    }
-    const trimmed = draft().trim();
-    const value = trimmed === "" ? NaN : Number(trimmed);
-    if (!Number.isFinite(value) || (props.min != null && value < props.min)) {
-      revert();
-      return;
-    }
-    setDraft(formatNumber(value));
-    props.onCommit(value);
-  };
-
-  return (
-    <Input
-      autocomplete="off"
-      aria-label={props.label}
-      disabled={props.disabled}
-      min={props.min}
-      name={props.label.toLowerCase().replaceAll(" ", "-")}
-      size="sm"
-      step={props.step ?? "any"}
-      type="number"
-      value={draft()}
-      onBlur={commit}
-      onInput={(e) => setDraft(e.currentTarget.value)}
-      onKeyDown={(e) => {
-        if (e.key === "Enter") {
-          e.currentTarget.blur();
-        } else if (e.key === "Escape") {
-          skipBlurCommit = true;
-          revert();
-          e.currentTarget.blur();
-        }
-      }}
-    />
-  );
-}
-
-function formatNumber(value: number) {
-  return Number.isFinite(value) ? String(value) : "";
-}
 
 function formatDegrees(value: number) {
   const rounded = Math.round(value * 10) / 10;

@@ -46,6 +46,7 @@ export type AlignState = {
   assayDefaultTime: number | null;
   setGrid: (next: AlignGridState | ((current: AlignGridState) => AlignGridState)) => void;
   adjustTranslation: (dx: number, dy: number) => void;
+  setDriftDelta: (dx: number, dy: number) => void;
   commitCanvas: (
     preview: AlignGridState,
     intent: AlignGridPointerIntent,
@@ -171,6 +172,7 @@ export function useAlignStateCore(deps: UseAlignStateCoreDeps): Accessor<AlignSt
       assayDefaultTime: deps.assayDefaultTime(),
       setGrid,
       adjustTranslation: session.adjustTranslation,
+      setDriftDelta: session.setDriftDelta,
       commitCanvas: session.commitCanvas,
       setKeyframe: session.setKeyframe,
       clearKeyframe: session.clearKeyframe,

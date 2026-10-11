@@ -11,6 +11,7 @@ import {
   normalizeAlignDrift,
   normalizeAlignGridState,
   rebaseAlignDriftReference,
+  setAlignDriftDelta,
   upsertAlignDriftKeyframe,
 } from "../src";
 
@@ -186,6 +187,28 @@ describe("align drift", () => {
       dx: 14,
       dy: -4,
     });
+  });
+
+  test("set drift delta writes an absolute correction and creates the first pin", () => {
+    const drift = normalizeAlignDrift(worked);
+    expect(setAlignDriftDelta(drift, 200, null, 3, -1.25)).toBe(drift);
+    const pinned = setAlignDriftDelta(drift, 200, null, 4, -1.25);
+    expect(pinned?.keyframes.find((pin) => pin.time === 200)).toEqual({
+      time: 200,
+      dx: 4,
+      dy: -1.25,
+    });
+    expect(pinned?.referenceTime).toBe(0);
+
+    const created = setAlignDriftDelta(null, 20, null, 1.5, 0);
+    expect(created).toEqual({
+      referenceTime: 20,
+      interpolation: "linear",
+      keyframes: [{ time: 20, dx: 1.5, dy: 0 }],
+    });
+    expect(setAlignDriftDelta(null, 20, 0, 1.5, 0)?.referenceTime).toBe(0);
+    expect(setAlignDriftDelta(null, 20, null, 0, 0)).toBeNull();
+    expect(setAlignDriftDelta(drift, -1, null, 1, 0)).toBe(drift);
   });
 
   test("set keyframe stores the interpolated delta and fills an unset reference", () => {

@@ -26,6 +26,7 @@ import {
   enumerateVisibleAlignGridPatterns,
   mergeExcludedAlignGridPatterns,
   rebaseAlignDriftReference,
+  setAlignDriftDelta,
   upsertAlignDriftKeyframe,
   type AlignGridPointerIntent,
   type AlignGridToolMode,
@@ -682,6 +683,18 @@ export function useAlignSessionCore(options: UseAlignSessionCoreOptions) {
   const writeLattice = (next: { grid?: AlignGridState; drift?: AlignDrift | null }) => {
     actions.setLattice(setUi, next);
   };
+  const setDriftDelta = (dx: number, dy: number) => {
+    const current = ui();
+    const next = setAlignDriftDelta(
+      current.drift,
+      navSelection().time,
+      options.assayDefaultTime(),
+      dx,
+      dy,
+    );
+    if (next === current.drift) return;
+    writeLattice({ drift: next });
+  };
   const adjustTranslation = (dx: number, dy: number) => {
     const current = ui();
     const next = adjustAlignDriftTranslation(
@@ -755,6 +768,7 @@ export function useAlignSessionCore(options: UseAlignSessionCoreOptions) {
     saveWithSmartExclusion,
     applySmartExclusion,
     adjustTranslation,
+    setDriftDelta,
     replaceDrift,
     setKeyframe,
     clearKeyframe,
