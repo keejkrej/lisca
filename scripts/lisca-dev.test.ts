@@ -61,6 +61,11 @@ describe("lisca dev ports", () => {
       expect(desktop.backendPort).toBe(ports.backendPort);
     }
   });
+
+  it("gives the studio browser mock its own ports and no desktop product", () => {
+    expect(LISCA_APP_PORTS.studioMock).toEqual({ publicPort: 18777, backendPort: 19777 });
+    expect(DESKTOP_PRODUCTS).not.toHaveProperty("studioMock");
+  });
 });
 
 describe("lisca API proxy path matching", () => {
@@ -170,6 +175,13 @@ describe("vite dev config", () => {
         expect(entry?.target).toBe(`http://127.0.0.1:${ports.backendPort}`);
       }
     }
+  });
+
+  it("can pin the dev port and open a browser", async () => {
+    const { createLiscaViteConfig } = await import("../packages/web-app/vite.ts");
+    const config = createLiscaViteConfig({ port: 18777, strictPort: true, open: true });
+    expect(config.server?.strictPort).toBe(true);
+    expect(config.server?.open).toBe(true);
   });
 });
 

@@ -64,6 +64,19 @@ describe("parseFixtureArgs", () => {
     expect(parsed.ok).toBe(false);
     if (!parsed.ok) expect(parsed.help).toBe(true);
   });
+
+  it("ignores the -- that pnpm inserts before script arguments", () => {
+    const parsed = parseFixtureArgs([
+      "--",
+      "--assay",
+      "transfection",
+      "--stage",
+      "assay",
+      "--out",
+      "/tmp/ws",
+    ]);
+    expect(parsed).toMatchObject({ ok: true, assay: "transfection", stage: "assay" });
+  });
 });
 
 describe("workspace fixture smoke", () => {

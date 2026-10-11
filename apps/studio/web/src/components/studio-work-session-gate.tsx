@@ -8,10 +8,11 @@ import { createSubscriptionOwner } from "@lisca/client/session/subscription-owne
 import { restoreStudioWorkSession } from "@lisca/client/session/studio-work-session-restore";
 import { WorkSessionAppGate } from "@lisca/client/session/work-session-app-gate";
 import type { StudioAssayJson } from "@lisca/contracts/assay";
-import { useShellWorkspace, WorkSessionPickerDialog } from "@lisca/ui/shell";
+import { useShellServer, useShellWorkspace, WorkSessionPickerDialog } from "@lisca/ui/shell";
 import { onCleanup, onMount, type JSX } from "solid-js";
 
 import { studioClient } from "../api/studio-port";
+import { studioMockAssayPath } from "../api/studio-mock";
 import { invalidateRoiWorkspaceAtom } from "../atoms/studio-query-atoms";
 import {
   readStudioAlignSession,
@@ -38,6 +39,7 @@ export function StudioWorkSessionGate(props: { children?: JSX.Element }) {
     void invalidateRoi(workspacePath);
   });
   onCleanup(releaseCropRefresh);
+  const mockAssayPath = studioMockAssayPath();
 
   const attachPendingRuns = async (workspacePath: string) => {
     await pendingRunSubscription.replace(() =>
@@ -65,6 +67,9 @@ export function StudioWorkSessionGate(props: { children?: JSX.Element }) {
       studioAlignUiActions.setSpacingZoomLocked(setAlignUi, alignSession.spacingZoomLocked);
       studioAlignUiActions.setPatternZoomLocked(setAlignUi, alignSession.patternZoomLocked);
     }
+    // The mock opens its fixture once the server answers. A saved session would
+    // flash a different workspace first.
+    if (mockAssayPath) return;
     if (alignSession?.workspacePath) {
       workspace.setWorkspacePath(alignSession.workspacePath);
       void attachPendingRuns(alignSession.workspacePath);
@@ -94,10 +99,66 @@ export function StudioWorkSessionGate(props: { children?: JSX.Element }) {
       }}
     >
       <StudioSessionContext.Provider value={{ openAssay }}>
+        {mockAssayPath ? (
+          <StudioMockAssayOpener path={mockAssayPath} openAssay={openAssay} />
+        ) : null}
         {props.children}
       </StudioSessionContext.Provider>
     </WorkSessionAppGate>
   );
+}
+
+/** Cold `cargo watch` can take minutes. Once the server is up, a bad file should stop. */
+const MOCK_OPEN_RETRY_MS = 1_000;
+const MOCK_OPEN_COLD_ATTEMPTS = 180;
+const MOCK_OPEN_READY_ATTEMPTS = 5;
+
+/** Vite opens `/`, which redirects to Assay. Leave a later page alone on refresh. */
+function studioMockStartsOnAssay(): boolean {
+  const hash = window.location.hash;
+  return hash === "" || hash === "#" || hash === "#/" || hash === "#/assay";
+}
+
+/** Opens the fixture once the server can read it, then shows Metadata. */
+function StudioMockAssayOpener(props: {
+  path: string;
+  openAssay: (assayJsonPath: string) => Promise<StudioAssayJson>;
+}) {
+  const server = useShellServer();
+  onMount(() => {
+    let cancelled = false;
+    let coldAttempts = 0;
+    let readyAttempts = 0;
+    let timer: ReturnType<typeof globalThis.setTimeout> | undefined;
+
+    const open = () => {
+      if (cancelled) return;
+      void props.openAssay(props.path).then(
+        () => {
+          if (cancelled || !studioMockStartsOnAssay()) return;
+          window.location.hash = "#/metadata";
+        },
+        () => {
+          if (cancelled) return;
+          if (server.state === "open") {
+            readyAttempts += 1;
+            if (readyAttempts >= MOCK_OPEN_READY_ATTEMPTS) return;
+          } else {
+            coldAttempts += 1;
+            if (coldAttempts >= MOCK_OPEN_COLD_ATTEMPTS) return;
+          }
+          timer = globalThis.setTimeout(open, MOCK_OPEN_RETRY_MS);
+        },
+      );
+    };
+
+    open();
+    onCleanup(() => {
+      cancelled = true;
+      if (timer !== undefined) globalThis.clearTimeout(timer);
+    });
+  });
+  return null;
 }
 
 async function restoreStudioSession(

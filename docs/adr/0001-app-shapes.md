@@ -16,7 +16,8 @@ verbatim into SolidJS rather than asking whether it was still needed. The result
 Annotator (and, at the time, their demo packages) shipping byte-identical generated route trees for
 exactly one route each, plus a `NotFound` handler whose only destination was the app's only route —
 a 404 page cleaning up after the router that was the sole reason 404s existed. The demo packages,
-the landing site, and the instrument mock have since been removed.
+the landing site, and the instrument mock have since been removed. The Studio browser mock
+(ADR-0010) is not those packages: it is the real Studio web app opened on a fixture workspace.
 
 **Do not re-add a router to Aligner or Annotator to make the apps consistent with Studio.** Add one
 only when an app gains a real second destination.

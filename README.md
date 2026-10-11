@@ -70,6 +70,15 @@ pnpm run dev:studio
 
 Studio listens on port 18767, Aligner on 18765, and Annotator on 18766. Each app's Rust server listens on that port plus 1000.
 
+Inspect Studio with a fixture workspace already open:
+
+```sh
+pnpm run dev:studio-mock
+pnpm run dev:studio-mock -- --assay killing-death-reporter --stage cropped
+```
+
+That is the real Studio web UI on port 18777, with its server on 19777. It writes `.mock/studio` and opens that assay on Metadata once the server can read it. `dev:studio` does not load this fixture. See `docs/adr/0010-studio-browser-mock.md`.
+
 ```sh
 pnpm run dev:aligner
 pnpm run dev:annotator

@@ -11,7 +11,7 @@
     }
   },
   "scripts": {
-    "fixture": "node --experimental-strip-types src/cli.ts",
+    "fixture": "node --experimental-strip-types ../../scripts/run-jiti.ts src/cli.ts",
     "test": "vp test run",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },

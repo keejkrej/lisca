@@ -38,6 +38,7 @@ cd python && uv sync --extra crop
 
 ```sh
 pnpm run dev:studio          # web + server, port 18767
+pnpm run dev:studio-mock     # same Studio UI on 18777, fixture workspace already open
 pnpm run dev:aligner         # port 18765
 pnpm run dev:annotator       # port 18766
 pnpm run dev:studio-desktop
@@ -45,7 +46,7 @@ pnpm run dist:studio         # Studio installer
 pnpm run fixture:workspace -- --assay transfection --stage cropped --out ./tf-analyze
 ```
 
-`pnpm run dist:aligner` and `pnpm run dist:annotator` still build those apps. An unnamed desktop package is Studio. Each dev UI proxies its Rust server at the public port plus 1000 (`scripts/lisca-dev-ports.cjs`).
+`pnpm run dev:studio-mock` materializes `@lisca/fixtures` into `.mock/studio` and opens that assay on Metadata in the real Studio web app (ADR-0010). It is not a demo package. `dev:studio` does not load the fixture. `pnpm run dist:aligner` and `pnpm run dist:annotator` still build those apps. An unnamed desktop package is Studio. Each dev UI proxies its Rust server at the public port plus 1000 (`scripts/lisca-dev-ports.cjs`). The mock UI uses 18777 and 19777.
 
 ```sh
 cargo run -p lisca --bin lisca-analyze -- pipeline WORKSPACE
