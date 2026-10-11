@@ -11,7 +11,7 @@ const files = [
   { name: "Lisca.Studio_aarch64.app.tar.gz", signature: "mac-sig\n" },
   { name: "Lisca.Studio_0.4.10_aarch64.dmg", signature: "dmg-sig" },
   { name: "Lisca.Studio_0.4.10_x64-setup.exe", signature: "win-sig" },
-  { name: "Lisca.Studio_0.4.10_amd64.deb", signature: "linux-sig" },
+  { name: "Lisca.Studio_0.4.10_amd64.AppImage", signature: "linux-sig" },
 ];
 
 describe("updater manifest", () => {
@@ -37,7 +37,13 @@ describe("updater manifest", () => {
       url: "https://github.com/keejkrej/lisca/releases/download/studio-v0.4.10/Lisca.Studio_aarch64.app.tar.gz",
     });
     expect(manifest.platforms["windows-x86_64"]?.url).toContain("_x64-setup.exe");
-    expect(manifest.platforms["linux-x86_64"]?.signature).toBe("linux-sig");
+    expect(manifest.platforms["linux-x86_64"]).toEqual({
+      signature: "linux-sig",
+      url: "https://github.com/keejkrej/lisca/releases/download/studio-v0.4.10/Lisca.Studio_0.4.10_amd64.AppImage",
+    });
+    expect(updaterPlatform("Lisca Studio_0.4.10_amd64.AppImage")).toBe("linux-x86_64");
+    expect(updaterPlatform("Lisca.Studio_0.4.10_amd64.deb")).toBeNull();
+    expect(updaterPlatform("Lisca.Studio_0.4.10_amd64.AppImage.sig")).toBeNull();
     expect(Object.keys(manifest.platforms)).toHaveLength(3);
   });
 
@@ -77,7 +83,7 @@ describe("updater manifest", () => {
     expect(tauriUpdaterBuildConfig(true)).toEqual({
       bundle: {
         createUpdaterArtifacts: true,
-        targets: ["app", "dmg", "nsis", "deb"],
+        targets: ["app", "dmg", "nsis", "appimage"],
       },
     });
     expect(tauriUpdaterBuildConfig(false)).toEqual({

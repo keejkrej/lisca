@@ -10,6 +10,24 @@ Three apps share that workspace:
 
 Studio includes the Aligner and Annotator flows. GitHub Releases publish one desktop app per tag (`studio-v*`, `aligner-v*`, or `annotator-v*`). Notebook zips use `notebooks-v*`.
 
+## Desktop app
+
+Studio is the app to install. Linux is an AppImage in your home directory, so a later release can replace that file. macOS copies the app into `~/Applications`. Windows runs the installer for the current user.
+
+macOS and Linux:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/keejkrej/lisca/main/scripts/get-studio.sh | bash
+```
+
+Windows (PowerShell):
+
+```powershell
+irm https://raw.githubusercontent.com/keejkrej/lisca/main/scripts/get-studio.ps1 | iex
+```
+
+Add `aligner` or `annotator` to install those apps instead. macOS and Linux: `bash -s -- aligner`. Windows: `$env:LISCA_APP = "aligner"; irm https://raw.githubusercontent.com/keejkrej/lisca/main/scripts/get-studio.ps1 | iex`.
+
 ## Repository
 
 pnpm, Vite+, and Cargo monorepo.

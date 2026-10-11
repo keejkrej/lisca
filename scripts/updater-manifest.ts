@@ -45,7 +45,7 @@ export function tauriUpdaterBuildConfig(releaseArtifacts: boolean): Record<strin
     return {
       bundle: {
         createUpdaterArtifacts: true,
-        targets: ["app", "dmg", "nsis", "deb"],
+        targets: ["app", "dmg", "nsis", "appimage"],
       },
     };
   }
@@ -53,11 +53,12 @@ export function tauriUpdaterBuildConfig(releaseArtifacts: boolean): Record<strin
 }
 
 export function updaterPlatform(name: string): string | null {
-  const os = name.endsWith(".app.tar.gz")
+  const lower = name.toLowerCase();
+  const os = lower.endsWith(".app.tar.gz")
     ? "darwin"
-    : name.endsWith(".exe")
+    : lower.endsWith(".exe")
       ? "windows"
-      : name.endsWith(".deb")
+      : lower.endsWith(".appimage")
         ? "linux"
         : null;
   if (!os) return null;
