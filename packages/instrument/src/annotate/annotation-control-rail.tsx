@@ -55,9 +55,6 @@ export type AnnotationControlRailProps = {
   activeLabelId: string | null;
   annotation: AnnotationControlHandle;
   canEdit: boolean;
-  scanLoading?: boolean;
-  frameLoading?: boolean;
-  annotationLoading?: boolean;
   scanError?: string | null;
   frameError?: string | null;
   annotationError?: string | null;
@@ -75,7 +72,6 @@ export type AnnotationControlRailProps = {
 };
 
 export function AnnotationControlRail(props: AnnotationControlRailProps) {
-  const loading = () => props.scanLoading || props.frameLoading || props.annotationLoading;
   const isRail = () => props.sectionAppearance === "rail";
 
   const chooseLabel = (label: AnnotationLabel) => {
@@ -158,9 +154,6 @@ export function AnnotationControlRail(props: AnnotationControlRailProps) {
       >
         Edit labels
       </Button>
-      <Show when={loading()}>
-        <p class="col-span-full text-xs text-muted-foreground">Loading…</p>
-      </Show>
     </>
   );
 

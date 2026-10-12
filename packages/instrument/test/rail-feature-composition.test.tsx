@@ -101,6 +101,7 @@ describe("stage rail feature composition", () => {
     expect(labels.querySelector('[data-rail-layout="stack"]')).not.toBeNull();
     expect(labels.querySelector('[data-rail-layout="action-pair"]')).toBeNull();
     expect(within(labels).getByRole("button", { name: "Edit labels" })).toBeTruthy();
+    expect(within(labels).queryByText("Loading…")).toBeNull();
 
     const edit = sectionFor("Edit");
     expect(
