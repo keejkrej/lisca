@@ -103,7 +103,39 @@ describe("HostFilePickerDialog hidden items and favorites", () => {
     const recent = screen.getByRole("list", { name: "Recent" });
     expect(recent.querySelectorAll("li")).toHaveLength(5);
     expect(screen.queryByText("Old 4")).toBeNull();
+    expect(screen.queryByRole("button", { name: /from recent/ })).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "TF84" }));
     expect(onPickRecent).toHaveBeenCalledWith("/home/user/data/TF84/assay.json");
+  });
+
+  it("removes a recent chip without opening it", async () => {
+    const onPickRecent = vi.fn();
+    const onRemoveRecent = vi.fn();
+    render(() => (
+      <HostFilePickerDialog
+        open
+        hostPort={makeHostPort()}
+        mode="assay_json_file"
+        recentItems={[
+          { path: "/home/user/data/TF84/assay.json", label: "TF84" },
+          { path: "/home/user/data/TF85/assay.json" },
+        ]}
+        title="Open assay"
+        onOpenChange={vi.fn()}
+        onPickDirectory={vi.fn()}
+        onPickFile={vi.fn()}
+        onPickRecent={onPickRecent}
+        onRemoveRecent={onRemoveRecent}
+      />
+    ));
+    await screen.findByText("data");
+
+    fireEvent.click(screen.getByRole("button", { name: "Remove TF84 from recent" }));
+    expect(onRemoveRecent).toHaveBeenCalledWith("/home/user/data/TF84/assay.json");
+    expect(onPickRecent).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole("button", { name: "Remove TF85 from recent" }));
+    expect(onRemoveRecent).toHaveBeenCalledWith("/home/user/data/TF85/assay.json");
+    expect(onPickRecent).not.toHaveBeenCalled();
   });
 });

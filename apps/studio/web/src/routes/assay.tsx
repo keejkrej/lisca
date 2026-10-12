@@ -1,3 +1,4 @@
+import { forgetStudioAssay } from "@lisca/client/studio/wizard-memory";
 import { CanvasToastStack, HostFilePickerDialog } from "@lisca/instrument";
 import { AppShell } from "@lisca/ui/shell";
 import { createFileRoute } from "@tanstack/solid-router";
@@ -28,7 +29,11 @@ function AssayPage() {
   const [openingAssay, setOpeningAssay] = createSignal(false);
   const [assayPickerOpen, setAssayPickerOpen] = createSignal(false);
   const [openAssayError, setOpenAssayError] = createSignal<string | null>(null);
-  const assayRecent = createMemo(() => useStudioMemoryRecent("assay", assayPickerOpen()));
+  const [recentRevision, setRecentRevision] = createSignal(0);
+  const assayRecent = createMemo(() => {
+    recentRevision();
+    return useStudioMemoryRecent("assay", assayPickerOpen());
+  });
   const wizard = useAtomValue(() => studioWizardAtom);
   const setWizard = useAtomSet(() => studioWizardAtom);
   const { replaceDocument, prompts } = useReplaceDocumentGuard();
@@ -103,6 +108,10 @@ function AssayPage() {
         onPickDirectory={() => {}}
         onPickFile={(path) => replaceDocument(() => void openAssayJson(path))}
         onPickRecent={(path) => replaceDocument(() => void openAssayJson(path))}
+        onRemoveRecent={(path) => {
+          forgetStudioAssay(path);
+          setRecentRevision((revision) => revision + 1);
+        }}
       />
       {prompts()}
     </AppShell>

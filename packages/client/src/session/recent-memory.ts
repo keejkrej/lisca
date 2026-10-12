@@ -154,3 +154,14 @@ export function touchRecentMemory(appId: LiscaAppId, touch: RecentMemoryTouch): 
 
   writeStorageJson(liscaLocalStorage(), recentMemoryKey(appId), memory);
 }
+
+/** Drop one assay from the recent list. Does not delete the assay file. */
+export function forgetRecentAssay(appId: LiscaAppId, path: string): void {
+  const trimmed = path.trim();
+  if (!trimmed) return;
+  const memory = readRecentMemory(appId);
+  const assays = memory.assays.filter((entry) => entry.path !== trimmed);
+  if (assays.length === memory.assays.length) return;
+  memory.assays = assays;
+  writeStorageJson(liscaLocalStorage(), recentMemoryKey(appId), memory);
+}

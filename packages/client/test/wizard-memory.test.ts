@@ -1,7 +1,11 @@
 import { configureLiscaStorage, type LiscaStorageAdapter } from "@lisca/utils";
 import { beforeEach, describe, expect, it } from "vite-plus/test";
 
-import { readStudioWizardMemoryRecent, touchStudioWizardMemory } from "../src/studio/wizard-memory";
+import {
+  forgetStudioAssay,
+  readStudioWizardMemoryRecent,
+  touchStudioWizardMemory,
+} from "../src/studio/wizard-memory";
 
 function createMemoryStorage(): LiscaStorageAdapter {
   const items = new Map<string, string>();
@@ -72,6 +76,44 @@ describe("studio wizard memory", () => {
       {
         path: "/data/run/assay.json",
         assayLabel: "Updated",
+        workspacePath: undefined,
+      },
+    ]);
+  });
+
+  it("forgets one recent assay and leaves workspace memory", () => {
+    touchStudioWizardMemory({
+      kind: "assay",
+      path: "/data/a/assay.json",
+      assayLabel: "A",
+      workspacePath: "/data/a",
+    });
+    touchStudioWizardMemory({
+      kind: "assay",
+      path: "/data/b/assay.json",
+      assayLabel: "B",
+    });
+    touchStudioWizardMemory({ kind: "workspace", path: "/data/a", label: "A" });
+
+    forgetStudioAssay("  /data/a/assay.json  ");
+
+    expect(readStudioWizardMemoryRecent("assay").assays).toEqual([
+      {
+        path: "/data/b/assay.json",
+        assayLabel: "B",
+        workspacePath: undefined,
+      },
+    ]);
+    expect(readStudioWizardMemoryRecent("workspace").workspaces).toEqual([
+      { path: "/data/a", label: "A" },
+    ]);
+
+    forgetStudioAssay("/data/missing/assay.json");
+    forgetStudioAssay("  ");
+    expect(readStudioWizardMemoryRecent("assay").assays).toEqual([
+      {
+        path: "/data/b/assay.json",
+        assayLabel: "B",
         workspacePath: undefined,
       },
     ]);
