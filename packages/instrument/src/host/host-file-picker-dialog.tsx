@@ -40,6 +40,8 @@ export type HostFilePickerDialogProps = {
   description?: string;
   recentItems?: readonly HostFilePickerRecentItem[];
   onPickRecent?: (path: string) => void;
+  /** Drops a recent chip. The caller removes it from recent memory. */
+  onRemoveRecent?: (path: string) => void;
   onPickDirectory: (path: string) => void;
   onPickFile: (path: string) => void;
 };
@@ -229,19 +231,36 @@ export function HostFilePickerDialog(props: HostFilePickerDialogProps) {
                 <Show when={recent().length > 0}>
                   <ul aria-label="Recent" class="contents">
                     <For each={recent()}>
-                      {(item) => (
-                        <li class="flex max-w-56 items-center rounded-md border border-border text-muted-foreground text-sm transition-colors hover:text-foreground">
-                          <button
-                            class="flex min-w-0 items-center gap-1.5 px-2 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                            title={`Open ${item.path}`}
-                            type="button"
-                            onClick={() => props.onPickRecent!(item.path)}
-                          >
-                            <IconClockCounterClockwiseRegular class="size-3.5 shrink-0" />
-                            <span class="truncate">{item.label ?? recentLabel(item.path)}</span>
-                          </button>
-                        </li>
-                      )}
+                      {(item) => {
+                        const label = item.label ?? recentLabel(item.path);
+                        return (
+                          <li class="flex max-w-56 items-center rounded-md border border-border text-muted-foreground text-sm transition-colors hover:text-foreground">
+                            <button
+                              class={cn(
+                                "flex min-w-0 items-center gap-1.5 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                                props.onRemoveRecent ? "pr-1 pl-2" : "px-2",
+                              )}
+                              title={`Open ${item.path}`}
+                              type="button"
+                              onClick={() => props.onPickRecent!(item.path)}
+                            >
+                              <IconClockCounterClockwiseRegular class="size-3.5 shrink-0" />
+                              <span class="truncate">{label}</span>
+                            </button>
+                            <Show when={props.onRemoveRecent}>
+                              <button
+                                aria-label={`Remove ${label} from recent`}
+                                class="inline-flex shrink-0 items-center py-1 pr-1.5 pl-1 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                title={item.path}
+                                type="button"
+                                onClick={() => props.onRemoveRecent!(item.path)}
+                              >
+                                <IconXRegular class="size-3" />
+                              </button>
+                            </Show>
+                          </li>
+                        );
+                      }}
                     </For>
                   </ul>
                 </Show>

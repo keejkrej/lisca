@@ -1,6 +1,7 @@
 import type { AlignerSource, MemoryKind } from "@lisca/contracts";
 
 import {
+  forgetRecentAssay,
   readRecentMemory,
   touchRecentMemory,
   type RecentMemoryTouch,
@@ -10,6 +11,10 @@ export type StudioWizardMemoryTouch = RecentMemoryTouch;
 
 export function touchStudioWizardMemory(touch: StudioWizardMemoryTouch): void {
   touchRecentMemory("studio", touch);
+}
+
+export function forgetStudioAssay(path: string): void {
+  forgetRecentAssay("studio", path);
 }
 
 export function readStudioWizardMemoryRecent(kind: MemoryKind): {
