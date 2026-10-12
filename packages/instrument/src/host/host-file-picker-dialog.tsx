@@ -171,6 +171,31 @@ export function HostFilePickerDialog(props: HostFilePickerDialogProps) {
               >
                 <IconHouseRegular class="size-4" />
               </Button>
+              <Button
+                aria-label="Create new folder"
+                disabled={picker.loading() || !picker.list()?.path}
+                size="icon-sm"
+                type="button"
+                variant="ghost"
+                onClick={openNewFolder}
+              >
+                <IconPlusRegular class="size-4" />
+              </Button>
+              <Show when={nativeLabel()}>
+                {(label) => (
+                  <Button
+                    aria-label={label()}
+                    disabled={picker.pickingNative()}
+                    size="icon-sm"
+                    title={label()}
+                    type="button"
+                    variant="ghost"
+                    onClick={() => void picker.openNative()}
+                  >
+                    <IconFolderOpenRegular class="size-4" />
+                  </Button>
+                )}
+              </Show>
               <Show when={picker.drives().length > 0}>
                 <Select<string>
                   class="w-auto"
@@ -198,16 +223,6 @@ export function HostFilePickerDialog(props: HostFilePickerDialogProps) {
                   <SelectContent class="min-w-24" />
                 </Select>
               </Show>
-              <Button
-                aria-label="Create new folder"
-                disabled={picker.loading() || !picker.list()?.path}
-                size="icon-sm"
-                type="button"
-                variant="ghost"
-                onClick={openNewFolder}
-              >
-                <IconPlusRegular class="size-4" />
-              </Button>
               <Button
                 aria-label={picker.showHidden() ? "Hide hidden items" : "Show hidden items"}
                 aria-pressed={picker.showHidden() ? "true" : "false"}
@@ -352,20 +367,6 @@ export function HostFilePickerDialog(props: HostFilePickerDialogProps) {
           </div>
 
           <div class="flex items-center gap-2 border-t border-border px-5 py-4">
-            <Show when={nativeLabel()}>
-              {(label) => (
-                <Button
-                  class="mr-auto"
-                  disabled={picker.pickingNative()}
-                  type="button"
-                  variant="ghost"
-                  onClick={() => void picker.openNative()}
-                >
-                  <IconFolderOpenRegular class="size-4" />
-                  {label()}
-                </Button>
-              )}
-            </Show>
             <Button
               class="ml-auto"
               type="button"
