@@ -131,7 +131,7 @@ describe("HostFilePickerDialog Windows drives and native opener", () => {
     expect(await screen.findByText("experiments")).not.toBeNull();
 
     const button = screen.getByRole("button", { name: "Open in Finder" });
-    expect(button.textContent).not.toContain("…");
+    expect(button.textContent?.trim()).toBe("");
     fireEvent.click(button);
     await waitFor(() => {
       expect(openNativePicker).toHaveBeenCalled();
@@ -162,5 +162,27 @@ describe("HostFilePickerDialog Windows drives and native opener", () => {
     expect(await screen.findByText("experiments")).not.toBeNull();
     expect(screen.queryByRole("button", { name: "Open in Explorer" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Open in Finder" })).toBeNull();
+    expect(screen.queryByText("Open in Explorer")).toBeNull();
+    expectFollows("Create new folder", "Drive C:");
+  });
+
+  it("keeps up, home, and new folder ahead of the native icon and drive menu", async () => {
+    Object.defineProperty(navigator, "platform", { configurable: true, value: "Win32" });
+    renderPicker({ openNativePicker: vi.fn(async () => null) });
+    expect(await screen.findByText("experiments")).not.toBeNull();
+
+    const opener = screen.getByRole("button", { name: "Open in Explorer" });
+    expect(opener.textContent?.trim()).toBe("");
+    expect(screen.queryByText("Open in Explorer")).toBeNull();
+    expectFollows("Go up one directory", "Go to home directory");
+    expectFollows("Go to home directory", "Create new folder");
+    expectFollows("Create new folder", "Open in Explorer");
+    expectFollows("Open in Explorer", "Drive C:");
   });
 });
+
+function expectFollows(earlierName: string, laterName: string) {
+  const earlier = screen.getByRole("button", { name: earlierName });
+  const later = screen.getByRole("button", { name: laterName });
+  expect(earlier.compareDocumentPosition(later) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
+}
