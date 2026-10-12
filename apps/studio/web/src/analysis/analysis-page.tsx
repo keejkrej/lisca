@@ -1,8 +1,7 @@
-import { Button } from "@lisca/ui/primitives";
 import { CanvasToastStack, useCanvasTransientStatus } from "@lisca/instrument";
 import { AppShell } from "@lisca/ui/shell";
 import { AnalysisPlotGallery } from "./analysis-plot-gallery";
-import { createMemo, createResource, createSignal } from "solid-js";
+import { createMemo, createResource, createSignal, Show } from "solid-js";
 import {
   liscaDesktopBridge,
   loadLiscaAssetBytes,
@@ -10,6 +9,11 @@ import {
   saveLiscaFile,
 } from "@lisca/client/desktop";
 import { toErrorMessage } from "../api/studio-port";
+import {
+  analysisStagePlaceholder,
+  StudioStagePlaceholderView,
+  studioStagePlaceholderRoute,
+} from "../components/studio-stage-placeholder";
 import { StudioLeft } from "../components/studio-left";
 import { StudioRightPanel } from "../components/studio-right-panel";
 import { StudioAnalysisExpert } from "../components/studio-analysis-expert";
@@ -142,6 +146,15 @@ export default function AnalysisPage() {
       },
     ];
   });
+  const resolvingPlotUrls = () => isDesktop && desktopPlots.loading && plotsWithUrls().length > 0;
+  const stagePlaceholder = createMemo(() => {
+    if (resolvingPlotUrls()) return null;
+    return analysisStagePlaceholder({
+      workspacePath: analysisPage.workspacePath,
+      hasAnyPlots: hasAnyPlots(),
+      sectionPlotCount: sectionPlots().length,
+    });
+  });
   const defaultInstruction = () => resultSectionInstruction(activeSection(), assayKind());
   const sectionToolActions = createMemo(() =>
     visibleSections().map((section) => ({
@@ -164,43 +177,34 @@ export default function AnalysisPage() {
           </AppShell.TopBar>
           <AppShell.Main>
             <CanvasToastStack messages={saveToast()} />
-            <AppShell.MainScroll contentClass="relative max-w-[1200px] px-6 py-8">
-              <div class="relative flex min-h-full w-full flex-1 flex-col">
-                <AnalysisPlotGallery
-                  emptyTitle={
-                    !analysisPage.workspacePath?.trim()
-                      ? "No workspace yet"
-                      : hasAnyPlots()
-                        ? "Nothing in this view"
-                        : "No plots yet"
-                  }
-                  emptyMessage={
-                    !analysisPage.workspacePath?.trim()
-                      ? "Choose a workspace on the Metadata step, then run analysis from Annotate. Plots show up here as images."
-                      : hasAnyPlots()
-                        ? "Switch views in the dock, or run analysis again."
-                        : "On Annotate, press Analyze. Finished plots appear here as images."
-                  }
-                  emptyAction={
-                    hasAnyPlots() ? undefined : (
-                      <Button
-                        size="sm"
-                        type="button"
-                        variant="outline"
-                        onClick={() =>
-                          navigateTo(analysisPage.workspacePath?.trim() ? "/annotate" : "/metadata")
-                        }
-                      >
-                        {analysisPage.workspacePath?.trim() ? "Go to Annotate" : "Go to Metadata"}
-                      </Button>
-                    )
-                  }
-                  pageTitle={resultSectionLabel(activeSection())}
-                  plots={sectionPlots()}
-                  section={activeSection()}
+            <Show
+              when={stagePlaceholder()}
+              fallback={
+                <Show when={sectionPlots().length > 0}>
+                  <AppShell.MainScroll contentClass="relative max-w-[1200px] px-6 py-8">
+                    <div class="relative flex min-h-full w-full flex-1 flex-col">
+                      <AnalysisPlotGallery
+                        pageTitle={resultSectionLabel(activeSection())}
+                        plots={sectionPlots()}
+                        section={activeSection()}
+                      />
+                    </div>
+                  </AppShell.MainScroll>
+                </Show>
+              }
+            >
+              {(placeholder) => (
+                <StudioStagePlaceholderView
+                  actionLabel={placeholder().actionLabel}
+                  description={placeholder().description}
+                  title={placeholder().title}
+                  onAction={() => {
+                    const action = placeholder().action;
+                    if (action) navigateTo(studioStagePlaceholderRoute(action));
+                  }}
                 />
-              </div>
-            </AppShell.MainScroll>
+              )}
+            </Show>
           </AppShell.Main>
         </AppShell.MainColumn>
         <AppShell.Right widthClass="w-rail">
