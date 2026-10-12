@@ -1,3 +1,5 @@
+import type { ResultPlotSection } from "../../shared/sections";
+
 /** Analysis `PosN/chC.csv`. Optional `channel` when a Pos has multiple signal CSVs. */
 export const TRANSFECTION_TRACE_CSV_COLUMNS = [
   "roi",
@@ -59,7 +61,7 @@ export type TransfectionPlotScope = "workspace" | "sample";
 export type TransfectionPlotSpec = {
   fileName: string;
   title: string;
-  section: "traces" | "parameters";
+  section: ResultPlotSection;
   /** Workspace boxplots live at `results/`; sample packs at `results/<sample>/`. */
   scope: TransfectionPlotScope;
 };
@@ -76,27 +78,27 @@ export const TRANSFECTION_PLOTS: readonly TransfectionPlotSpec[] = [
   {
     fileName: "traces_summary.png",
     title: "Intensity summary",
-    section: "traces",
+    section: "traces-summary",
     scope: "sample",
   },
   {
     fileName: "traces_summary_shared_y.png",
     title: "Intensity summary (shared y)",
-    section: "traces",
+    section: "traces-summary",
     scope: "sample",
   },
-  { fileName: "area.png", title: "Mask area", section: "traces", scope: "sample" },
+  { fileName: "area.png", title: "Mask area", section: "area", scope: "sample" },
   {
     fileName: "area_shared_y.png",
     title: "Mask area (shared y)",
-    section: "traces",
+    section: "area",
     scope: "sample",
   },
-  { fileName: "traces_fit.png", title: "Fitted traces", section: "traces", scope: "sample" },
+  { fileName: "traces_fit.png", title: "Fitted traces", section: "traces-fit", scope: "sample" },
   {
     fileName: "traces_fit_shared_y.png",
     title: "Fitted traces (shared y)",
-    section: "traces",
+    section: "traces-fit",
     scope: "sample",
   },
   {
@@ -105,7 +107,7 @@ export const TRANSFECTION_PLOTS: readonly TransfectionPlotSpec[] = [
     section: "parameters",
     scope: "workspace",
   },
-  { fileName: "auc.png", title: "AUC", section: "parameters", scope: "workspace" },
+  { fileName: "auc.png", title: "AUC", section: "auc", scope: "workspace" },
   {
     fileName: "expression_rate.png",
     title: "Expression rate m0 k_TL",
@@ -128,13 +130,13 @@ export const TRANSFECTION_PLOTS: readonly TransfectionPlotSpec[] = [
   {
     fileName: "expression_rate_vs_onset_time.png",
     title: "Expression rate m0 k_TL vs onset time t0",
-    section: "parameters",
+    section: "parameters-comparison",
     scope: "sample",
   },
   {
     fileName: "expression_rate_vs_mrna_lifetime.png",
     title: "Expression rate m0 k_TL vs mRNA lifetime τ_mRNA",
-    section: "parameters",
+    section: "parameters-comparison",
     scope: "sample",
   },
 ] as const;

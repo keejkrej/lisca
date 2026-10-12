@@ -4,7 +4,12 @@ import { jsPDF } from "jspdf";
 export const RESULT_PDF_FILE_NAME = "results.pdf";
 
 export type ResultPdfPlot = { label: string; bytes: Uint8Array };
-export type ResultPdfGroup = { title: string; plots: ResultPdfPlot[] };
+export type ResultPdfGroup = {
+  title: string;
+  plots: ResultPdfPlot[];
+  /** Column count for this page. Omitted groups use the per-sample cap of two. */
+  columns?: number;
+};
 export type ResultPdfSection = { title: string; groups: ResultPdfGroup[] };
 
 const MARGIN = 32;
@@ -21,14 +26,19 @@ export function pdfSafeText(text: string): string {
 
 /**
  * Lay plot PNGs straight into a landscape A4 PDF: one page per plot group, headed
- * "Section · Group", with the plots in a ⌈√n⌉-column grid scaled to fit the page.
+ * "Section · Group". Per-sample groups use two columns. Groups that already
+ * contain every sample use one. Pass `columns` to override.
  * Yields between pages so the UI can repaint while large exports encode.
  */
 export async function buildResultPdf(sections: ResultPdfSection[]): Promise<Uint8Array> {
   const pages = sections.flatMap((section) =>
     section.groups
       .filter((group) => group.plots.length > 0)
-      .map((group) => ({ title: `${section.title} · ${group.title}`, plots: group.plots })),
+      .map((group) => ({
+        title: `${section.title} · ${group.title}`,
+        plots: group.plots,
+        columns: group.columns,
+      })),
   );
   if (pages.length === 0) {
     throw new Error("No plots to export");
@@ -52,7 +62,7 @@ export async function buildResultPdf(sections: ResultPdfSection[]): Promise<Uint
     pdf.setFontSize(TITLE_SIZE);
     pdf.text(pdfSafeText(page.title), MARGIN, MARGIN + TITLE_SIZE);
 
-    const columns = resultGridColumns(page.plots.length);
+    const columns = page.columns ?? resultGridColumns(page.plots.length);
     const rows = Math.ceil(page.plots.length / columns);
     const cellWidth = (gridWidth - GAP * (columns - 1)) / columns;
     const cellHeight = (gridHeight - GAP * (rows - 1)) / rows;

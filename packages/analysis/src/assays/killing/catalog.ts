@@ -1,7 +1,9 @@
+import type { ResultPlotSection } from "../../shared/sections";
+
 export type KillingPlotSpec = {
   fileName: string;
   title: string;
-  section: "traces" | "parameters";
+  section: ResultPlotSection;
 };
 
 /** PNG artifacts written by the death-reporter plot stage, in display order. */
@@ -12,11 +14,11 @@ export const KILLING_PLOTS: readonly KillingPlotSpec[] = [
     title: "Fluorescence traces (shared y)",
     section: "traces",
   },
-  { fileName: "traces_summary.png", title: "Mean fluorescence", section: "parameters" },
+  { fileName: "traces_summary.png", title: "Mean fluorescence", section: "traces-summary" },
   {
     fileName: "traces_summary_shared_y.png",
     title: "Mean fluorescence (shared y)",
-    section: "parameters",
+    section: "traces-summary",
   },
 ] as const;
 
@@ -28,10 +30,14 @@ export const ENGAGEMENT_PLOTS: readonly KillingPlotSpec[] = [
     title: "Engager traces (shared y)",
     section: "traces",
   },
-  { fileName: "engagement_traces_summary.png", title: "Mean engagers", section: "parameters" },
+  {
+    fileName: "engagement_traces_summary.png",
+    title: "Mean engagers",
+    section: "traces-summary",
+  },
   {
     fileName: "engagement_traces_summary_shared_y.png",
     title: "Mean engagers (shared y)",
-    section: "parameters",
+    section: "traces-summary",
   },
 ] as const;

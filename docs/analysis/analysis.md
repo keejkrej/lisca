@@ -21,8 +21,11 @@ boxplots and `results/<sample>/*.png` packs) and serves them at `GET /fs/file?pa
 Per-sample titles include the sample folder (for example
 `Intensity traces (A431_aiLNP)`).
 
-Sections stay assay-aware: Traces / Parameters (transfection) vs Traces /
-Compare (killing). Compare is the mean fluorescence for each sample.
+Views follow the assay. Every assay has Traces (each cell, plus a shared-y
+companion) and Traces summary (mean, median, and interquartile range, plus
+shared y). Killing stops there. Transfection also has Mask area, Traces fit,
+AUC, Parameters, and Parameters comparison. Per-sample plots use two columns.
+Plots that already contain every sample use one column.
 
 ## Workspace fixtures (e2e / agents)
 
@@ -108,8 +111,9 @@ assay.json → analysis/Pos{n}/ch{m}.csv → results/<sample>/traces.xlsx + one 
 Studio steps: `analysis/killing/traces/Pos{n}` (one per Position), then
 `analysis/killing/plot-traces`, then finalize. Each PNG is one sample.
 `traces.png` is every cell. `traces_summary.png` is the mean, median, and
-interquartile range. `_shared_y` uses one scale across samples. Studio places
-the same-named files next to each other. The Excel file is the table to replot.
+interquartile range. `_shared_y` uses one scale across samples. Studio shows
+the trace pair on Traces and the summary pair on Traces summary, two samples
+per row. The Excel file is the table to replot.
 
 ### Killing outputs
 

@@ -21,8 +21,10 @@ import {
   filterResultPlotsBySection,
   groupResultPlots,
   inferResultAssayKind,
+  resultGridColumns,
   resultSectionInstruction,
   resultSectionLabel,
+  visibleResultPlotSections,
   withPlotSrc,
   type ResultAssayKind,
   type ResultPlotSection,
@@ -68,8 +70,7 @@ export default function AnalysisPage() {
       : defaultResultPlotSection(plots);
   });
   const sectionPlots = createMemo(() => filterResultPlotsBySection(allPlots(), activeSection()));
-  const tracePlots = createMemo(() => filterResultPlotsBySection(allPlots(), "traces"));
-  const parameterPlots = createMemo(() => filterResultPlotsBySection(allPlots(), "parameters"));
+  const visibleSections = createMemo(() => visibleResultPlotSections(allPlots()));
   const hasAnyPlots = createMemo(() => allPlots().length > 0);
   const savePdf = async () => {
     const workspacePath = analysisPage.workspacePath?.trim();
@@ -80,11 +81,12 @@ export default function AnalysisPage() {
       const { buildResultPdf, RESULT_PDF_FILE_NAME } = await import("./save-result-pdf");
       // Read PNG bytes from the backend URLs, not the desktop data URLs shown in the gallery.
       const loadSection = async (section: ResultPlotSection) => ({
-        title: resultSectionLabel(section, assayKind()),
+        title: resultSectionLabel(section),
         groups: await Promise.all(
           groupResultPlots(filterResultPlotsBySection(plotsWithUrls(), section)).map(
             async (group) => ({
               title: group.title,
+              columns: resultGridColumns(group.plots.length, group.layout),
               plots: await Promise.all(
                 group.plots.flatMap((plot, index) =>
                   plot.src
@@ -101,7 +103,10 @@ export default function AnalysisPage() {
           ),
         ),
       });
-      const sections = [await loadSection("traces"), await loadSection("parameters")];
+      const sections: Awaited<ReturnType<typeof loadSection>>[] = [];
+      for (const section of visibleResultPlotSections(plotsWithUrls())) {
+        sections.push(await loadSection(section));
+      }
       const savedTo = await saveLiscaFile({
         fileName: RESULT_PDF_FILE_NAME,
         directory: `${workspacePath.replace(/[\\/]+$/, "")}/results`,
@@ -138,22 +143,15 @@ export default function AnalysisPage() {
     ];
   });
   const defaultInstruction = () => resultSectionInstruction(activeSection(), assayKind());
-  const sectionToolActions = createMemo(() => [
-    {
-      id: "traces",
-      label: resultSectionLabel("traces", assayKind()),
-      disabled: tracePlots().length === 0 || isSaving(),
-      active: activeSection() === "traces",
-      onSelect: () => switchSection("traces"),
-    },
-    {
-      id: "parameters",
-      label: resultSectionLabel("parameters", assayKind()),
-      disabled: parameterPlots().length === 0 || isSaving(),
-      active: activeSection() === "parameters",
-      onSelect: () => switchSection("parameters"),
-    },
-  ]);
+  const sectionToolActions = createMemo(() =>
+    visibleSections().map((section) => ({
+      id: section,
+      label: resultSectionLabel(section),
+      disabled: isSaving(),
+      active: activeSection() === section,
+      onSelect: () => switchSection(section),
+    })),
+  );
   return (
     <AppShell>
       <AppShell.Body>
@@ -197,7 +195,7 @@ export default function AnalysisPage() {
                       </Button>
                     )
                   }
-                  pageTitle={resultSectionLabel(activeSection(), assayKind())}
+                  pageTitle={resultSectionLabel(activeSection())}
                   plots={sectionPlots()}
                   section={activeSection()}
                 />

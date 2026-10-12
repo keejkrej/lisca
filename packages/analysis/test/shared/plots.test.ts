@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vite-plus/test";
+import { ENGAGEMENT_PLOTS, KILLING_PLOTS } from "../../src/assays/killing/catalog";
+import { TRANSFECTION_PLOTS } from "../../src/assays/transfection/catalog";
 import {
   collectResultPlots,
   defaultResultPlotSection,
@@ -9,6 +11,7 @@ import {
   resultGridColumns,
   resultSectionLabel,
   sampleFolderFromResultPath,
+  visibleResultPlotSections,
 } from "../../src/shared/plots";
 
 describe("inferResultAssayKind", () => {
@@ -52,8 +55,8 @@ describe("inferResultAssayKind", () => {
       "engagement_traces_summary_shared_y.png",
     ]);
     expect(plots[0]?.section).toBe("traces");
-    expect(plots[1]?.section).toBe("parameters");
-    expect(resultSectionLabel("parameters", "killing-engagement")).toBe("Compare");
+    expect(plots[1]?.section).toBe("traces-summary");
+    expect(resultSectionLabel("traces-summary")).toBe("Traces summary");
   });
 
   it("does not treat analysis CSVs as transfection markers", () => {
@@ -99,7 +102,7 @@ describe("collectResultPlots", () => {
     expect(plots[0]?.title).toBe("Intensity traces (Mock_(fixture))");
     expect(plots[0]?.section).toBe("traces");
     expect(plots[1]?.title).toBe("AUC");
-    expect(plots[1]?.section).toBe("parameters");
+    expect(plots[1]?.section).toBe("auc");
   });
 
   it("lists every per-sample PNG by path instead of collapsing on fileName", () => {
@@ -154,9 +157,9 @@ describe("collectResultPlots", () => {
       "expression_rate_vs_mrna_lifetime.png",
     ]);
     expect(plots[1]?.title).toBe("Expression rate m0 k_TL vs onset time t0 (A431_aiLNP)");
-    expect(plots[1]?.section).toBe("parameters");
+    expect(plots[1]?.section).toBe("parameters-comparison");
     expect(plots[2]?.title).toBe("Expression rate m0 k_TL vs mRNA lifetime τ_mRNA (A431_aiLNP)");
-    expect(plots[2]?.section).toBe("parameters");
+    expect(plots[2]?.section).toBe("parameters-comparison");
   });
 
   it("uses killing titles for shared filenames", () => {
@@ -169,7 +172,7 @@ describe("collectResultPlots", () => {
     );
     expect(plots[0]?.title).toBe("Fluorescence traces");
     expect(plots[1]?.title).toBe("Mean fluorescence");
-    expect(plots[1]?.section).toBe("parameters");
+    expect(plots[1]?.section).toBe("traces-summary");
   });
 
   it("keeps unknown PNGs after catalog entries", () => {
@@ -186,9 +189,13 @@ describe("collectResultPlots", () => {
 });
 
 describe("result sections", () => {
-  it("labels Compare for killing sample means", () => {
-    expect(resultSectionLabel("parameters", "killing-death-reporter")).toBe("Compare");
-    expect(resultSectionLabel("parameters", "transfection")).toBe("Parameters");
+  it("labels each view", () => {
+    expect(resultSectionLabel("traces")).toBe("Traces");
+    expect(resultSectionLabel("traces-summary")).toBe("Traces summary");
+    expect(resultSectionLabel("traces-fit")).toBe("Traces fit");
+    expect(resultSectionLabel("auc")).toBe("AUC");
+    expect(resultSectionLabel("parameters")).toBe("Parameters");
+    expect(resultSectionLabel("parameters-comparison")).toBe("Parameters comparison");
   });
 
   it("defaults to Traces when traces exist", () => {
@@ -200,20 +207,105 @@ describe("result sections", () => {
       "transfection",
     );
     expect(defaultResultPlotSection(plots)).toBe("traces");
-    expect(filterResultPlotsBySection(plots, "parameters")).toHaveLength(1);
+    expect(filterResultPlotsBySection(plots, "auc")).toHaveLength(1);
+    expect(visibleResultPlotSections(plots)).toEqual(["traces", "auc"]);
+  });
+
+  it("keeps killing on traces and traces summary", () => {
+    const plots = collectResultPlots(
+      KILLING_PLOTS.map((plot) => ({
+        kind: "plot" as const,
+        fileName: plot.fileName,
+        path: `/results/Control/${plot.fileName}`,
+      })),
+      "killing-death-reporter",
+    );
+    expect(plots.map((plot) => [plot.fileName, plot.section])).toEqual([
+      ["traces.png", "traces"],
+      ["traces_shared_y.png", "traces"],
+      ["traces_summary.png", "traces-summary"],
+      ["traces_summary_shared_y.png", "traces-summary"],
+    ]);
+    expect(visibleResultPlotSections(plots)).toEqual(["traces", "traces-summary"]);
+  });
+
+  it("keeps engagement on traces and traces summary", () => {
+    const plots = collectResultPlots(
+      ENGAGEMENT_PLOTS.map((plot) => ({
+        kind: "plot" as const,
+        fileName: plot.fileName,
+        path: `/results/Sample/${plot.fileName}`,
+      })),
+      "killing-engagement",
+    );
+    expect(visibleResultPlotSections(plots)).toEqual(["traces", "traces-summary"]);
+    expect(filterResultPlotsBySection(plots, "traces").map((plot) => plot.fileName)).toEqual([
+      "engagement_traces.png",
+      "engagement_traces_shared_y.png",
+    ]);
+    expect(
+      filterResultPlotsBySection(plots, "traces-summary").map((plot) => plot.fileName),
+    ).toEqual(["engagement_traces_summary.png", "engagement_traces_summary_shared_y.png"]);
+  });
+
+  it("splits transfection into traces, summary, area, fit, auc, parameters, and comparison", () => {
+    const plots = collectResultPlots(
+      TRANSFECTION_PLOTS.map((plot) => ({
+        kind: "plot" as const,
+        fileName: plot.fileName,
+        path:
+          plot.scope === "workspace"
+            ? `/results/${plot.fileName}`
+            : `/results/Sample/${plot.fileName}`,
+      })),
+      "transfection",
+    );
+    expect(plots.map((plot) => [plot.fileName, plot.section])).toEqual([
+      ["traces.png", "traces"],
+      ["traces_shared_y.png", "traces"],
+      ["traces_summary.png", "traces-summary"],
+      ["traces_summary_shared_y.png", "traces-summary"],
+      ["area.png", "area"],
+      ["area_shared_y.png", "area"],
+      ["traces_fit.png", "traces-fit"],
+      ["traces_fit_shared_y.png", "traces-fit"],
+      ["mrna_lifetime.png", "parameters"],
+      ["auc.png", "auc"],
+      ["expression_rate.png", "parameters"],
+      ["onset_time.png", "parameters"],
+      ["baseline_intensity.png", "parameters"],
+      ["protein_lifetime.png", "parameters"],
+      ["expression_rate_vs_onset_time.png", "parameters-comparison"],
+      ["expression_rate_vs_mrna_lifetime.png", "parameters-comparison"],
+    ]);
+    expect(visibleResultPlotSections(plots)).toEqual([
+      "traces",
+      "traces-summary",
+      "area",
+      "traces-fit",
+      "auc",
+      "parameters",
+      "parameters-comparison",
+    ]);
   });
 });
 
 describe("resultSectionInstruction", () => {
   it("uses scientist-facing copy without pipeline jargon", () => {
     expect(resultSectionInstruction("traces", "transfection")).toBe(
-      "Intensity, area, and fitted traces for each sample.",
+      "Intensity for each cell. Shared y uses one scale across samples.",
+    );
+    expect(resultSectionInstruction("traces-summary", "killing-death-reporter")).toBe(
+      "Mean, median, and interquartile range of fluorescence for each sample.",
     );
     expect(resultSectionInstruction("parameters", "transfection")).toBe(
-      "Fitted parameters: mRNA lifetime τ_mRNA, AUC, expression rate m0 k_TL, and onset time t0.",
+      "Onset time t0, expression rate m0 k_TL, mRNA lifetime τ_mRNA, protein lifetime τ_EGFP, and baseline intensity for every sample.",
     );
-    expect(resultSectionInstruction("parameters", "killing-death-reporter")).toBe(
-      "Mean fluorescence for each sample.",
+    expect(resultSectionInstruction("auc", "transfection")).toBe(
+      "Area under the curve for every sample.",
+    );
+    expect(resultSectionInstruction("parameters-comparison", "transfection")).toBe(
+      "Expression rate m0 k_TL against onset time t0 and against mRNA lifetime τ_mRNA.",
     );
   });
 });
@@ -229,17 +321,49 @@ describe("groupResultPlots", () => {
     ];
     const groups = groupResultPlots(collectResultPlots(files, "transfection"));
 
-    expect(groups.map((group) => [group.title, group.labels])).toEqual([
-      ["Intensity traces", ["A", "B"]],
-      ["Mask area", ["A"]],
-      ["All samples", ["AUC", "Onset time t0"]],
+    expect(groups.map((group) => [group.title, group.labels, group.layout])).toEqual([
+      ["Intensity traces", ["A", "B"], "sample"],
+      ["Mask area", ["A"], "sample"],
+      ["All samples", ["AUC", "Onset time t0"], "workspace"],
     ]);
+  });
+
+  it("caps five per-sample traces at two columns", () => {
+    const plots = collectResultPlots(
+      ["A", "B", "C", "D", "E"].map((sample) => ({
+        kind: "plot" as const,
+        fileName: "traces.png",
+        path: `/w/results/${sample}/traces.png`,
+      })),
+      "killing-death-reporter",
+    );
+    const [group] = groupResultPlots(plots);
+    expect(group?.layout).toBe("sample");
+    expect(resultGridColumns(group?.plots.length ?? 0, group?.layout)).toBe(2);
+  });
+
+  it("stacks workspace plots that already contain every sample", () => {
+    const plots = collectResultPlots(
+      ["auc.png", "onset_time.png", "expression_rate.png"].map((fileName) => ({
+        kind: "plot" as const,
+        fileName,
+        path: `/w/results/${fileName}`,
+      })),
+      "transfection",
+    );
+    const [group] = groupResultPlots(plots);
+    expect(group?.layout).toBe("workspace");
+    expect(group?.labels).toEqual(["AUC", "Expression rate m0 k_TL", "Onset time t0"]);
+    expect(resultGridColumns(group?.plots.length ?? 0, group?.layout)).toBe(1);
   });
 });
 
 describe("resultGridColumns", () => {
-  it("uses ceil(sqrt(n)) columns", () => {
-    expect([1, 2, 4, 5, 6, 9, 10].map(resultGridColumns)).toEqual([1, 2, 2, 3, 3, 3, 4]);
+  it("uses two columns for per-sample plots and one for all-sample plots", () => {
+    expect([0, 1, 2, 5, 9].map((count) => resultGridColumns(count, "sample"))).toEqual([
+      1, 1, 2, 2, 2,
+    ]);
+    expect(resultGridColumns(5, "workspace")).toBe(1);
     expect(resultGridColumns(0)).toBe(1);
   });
 });
