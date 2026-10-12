@@ -110,7 +110,7 @@ function renderStack(pos: Accessor<number>, expert = false): void {
 afterEach(cleanup);
 
 describe("Studio Align position buttons", () => {
-  it("enables Next on the first position and shows Channel and Frame in Navigation", () => {
+  it("enables Next on the first position and shows Channel, Frame, and Contrast", () => {
     const [pos] = createSignal(61);
     renderStack(pos);
 
@@ -120,9 +120,9 @@ describe("Studio Align position buttons", () => {
     expect(screen.getByText("Channel")).toBeTruthy();
     expect(screen.getByText("Frame")).toBeTruthy();
     expect(screen.getByText("20 (3/3)")).toBeTruthy();
+    expect(screen.getByText("Contrast")).toBeTruthy();
     expect(screen.queryByText("Position")).toBeNull();
     expect(screen.queryByText("Z plane")).toBeNull();
-    expect(screen.queryByText("Contrast")).toBeNull();
     expect(screen.queryByRole("button", { name: "Drift" })).toBeNull();
   });
 
