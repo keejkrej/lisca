@@ -57,4 +57,39 @@ describe("AnalysisPlotGallery reactivity", () => {
     expect(screen.getByRole("img", { name: "Intensity traces (A431_aiLNP)" })).toBeTruthy();
     expect(screen.getByRole("img", { name: "Intensity traces (Mock_(fixture))" })).toBeTruthy();
   });
+
+  it("uses two columns for per-sample plots and one column for all-sample plots", () => {
+    const { container } = render(() => (
+      <AnalysisPlotGallery
+        plots={[
+          ...["A", "B", "C", "D", "E"].map((sample) => ({
+            fileName: "traces.png",
+            path: `/results/${sample}/traces.png`,
+            title: `Intensity traces (${sample})`,
+            src: `/results/${sample}/traces.png`,
+            section: "traces" as const,
+          })),
+          {
+            fileName: "auc.png",
+            path: "/results/auc.png",
+            title: "AUC",
+            src: "/results/auc.png",
+            section: "auc" as const,
+          },
+          {
+            fileName: "onset_time.png",
+            path: "/results/onset_time.png",
+            title: "Onset time t0",
+            src: "/results/onset_time.png",
+            section: "parameters" as const,
+          },
+        ]}
+      />
+    ));
+
+    const grids = [...container.querySelectorAll(".grid")].map(
+      (grid) => (grid as HTMLElement).style.gridTemplateColumns,
+    );
+    expect(grids).toEqual(["repeat(2, minmax(0, 1fr))", "repeat(1, minmax(0, 1fr))"]);
+  });
 });

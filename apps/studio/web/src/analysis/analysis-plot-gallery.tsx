@@ -56,7 +56,7 @@ export function AnalysisPlotGallery(props: {
                 <div
                   class="grid gap-4"
                   style={{
-                    "grid-template-columns": `repeat(${resultGridColumns(group.plots.length)}, minmax(0, 1fr))`,
+                    "grid-template-columns": `repeat(${resultGridColumns(group.plots.length, group.layout)}, minmax(0, 1fr))`,
                   }}
                 >
                   <For each={group.plots}>

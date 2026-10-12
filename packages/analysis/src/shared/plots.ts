@@ -1,7 +1,8 @@
 import { ENGAGEMENT_PLOTS, KILLING_PLOTS, type KillingPlotSpec } from "../assays/killing/catalog";
 import { TRANSFECTION_PLOTS, type TransfectionPlotSpec } from "../assays/transfection/catalog";
+import { RESULT_PLOT_SECTIONS, type ResultPlotSection } from "./sections";
 
-export type ResultPlotSection = "traces" | "parameters";
+export { RESULT_PLOT_SECTIONS, type ResultPlotSection };
 
 export type ResultAssayKind =
   | "transfection"
@@ -69,10 +70,18 @@ export function catalogForAssay(assay: ResultAssayKind): readonly ResultPlotSpec
   return TRANSFECTION_PLOTS;
 }
 
-export function resultSectionLabel(section: ResultPlotSection, assay: ResultAssayKind): string {
-  if (section === "traces") return "Traces";
-  if (assay === "killing-death-reporter" || assay === "killing-engagement") return "Compare";
-  return "Parameters";
+const SECTION_LABEL: Record<ResultPlotSection, string> = {
+  traces: "Traces",
+  "traces-summary": "Traces summary",
+  area: "Mask area",
+  "traces-fit": "Traces fit",
+  auc: "AUC",
+  parameters: "Parameters",
+  "parameters-comparison": "Parameters comparison",
+};
+
+export function resultSectionLabel(section: ResultPlotSection): string {
+  return SECTION_LABEL[section];
 }
 
 export function resultSectionInstruction(
@@ -80,27 +89,42 @@ export function resultSectionInstruction(
   assay: ResultAssayKind,
 ): string {
   if (section === "traces") {
-    if (assay === "killing-engagement") return "Engager count for each cell.";
+    if (assay === "killing-engagement") {
+      return "Engager count for each cell. Shared y uses one scale across samples.";
+    }
     return assay === "killing-death-reporter"
-      ? "Fluorescence time series for each cell."
-      : "Intensity, area, and fitted traces for each sample.";
+      ? "Fluorescence for each cell. Shared y uses one scale across samples."
+      : "Intensity for each cell. Shared y uses one scale across samples.";
   }
-  if (assay === "killing-engagement") return "Mean engager count for each sample.";
-  return assay === "killing-death-reporter"
-    ? "Mean fluorescence for each sample."
-    : "Fitted parameters: mRNA lifetime τ_mRNA, AUC, expression rate m0 k_TL, and onset time t0.";
+  if (section === "traces-summary") {
+    if (assay === "killing-engagement") {
+      return "Mean, median, and interquartile range of engager counts for each sample.";
+    }
+    return assay === "killing-death-reporter"
+      ? "Mean, median, and interquartile range of fluorescence for each sample."
+      : "Mean, median, and interquartile range of intensity for each sample.";
+  }
+  if (section === "area") {
+    return "Mask area for each cell. Shared y uses one scale across samples.";
+  }
+  if (section === "traces-fit") {
+    return "Fitted intensity for each cell. Shared y uses one scale across samples.";
+  }
+  if (section === "auc") return "Area under the curve for every sample.";
+  if (section === "parameters-comparison") {
+    return "Expression rate m0 k_TL against onset time t0 and against mRNA lifetime τ_mRNA.";
+  }
+  return "Onset time t0, expression rate m0 k_TL, mRNA lifetime τ_mRNA, protein lifetime τ_EGFP, and baseline intensity for every sample.";
 }
 
 function guessPlotSection(fileName: string): ResultPlotSection {
   const stem = fileName.replace(/\.png$/i, "");
-  if (
-    stem.startsWith("traces") ||
-    stem.startsWith("area") ||
-    stem === "traces_fit" ||
-    stem === "traces_fit_shared_y"
-  ) {
-    return "traces";
-  }
+  if (stem === "auc") return "auc";
+  if (stem.includes("_vs_")) return "parameters-comparison";
+  if (stem.includes("summary")) return "traces-summary";
+  if (stem.startsWith("area")) return "area";
+  if (stem.includes("fit")) return "traces-fit";
+  if (stem.startsWith("traces") || stem.startsWith("engagement_traces")) return "traces";
   return "parameters";
 }
 
@@ -168,12 +192,16 @@ export function collectResultPlots(
   return ordered;
 }
 
+/** Per-sample images sit side by side. Workspace plots already contain every sample. */
+export type ResultPlotLayout = "sample" | "workspace";
+
 /** Plots of one kind across samples, or all workspace-level plots, shown together as a grid. */
 export type ResultPlotGroup = {
   title: string;
   plots: ResultPlot[];
   /** Per-plot caption inside the group: the sample folder, or the plot title for workspace plots. */
   labels: string[];
+  layout: ResultPlotLayout;
 };
 
 export const WORKSPACE_PLOT_GROUP_TITLE = "All samples";
@@ -187,6 +215,7 @@ export function groupResultPlots(plots: ResultPlot[]): ResultPlotGroup[] {
   const groups = new Map<string, ResultPlotGroup>();
   for (const plot of plots) {
     const sample = sampleFolderFromResultPath(plot.path);
+    const layout: ResultPlotLayout = sample ? "sample" : "workspace";
     const key = sample ? `sample:${plot.fileName}` : "workspace";
     let group = groups.get(key);
     if (!group) {
@@ -197,7 +226,7 @@ export function groupResultPlots(plots: ResultPlot[]): ResultPlotGroup[] {
           : sample
             ? plot.title
             : WORKSPACE_PLOT_GROUP_TITLE;
-      group = { title, plots: [], labels: [] };
+      group = { title, plots: [], labels: [], layout };
       groups.set(key, group);
     }
     group.plots.push(plot);
@@ -206,9 +235,14 @@ export function groupResultPlots(plots: ResultPlot[]): ResultPlotGroup[] {
   return [...groups.values()];
 }
 
-/** Near-square grid: ⌈√n⌉ columns for n plots. */
-export function resultGridColumns(count: number): number {
-  return Math.max(1, Math.ceil(Math.sqrt(count)));
+/**
+ * Per-sample grids stop at two columns. Three columns overflow the analysis
+ * pane between the rails. Plots that already contain every sample use one
+ * column so each figure stays full width.
+ */
+export function resultGridColumns(count: number, layout: ResultPlotLayout = "sample"): number {
+  if (count <= 1 || layout === "workspace") return 1;
+  return 2;
 }
 
 export function filterResultPlotsBySection(
@@ -218,9 +252,14 @@ export function filterResultPlotsBySection(
   return plots.filter((plot) => plot.section === section);
 }
 
+/** Sections that have at least one plot, in dock order. */
+export function visibleResultPlotSections(plots: readonly ResultPlot[]): ResultPlotSection[] {
+  const present = new Set(plots.map((plot) => plot.section));
+  return RESULT_PLOT_SECTIONS.filter((section) => present.has(section));
+}
+
 export function defaultResultPlotSection(plots: ResultPlot[]): ResultPlotSection {
-  if (plots.some((plot) => plot.section === "traces")) return "traces";
-  return "parameters";
+  return visibleResultPlotSections(plots)[0] ?? "traces";
 }
 
 /** Origin-relative URL of a workspace file on the server's file endpoint. */

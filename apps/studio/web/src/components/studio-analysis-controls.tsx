@@ -44,7 +44,7 @@ export function StudioAnalysisControls(props: {
             <For each={props.toolActions}>
               {(action, index) => (
                 <Button
-                  class="w-full justify-center"
+                  class="h-auto min-h-7 w-full justify-center whitespace-normal py-1 text-center leading-4"
                   disabled={action.disabled}
                   size="sm"
                   type="button"
