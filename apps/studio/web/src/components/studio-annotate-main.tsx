@@ -12,7 +12,11 @@ import {
   useStudioAnnotateCanvas,
   useStudioAnnotateNav,
 } from "../state/studio-annotate-page-selectors";
-import { StudioEmptyState } from "./studio-empty-state";
+import {
+  annotateStagePlaceholder,
+  StudioStagePlaceholderView,
+  studioStagePlaceholderRoute,
+} from "./studio-stage-placeholder";
 
 export function StudioAnnotateMain() {
   const { navigateTo } = useStudioNavigate();
@@ -59,14 +63,17 @@ export function StudioAnnotateMain() {
         : canvas.canvasToasts,
   );
 
-  const noCroppedRois = () => {
-    const scan = state.scan;
-    return !state.scanLoading && scan != null && scan.positions.length === 0;
-  };
+  const placeholder = () =>
+    annotateStagePlaceholder({
+      workspaceMissing: state.workspaceMissing,
+      scanLoading: state.scanLoading,
+      positionCount: state.scan ? state.scan.positions.length : null,
+      scanError: state.scanError,
+    });
 
   return (
     <Show
-      when={noCroppedRois()}
+      when={placeholder()}
       fallback={
         <ViewportCard>
           <StageCanvas
@@ -95,14 +102,17 @@ export function StudioAnnotateMain() {
         </ViewportCard>
       }
     >
-      <ViewportCard contentClass="relative max-w-[480px]">
-        <StudioEmptyState
-          actionLabel="Go to Align"
-          description="Align the grid and crop ROI images first. Annotation needs those ROI stacks."
-          title="No cropped ROIs"
-          onAction={() => navigateTo("/align")}
+      {(item) => (
+        <StudioStagePlaceholderView
+          actionLabel={item().actionLabel}
+          description={item().description}
+          title={item().title}
+          onAction={() => {
+            const action = item().action;
+            if (action) navigateTo(studioStagePlaceholderRoute(action));
+          }}
         />
-      </ViewportCard>
+      )}
     </Show>
   );
 }
