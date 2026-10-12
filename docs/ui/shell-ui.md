@@ -64,8 +64,9 @@ Stage shells keep both 256px rails inline at 1024px and wider. Below 1024px—or
 
 Studio’s right rail always shows an Instruction section when the route provides copy, then either the default instrument stack or the expert stack. Expert mode is a workspace-level setting: render its compact checkmark toggle (Show/Edit family: persistent indicator, `aria-pressed`, brand fill when on) in the Studio top bar only on routes with an expert body. Place it immediately after Tasks in the left cluster; the right cluster is the server alert (only when unreachable) + theme. Never put Expert at the bottom of a scrolling rail.
 
-Studio Align: basic shows Tool, Selection, and Action; Expert adds Navigation, Contrast, Grid, and
-Geometry. Studio Annotate: Expert adds Shuffle to Action.
+Studio Align basic rail shows Navigation (Channel and Frame), Contrast, Grid, Tool, Selection, and
+Action. Expert adds Position, Z, Geometry, and Drift. Studio Annotate basic rail shows Navigation
+(Channel and Frame) and Contrast with the annotation controls. Expert adds Position, ROI, and Z.
 
 ### Action vocabulary
 

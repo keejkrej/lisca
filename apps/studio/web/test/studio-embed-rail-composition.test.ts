@@ -56,6 +56,7 @@ describe("Studio Align instrument stack composition", () => {
   it("orders Navigation and Contrast before Geometry, then Grid, Tool, Selection, and Action", () => {
     expect(navSource).toMatch(/<FrameNavigation\b/);
     expect(navSource).toMatch(/<ContrastControl\b/);
+    expect(navSource).not.toMatch(/<Show when=\{!props\.standard\}>/);
     expect(navSource.indexOf("<FrameNavigation")).toBeLessThan(
       navSource.indexOf("<ContrastControl"),
     );
@@ -100,6 +101,7 @@ describe("Studio Annotate instrument stack composition", () => {
   it("orders Navigation and Contrast, then Mode before Tool, and Action last", () => {
     expect(navSource).toMatch(/<RoiFrameNavigation\b/);
     expect(navSource).toMatch(/<ContrastControl\b/);
+    expect(navSource).not.toMatch(/<Show when=\{!props\.standard\}>/);
     expect(navSource.indexOf("<RoiFrameNavigation")).toBeLessThan(
       navSource.indexOf("<ContrastControl"),
     );

@@ -1,5 +1,4 @@
 import { ContrastControl, RoiFrameNavigation } from "@lisca/instrument";
-import { Show } from "solid-js";
 
 import { useStudioAnnotateNav } from "../state/studio-annotate-page-selectors";
 
@@ -17,19 +16,17 @@ export function StudioAnnotateNav(props: { standard?: boolean }) {
         selection={nav.selection}
         setSelection={nav.setSelection}
       />
-      <Show when={!props.standard}>
-        <ContrastControl
-          aria-label="Contrast"
-          contrast={nav.contrast}
-          disabled={!nav.frame}
-          frame={nav.frame}
-          role="region"
-          sectionAppearance="rail"
-          sectionClassName="min-h-0 shrink-0"
-          sectionContentClassName="flex min-h-0 flex-col"
-          onContrastChange={nav.setContrast}
-        />
-      </Show>
+      <ContrastControl
+        aria-label="Contrast"
+        contrast={nav.contrast}
+        disabled={!nav.frame}
+        frame={nav.frame}
+        role="region"
+        sectionAppearance="rail"
+        sectionClassName="min-h-0 shrink-0"
+        sectionContentClassName="flex min-h-0 flex-col"
+        onContrastChange={nav.setContrast}
+      />
     </>
   );
 }

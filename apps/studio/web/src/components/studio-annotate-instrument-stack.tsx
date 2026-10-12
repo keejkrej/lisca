@@ -23,8 +23,8 @@ import { StudioAnnotateNav } from "./studio-annotate-nav";
 
 /**
  * Shared Studio Annotate instrument stack for basic and expert modes.
- * Expert sections stack above the normal rail: Navigation → Contrast,
- * then Mode → Tool → Labels → Edit → Brush → Action.
+ * Rail order: Navigation → Contrast → Mode → Tool → Labels → Edit → Brush → Action.
+ * Expert adds Position, ROI, and Z to Navigation. Contrast stays in both modes.
  * Action follows the rail vocabulary: Save → Back → Next → Analyze (primary, last).
  */
 export function StudioAnnotateInstrumentStack() {

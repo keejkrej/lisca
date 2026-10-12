@@ -7,11 +7,11 @@ import {
   toAxisNavigationOptions,
 } from "@lisca/instrument";
 import { clamp } from "@lisca/utils";
-import { Show, createMemo } from "solid-js";
+import { createMemo } from "solid-js";
 
 import { useStudioAlignNav } from "../state/studio-align-page-selectors";
 
-/** Standard Navigation shows Channel and Frame. Expert adds Position, Z, and Contrast. */
+/** Standard Navigation shows Channel, Frame, and Contrast. Expert adds Position and Z. */
 export function StudioAlignNav(props: { standard?: boolean }) {
   const nav = useStudioAlignNav();
   const disabled = createMemo(() => !nav.scan);
@@ -222,19 +222,17 @@ export function StudioAlignNav(props: { standard?: boolean }) {
               }
         }
       />
-      <Show when={!props.standard}>
-        <ContrastControl
-          aria-label="Contrast"
-          contrast={nav.contrast}
-          disabled={!nav.frame}
-          frame={nav.frame}
-          role="region"
-          sectionAppearance="rail"
-          sectionClassName="min-h-0 shrink-0"
-          sectionContentClassName="flex min-h-0 flex-col"
-          onContrastChange={nav.setContrast}
-        />
-      </Show>
+      <ContrastControl
+        aria-label="Contrast"
+        contrast={nav.contrast}
+        disabled={!nav.frame}
+        frame={nav.frame}
+        role="region"
+        sectionAppearance="rail"
+        sectionClassName="min-h-0 shrink-0"
+        sectionContentClassName="flex min-h-0 flex-col"
+        onContrastChange={nav.setContrast}
+      />
     </>
   );
 }

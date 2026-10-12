@@ -28,8 +28,8 @@ const RAIL_CLASS =
 
 /**
  * Shared Studio Align instrument stack for basic and expert modes.
- * Expert sections stack above the normal rail: Navigation → Contrast → Geometry → Drift,
- * then Grid → Tool → Selection → Action.
+ * Basic rail: Navigation (Channel, Frame) → Contrast → Grid → Tool → Selection → Action.
+ * Expert adds Position and Z to Navigation, then Geometry and Drift before Grid.
  * Action follows the rail vocabulary: Save → Back → Next → Crop (primary, last).
  */
 export function StudioAlignInstrumentStack(props: { expert?: boolean }) {
