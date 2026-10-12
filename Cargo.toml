@@ -49,7 +49,7 @@ walkdir = "2.5"
 uuid = { version = "1", features = ["v4"] }
 csv = "1.3"
 rayon = "1.10"
-mplot = { git = "https://github.com/keejkrej/mplot-rs", rev = "498c50305891cadcdfc5ef7b4f1d7fa40f44e77f", version = "1.0.0" }
+mplot = { git = "https://github.com/keejkrej/mplot-rs", rev = "8a596cdcb0f45eb1d48252b5c36c5d68ebfc2842", version = "1.0.0" }
 marray = { git = "https://github.com/keejkrej/marray-rs", rev = "af67ac2d833f55e069f286022d0a0de0b9547bfb", version = "1.0.0", default-features = false }
 lisca = { path = "crates/lisca", default-features = false }
 lisca-workspace = { path = "crates/lisca-workspace" }
@@ -57,7 +57,7 @@ lisca-server = { path = "crates/lisca-server" }
 # Transfection analysis (Otsu segment, traces, AUC, fit, plots).
 # ndarray 0.16 / imageproc 0.25 in that crate; this workspace stays on 0.17 / 0.27.
 # Call workspace-path APIs so ndarray types are not unified across the boundary.
-lisca-transfection = { git = "https://github.com/keejkrej/lisca-transfection-assay", rev = "0a127d425f5e97f353b503b962ce4e7b2affa4d1" }
+lisca-transfection = { git = "https://github.com/keejkrej/lisca-transfection-assay", rev = "0d2bfe9205d735918587a83f8a538172de90dbe5" }
 # Death-reporter fluorescence, fluorescent engagement, and the killing
 # classifier (predict, clean, kill curve). Python `killing` in that repo is
 # the same definitions. Lisca does not depend on it: the package also pulls
