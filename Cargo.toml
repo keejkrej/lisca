@@ -49,7 +49,7 @@ walkdir = "2.5"
 uuid = { version = "1", features = ["v4"] }
 csv = "1.3"
 rayon = "1.10"
-mplot = { git = "https://github.com/keejkrej/mplot-rs", rev = "b5f3690f7410fa67709621b564b51272f5b3b6e9", version = "1.0.0" }
+mplot = { git = "https://github.com/keejkrej/mplot-rs", rev = "498c50305891cadcdfc5ef7b4f1d7fa40f44e77f", version = "1.0.0" }
 marray = { git = "https://github.com/keejkrej/marray-rs", rev = "af67ac2d833f55e069f286022d0a0de0b9547bfb", version = "1.0.0", default-features = false }
 lisca = { path = "crates/lisca", default-features = false }
 lisca-workspace = { path = "crates/lisca-workspace" }

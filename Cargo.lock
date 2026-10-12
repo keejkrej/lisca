@@ -2589,7 +2589,7 @@ dependencies = [
  "lisca-transfection",
  "lisca-workspace",
  "marray",
- "mplot",
+ "mplot 1.0.0 (git+https://github.com/keejkrej/mplot-rs?rev=498c50305891cadcdfc5ef7b4f1d7fa40f44e77f)",
  "nd2",
  "ndarray 0.17.2",
  "ndarray-stats 0.7.0",
@@ -2660,7 +2660,7 @@ dependencies = [
  "image 0.25.10",
  "imageproc",
  "marray",
- "mplot",
+ "mplot 1.0.0 (git+https://github.com/keejkrej/mplot-rs?rev=b5f3690f7410fa67709621b564b51272f5b3b6e9)",
  "ndarray 0.16.1",
  "ndarray-ndimage",
  "rayon",
@@ -2840,6 +2840,16 @@ checksum = "bb85c154ba489f01b25c0d36ae69a87e4a1c73a72631fc6c0eb6dde34a73e44b"
 dependencies = [
  "num-traits",
  "pxfm",
+]
+
+[[package]]
+name = "mplot"
+version = "1.0.0"
+source = "git+https://github.com/keejkrej/mplot-rs?rev=498c50305891cadcdfc5ef7b4f1d7fa40f44e77f#498c50305891cadcdfc5ef7b4f1d7fa40f44e77f"
+dependencies = [
+ "num-traits",
+ "plotters",
+ "svg2pdf",
 ]
 
 [[package]]
