@@ -2227,6 +2227,259 @@
         "error"
       ]
     },
+    "LabelFreeRuntime": {
+      "anyOf": [
+        {
+          "type": "string",
+          "enum": [
+            "embedded"
+          ]
+        }
+      ]
+    },
+    "LabelFreeBuild": {
+      "type": "string",
+      "enum": [
+        "light",
+        "label-free"
+      ]
+    },
+    "LabelFreeHealth": {
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "type": "integer",
+          "minimum": 0,
+          "format": "uint32"
+        },
+        "runtime": {
+          "$ref": "#/definitions/LabelFreeRuntime"
+        },
+        "build": {
+          "$ref": "#/definitions/LabelFreeBuild"
+        },
+        "cudaBundled": {
+          "type": "boolean"
+        },
+        "modelId": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "revision": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "dimensions": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "format": "uint32"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "device": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "batchSize": {
+          "type": "integer",
+          "minimum": 0,
+          "format": "uint32"
+        },
+        "queueDepth": {
+          "type": "integer",
+          "minimum": 0,
+          "format": "uint32"
+        },
+        "cacheCap": {
+          "type": "integer",
+          "minimum": 0,
+          "format": "uint32"
+        }
+      },
+      "required": [
+        "apiVersion",
+        "runtime",
+        "build",
+        "cudaBundled",
+        "modelId",
+        "revision",
+        "dimensions",
+        "device",
+        "batchSize",
+        "queueDepth",
+        "cacheCap"
+      ]
+    },
+    "LabelFreeLabelCount": {
+      "type": "object",
+      "properties": {
+        "label": {
+          "type": "string"
+        },
+        "count": {
+          "type": "integer",
+          "minimum": 0,
+          "format": "uint32"
+        }
+      },
+      "required": [
+        "label",
+        "count"
+      ]
+    },
+    "LabelFreeReferenceSet": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "count": {
+          "type": "integer",
+          "minimum": 0,
+          "format": "uint32"
+        },
+        "labels": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/LabelFreeLabelCount"
+          }
+        },
+        "modelId": {
+          "type": "string"
+        },
+        "revision": {
+          "type": "string"
+        },
+        "encoderId": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "count",
+        "labels",
+        "modelId",
+        "revision",
+        "encoderId"
+      ]
+    },
+    "LabelFreeReferenceSetList": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/LabelFreeReferenceSet"
+      }
+    },
+    "LabelFreeReferenceRequest": {
+      "type": "object",
+      "properties": {
+        "workspacePath": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "workspacePath",
+        "name"
+      ]
+    },
+    "LabelFreeClassifyRequest": {
+      "type": "object",
+      "properties": {
+        "workspacePath": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 0,
+          "format": "uint32"
+        }
+      },
+      "required": [
+        "workspacePath",
+        "name",
+        "limit"
+      ]
+    },
+    "LabelFreeClassification": {
+      "type": "object",
+      "properties": {
+        "pos": {
+          "type": "integer",
+          "minimum": 0,
+          "format": "uint32"
+        },
+        "roi": {
+          "type": "integer",
+          "minimum": 0,
+          "format": "uint32"
+        },
+        "channel": {
+          "type": "integer",
+          "minimum": 0,
+          "format": "uint32"
+        },
+        "time": {
+          "type": "integer",
+          "minimum": 0,
+          "format": "uint32"
+        },
+        "z": {
+          "type": "integer",
+          "minimum": 0,
+          "format": "uint32"
+        },
+        "labelId": {
+          "type": "string"
+        },
+        "support": {
+          "type": "number",
+          "format": "double"
+        }
+      },
+      "required": [
+        "pos",
+        "roi",
+        "channel",
+        "time",
+        "z",
+        "labelId",
+        "support"
+      ]
+    },
+    "LabelFreeClassificationList": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/LabelFreeClassification"
+      }
+    },
     "AssayType": {
       "type": "string",
       "enum": [
@@ -2643,6 +2896,17 @@
           "type": "string"
         }
       }
+    },
+    "LabelFreeReferenceQuery": {
+      "type": "object",
+      "properties": {
+        "workspacePath": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "workspacePath"
+      ]
     },
     "LatestAnalysisQuery": {
       "type": "object",

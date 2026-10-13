@@ -18,6 +18,7 @@ import { StudioLeft } from "../components/studio-left";
 import { StudioRightPanel } from "../components/studio-right-panel";
 import { StudioAnalysisExpert } from "../components/studio-analysis-expert";
 import { StudioAnalysisControls } from "../components/studio-analysis-controls";
+import { LabelFreeReferences } from "../components/label-free-references";
 import { StudioTopBar } from "../components/studio-top-bar";
 import {
   collectResultPlots,
@@ -212,6 +213,7 @@ export default function AnalysisPage() {
             expert={() => (
               <>
                 <StudioAnalysisExpert />
+                <LabelFreeReferences workspacePath={analysisPage.workspacePath} />
                 <StudioAnalysisControls
                   saveDisabled={!analysisPage.workspacePath?.trim() || !hasAnyPlots() || isSaving()}
                   saveLabel="Save PDF"
@@ -223,6 +225,7 @@ export default function AnalysisPage() {
             )}
             instruction={defaultInstruction}
           >
+            <LabelFreeReferences workspacePath={analysisPage.workspacePath} />
             <StudioAnalysisControls
               saveDisabled={!analysisPage.workspacePath?.trim() || !hasAnyPlots() || isSaving()}
               saveLabel="Save PDF"

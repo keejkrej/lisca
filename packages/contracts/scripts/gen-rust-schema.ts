@@ -13,6 +13,7 @@ import {
   AppIdSchema,
   CropRoiProgressQuerySchema,
   HostListDirectoryQuerySchema,
+  LabelFreeReferenceQuerySchema,
   LatestAnalysisQuerySchema,
   LatestCropQuerySchema,
   LoadAlignStateQuerySchema,
@@ -85,6 +86,7 @@ foldDefs(MemoryTouchRequestSchema, "MemoryTouchRequest");
 foldDefs(Schema.toType(AnalysisProgressQuerySchema), "AnalysisProgressQuery");
 foldDefs(Schema.toType(CropRoiProgressQuerySchema), "CropRoiProgressQuery");
 foldDefs(Schema.toType(HostListDirectoryQuerySchema), "HostListDirectoryQuery");
+foldDefs(Schema.toType(LabelFreeReferenceQuerySchema), "LabelFreeReferenceQuery");
 foldDefs(Schema.toType(LatestAnalysisQuerySchema), "LatestAnalysisQuery");
 foldDefs(Schema.toType(LatestCropQuerySchema), "LatestCropQuery");
 foldDefs(Schema.toType(LoadAlignStateQuerySchema), "LoadAlignStateQuery");

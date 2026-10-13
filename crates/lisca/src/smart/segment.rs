@@ -85,13 +85,9 @@ fn build_segment_sessions(model_dir: Result<PathBuf, String>) -> Result<SegmentS
     let model_dir = model_dir?;
     let encoder_path = model_dir.join("vision_encoder_quantized.onnx");
     let decoder_path = model_dir.join("prompt_encoder_mask_decoder_quantized.onnx");
-    let encoder = Session::builder()
-        .map_err(|error| error.to_string())?
-        .commit_from_file(&encoder_path)
+    let encoder = crate::onnx::commit_onnx_file(&encoder_path)
         .map_err(|error| format!("failed to load smart segment encoder: {error}"))?;
-    let decoder = Session::builder()
-        .map_err(|error| error.to_string())?
-        .commit_from_file(&decoder_path)
+    let decoder = crate::onnx::commit_onnx_file(&decoder_path)
         .map_err(|error| format!("failed to load smart segment decoder: {error}"))?;
     Ok(SegmentSessions { encoder, decoder })
 }

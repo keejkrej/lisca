@@ -110,9 +110,7 @@ impl OnnxSegmenter {
             ));
         };
 
-        let session = Session::builder()
-            .map_err(|error| error.to_string())?
-            .commit_from_file(&model_path)
+        let session = crate::onnx::commit_onnx_file(&model_path)
             .map_err(|error| format!("failed to load gene-expression seg model: {error}"))?;
         let input_name = session
             .inputs()

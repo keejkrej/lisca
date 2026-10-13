@@ -109,9 +109,10 @@ See `../models/single-cell-pattern-unet/README.md` and
 
 `python -m lisca.inference.server` batches frozen image embeddings. Assay
 packages register the encoders. Label-free viability's EmbeddingGemma model and
-viable/dead classifier come from `lisca-killing-assay`. Install that process
-from `requirements-inference.txt` in its own virtual environment. See
-`../docs/analysis/inference-server.md`.
+viable/dead classifier come from `lisca-killing-assay`. Without that package,
+`--model cpu-microscopy --device cpu` still serves the laptop encoder. Install
+the EmbeddingGemma process from `requirements-inference.txt` in its own virtual
+environment. See `../docs/analysis/inference-server.md`.
 
 ## Tests
 

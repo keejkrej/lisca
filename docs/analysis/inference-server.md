@@ -1,12 +1,35 @@
-# Remote image inference
+# Image inference
 
-Studio does not connect to an inference server in this version. Settings has an
-Inference tab for the server address, a connection test, the models that server
-provides, and which assays are inference-ready. That tab is deferred with the
-other model features: no server ships, and no assay is inference-ready. The
-Analysis page does not ask for a server.
+Studio has two Rust builds. The light build runs fluorescence assays and does
+not mount an inference server. The heavier build enables label-free embedding:
 
-The service below is for a later version. It loads the killing assay's frozen
+```sh
+cargo build -p studio-server --features label-free
+cargo build -p studio-server --features cuda
+cargo build -p studio-tauri --features cuda
+```
+
+`cuda` includes `label-free` and bundles the ONNX Runtime CUDA 12 libraries, so
+that build does not ask the user to install the CUDA toolkit. Packaging scripts
+still build the light feature set.
+
+The embedded server is Rust, on the Studio API (`/studio/label-free`). It uses
+the same client as the rest of Studio: Tauri IPC in the desktop app, and
+same-origin HTTP when Studio is hosted (ADR-0002). It does not open its own
+HTTP server. It reads classification annotations from the open workspace,
+embeds those ROI frames, and classifies other ROIs by cosine k-nearest
+neighbors. The encoder is `cpu-microscopy` revision `v1`. It runs on the CPU.
+It is not EmbeddingGemma. Settings and the Analysis rail say which build is
+running. The light build answers `GET /studio/label-free/health` with
+`build: "light"` and does not mount the reference or classify routes.
+
+The independent host stays Python. `python -m lisca.inference.server` loads
+EmbeddingGemma from `lisca-killing-assay` when that package is installed.
+`--model cpu-microscopy --device cpu` runs the same CPU encoder without it.
+A fine-tuned microscopy revision would register from the assay package. This
+repository does not train or store those weights.
+
+The service below is that Python host. It loads the killing assay's frozen
 EmbeddingGemma 2 encoder and cosine kNN. The browser performs no neural
 inference. Results include frame-by-frame viable vote support, a retrospective
 one-transition fit, and CSV/JSON export. It does not replace the Analyze task

@@ -22,3 +22,4 @@ Why a shipped choice looks the way it does. Agents write these during the change
 | [0009](0009-shared-killing-workspace.md)          | accepted   | One workspace holds every killing kind                                    |
 | [0010](0010-studio-browser-mock.md)               | accepted   | Studio browser mock opens the real web app on a fixture workspace         |
 | [0011](0011-standard-rail-contrast.md)            | accepted   | Studio Contrast stays on the standard Align and Annotate rails            |
+| [0012](0012-two-studio-builds.md)                 | accepted   | Two Studio builds share one inference protocol                            |

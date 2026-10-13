@@ -19,6 +19,13 @@ import {
   HostWindowsDrivesResponseSchema,
   HostListDirectoryQuerySchema,
   HostListDirectoryResultSchema,
+  LabelFreeClassificationListSchema,
+  LabelFreeClassifyRequestSchema,
+  LabelFreeHealthSchema,
+  LabelFreeReferenceQuerySchema,
+  LabelFreeReferenceRequestSchema,
+  LabelFreeReferenceSetListSchema,
+  LabelFreeReferenceSetSchema,
   LatestAnalysisQuerySchema,
   LatestCropQuerySchema,
   LoadAlignStateQuerySchema,
@@ -401,6 +408,33 @@ const studioGroup = HttpApiGroup.make("studio")
     HttpApiEndpoint.get("getAnalysisResults", "/studio/analysis-results", {
       query: LatestAnalysisQuerySchema,
       success: NullableAnalysisProgressSchema,
+      error: [RequestError, Unauthorized],
+    }),
+  )
+  .add(
+    HttpApiEndpoint.get("labelFreeHealth", "/studio/label-free/health", {
+      success: LabelFreeHealthSchema,
+      error: [RequestError, Unauthorized],
+    }),
+  )
+  .add(
+    HttpApiEndpoint.get("listLabelFreeReferences", "/studio/label-free/references", {
+      query: LabelFreeReferenceQuerySchema,
+      success: LabelFreeReferenceSetListSchema,
+      error: [RequestError, Unauthorized],
+    }),
+  )
+  .add(
+    HttpApiEndpoint.post("buildLabelFreeReferences", "/studio/label-free/references", {
+      payload: LabelFreeReferenceRequestSchema,
+      success: LabelFreeReferenceSetSchema,
+      error: [RequestError, Unauthorized],
+    }),
+  )
+  .add(
+    HttpApiEndpoint.post("classifyLabelFree", "/studio/label-free/classify", {
+      payload: LabelFreeClassifyRequestSchema,
+      success: LabelFreeClassificationListSchema,
       error: [RequestError, Unauthorized],
     }),
   );

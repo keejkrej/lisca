@@ -72,9 +72,7 @@ fn exclude_session() -> Result<std::sync::MutexGuard<'static, Session>, String> 
 fn build_exclude_session(model_path: Result<PathBuf, String>) -> Result<Session, String> {
     let model_path = model_path?;
     let onnx_path = model_path.join("model.onnx");
-    Session::builder()
-        .map_err(|error| error.to_string())?
-        .commit_from_file(&onnx_path)
+    crate::onnx::commit_onnx_file(&onnx_path)
         .map_err(|error| format!("failed to load smart exclusion model: {error}"))
 }
 

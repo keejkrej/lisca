@@ -1,6 +1,6 @@
 import * as Schema from "effect/Schema";
 
-import { F64 } from "./primitives";
+import { F64, U32 } from "./primitives";
 
 export const SaveAssayJsonRequestSchema = Schema.Struct({
   saveTo: Schema.String,
@@ -61,6 +61,76 @@ export const LatestAnalysisQuerySchema = Schema.Struct({
   workspacePath: Schema.String,
 }).annotate({ identifier: "LatestAnalysisQuery" });
 
+export const LabelFreeRuntimeSchema = Schema.Literals(["embedded"]).annotate({
+  identifier: "LabelFreeRuntime",
+});
+
+export const LabelFreeBuildSchema = Schema.Literals(["light", "label-free"]).annotate({
+  identifier: "LabelFreeBuild",
+});
+
+/** Build probe on the Studio API. Desktop sends it over IPC; hosted web uses same-origin HTTP. */
+export const LabelFreeHealthSchema = Schema.Struct({
+  apiVersion: U32,
+  runtime: LabelFreeRuntimeSchema,
+  build: LabelFreeBuildSchema,
+  cudaBundled: Schema.Boolean,
+  modelId: Schema.NullOr(Schema.String),
+  revision: Schema.NullOr(Schema.String),
+  dimensions: Schema.NullOr(U32),
+  device: Schema.NullOr(Schema.String),
+  batchSize: U32,
+  queueDepth: U32,
+  cacheCap: U32,
+}).annotate({ identifier: "LabelFreeHealth" });
+
+export const LabelFreeReferenceQuerySchema = Schema.Struct({
+  workspacePath: Schema.String,
+}).annotate({ identifier: "LabelFreeReferenceQuery" });
+
+export const LabelFreeReferenceRequestSchema = Schema.Struct({
+  workspacePath: Schema.String,
+  name: Schema.String,
+}).annotate({ identifier: "LabelFreeReferenceRequest" });
+
+export const LabelFreeClassifyRequestSchema = Schema.Struct({
+  workspacePath: Schema.String,
+  name: Schema.String,
+  limit: U32,
+}).annotate({ identifier: "LabelFreeClassifyRequest" });
+
+export const LabelFreeLabelCountSchema = Schema.Struct({
+  label: Schema.String,
+  count: U32,
+}).annotate({ identifier: "LabelFreeLabelCount" });
+
+export const LabelFreeReferenceSetSchema = Schema.Struct({
+  name: Schema.String,
+  count: U32,
+  labels: Schema.mutable(Schema.Array(LabelFreeLabelCountSchema)),
+  modelId: Schema.String,
+  revision: Schema.String,
+  encoderId: Schema.String,
+}).annotate({ identifier: "LabelFreeReferenceSet" });
+
+export const LabelFreeReferenceSetListSchema = Schema.mutable(
+  Schema.Array(LabelFreeReferenceSetSchema),
+).annotate({ identifier: "LabelFreeReferenceSetList" });
+
+export const LabelFreeClassificationSchema = Schema.Struct({
+  pos: U32,
+  roi: U32,
+  channel: U32,
+  time: U32,
+  z: U32,
+  labelId: Schema.String,
+  support: F64,
+}).annotate({ identifier: "LabelFreeClassification" });
+
+export const LabelFreeClassificationListSchema = Schema.mutable(
+  Schema.Array(LabelFreeClassificationSchema),
+).annotate({ identifier: "LabelFreeClassificationList" });
+
 export type SaveAssayJsonRequest = typeof SaveAssayJsonRequestSchema.Type;
 export type SaveAssayJsonResponse = typeof SaveAssayJsonResponseSchema.Type;
 export type AnalysisStatus = typeof AnalysisStatusSchema.Type;
@@ -70,3 +140,10 @@ export type AnalysisProgress = typeof AnalysisProgressSchema.Type;
 export type AnalysisStartRequest = typeof AnalysisStartRequestSchema.Type;
 export type AnalysisProgressQuery = typeof AnalysisProgressQuerySchema.Type;
 export type LatestAnalysisQuery = typeof LatestAnalysisQuerySchema.Type;
+export type LabelFreeHealth = typeof LabelFreeHealthSchema.Type;
+export type LabelFreeReferenceQuery = typeof LabelFreeReferenceQuerySchema.Type;
+export type LabelFreeReferenceRequest = typeof LabelFreeReferenceRequestSchema.Type;
+export type LabelFreeClassifyRequest = typeof LabelFreeClassifyRequestSchema.Type;
+export type LabelFreeLabelCount = typeof LabelFreeLabelCountSchema.Type;
+export type LabelFreeReferenceSet = typeof LabelFreeReferenceSetSchema.Type;
+export type LabelFreeClassification = typeof LabelFreeClassificationSchema.Type;

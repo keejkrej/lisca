@@ -3,7 +3,26 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test"
 
 import { StudioSettings } from "../src/components/studio-settings";
 
+const lightHealth = {
+  apiVersion: 1,
+  runtime: "embedded",
+  build: "light",
+  cudaBundled: false,
+  modelId: null,
+  revision: null,
+  dimensions: null,
+  device: null,
+  batchSize: 0,
+  queueDepth: 0,
+  cacheCap: 0,
+};
+
+let fetchHandler: typeof fetch = async () => Response.json(lightHealth);
+const fetchImpl: typeof fetch = (input, init) => fetchHandler(input, init);
+
 beforeEach(() => {
+  fetchHandler = async () => Response.json(lightHealth);
+  vi.stubGlobal("fetch", fetchImpl);
   vi.stubGlobal(
     "matchMedia",
     vi.fn((query: string) => ({
@@ -27,22 +46,44 @@ function openSettings() {
 }
 
 describe("StudioSettings", () => {
-  it("keeps inference deferred when no server ships in this version", async () => {
+  it("describes the light build when the label-free server is not mounted", async () => {
     openSettings();
     fireEvent.click(screen.getByRole("button", { name: "Inference" }));
 
-    expect(screen.getAllByText(/no assay is inference-ready/i).length).toBeGreaterThan(0);
-    expect(screen.getByText("None")).toBeTruthy();
+    expect(await screen.findByText(/light Studio build/i)).toBeTruthy();
+    expect(screen.getByText("None in this build")).toBeTruthy();
     const url = screen.getByLabelText("Server address") as HTMLInputElement;
     const token = screen.getByLabelText("Server token") as HTMLInputElement;
-    const testConnection = screen.getByRole("button", { name: "Test connection" });
-    expect(url.disabled).toBe(true);
-    expect(token.disabled).toBe(true);
-    expect(testConnection.hasAttribute("disabled")).toBe(true);
+    expect(url.disabled).toBe(false);
+    expect(token.disabled).toBe(false);
+    expect(screen.getByRole("button", { name: "Test connection" }).hasAttribute("disabled")).toBe(
+      false,
+    );
     expect(screen.getByRole("button", { name: "Inference" }).getAttribute("aria-current")).toBe(
       "page",
     );
     expect(screen.getByRole("button", { name: "Updates" }).getAttribute("aria-current")).toBeNull();
+  });
+
+  it("shows the bundled CUDA flag on a label-free build", async () => {
+    fetchHandler = async () =>
+      Response.json({
+        apiVersion: 1,
+        runtime: "embedded",
+        build: "label-free",
+        cudaBundled: true,
+        modelId: "cpu-microscopy",
+        revision: "v1",
+        dimensions: 43,
+        device: "cpu",
+        batchSize: 32,
+        queueDepth: 0,
+        cacheCap: 4096,
+      });
+    openSettings();
+    fireEvent.click(screen.getByRole("button", { name: "Inference" }));
+    expect(await screen.findByText(/CUDA ONNX runtime is bundled/i)).toBeTruthy();
+    expect(screen.getByText("cpu-microscopy v1")).toBeTruthy();
   });
 
   it("explains desktop update checks in the browser", () => {
