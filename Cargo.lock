@@ -5086,6 +5086,7 @@ dependencies = [
  "lisca-server",
  "serde_json",
  "tokio",
+ "tower",
 ]
 
 [[package]]

@@ -4,6 +4,7 @@ use std::path::{Path, PathBuf};
 
 use image::{imageops::FilterType, GrayImage, ImageBuffer, Luma};
 use ndarray::ArrayView;
+use ort::session::Session;
 
 pub(crate) const IMAGE_SIZE: u32 = 224;
 pub(crate) const IMAGENET_MEAN: [f32; 3] = [0.485, 0.456, 0.406];
@@ -36,6 +37,29 @@ pub(crate) fn bundled_models_dirs() -> Vec<PathBuf> {
     std::env::current_exe()
         .map(|exe| models_dirs_near_executable(&exe))
         .unwrap_or_default()
+}
+
+/// Open an ONNX file. The `cuda` build tries the bundled CUDA execution
+/// provider first and uses CPU when that provider cannot start.
+pub(crate) fn commit_onnx_file(path: &Path) -> Result<Session, String> {
+    #[cfg(feature = "cuda")]
+    {
+        match Session::builder()
+            .map_err(|error| error.to_string())?
+            .with_execution_providers([ort::ep::CUDA::default().build()])
+            .map_err(|error| error.to_string())?
+            .commit_from_file(path)
+        {
+            Ok(session) => return Ok(session),
+            Err(error) => {
+                tracing::warn!(%error, "CUDA execution provider unavailable; using CPU");
+            }
+        }
+    }
+    Session::builder()
+        .map_err(|error| error.to_string())?
+        .commit_from_file(path)
+        .map_err(|error| format!("failed to load ONNX model {}: {error}", path.display()))
 }
 
 pub(crate) fn resolve_model_path(

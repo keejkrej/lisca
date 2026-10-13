@@ -2,6 +2,9 @@ import type {
   AlignerSource,
   AnalysisProgress,
   AnalysisStartRequest,
+  LabelFreeClassification,
+  LabelFreeHealth,
+  LabelFreeReferenceSet,
   AnnotationLabel,
   ContrastWindow,
   CreateDirectoryResponse,
@@ -119,4 +122,15 @@ export type StudioDataPort = AlignerDataPort &
   StudioHostPort & {
     getAnalysisResults(workspacePath: string): ClientEffect<AnalysisProgress | null>;
     getLatestAnalysisProgress(workspacePath: string): ClientEffect<AnalysisProgress | null>;
+    labelFreeHealth(): ClientEffect<LabelFreeHealth>;
+    listLabelFreeReferences(workspacePath: string): ClientEffect<LabelFreeReferenceSet[]>;
+    buildLabelFreeReferences(
+      workspacePath: string,
+      name: string,
+    ): ClientEffect<LabelFreeReferenceSet>;
+    classifyLabelFree(
+      workspacePath: string,
+      name: string,
+      limit?: number,
+    ): ClientEffect<LabelFreeClassification[]>;
   };

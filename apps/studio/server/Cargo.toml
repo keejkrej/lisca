@@ -18,6 +18,13 @@ path = "src/lib.rs"
 name = "studio-server"
 path = "src/main.rs"
 
+[features]
+default = []
+# Mount label-free reference and classify routes. Fluorescence assays stay available.
+label-free = ["lisca/label-free"]
+# Label-free plus the bundled ONNX Runtime CUDA 12 libraries.
+cuda = ["label-free", "lisca/cuda"]
+
 [dependencies]
 aligner-server = { path = "../../aligner/server" }
 annotator-server = { path = "../../annotator/server" }
@@ -27,3 +34,6 @@ lisca = { workspace = true, features = ["studio"] }
 lisca-server.workspace = true
 serde_json.workspace = true
 tokio.workspace = true
+
+[dev-dependencies]
+tower = { workspace = true }

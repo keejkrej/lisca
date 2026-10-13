@@ -46,11 +46,22 @@ def tasks() -> list[tuple[Prepare, Mount]]:
 
 
 def load_assays() -> None:
-    """Import assay packages that contribute models. Safe to call more than once."""
+    """Import assay packages that contribute models. Safe to call more than once.
+
+    The CPU microscopy encoder is always available, including a laptop that does
+    not have ``lisca-killing-assay`` installed. EmbeddingGemma registers only
+    when that package is installed.
+    """
     global _loaded
     if _loaded:
         return
-    from killing.inference import register  # ty: ignore[unresolved-import]
+    from lisca.inference.microscopy import register_cpu_microscopy
 
+    register_cpu_microscopy(register_model)
+    try:
+        from killing.inference import register  # ty: ignore[unresolved-import]
+    except ImportError:
+        _loaded = True
+        return
     register(register_model, register_task)
     _loaded = True

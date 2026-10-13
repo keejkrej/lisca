@@ -36,6 +36,118 @@ pub fn load_annotation_labels(workspace_path: &str) -> Result<Vec<AnnotationLabe
     read_annotation_labels(workspace_path)
 }
 
+#[derive(Clone, Debug)]
+pub struct ClassifiedFrame {
+    pub request: RoiFrameRequest,
+    pub label_id: String,
+}
+
+/// Classification annotations on disk. Frames with no class are omitted.
+pub fn list_classified_frames(workspace_path: &str) -> Result<Vec<ClassifiedFrame>, String> {
+    let root = annotations_dir_path(workspace_path).join("roi");
+    if !root.is_dir() {
+        return Ok(Vec::new());
+    }
+    let mut frames = Vec::new();
+    let positions = fs::read_dir(&root)
+        .map_err(|error| format!("failed to list {}: {error}", root.display()))?;
+    for position in positions {
+        let position =
+            position.map_err(|error| format!("failed to read {}: {error}", root.display()))?;
+        let Some(pos) = parse_prefixed_u32(&file_name(&position.path())?, "Pos") else {
+            continue;
+        };
+        if !position.path().is_dir() {
+            continue;
+        }
+        let rois = fs::read_dir(position.path())
+            .map_err(|error| format!("failed to list {}: {error}", position.path().display()))?;
+        for roi in rois {
+            let roi = roi.map_err(|error| {
+                format!("failed to read {}: {error}", position.path().display())
+            })?;
+            let Some(roi_index) = parse_prefixed_u32(&file_name(&roi.path())?, "Roi") else {
+                continue;
+            };
+            if !roi.path().is_dir() {
+                continue;
+            }
+            let files = fs::read_dir(roi.path())
+                .map_err(|error| format!("failed to list {}: {error}", roi.path().display()))?;
+            for file in files {
+                let file = file
+                    .map_err(|error| format!("failed to read {}: {error}", roi.path().display()))?;
+                let name = file_name(&file.path())?;
+                let Some(stem) = name.strip_suffix(".json") else {
+                    continue;
+                };
+                let Some((channel, time, z)) = parse_frame_stem(stem) else {
+                    continue;
+                };
+                let bytes = fs::read(file.path())
+                    .map_err(|error| format!("{}: {error}", file.path().display()))?;
+                let annotation = serde_json::from_slice::<RoiFrameAnnotationFile>(&bytes)
+                    .map_err(|error| format!("{}: {error}", file.path().display()))?;
+                let Some(label_id) = annotation.classification_label_id else {
+                    continue;
+                };
+                if label_id.trim().is_empty() {
+                    continue;
+                }
+                frames.push(ClassifiedFrame {
+                    request: RoiFrameRequest {
+                        pos,
+                        roi: roi_index,
+                        channel,
+                        time,
+                        z,
+                    },
+                    label_id,
+                });
+            }
+        }
+    }
+    frames.sort_by(|left, right| {
+        (
+            left.request.pos,
+            left.request.roi,
+            left.request.channel,
+            left.request.time,
+            left.request.z,
+        )
+            .cmp(&(
+                right.request.pos,
+                right.request.roi,
+                right.request.channel,
+                right.request.time,
+                right.request.z,
+            ))
+    });
+    Ok(frames)
+}
+
+fn file_name(path: &Path) -> Result<String, String> {
+    path.file_name()
+        .and_then(|name| name.to_str())
+        .map(str::to_string)
+        .ok_or_else(|| format!("annotation path {} is not valid Unicode", path.display()))
+}
+
+fn parse_prefixed_u32(name: &str, prefix: &str) -> Option<u32> {
+    name.strip_prefix(prefix)?.parse().ok()
+}
+
+fn parse_frame_stem(stem: &str) -> Option<(u32, u32, u32)> {
+    let mut parts = stem.split('_');
+    let channel = parse_prefixed_u32(parts.next()?, "C")?;
+    let time = parse_prefixed_u32(parts.next()?, "T")?;
+    let z = parse_prefixed_u32(parts.next()?, "Z")?;
+    if parts.next().is_some() {
+        return None;
+    }
+    Some((channel, time, z))
+}
+
 pub fn save_annotation_labels(
     workspace_path: &str,
     labels: Vec<AnnotationLabel>,

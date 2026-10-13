@@ -2,8 +2,8 @@ mod annotation;
 mod index;
 
 pub use annotation::{
-    load_annotation_labels, load_roi_frame_annotation, save_annotation_labels,
-    save_roi_frame_annotation,
+    list_classified_frames, load_annotation_labels, load_roi_frame_annotation,
+    save_annotation_labels, save_roi_frame_annotation, ClassifiedFrame,
 };
 pub use index::{load_roi_frame, scan_roi_workspace};
 

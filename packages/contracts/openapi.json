@@ -2161,6 +2161,201 @@
           }
         }
       }
+    },
+    "/studio/label-free/health": {
+      "get": {
+        "tags": [
+          "studio"
+        ],
+        "operationId": "studio.labelFreeHealth",
+        "parameters": [],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "LabelFreeHealth",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LabelFreeHealth"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RequestError",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestErrorEncoded"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedEncoded"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/studio/label-free/references": {
+      "get": {
+        "tags": [
+          "studio"
+        ],
+        "operationId": "studio.listLabelFreeReferences",
+        "parameters": [
+          {
+            "name": "workspacePath",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "LabelFreeReferenceSetList",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LabelFreeReferenceSetList"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RequestError",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestErrorEncoded"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedEncoded"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "studio"
+        ],
+        "operationId": "studio.buildLabelFreeReferences",
+        "parameters": [],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "LabelFreeReferenceSet",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LabelFreeReferenceSet"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RequestError",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestErrorEncoded"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedEncoded"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LabelFreeReferenceRequest"
+              }
+            }
+          },
+          "required": true
+        }
+      }
+    },
+    "/studio/label-free/classify": {
+      "post": {
+        "tags": [
+          "studio"
+        ],
+        "operationId": "studio.classifyLabelFree",
+        "parameters": [],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "LabelFreeClassificationList",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LabelFreeClassificationList"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RequestError",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestErrorEncoded"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedEncoded"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LabelFreeClassifyRequest"
+              }
+            }
+          },
+          "required": true
+        }
+      }
     }
   },
   "components": {
@@ -5020,6 +5215,321 @@
           "error"
         ],
         "additionalProperties": false
+      },
+      "LabelFreeRuntime": {
+        "anyOf": [
+          {
+            "type": "string",
+            "enum": [
+              "embedded"
+            ]
+          }
+        ]
+      },
+      "LabelFreeBuild": {
+        "type": "string",
+        "enum": [
+          "light",
+          "label-free"
+        ]
+      },
+      "LabelFreeHealth": {
+        "type": "object",
+        "properties": {
+          "apiVersion": {
+            "type": "integer",
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          },
+          "runtime": {
+            "$ref": "#/components/schemas/LabelFreeRuntime"
+          },
+          "build": {
+            "$ref": "#/components/schemas/LabelFreeBuild"
+          },
+          "cudaBundled": {
+            "type": "boolean"
+          },
+          "modelId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "revision": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "dimensions": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "allOf": [
+                  {
+                    "minimum": 0,
+                    "format": "uint32"
+                  }
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "device": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "batchSize": {
+            "type": "integer",
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          },
+          "queueDepth": {
+            "type": "integer",
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          },
+          "cacheCap": {
+            "type": "integer",
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          }
+        },
+        "required": [
+          "apiVersion",
+          "runtime",
+          "build",
+          "cudaBundled",
+          "modelId",
+          "revision",
+          "dimensions",
+          "device",
+          "batchSize",
+          "queueDepth",
+          "cacheCap"
+        ],
+        "additionalProperties": false
+      },
+      "LabelFreeLabelCount": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "count": {
+            "type": "integer",
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          }
+        },
+        "required": [
+          "label",
+          "count"
+        ],
+        "additionalProperties": false
+      },
+      "LabelFreeReferenceSet": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "count": {
+            "type": "integer",
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          },
+          "labels": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LabelFreeLabelCount"
+            }
+          },
+          "modelId": {
+            "type": "string"
+          },
+          "revision": {
+            "type": "string"
+          },
+          "encoderId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "count",
+          "labels",
+          "modelId",
+          "revision",
+          "encoderId"
+        ],
+        "additionalProperties": false
+      },
+      "LabelFreeReferenceSetList": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/LabelFreeReferenceSet"
+        }
+      },
+      "LabelFreeReferenceRequest": {
+        "type": "object",
+        "properties": {
+          "workspacePath": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "workspacePath",
+          "name"
+        ],
+        "additionalProperties": false
+      },
+      "LabelFreeClassifyRequest": {
+        "type": "object",
+        "properties": {
+          "workspacePath": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "limit": {
+            "type": "integer",
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          }
+        },
+        "required": [
+          "workspacePath",
+          "name",
+          "limit"
+        ],
+        "additionalProperties": false
+      },
+      "LabelFreeClassification": {
+        "type": "object",
+        "properties": {
+          "pos": {
+            "type": "integer",
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          },
+          "roi": {
+            "type": "integer",
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          },
+          "channel": {
+            "type": "integer",
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          },
+          "time": {
+            "type": "integer",
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          },
+          "z": {
+            "type": "integer",
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          },
+          "labelId": {
+            "type": "string"
+          },
+          "support": {
+            "type": "number",
+            "allOf": [
+              {
+                "format": "double"
+              }
+            ]
+          }
+        },
+        "required": [
+          "pos",
+          "roi",
+          "channel",
+          "time",
+          "z",
+          "labelId",
+          "support"
+        ],
+        "additionalProperties": false
+      },
+      "LabelFreeClassificationList": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/LabelFreeClassification"
+        }
       }
     },
     "securitySchemes": {}

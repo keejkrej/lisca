@@ -5,6 +5,11 @@ publish = false
 edition = "2021"
 license = "MIT OR Apache-2.0"
 
+[features]
+default = []
+label-free = ["studio-server/label-free"]
+cuda = ["studio-server/cuda"]
+
 [dependencies]
 lisca-tauri = { path = "../../../../crates/lisca-tauri" }
 serde_json = { workspace = true }
