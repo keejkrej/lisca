@@ -3,25 +3,22 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test"
 
 import { StudioSettings } from "../src/components/studio-settings";
 
-const lightHealth = {
+const unconfiguredHealth = {
   apiVersion: 1,
-  runtime: "embedded",
-  build: "light",
-  cudaBundled: false,
-  modelId: null,
-  revision: null,
-  dimensions: null,
-  device: null,
-  batchSize: 0,
-  queueDepth: 0,
-  cacheCap: 0,
+  provider: "openrouter",
+  configured: false,
+  modelId: "google/gemini-embedding-2",
+  revision: "v1",
+  dimensions: 768,
+  batchSize: 32,
+  cacheCap: 4096,
 };
 
-let fetchHandler: typeof fetch = async () => Response.json(lightHealth);
+let fetchHandler: typeof fetch = async () => Response.json(unconfiguredHealth);
 const fetchImpl: typeof fetch = (input, init) => fetchHandler(input, init);
 
 beforeEach(() => {
-  fetchHandler = async () => Response.json(lightHealth);
+  fetchHandler = async () => Response.json(unconfiguredHealth);
   vi.stubGlobal("fetch", fetchImpl);
   vi.stubGlobal(
     "matchMedia",
@@ -46,17 +43,16 @@ function openSettings() {
 }
 
 describe("StudioSettings", () => {
-  it("describes the light build when the label-free server is not mounted", async () => {
+  it("shows OpenRouter API key configuration with no endpoint URL field", async () => {
     openSettings();
     fireEvent.click(screen.getByRole("button", { name: "Inference" }));
 
-    expect(await screen.findByText(/light Studio build/i)).toBeTruthy();
-    expect(screen.getByText("None in this build")).toBeTruthy();
-    const url = screen.getByLabelText("Server address") as HTMLInputElement;
-    const token = screen.getByLabelText("Server token") as HTMLInputElement;
-    expect(url.disabled).toBe(false);
-    expect(token.disabled).toBe(false);
-    expect(screen.getByRole("button", { name: "Test connection" }).hasAttribute("disabled")).toBe(
+    expect(await screen.findByText(/No OpenRouter API key is configured yet/i)).toBeTruthy();
+    expect(screen.getByText("google/gemini-embedding-2 (768 dimensions)")).toBeTruthy();
+    expect(screen.queryByLabelText("Server address")).toBeNull();
+    const keyInput = screen.getByLabelText("OpenRouter API key") as HTMLInputElement;
+    expect(keyInput.disabled).toBe(false);
+    expect(screen.getByRole("button", { name: "Save API key" }).hasAttribute("disabled")).toBe(
       false,
     );
     expect(screen.getByRole("button", { name: "Inference" }).getAttribute("aria-current")).toBe(
@@ -65,25 +61,28 @@ describe("StudioSettings", () => {
     expect(screen.getByRole("button", { name: "Updates" }).getAttribute("aria-current")).toBeNull();
   });
 
-  it("shows the bundled CUDA flag on a label-free build", async () => {
-    fetchHandler = async () =>
-      Response.json({
-        apiVersion: 1,
-        runtime: "embedded",
-        build: "label-free",
-        cudaBundled: true,
-        modelId: "cpu-microscopy",
-        revision: "v1",
-        dimensions: 43,
-        device: "cpu",
-        batchSize: 32,
-        queueDepth: 0,
-        cacheCap: 4096,
-      });
+  it("saves the OpenRouter API key and updates status to configured", async () => {
+    const transport = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = input instanceof Request ? input.url : String(input);
+      const method = input instanceof Request ? input.method : (init?.method ?? "GET");
+      if (method === "POST" && url.includes("/studio/label-free/key")) {
+        return Response.json({
+          ...unconfiguredHealth,
+          configured: true,
+        });
+      }
+      return Response.json(unconfiguredHealth);
+    });
+    fetchHandler = transport;
+
     openSettings();
     fireEvent.click(screen.getByRole("button", { name: "Inference" }));
-    expect(await screen.findByText(/CUDA ONNX runtime is bundled/i)).toBeTruthy();
-    expect(screen.getByText("cpu-microscopy v1")).toBeTruthy();
+    const keyInput = (await screen.findByLabelText("OpenRouter API key")) as HTMLInputElement;
+    fireEvent.input(keyInput, { target: { value: "sk-or-v1-test" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save API key" }));
+
+    expect(await screen.findByText(/OpenRouter API key is configured/i)).toBeTruthy();
+    expect(screen.getByText(/OpenRouter API key saved for this session/i)).toBeTruthy();
   });
 
   it("explains desktop update checks in the browser", () => {

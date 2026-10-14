@@ -13,13 +13,7 @@ workspace = true
 [features]
 default = ["studio"]
 smart = ["dep:ort"]
-# Light Studio: fluorescence assays, CPU ONNX runtime, no label-free server.
-fluorescence = []
-# Heavier Studio: mount the embedded label-free inference server.
-label-free = []
-# Heavier Studio with the ONNX Runtime CUDA 12 libraries bundled.
-cuda = ["label-free", "smart", "ort/cuda"]
-studio = ["fluorescence", "smart", "dep:mplot", "dep:lisca-transfection", "dep:lisca-killing"]
+studio = ["smart", "dep:mplot", "dep:lisca-transfection", "dep:lisca-killing"]
 
 [dependencies]
 axum.workspace = true
@@ -34,6 +28,7 @@ tokio.workspace = true
 tower-http.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
+ureq.workspace = true
 uuid.workspace = true
 csv.workspace = true
 rayon.workspace = true

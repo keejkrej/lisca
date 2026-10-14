@@ -2204,6 +2204,58 @@
         }
       }
     },
+    "/studio/label-free/key": {
+      "post": {
+        "tags": [
+          "studio"
+        ],
+        "operationId": "studio.saveLabelFreeKey",
+        "parameters": [],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "LabelFreeHealth",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LabelFreeHealth"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RequestError",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestErrorEncoded"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedEncoded"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LabelFreeKeyRequest"
+              }
+            }
+          },
+          "required": true
+        }
+      }
+    },
     "/studio/label-free/references": {
       "get": {
         "tags": [
@@ -5216,21 +5268,14 @@
         ],
         "additionalProperties": false
       },
-      "LabelFreeRuntime": {
+      "LabelFreeProvider": {
         "anyOf": [
           {
             "type": "string",
             "enum": [
-              "embedded"
+              "openrouter"
             ]
           }
-        ]
-      },
-      "LabelFreeBuild": {
-        "type": "string",
-        "enum": [
-          "light",
-          "label-free"
         ]
       },
       "LabelFreeHealth": {
@@ -5245,62 +5290,19 @@
               }
             ]
           },
-          "runtime": {
-            "$ref": "#/components/schemas/LabelFreeRuntime"
+          "provider": {
+            "$ref": "#/components/schemas/LabelFreeProvider"
           },
-          "build": {
-            "$ref": "#/components/schemas/LabelFreeBuild"
-          },
-          "cudaBundled": {
+          "configured": {
             "type": "boolean"
           },
           "modelId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ]
+            "type": "string"
           },
           "revision": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ]
+            "type": "string"
           },
           "dimensions": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "allOf": [
-                  {
-                    "minimum": 0,
-                    "format": "uint32"
-                  }
-                ]
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "device": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "batchSize": {
             "type": "integer",
             "allOf": [
               {
@@ -5309,7 +5311,7 @@
               }
             ]
           },
-          "queueDepth": {
+          "batchSize": {
             "type": "integer",
             "allOf": [
               {
@@ -5330,16 +5332,25 @@
         },
         "required": [
           "apiVersion",
-          "runtime",
-          "build",
-          "cudaBundled",
+          "provider",
+          "configured",
           "modelId",
           "revision",
           "dimensions",
-          "device",
           "batchSize",
-          "queueDepth",
           "cacheCap"
+        ],
+        "additionalProperties": false
+      },
+      "LabelFreeKeyRequest": {
+        "type": "object",
+        "properties": {
+          "apiKey": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "apiKey"
         ],
         "additionalProperties": false
       },

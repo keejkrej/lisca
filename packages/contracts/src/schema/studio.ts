@@ -61,28 +61,25 @@ export const LatestAnalysisQuerySchema = Schema.Struct({
   workspacePath: Schema.String,
 }).annotate({ identifier: "LatestAnalysisQuery" });
 
-export const LabelFreeRuntimeSchema = Schema.Literals(["embedded"]).annotate({
-  identifier: "LabelFreeRuntime",
+export const LabelFreeProviderSchema = Schema.Literals(["openrouter"]).annotate({
+  identifier: "LabelFreeProvider",
 });
 
-export const LabelFreeBuildSchema = Schema.Literals(["light", "label-free"]).annotate({
-  identifier: "LabelFreeBuild",
-});
-
-/** Build probe on the Studio API. Desktop sends it over IPC; hosted web uses same-origin HTTP. */
+/** OpenRouter label-free status on the Studio API. Desktop sends it over IPC; hosted web uses same-origin HTTP. */
 export const LabelFreeHealthSchema = Schema.Struct({
   apiVersion: U32,
-  runtime: LabelFreeRuntimeSchema,
-  build: LabelFreeBuildSchema,
-  cudaBundled: Schema.Boolean,
-  modelId: Schema.NullOr(Schema.String),
-  revision: Schema.NullOr(Schema.String),
-  dimensions: Schema.NullOr(U32),
-  device: Schema.NullOr(Schema.String),
+  provider: LabelFreeProviderSchema,
+  configured: Schema.Boolean,
+  modelId: Schema.String,
+  revision: Schema.String,
+  dimensions: U32,
   batchSize: U32,
-  queueDepth: U32,
   cacheCap: U32,
 }).annotate({ identifier: "LabelFreeHealth" });
+
+export const LabelFreeKeyRequestSchema = Schema.Struct({
+  apiKey: Schema.String,
+}).annotate({ identifier: "LabelFreeKeyRequest" });
 
 export const LabelFreeReferenceQuerySchema = Schema.Struct({
   workspacePath: Schema.String,
@@ -140,7 +137,9 @@ export type AnalysisProgress = typeof AnalysisProgressSchema.Type;
 export type AnalysisStartRequest = typeof AnalysisStartRequestSchema.Type;
 export type AnalysisProgressQuery = typeof AnalysisProgressQuerySchema.Type;
 export type LatestAnalysisQuery = typeof LatestAnalysisQuerySchema.Type;
+export type LabelFreeProvider = typeof LabelFreeProviderSchema.Type;
 export type LabelFreeHealth = typeof LabelFreeHealthSchema.Type;
+export type LabelFreeKeyRequest = typeof LabelFreeKeyRequestSchema.Type;
 export type LabelFreeReferenceQuery = typeof LabelFreeReferenceQuerySchema.Type;
 export type LabelFreeReferenceRequest = typeof LabelFreeReferenceRequestSchema.Type;
 export type LabelFreeClassifyRequest = typeof LabelFreeClassifyRequestSchema.Type;

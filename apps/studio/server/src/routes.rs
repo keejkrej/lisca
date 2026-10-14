@@ -25,43 +25,28 @@ pub fn router<S>() -> Router<S>
 where
     S: HasAnalysisTasks + HasTaskScheduler + Clone + Send + Sync + 'static,
 {
-    with_label_free_routes(
-        Router::new()
-            .route("/studio/save-assay-json", post(save_assay_json_handler))
-            .route("/studio/start-analysis", post(start_analysis_handler::<S>))
-            .route(
-                "/studio/analysis-progress",
-                get(analysis_progress_handler::<S>),
-            )
-            .route(
-                "/studio/latest-analysis",
-                get(analysis_latest_progress_handler::<S>),
-            )
-            .route("/studio/analysis-results", get(analysis_results_handler))
-            .route("/studio/label-free/health", get(lisca::inference::health)),
-    )
-}
-
-fn with_label_free_routes<S>(router: Router<S>) -> Router<S>
-where
-    S: Clone + Send + Sync + 'static,
-{
-    #[cfg(feature = "label-free")]
-    {
-        router
-            .route(
-                "/studio/label-free/references",
-                get(lisca::inference::list_references).post(lisca::inference::build_references),
-            )
-            .route(
-                "/studio/label-free/classify",
-                post(lisca::inference::classify),
-            )
-    }
-    #[cfg(not(feature = "label-free"))]
-    {
-        router
-    }
+    Router::new()
+        .route("/studio/save-assay-json", post(save_assay_json_handler))
+        .route("/studio/start-analysis", post(start_analysis_handler::<S>))
+        .route(
+            "/studio/analysis-progress",
+            get(analysis_progress_handler::<S>),
+        )
+        .route(
+            "/studio/latest-analysis",
+            get(analysis_latest_progress_handler::<S>),
+        )
+        .route("/studio/analysis-results", get(analysis_results_handler))
+        .route("/studio/label-free/health", get(lisca::inference::health))
+        .route("/studio/label-free/key", post(lisca::inference::save_key))
+        .route(
+            "/studio/label-free/references",
+            get(lisca::inference::list_references).post(lisca::inference::build_references),
+        )
+        .route(
+            "/studio/label-free/classify",
+            post(lisca::inference::classify),
+        )
 }
 
 async fn save_assay_json_handler(

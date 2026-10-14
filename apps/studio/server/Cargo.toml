@@ -5,7 +5,7 @@ publish = false
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
-description = "Transport-neutral Rust backend for Studio hosted and desktop builds."
+description = "Transport-neutral HTTP server for the Lisca Studio app."
 
 [lints]
 workspace = true
@@ -18,18 +18,10 @@ path = "src/lib.rs"
 name = "studio-server"
 path = "src/main.rs"
 
-[features]
-default = []
-# Mount label-free reference and classify routes. Fluorescence assays stay available.
-label-free = ["lisca/label-free"]
-# Label-free plus the bundled ONNX Runtime CUDA 12 libraries.
-cuda = ["label-free", "lisca/cuda"]
-
 [dependencies]
 aligner-server = { path = "../../aligner/server" }
 annotator-server = { path = "../../annotator/server" }
 axum.workspace = true
-base64.workspace = true
 lisca = { workspace = true, features = ["studio"] }
 lisca-server.workspace = true
 serde_json.workspace = true

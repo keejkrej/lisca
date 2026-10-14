@@ -3080,57 +3080,6 @@ impl HostListDirectoryResult {
         Default::default()
     }
 }
-#[doc = "`LabelFreeBuild`"]
-#[derive(
-    :: serde :: Deserialize,
-    :: serde :: Serialize,
-    Clone,
-    Copy,
-    Debug,
-    Eq,
-    Hash,
-    Ord,
-    PartialEq,
-    PartialOrd,
-)]
-pub enum LabelFreeBuild {
-    #[serde(rename = "light")]
-    Light,
-    #[serde(rename = "label-free")]
-    LabelFree,
-}
-impl ::std::fmt::Display for LabelFreeBuild {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        match *self {
-            Self::Light => f.write_str("light"),
-            Self::LabelFree => f.write_str("label-free"),
-        }
-    }
-}
-impl ::std::str::FromStr for LabelFreeBuild {
-    type Err = self::error::ConversionError;
-    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        match value {
-            "light" => Ok(Self::Light),
-            "label-free" => Ok(Self::LabelFree),
-            _ => Err("invalid value".into()),
-        }
-    }
-}
-impl ::std::convert::TryFrom<&str> for LabelFreeBuild {
-    type Error = self::error::ConversionError;
-    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<::std::string::String> for LabelFreeBuild {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: ::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
 #[doc = "`LabelFreeClassification`"]
 #[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
 pub struct LabelFreeClassification {
@@ -3182,31 +3131,73 @@ pub struct LabelFreeHealth {
     pub api_version: u32,
     #[serde(rename = "batchSize")]
     pub batch_size: u32,
-    pub build: LabelFreeBuild,
     #[serde(rename = "cacheCap")]
     pub cache_cap: u32,
-    #[serde(rename = "cudaBundled")]
-    pub cuda_bundled: bool,
-    #[serde(deserialize_with = "::std::option::Option::deserialize")]
-    pub device: ::std::option::Option<::std::string::String>,
-    #[serde(deserialize_with = "::std::option::Option::deserialize")]
-    pub dimensions: ::std::option::Option<u32>,
-    #[serde(
-        rename = "modelId",
-        deserialize_with = "::std::option::Option::deserialize"
-    )]
-    pub model_id: ::std::option::Option<::std::string::String>,
-    #[serde(rename = "queueDepth")]
-    pub queue_depth: u32,
-    #[serde(deserialize_with = "::std::option::Option::deserialize")]
-    pub revision: ::std::option::Option<::std::string::String>,
-    pub runtime: LabelFreeRuntime,
+    pub configured: bool,
+    pub dimensions: u32,
+    #[serde(rename = "modelId")]
+    pub model_id: ::std::string::String,
+    pub provider: LabelFreeProvider,
+    pub revision: ::std::string::String,
+}
+#[doc = "`LabelFreeKeyRequest`"]
+#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
+pub struct LabelFreeKeyRequest {
+    #[serde(rename = "apiKey")]
+    pub api_key: ::std::string::String,
 }
 #[doc = "`LabelFreeLabelCount`"]
 #[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
 pub struct LabelFreeLabelCount {
     pub count: u32,
     pub label: ::std::string::String,
+}
+#[doc = "`LabelFreeProvider`"]
+#[derive(
+    :: serde :: Deserialize,
+    :: serde :: Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    Ord,
+    PartialEq,
+    PartialOrd,
+)]
+pub enum LabelFreeProvider {
+    #[serde(rename = "openrouter")]
+    OpenRouter,
+}
+impl ::std::fmt::Display for LabelFreeProvider {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        match *self {
+            Self::OpenRouter => f.write_str("openrouter"),
+        }
+    }
+}
+impl ::std::str::FromStr for LabelFreeProvider {
+    type Err = self::error::ConversionError;
+    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        match value {
+            "openrouter" => Ok(Self::OpenRouter),
+            _ => Err("invalid value".into()),
+        }
+    }
+}
+impl ::std::convert::TryFrom<&str> for LabelFreeProvider {
+    type Error = self::error::ConversionError;
+    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
+}
+impl ::std::convert::TryFrom<::std::string::String> for LabelFreeProvider {
+    type Error = self::error::ConversionError;
+    fn try_from(
+        value: ::std::string::String,
+    ) -> ::std::result::Result<Self, self::error::ConversionError> {
+        value.parse()
+    }
 }
 #[doc = "`LabelFreeReferenceQuery`"]
 #[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
@@ -3251,53 +3242,6 @@ impl ::std::convert::From<LabelFreeReferenceSetList> for ::std::vec::Vec<LabelFr
 impl ::std::convert::From<::std::vec::Vec<LabelFreeReferenceSet>> for LabelFreeReferenceSetList {
     fn from(value: ::std::vec::Vec<LabelFreeReferenceSet>) -> Self {
         Self(value)
-    }
-}
-#[doc = "`LabelFreeRuntime`"]
-#[derive(
-    :: serde :: Deserialize,
-    :: serde :: Serialize,
-    Clone,
-    Copy,
-    Debug,
-    Eq,
-    Hash,
-    Ord,
-    PartialEq,
-    PartialOrd,
-)]
-pub enum LabelFreeRuntime {
-    #[serde(rename = "embedded")]
-    Embedded,
-}
-impl ::std::fmt::Display for LabelFreeRuntime {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        match *self {
-            Self::Embedded => f.write_str("embedded"),
-        }
-    }
-}
-impl ::std::str::FromStr for LabelFreeRuntime {
-    type Err = self::error::ConversionError;
-    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        match value {
-            "embedded" => Ok(Self::Embedded),
-            _ => Err("invalid value".into()),
-        }
-    }
-}
-impl ::std::convert::TryFrom<&str> for LabelFreeRuntime {
-    type Error = self::error::ConversionError;
-    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<::std::string::String> for LabelFreeRuntime {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: ::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
     }
 }
 #[doc = "`LatestAnalysisQuery`"]

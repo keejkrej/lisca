@@ -2227,21 +2227,14 @@
         "error"
       ]
     },
-    "LabelFreeRuntime": {
+    "LabelFreeProvider": {
       "anyOf": [
         {
           "type": "string",
           "enum": [
-            "embedded"
+            "openrouter"
           ]
         }
-      ]
-    },
-    "LabelFreeBuild": {
-      "type": "string",
-      "enum": [
-        "light",
-        "label-free"
       ]
     },
     "LabelFreeHealth": {
@@ -2252,63 +2245,24 @@
           "minimum": 0,
           "format": "uint32"
         },
-        "runtime": {
-          "$ref": "#/definitions/LabelFreeRuntime"
+        "provider": {
+          "$ref": "#/definitions/LabelFreeProvider"
         },
-        "build": {
-          "$ref": "#/definitions/LabelFreeBuild"
-        },
-        "cudaBundled": {
+        "configured": {
           "type": "boolean"
         },
         "modelId": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ]
+          "type": "string"
         },
         "revision": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ]
+          "type": "string"
         },
         "dimensions": {
-          "anyOf": [
-            {
-              "type": "integer",
-              "minimum": 0,
-              "format": "uint32"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "device": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "batchSize": {
           "type": "integer",
           "minimum": 0,
           "format": "uint32"
         },
-        "queueDepth": {
+        "batchSize": {
           "type": "integer",
           "minimum": 0,
           "format": "uint32"
@@ -2321,16 +2275,24 @@
       },
       "required": [
         "apiVersion",
-        "runtime",
-        "build",
-        "cudaBundled",
+        "provider",
+        "configured",
         "modelId",
         "revision",
         "dimensions",
-        "device",
         "batchSize",
-        "queueDepth",
         "cacheCap"
+      ]
+    },
+    "LabelFreeKeyRequest": {
+      "type": "object",
+      "properties": {
+        "apiKey": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "apiKey"
       ]
     },
     "LabelFreeLabelCount": {

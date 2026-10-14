@@ -1,6 +1,7 @@
 # ADR-0012: Two Studio builds, one inference protocol
 
-- **Status:** accepted
+- **Status:** superseded
+- **Superseded by:** [ADR-0013](0013-openrouter-label-free-single-build.md)
 - **Date:** 2026-10-13
 
 ## Decision
