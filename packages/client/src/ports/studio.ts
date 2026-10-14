@@ -31,10 +31,11 @@ export function createStudioPort(deps: StudioPortDeps = {}): StudioDataPort {
     labelFreeHealth() {
       return toClientEffect(client.studio.labelFreeHealth());
     },
+    saveLabelFreeKey(apiKey) {
+      return toClientEffect(client.studio.saveLabelFreeKey({ payload: { apiKey } }));
+    },
     listLabelFreeReferences(workspacePath) {
-      return toClientEffect(
-        client.studio.listLabelFreeReferences({ query: { workspacePath } }),
-      );
+      return toClientEffect(client.studio.listLabelFreeReferences({ query: { workspacePath } }));
     },
     buildLabelFreeReferences(workspacePath, name) {
       return toClientEffect(

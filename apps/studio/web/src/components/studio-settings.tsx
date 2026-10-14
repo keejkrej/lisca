@@ -18,7 +18,6 @@ import { StartupUpdateCheck } from "@lisca/ui/shell";
 import { DialogSurface, ModalScrim } from "@lisca/ui/patterns";
 import IconGearRegular from "phosphor-icons-solid/IconGearRegular";
 import IconXRegular from "phosphor-icons-solid/IconXRegular";
-import { createInferenceClient } from "@lisca/client/inference";
 import { runClientEffect } from "@lisca/client/runtime";
 import type { LabelFreeHealth } from "@lisca/contracts";
 import { createResource, createSignal, Match, Show, Switch } from "solid-js";
@@ -27,19 +26,20 @@ import { studioClient, toErrorMessage } from "../api/studio-port";
 
 type SettingsSection = "updates" | "inference";
 
-type EmbeddedStatus =
-  | { kind: "light" }
-  | { kind: "label-free"; health: LabelFreeHealth }
+type InferenceStatus =
+  | { kind: "ready"; health: LabelFreeHealth }
   | { kind: "error"; message: string };
 
-async function loadEmbeddedStatus(): Promise<EmbeddedStatus> {
+async function loadInferenceStatus(): Promise<InferenceStatus> {
   try {
     const health = await runClientEffect(studioClient.labelFreeHealth());
-    if (health.apiVersion !== 1 || health.runtime !== "embedded") {
-      return { kind: "error", message: "The Studio server returned an unknown inference build." };
+    if (health.apiVersion !== 1 || health.provider !== "openrouter") {
+      return {
+        kind: "error",
+        message: "The Studio server returned an unknown inference provider.",
+      };
     }
-    if (health.build === "light") return { kind: "light" };
-    return { kind: "label-free", health };
+    return { kind: "ready", health };
   } catch (error) {
     return {
       kind: "error",
@@ -49,15 +49,14 @@ async function loadEmbeddedStatus(): Promise<EmbeddedStatus> {
 }
 
 function InferenceSettings() {
-  const [status] = createResource(loadEmbeddedStatus);
-  const [url, setUrl] = createSignal("");
-  const [token, setToken] = createSignal("");
-  const [hostMessage, setHostMessage] = createSignal<string | null>(null);
-  const [testing, setTesting] = createSignal(false);
+  const [status, { mutate }] = createResource(loadInferenceStatus);
+  const [apiKey, setApiKey] = createSignal("");
+  const [saveMessage, setSaveMessage] = createSignal<string | null>(null);
+  const [saving, setSaving] = createSignal(false);
 
   const labelFreeHealth = () => {
     const current = status();
-    return current?.kind === "label-free" ? current.health : undefined;
+    return current?.kind === "ready" ? current.health : undefined;
   };
   const errorMessage = () => {
     const current = status();
@@ -65,45 +64,42 @@ function InferenceSettings() {
   };
   const modelLabel = () => {
     const health = labelFreeHealth();
-    return health?.modelId && health.revision
-      ? `${health.modelId} ${health.revision}`
-      : "None in this build";
+    return health ? `${health.modelId} (${health.dimensions} dimensions)` : "Checking...";
   };
 
-  const testHost = async () => {
-    setTesting(true);
-    setHostMessage(null);
+  const saveKey = async () => {
+    setSaving(true);
+    setSaveMessage(null);
     try {
-      const health = await createInferenceClient({ url: url(), token: token() }).health();
-      setHostMessage(`${health.model_id} · ${health.device} · ${health.dimensions} dimensions`);
+      const updated = await runClientEffect(studioClient.saveLabelFreeKey(apiKey()));
+      mutate({ kind: "ready", health: updated });
+      setApiKey("");
+      setSaveMessage(
+        updated.configured
+          ? "OpenRouter API key saved for this session."
+          : "OpenRouter API key cleared.",
+      );
     } catch (error) {
-      setHostMessage(error instanceof Error ? error.message : "Could not reach the Python host.");
+      setSaveMessage(toErrorMessage(error, "Could not save the OpenRouter API key."));
     } finally {
-      setTesting(false);
+      setSaving(false);
     }
   };
 
   return (
     <div class="flex flex-col gap-4">
-      <Switch fallback={<p class="text-sm text-muted-foreground">Checking this Studio build.</p>}>
-        <Match when={status()?.kind === "light"}>
-          <p class="text-sm text-muted-foreground">
-            This is the light Studio build. Fluorescence assays run on this computer. The heavier
-            build bundles the CUDA runtime and turns label-free embedding on.
-          </p>
-        </Match>
+      <Switch fallback={<p class="text-sm text-muted-foreground">Checking OpenRouter status.</p>}>
         <Match when={labelFreeHealth()}>
           {(health) => (
             <div class="flex flex-col gap-2">
               <p class="text-sm text-muted-foreground">
-                Label-free embedding is on. Annotate a few classifications, then Analysis embeds
-                those frames with {health().modelId} {health().revision} and uses them as the
-                reference set. This encoder runs on the CPU.
+                Label-free assays embed annotated reference frames and sample time series with{" "}
+                {health().modelId} via OpenRouter.
               </p>
               <p class="text-sm text-muted-foreground">
-                {health().cudaBundled
-                  ? "The CUDA ONNX runtime is bundled with this build."
-                  : "This label-free build does not bundle the CUDA runtime."}
+                {health().configured
+                  ? "OpenRouter API key is configured."
+                  : "No OpenRouter API key is configured yet. Enter a key below to enable label-free embedding."}
               </p>
             </div>
           )}
@@ -117,46 +113,34 @@ function InferenceSettings() {
         </Match>
       </Switch>
       <div class="flex flex-col gap-1">
-        <p class="text-sm font-medium text-foreground">Embedded model</p>
+        <p class="text-sm font-medium text-foreground">Embedding model</p>
         <p class="text-sm text-muted-foreground">{modelLabel()}</p>
       </div>
       <FieldGroup class="gap-3">
-        <p class="text-sm text-muted-foreground">
-          An independent Python server can still host EmbeddingGemma. Leave the token in this page.
-        </p>
         <Field>
-          <FieldLabel for="inference-settings-url">Server address</FieldLabel>
-          <Input
-            id="inference-settings-url"
-            placeholder="https://"
-            type="url"
-            value={url()}
-            onInput={(event) => setUrl(event.currentTarget.value)}
-          />
-        </Field>
-        <Field>
-          <FieldLabel for="inference-settings-token">Server token</FieldLabel>
+          <FieldLabel for="inference-settings-openrouter-key">OpenRouter API key</FieldLabel>
           <Input
             autocomplete="off"
-            id="inference-settings-token"
+            id="inference-settings-openrouter-key"
+            placeholder="sk-or-v1-..."
             type="password"
-            value={token()}
-            onInput={(event) => setToken(event.currentTarget.value)}
+            value={apiKey()}
+            onInput={(event) => setApiKey(event.currentTarget.value)}
           />
         </Field>
       </FieldGroup>
       <Button
         class="self-start"
-        disabled={testing()}
+        disabled={saving()}
         type="button"
         variant="outline"
-        onClick={() => void testHost()}
+        onClick={() => void saveKey()}
       >
-        Test connection
+        Save API key
       </Button>
-      <Show when={hostMessage()}>
+      <Show when={saveMessage()}>
         <p class="text-sm text-muted-foreground" role="status">
-          {hostMessage()}
+          {saveMessage()}
         </p>
       </Show>
     </div>
@@ -205,7 +189,7 @@ function SettingsSections() {
   );
 }
 
-/** Studio settings. Inference reports the embedded build and can test a Python host. */
+/** Studio settings. Inference configures the OpenRouter API key for label-free embedding. */
 export function StudioSettings() {
   const [open, setOpen] = createSignal(false);
 
@@ -234,7 +218,7 @@ export function StudioSettings() {
                   Settings
                 </h2>
                 <p class="text-muted-foreground text-sm">
-                  Startup updates and the inference server.
+                  Startup updates and OpenRouter label-free inference.
                 </p>
               </div>
               <Button

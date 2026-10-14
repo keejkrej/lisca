@@ -123,6 +123,7 @@ export type StudioDataPort = AlignerDataPort &
     getAnalysisResults(workspacePath: string): ClientEffect<AnalysisProgress | null>;
     getLatestAnalysisProgress(workspacePath: string): ClientEffect<AnalysisProgress | null>;
     labelFreeHealth(): ClientEffect<LabelFreeHealth>;
+    saveLabelFreeKey(apiKey: string): ClientEffect<LabelFreeHealth>;
     listLabelFreeReferences(workspacePath: string): ClientEffect<LabelFreeReferenceSet[]>;
     buildLabelFreeReferences(
       workspacePath: string,

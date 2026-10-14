@@ -22,6 +22,7 @@ import {
   LabelFreeClassificationListSchema,
   LabelFreeClassifyRequestSchema,
   LabelFreeHealthSchema,
+  LabelFreeKeyRequestSchema,
   LabelFreeReferenceQuerySchema,
   LabelFreeReferenceRequestSchema,
   LabelFreeReferenceSetListSchema,
@@ -413,6 +414,13 @@ const studioGroup = HttpApiGroup.make("studio")
   )
   .add(
     HttpApiEndpoint.get("labelFreeHealth", "/studio/label-free/health", {
+      success: LabelFreeHealthSchema,
+      error: [RequestError, Unauthorized],
+    }),
+  )
+  .add(
+    HttpApiEndpoint.post("saveLabelFreeKey", "/studio/label-free/key", {
+      payload: LabelFreeKeyRequestSchema,
       success: LabelFreeHealthSchema,
       error: [RequestError, Unauthorized],
     }),

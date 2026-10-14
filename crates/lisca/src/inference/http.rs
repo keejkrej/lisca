@@ -8,52 +8,37 @@ use axum::Json;
 
 use crate::http::FsError;
 use crate::protocol::{
-    LabelFreeBuild, LabelFreeClassification, LabelFreeClassificationList, LabelFreeClassifyRequest,
-    LabelFreeHealth, LabelFreeLabelCount, LabelFreeReferenceQuery, LabelFreeReferenceRequest,
-    LabelFreeReferenceSet, LabelFreeReferenceSetList, LabelFreeRuntime,
+    LabelFreeClassification, LabelFreeClassificationList, LabelFreeClassifyRequest,
+    LabelFreeHealth, LabelFreeKeyRequest, LabelFreeLabelCount, LabelFreeProvider,
+    LabelFreeReferenceQuery, LabelFreeReferenceRequest, LabelFreeReferenceSet,
+    LabelFreeReferenceSetList,
 };
 
-use super::embed::{DIMENSIONS, MODEL_ID, REVISION};
+use super::embed::{self, BATCH_SIZE, DIMENSIONS, MODEL_ID, REVISION};
 use super::service::{self, ClassificationRow, InferenceFailure, ReferenceSetSummary, CACHE_CAP};
 
-pub fn cuda_bundled() -> bool {
-    cfg!(feature = "cuda")
-}
-
 pub fn health_report() -> LabelFreeHealth {
-    if cfg!(feature = "label-free") {
-        LabelFreeHealth {
-            api_version: 1,
-            runtime: LabelFreeRuntime::Embedded,
-            build: LabelFreeBuild::LabelFree,
-            cuda_bundled: cuda_bundled(),
-            model_id: Some(MODEL_ID.to_string()),
-            revision: Some(REVISION.to_string()),
-            dimensions: Some(DIMENSIONS as u32),
-            device: Some("cpu".to_string()),
-            batch_size: 32,
-            queue_depth: 0,
-            cache_cap: CACHE_CAP as u32,
-        }
-    } else {
-        LabelFreeHealth {
-            api_version: 1,
-            runtime: LabelFreeRuntime::Embedded,
-            build: LabelFreeBuild::Light,
-            cuda_bundled: false,
-            model_id: None,
-            revision: None,
-            dimensions: None,
-            device: None,
-            batch_size: 0,
-            queue_depth: 0,
-            cache_cap: 0,
-        }
+    LabelFreeHealth {
+        api_version: 1,
+        provider: LabelFreeProvider::OpenRouter,
+        configured: embed::has_api_key(),
+        model_id: MODEL_ID.to_string(),
+        revision: REVISION.to_string(),
+        dimensions: DIMENSIONS as u32,
+        batch_size: BATCH_SIZE as u32,
+        cache_cap: CACHE_CAP as u32,
     }
 }
 
 pub async fn health() -> Json<LabelFreeHealth> {
     Json(health_report())
+}
+
+pub async fn save_key(
+    Json(body): Json<LabelFreeKeyRequest>,
+) -> Result<Json<LabelFreeHealth>, FsError> {
+    embed::set_api_key(&body.api_key);
+    Ok(Json(health_report()))
 }
 
 pub async fn list_references(
@@ -154,25 +139,13 @@ mod tests {
     use super::*;
 
     #[test]
-    fn health_reports_the_studio_build() {
+    fn health_reports_openrouter_configuration() {
         let health = health_report();
         let value = serde_json::to_value(&health).expect("health json");
         assert_eq!(value["apiVersion"], 1);
-        assert_eq!(value["runtime"], "embedded");
-        assert_eq!(
-            value["cudaBundled"],
-            serde_json::Value::Bool(cfg!(feature = "cuda"))
-        );
-        if cfg!(feature = "label-free") {
-            assert_eq!(value["build"], "label-free");
-            assert_eq!(value["modelId"], MODEL_ID);
-            assert_eq!(value["device"], "cpu");
-            assert_eq!(value["dimensions"], serde_json::json!(DIMENSIONS));
-        } else {
-            assert_eq!(value["build"], "light");
-            assert_eq!(value["modelId"], serde_json::Value::Null);
-            assert_eq!(value["device"], serde_json::Value::Null);
-            assert_eq!(value["dimensions"], serde_json::Value::Null);
-        }
+        assert_eq!(value["provider"], "openrouter");
+        assert_eq!(value["modelId"], MODEL_ID);
+        assert_eq!(value["revision"], REVISION);
+        assert_eq!(value["dimensions"], serde_json::json!(DIMENSIONS));
     }
 }

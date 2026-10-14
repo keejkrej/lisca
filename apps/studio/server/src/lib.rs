@@ -59,43 +59,31 @@ mod tests {
     use tower::ServiceExt;
 
     #[test]
-    fn light_build_reports_itself_and_hides_classify() {
+    fn studio_mounts_openrouter_label_free_routes_and_saves_key() {
         let runtime = tokio::runtime::Builder::new_current_thread()
             .enable_all()
             .build()
             .expect("runtime");
         runtime.block_on(async {
-            let health = super::app()
-                .oneshot(
-                    Request::builder()
-                        .uri("/studio/label-free/health")
-                        .body(Body::empty())
-                        .expect("request"),
-                )
-                .await
-                .expect("response");
-            assert_eq!(health.status(), StatusCode::OK);
-            let bytes = axum::body::to_bytes(health.into_body(), 8 * 1024)
-                .await
-                .expect("health body");
-            let value: serde_json::Value = serde_json::from_slice(&bytes).expect("health json");
-            assert_eq!(value["build"], "light");
-            assert_eq!(value["runtime"], "embedded");
-
-            let classify = super::app()
+            let save = super::app()
                 .oneshot(
                     Request::builder()
                         .method("POST")
-                        .uri("/studio/label-free/classify")
+                        .uri("/studio/label-free/key")
                         .header("content-type", "application/json")
-                        .body(Body::from(
-                            r#"{"workspacePath":"C:/assay","name":"annotations","limit":32}"#,
-                        ))
+                        .body(Body::from(r#"{"apiKey":"sk-or-v1-test"}"#))
                         .expect("request"),
                 )
                 .await
                 .expect("response");
-            assert_eq!(classify.status(), StatusCode::NOT_FOUND);
+            assert_eq!(save.status(), StatusCode::OK);
+            let bytes = axum::body::to_bytes(save.into_body(), 8 * 1024)
+                .await
+                .expect("save body");
+            let value: serde_json::Value = serde_json::from_slice(&bytes).expect("save json");
+            assert_eq!(value["provider"], "openrouter");
+            assert_eq!(value["configured"], true);
+            assert_eq!(value["modelId"], "google/gemini-embedding-2");
         });
     }
 }

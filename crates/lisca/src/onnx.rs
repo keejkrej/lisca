@@ -39,23 +39,7 @@ pub(crate) fn bundled_models_dirs() -> Vec<PathBuf> {
         .unwrap_or_default()
 }
 
-/// Open an ONNX file. The `cuda` build tries the bundled CUDA execution
-/// provider first and uses CPU when that provider cannot start.
 pub(crate) fn commit_onnx_file(path: &Path) -> Result<Session, String> {
-    #[cfg(feature = "cuda")]
-    {
-        match Session::builder()
-            .map_err(|error| error.to_string())?
-            .with_execution_providers([ort::ep::CUDA::default().build()])
-            .map_err(|error| error.to_string())?
-            .commit_from_file(path)
-        {
-            Ok(session) => return Ok(session),
-            Err(error) => {
-                tracing::warn!(%error, "CUDA execution provider unavailable; using CPU");
-            }
-        }
-    }
     Session::builder()
         .map_err(|error| error.to_string())?
         .commit_from_file(path)

@@ -77,6 +77,19 @@ def test_queue_backpressure_and_shutdown_resolve_waiters(tmp_path):
     asyncio.run(run())
 
 
+def test_create_app_rejects_non_cuda_device(tmp_path):
+    pytest.importorskip("fastapi")
+    from lisca.inference.server import create_app
+
+    with pytest.raises(RuntimeError, match="CPU fallback is disabled"):
+        create_app(
+            token=TOKEN,
+            data_dir=tmp_path,
+            origins=["http://localhost:18767"],
+            device="cpu",
+        )
+
+
 def test_auth_cors_reference_creation_and_movie(tmp_path):
     pytest.importorskip("fastapi")
     pytest.importorskip("httpx")

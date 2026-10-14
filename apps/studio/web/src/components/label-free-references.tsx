@@ -6,11 +6,11 @@ import { createSignal, For, onMount, Show } from "solid-js";
 
 import { studioClient, toErrorMessage } from "../api/studio-port";
 
-type BuildState = "unknown" | "light" | "ready" | "error";
+type ProbeState = "unknown" | "unconfigured" | "ready" | "error";
 
 export function LabelFreeReferences(props: { workspacePath: string | null }) {
-  const [build, setBuild] = createSignal<BuildState>("unknown");
-  const [cudaBundled, setCudaBundled] = createSignal(false);
+  const [state, setState] = createSignal<ProbeState>("unknown");
+  const [modelId, setModelId] = createSignal("google/gemini-embedding-2");
   const [reference, setReference] = createSignal<LabelFreeReferenceSet | null>(null);
   const [rows, setRows] = createSignal<LabelFreeClassification[]>([]);
   const [name, setName] = createSignal("annotations");
@@ -20,19 +20,19 @@ export function LabelFreeReferences(props: { workspacePath: string | null }) {
   const probe = async () => {
     try {
       const health = await runClientEffect(studioClient.labelFreeHealth());
-      if (health.build === "light") {
-        setBuild("light");
+      setModelId(health.modelId);
+      if (!health.configured) {
+        setState("unconfigured");
         return;
       }
-      setBuild("ready");
-      setCudaBundled(health.cudaBundled);
+      setState("ready");
       const workspacePath = props.workspacePath?.trim();
       if (!workspacePath) return;
       const sets = await runClientEffect(studioClient.listLabelFreeReferences(workspacePath));
       const existing = sets.find((set) => set.name === name());
       if (existing) setReference(existing);
     } catch (error) {
-      setBuild("error");
+      setState("error");
       setMessage(toErrorMessage(error, "Could not reach the Studio server"));
     }
   };
@@ -87,19 +87,18 @@ export function LabelFreeReferences(props: { workspacePath: string | null }) {
   return (
     <PanelSection appearance="rail" title="Label-free">
       <RailControlStack>
-        <Show when={build() === "unknown"}>
-          <p class="text-sm text-muted-foreground">Checking this Studio build.</p>
+        <Show when={state() === "unknown"}>
+          <p class="text-sm text-muted-foreground">Checking OpenRouter configuration.</p>
         </Show>
-        <Show when={build() === "light"}>
+        <Show when={state() === "unconfigured"}>
           <p class="text-sm text-muted-foreground">
-            This light build runs fluorescence assays. Label-free references are in the heavier
-            build, which can also bundle CUDA.
+            Add an OpenRouter API key in Settings → Inference to embed label-free reference frames
+            with {modelId()}.
           </p>
         </Show>
-        <Show when={build() === "ready"}>
+        <Show when={state() === "ready"}>
           <p class="text-sm text-muted-foreground">
-            Classification labels on Annotate become the reference set.
-            {cudaBundled() ? " CUDA is bundled in this build." : ""}
+            Classification labels on Annotate become the reference set ({modelId()} via OpenRouter).
           </p>
           <label class="flex flex-col gap-1 text-sm" for="label-free-reference-name">
             Reference name

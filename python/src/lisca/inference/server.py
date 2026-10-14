@@ -83,6 +83,10 @@ def create_app(
 ) -> FastAPI:
     if len(token) < 24 or token.startswith("replace-"):
         raise ValueError("LISCA_INFERENCE_TOKEN must have at least 24 characters")
+    if encoder is None and not device.startswith("cuda"):
+        raise RuntimeError(
+            f"CPU fallback is disabled; CUDA is required for inference (got device={device!r})"
+        )
     load_assays()
     factories = model_factories()
     if encoder is None and model not in factories:
