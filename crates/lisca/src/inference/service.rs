@@ -9,8 +9,9 @@ use std::sync::Mutex;
 
 use serde::{Deserialize, Serialize};
 
+use crate::image_source::RawFrame;
 use crate::protocol::RoiFrameRequest;
-use crate::roi::{self, ClassifiedFrame, RawRoiFrame};
+use crate::roi::{self, ClassifiedFrame};
 
 use super::embed::{embed_planes, PlaneInput, DIMENSIONS, ENCODER_ID, MODEL_ID, REVISION};
 
@@ -286,7 +287,7 @@ fn classify_roi_trajectory(
     if times.len() <= 1 {
         let time = times.first().copied().unwrap_or(0);
         let frame = load_frame(workspace, pos, roi_id, channel, time, z)?;
-        let vectors = cached_embed_batch(disk, &[frame])?;
+        let vectors = cached_embed_batch(disk, std::slice::from_ref(&frame))?;
         let (label_id, support) = nearest(examples, &vectors[0])?;
         return Ok(ClassificationRow {
             pos,
@@ -333,7 +334,7 @@ fn classify_roi_trajectory(
     while hi_idx - lo_idx > 1 {
         let mid_idx = lo_idx + (hi_idx - lo_idx) / 2;
         let mid_frame = load_frame(workspace, pos, roi_id, channel, times[mid_idx], z)?;
-        let mid_vectors = cached_embed_batch(disk, &[mid_frame])?;
+        let mid_vectors = cached_embed_batch(disk, std::slice::from_ref(&mid_frame))?;
         let (mid_label, mid_support) = nearest(examples, &mid_vectors[0])?;
         if mid_label == initial_label {
             lo_idx = mid_idx;
@@ -454,7 +455,7 @@ fn load_frame(
     channel: u32,
     time: u32,
     z: u32,
-) -> Result<RawRoiFrame, InferenceFailure> {
+) -> Result<RawFrame, InferenceFailure> {
     let request = RoiFrameRequest {
         pos,
         roi,
@@ -517,7 +518,7 @@ fn dominant_plane(examples: &[StoredExample]) -> (u32, u32, u32) {
 
 fn cached_embed_batch(
     disk: &mut Disk,
-    frames: &[RawRoiFrame],
+    frames: &[RawFrame],
 ) -> Result<Vec<Vec<f32>>, InferenceFailure> {
     let mut results: Vec<Option<Vec<f32>>> = vec![None; frames.len()];
     let mut missing_indices = Vec::new();
