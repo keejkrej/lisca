@@ -289,6 +289,7 @@ cargo build -p lisca --release --bin lisca-analyze
 # Killing assays (workspace path only; no --interval, no --assay)
 ./target/release/lisca-analyze killing-death-reporter ~/data/killing_pi
 ./target/release/lisca-analyze killing-engagement ~/data/killing_tcell
+./target/release/lisca-analyze lnp-binding ~/data/lnp_binding
 ```
 
 `killing-death-reporter` writes fluorescence CSVs, `results/<sample>/traces.xlsx`, and `traces.png`, `traces_shared_y.png`, `traces_summary.png`, `traces_summary_shared_y.png`. `killing-engagement` writes `engagement.csv`, `engagement_summary.csv`, the engagement workbooks, and `engagement_traces.png`, `engagement_traces_shared_y.png`, `engagement_traces_summary.png`, `engagement_traces_summary_shared_y.png`.

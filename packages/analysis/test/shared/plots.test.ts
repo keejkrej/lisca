@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
+import { BINDING_PLOTS } from "../../src/assays/binding/catalog";
 import { ENGAGEMENT_PLOTS, KILLING_PLOTS } from "../../src/assays/killing/catalog";
 import { TRANSFECTION_PLOTS } from "../../src/assays/transfection/catalog";
 import {
@@ -57,6 +58,34 @@ describe("inferResultAssayKind", () => {
     expect(plots[0]?.section).toBe("traces");
     expect(plots[1]?.section).toBe("traces-summary");
     expect(resultSectionLabel("traces-summary")).toBe("Traces summary");
+  });
+
+  it("detects lnp-binding from binding figures and CSVs", () => {
+    expect(
+      inferResultAssayKind([
+        {
+          fileName: "binding_particles.png",
+          path: "/results/LNP_1/binding_particles.png",
+        },
+      ]),
+    ).toBe("lnp-binding");
+    expect(
+      inferResultAssayKind([
+        {
+          fileName: "particles.csv",
+          path: "/analysis/Pos0/particles.csv",
+        },
+      ]),
+    ).toBe("lnp-binding");
+    const plots = collectResultPlots(
+      BINDING_PLOTS.map((plot) => ({
+        kind: "plot" as const,
+        fileName: plot.fileName,
+        path: `/results/Sample/${plot.fileName}`,
+      })),
+      "lnp-binding",
+    );
+    expect(visibleResultPlotSections(plots)).toEqual(["traces", "traces-summary"]);
   });
 
   it("does not treat analysis CSVs as transfection markers", () => {

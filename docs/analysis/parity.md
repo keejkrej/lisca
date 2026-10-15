@@ -85,7 +85,7 @@ pools, or bitwise float identity.
 | `transfection` (Studio wire id; science = transfection) | `lisca-transfection-assay` (`transfection` CLI + `lisca-transfection` crate)  | Thin dispatch in `analysis/assays/transfection/` + local ONNX segment | `lisca-analyze` (calls the git crate)  | Crop stays here. Python+Rust parity: sidecar `docs/parity.md`.                                                                                                                                                                                           |
 | `killing-death-reporter`                                | `lisca-killing-assay` (`lisca-killing` + `killing.core` / `killing.services`) | Thin dispatch and plots in `analysis/assays/killing/`                 | `lisca-analyze killing-death-reporter` | Per-cell traces and sample-mean figures. The command and `assay.json` type are both `killing-death-reporter`. Analyze does not run the classifier. The kill curve is `lisca_killing::run_clean` / `killing.services.classifier.run_clean`, library only. |
 | `killing-engagement`                                    | `lisca-killing-assay` (`lisca-killing` + `killing.core` / `killing.services`) | Thin dispatch and plots in `analysis/assays/killing_engagement.rs`    | `lisca-analyze killing-engagement`     | Spot counts. Tumor touch is recorded and is not proof of contact.                                                                                                                                                                                        |
-| `lnp-binding` / binding                                 | future `lisca-binding-assay`                                                  | none until mature                                                     | —                                      | Closed enum: do not half-register                                                                                                                                                                                                                        |
+| `lnp-binding`                                           | `lisca-binding-assay` (`lisca-binding` + `binding.core` / `binding.services`) | Thin dispatch and plots in `analysis/assays/lnp_binding.rs`           | `lisca-analyze lnp-binding`            | Picasso single-particle detection (`particles.csv`) and per-ROI time series (`binding.csv`, `binding_summary.csv`) for particle count, intensity (mean/median/IQR), and radius (mean/median/IQR). |
 
 Adding a Studio assay id is a **cross-cutting** change (`@lisca/contracts`,
 Rust, generated types). Unsupported ids fail explicitly — see `PRODUCT.md`.
@@ -229,6 +229,7 @@ any other flag exit 1. There is no `fluorescence`, `clean`, `predict`, or
 ```sh
 ./target/release/lisca-analyze killing-death-reporter ~/data/killing_pi
 ./target/release/lisca-analyze killing-engagement ~/data/killing_tcell
+./target/release/lisca-analyze lnp-binding ~/data/lnp_binding
 ```
 
 ### Side-by-side recipe

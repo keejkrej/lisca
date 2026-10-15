@@ -64,6 +64,8 @@ lisca-transfection = { git = "https://github.com/keejkrej/lisca-transfection-ass
 # the same definitions. Lisca does not depend on it: the package also pulls
 # the label-free training stack.
 lisca-killing = { git = "https://github.com/keejkrej/lisca-killing-assay", rev = "0d1d750e04ed5ec3fa1cbedb8ad9320b8103c3e4" }
+# Single-particle LNP binding assay (Picasso particle detection, intensity & radius time-series).
+lisca-binding = { git = "https://github.com/keejkrej/lisca-binding-assay", rev = "c375ce9557006291cc238274c6cc5961cd354fe1" }
 tauri = "2"
 tauri-build = "2"
 tauri-plugin-dialog = "2"

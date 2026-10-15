@@ -24,6 +24,7 @@ use std::time::Instant;
 
 use lisca::analysis::assays::killing;
 use lisca::analysis::assays::killing_engagement;
+use lisca::analysis::assays::lnp_binding;
 use lisca::analysis::assays::transfection::{
     default_fit_jobs, default_jobs, default_traces_jobs, interval_minutes, max_onset_minutes,
     publish_sample_tables_xlsx, publish_sample_traces_xlsx, run_auc, run_fit, run_plot_auc,
@@ -62,6 +63,7 @@ fn run() -> Result<(), String> {
         "pipeline" | "analyze" | "all" => cmd_pipeline(rest),
         "killing-death-reporter" => cmd_killing_death_reporter(rest),
         "killing-engagement" => cmd_killing_engagement(rest),
+        "lnp-binding" => cmd_lnp_binding(rest),
         other => Err(format!(
             "unknown command {other:?}\n\nRun `lisca-analyze --help` for usage."
         )),
@@ -75,6 +77,7 @@ lisca-analyze — assay CLI
   segment | traces | auc | fit | plot-traces | plot-auc | plot-fit | pipeline
   killing-death-reporter <workspace>
   killing-engagement <workspace>
+  lnp-binding <workspace>
 
 Transfection stages call `lisca-transfection`. `killing-death-reporter` and
 `killing-engagement` call the killing dispatch and take a workspace path only.
@@ -85,6 +88,7 @@ Usage:
   lisca-analyze <command> [options] <workspace>
   lisca-analyze killing-death-reporter <workspace>
   lisca-analyze killing-engagement <workspace>
+  lisca-analyze lnp-binding <workspace>
 
 Commands (transfection stage names):
   segment           Masks → mask/PosN/ (default Otsu; optional ONNX U-Net)
@@ -106,6 +110,10 @@ Commands (transfection stage names):
                     the engagement workbooks, engagement_traces.png,
                     engagement_traces_shared_y.png, engagement_traces_summary.png,
                     engagement_traces_summary_shared_y.png
+  lnp-binding
+                    LNP binding: Picasso particle detection (particles.csv, binding.csv,
+                    binding_summary.csv), workbooks, and per-sample particle count,
+                    intensity (mean/median/IQR), and radius (mean/median/IQR) plots
 
 Transfection stage options (not accepted by killing-death-reporter or killing-engagement):
   --assay PATH            assay.json (default: <workspace>/assay.json)
@@ -131,6 +139,7 @@ Examples:
   lisca-analyze pipeline ~/data/TF84
   lisca-analyze killing-death-reporter ~/data/killing_pi
   lisca-analyze killing-engagement ~/data/killing_tcell
+  lisca-analyze lnp-binding ~/data/lnp_binding
 "
     );
 }
@@ -324,6 +333,28 @@ fn cmd_killing_engagement(args: &[String]) -> Result<(), String> {
         }
         killing_engagement::run_plot_traces(&workspace, &mapping, interval)?;
         killing_engagement::write_summary(&workspace, &mapping)?;
+        Ok(())
+    })
+}
+
+fn cmd_lnp_binding(args: &[String]) -> Result<(), String> {
+    let workspace = killing_workspace(args, "lnp-binding")?;
+    let assay = load_assay_json(&workspace)?;
+    if assay.type_ != AssayType::LnpBinding {
+        return Err(format!(
+            "lisca-analyze lnp-binding requires assay.json type lnp-binding, found {}",
+            assay.type_
+        ));
+    }
+    let interval = parse_interval_minutes(assay.interval.value, Some(assay.interval.unit.as_str()))
+        .ok_or_else(|| "invalid interval.value/unit in assay.json".to_string())?;
+    let mapping = build_sample_mapping(&assay)?;
+    timed("lnp-binding", || {
+        for position in mapping.positions() {
+            lnp_binding::run_position(&workspace, &mapping, position, interval)?;
+        }
+        lnp_binding::run_plot_traces(&workspace, &mapping, interval)?;
+        lnp_binding::write_summary(&workspace, &mapping)?;
         Ok(())
     })
 }
@@ -688,5 +719,29 @@ mod tests {
 
         assert!(root.join("results/tcells/engagement_traces.png").is_file());
         assert!(root.join("analysis/Pos1/engagement_summary.csv").is_file());
+    }
+
+    #[test]
+    fn lnp_binding_writes_particles_binding_plots_and_summary() {
+        let workspace = tempfile::tempdir().unwrap();
+        let root = workspace.path();
+        write_assay(root, "lnp-binding", "5.0");
+        write_engagement_position(root);
+
+        cmd_lnp_binding(&[root.display().to_string()]).unwrap();
+
+        assert!(root.join("analysis/Pos1/particles.csv").is_file());
+        assert!(root.join("analysis/Pos1/binding.csv").is_file());
+        assert!(root.join("analysis/Pos1/binding_summary.csv").is_file());
+        assert!(root.join("results/tcells/binding_particles.png").is_file());
+        assert!(root.join("results/tcells/binding_intensity_mean.png").is_file());
+        assert!(root.join("results/tcells/binding_intensity_median.png").is_file());
+        assert!(root.join("results/tcells/binding_intensity_iqr.png").is_file());
+        assert!(root.join("results/tcells/binding_radius_mean.png").is_file());
+        assert!(root.join("results/tcells/binding_radius_median.png").is_file());
+        assert!(root.join("results/tcells/binding_radius_iqr.png").is_file());
+        assert!(root.join("results/tcells/particles.xlsx").is_file());
+        assert!(root.join("results/tcells/binding.xlsx").is_file());
+        assert!(root.join("results/tcells/binding_summary.xlsx").is_file());
     }
 }

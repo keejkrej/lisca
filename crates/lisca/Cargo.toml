@@ -13,7 +13,7 @@ workspace = true
 [features]
 default = ["studio"]
 smart = ["dep:ort"]
-studio = ["smart", "dep:mplot", "dep:lisca-transfection", "dep:lisca-killing"]
+studio = ["smart", "dep:mplot", "dep:lisca-transfection", "dep:lisca-killing", "dep:lisca-binding"]
 
 [dependencies]
 axum.workspace = true
@@ -38,6 +38,7 @@ ndarray.workspace = true
 ndarray-stats.workspace = true
 lisca-transfection = { workspace = true, optional = true }
 lisca-killing = { workspace = true, optional = true, features = ["onnx"] }
+lisca-binding = { workspace = true, optional = true }
 lisca-workspace.workspace = true
 ort = { workspace = true, optional = true }
 

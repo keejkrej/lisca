@@ -48,7 +48,12 @@ export default function AnalysisPage() {
   const assayId = useStudioStore((state) => state.assayId);
   const assayKind = createMemo((): ResultAssayKind => {
     const id = assayId();
-    if (id === "killing-death-reporter" || id === "transfection" || id === "killing-engagement")
+    if (
+      id === "killing-death-reporter" ||
+      id === "transfection" ||
+      id === "killing-engagement" ||
+      id === "lnp-binding"
+    )
       return id;
     return inferResultAssayKind(analysisResultFiles());
   });
