@@ -3,6 +3,7 @@
 
 pub mod killing;
 pub mod killing_engagement;
+pub mod lnp_binding;
 pub mod transfection;
 
 use std::path::PathBuf;
@@ -15,6 +16,7 @@ enum SupportedAssay {
     Transfection,
     Killing,
     KillingEngagement,
+    LnpBinding,
 }
 
 fn dispatch(assay_id: AssayType) -> Result<SupportedAssay, AnalysisError> {
@@ -22,7 +24,7 @@ fn dispatch(assay_id: AssayType) -> Result<SupportedAssay, AnalysisError> {
         AssayType::Transfection => Ok(SupportedAssay::Transfection),
         AssayType::KillingDeathReporter => Ok(SupportedAssay::Killing),
         AssayType::KillingEngagement => Ok(SupportedAssay::KillingEngagement),
-        AssayType::LnpBinding => Err(AnalysisError::UnsupportedAssay { assay_id }),
+        AssayType::LnpBinding => Ok(SupportedAssay::LnpBinding),
     }
 }
 
@@ -51,6 +53,11 @@ where
                 .await
                 .map_err(AnalysisError::Failed)
         }
+        SupportedAssay::LnpBinding => {
+            lnp_binding::run(workspace_path, request_id, assay_json, update_progress)
+                .await
+                .map_err(AnalysisError::Failed)
+        }
     }
 }
 
@@ -59,10 +66,22 @@ mod tests {
     use super::*;
 
     #[test]
-    fn unsupported_assay_ids_have_typed_errors_that_name_the_id() {
-        let assay_id = AssayType::LnpBinding;
-        let error = dispatch(assay_id).unwrap_err();
-        assert_eq!(error, AnalysisError::UnsupportedAssay { assay_id });
-        assert!(error.to_string().contains(assay_id.to_string().as_str()));
+    fn all_assay_ids_dispatch_to_supported_pipelines() {
+        assert_eq!(
+            dispatch(AssayType::Transfection),
+            Ok(SupportedAssay::Transfection)
+        );
+        assert_eq!(
+            dispatch(AssayType::KillingDeathReporter),
+            Ok(SupportedAssay::Killing)
+        );
+        assert_eq!(
+            dispatch(AssayType::KillingEngagement),
+            Ok(SupportedAssay::KillingEngagement)
+        );
+        assert_eq!(
+            dispatch(AssayType::LnpBinding),
+            Ok(SupportedAssay::LnpBinding)
+        );
     }
 }
