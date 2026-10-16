@@ -195,8 +195,6 @@ Details: [`schema.md`](./schema.md).
 ```
 analysis.rs            # crate module root (no mod.rs)
 analysis/
-  pipeline.rs          # load assay.json, dispatch
-  progress.rs          # shared progress + spawn_blocking helper
   array.rs             # Frame2D, masked ROI stats, trapz AUC, kinetic basis, ndarray-stats quantiles
   sample.rs            # SampleAnalysis / SampleMapping, build_sample_mapping (shared)
   roi_stack.rs         # ROI TIFF stacks (shared)

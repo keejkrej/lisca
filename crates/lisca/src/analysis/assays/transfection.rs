@@ -17,10 +17,8 @@ pub use segment::{default_jobs, run_segment, SegmentBackend, SegmentOptions};
 
 use std::path::{Path, PathBuf};
 
-use crate::analysis::output::collect_csv_outputs;
-use crate::analysis::progress::{analysis_progress, run_blocking};
-use crate::analysis::sample::{build_sample_mapping, parse_interval_minutes, SampleMapping};
-use crate::protocol::{AnalysisCsvFile, AnalysisProgress, AnalysisStage, AssayJsonFile};
+use crate::analysis::sample::{parse_interval_minutes, SampleMapping};
+use crate::protocol::AssayJsonFile;
 
 use mapping::to_sidecar_mapping;
 
@@ -178,128 +176,6 @@ pub fn publish_sample_tables_xlsx(
     kind: &str,
 ) -> Result<Vec<PathBuf>, String> {
     lisca_transfection::publish_sample_tables_xlsx(workspace, &to_sidecar_mapping(mapping), kind)
-}
-
-pub async fn run<F>(
-    workspace_path: PathBuf,
-    request_id: String,
-    assay_json: AssayJsonFile,
-    update_progress: F,
-) -> Result<Vec<AnalysisCsvFile>, String>
-where
-    F: Fn(AnalysisProgress) + Send + Sync + 'static,
-{
-    let interval = interval_minutes(&assay_json)?;
-    let mapping = build_sample_mapping(&assay_json)?;
-    let jobs = default_traces_jobs();
-    let skip_segment_stage = skip_segment(&assay_json);
-
-    update_progress(analysis_progress(
-        &request_id,
-        AnalysisStage::Preparing,
-        5.0,
-        "Building sample mapping from assay.json",
-    ));
-
-    if !skip_segment_stage {
-        let segment_workspace = workspace_path.clone();
-        let segment_mapping = mapping.clone();
-        run_blocking(move || {
-            run_segment(
-                &segment_workspace,
-                &segment_mapping,
-                &SegmentOptions {
-                    jobs,
-                    ..SegmentOptions::default()
-                },
-            )
-        })
-        .await
-        .map_err(|error| format!("segment step failed: {error}"))?;
-    }
-    update_progress(analysis_progress(
-        &request_id,
-        AnalysisStage::Segment,
-        30.0,
-        "Completed segmentation",
-    ));
-
-    let traces_workspace = workspace_path.clone();
-    let traces_mapping = mapping.clone();
-    run_blocking(move || {
-        run_traces_with_mode(&traces_workspace, &traces_mapping, jobs, skip_segment_stage)
-    })
-    .await
-    .map_err(|error| format!("traces step failed: {error}"))?;
-    update_progress(analysis_progress(
-        &request_id,
-        AnalysisStage::Traces,
-        60.0,
-        "Computed traces",
-    ));
-
-    let plot_traces_workspace = workspace_path.clone();
-    let plot_traces_mapping = mapping.clone();
-    run_blocking(move || {
-        publish_sample_traces_xlsx(&plot_traces_workspace, &plot_traces_mapping)?;
-        run_plot_traces(&plot_traces_workspace, &plot_traces_mapping, interval, None)
-    })
-    .await
-    .map_err(|error| format!("plot-traces step failed: {error}"))?;
-
-    run_blocking({
-        let workspace = workspace_path.clone();
-        move || run_auc(&workspace, interval).map(|_| ())
-    })
-    .await
-    .map_err(|error| format!("auc step failed: {error}"))?;
-    update_progress(analysis_progress(
-        &request_id,
-        AnalysisStage::Auc,
-        85.0,
-        "Computed AUC table",
-    ));
-
-    let plot_auc_workspace = workspace_path.clone();
-    let plot_auc_mapping = mapping.clone();
-    run_blocking(move || {
-        publish_sample_tables_xlsx(&plot_auc_workspace, &plot_auc_mapping, "auc")?;
-        run_plot_auc(&plot_auc_workspace, &plot_auc_mapping)
-    })
-    .await
-    .map_err(|error| format!("plot-auc step failed: {error}"))?;
-
-    let max_onset = max_onset_minutes(&assay_json);
-    run_blocking({
-        let workspace = workspace_path.clone();
-        move || run_fit(&workspace, interval, max_onset, default_fit_jobs()).map(|_| ())
-    })
-    .await
-    .map_err(|error| format!("fit step failed: {error}"))?;
-    update_progress(analysis_progress(
-        &request_id,
-        AnalysisStage::Fit,
-        98.0,
-        "Computed fit table",
-    ));
-
-    let plot_fit_workspace = workspace_path.clone();
-    let plot_fit_mapping = mapping.clone();
-    run_blocking(move || {
-        publish_sample_tables_xlsx(&plot_fit_workspace, &plot_fit_mapping, "fit")?;
-        run_plot_fit(&plot_fit_workspace, &plot_fit_mapping, interval, None)
-    })
-    .await
-    .map_err(|error| format!("plot-fit step failed: {error}"))?;
-
-    let outputs = collect_csv_outputs(&workspace_path)?;
-    update_progress(analysis_progress(
-        &request_id,
-        AnalysisStage::Completed,
-        100.0,
-        "Analysis pipeline completed",
-    ));
-    Ok(outputs)
 }
 
 /// Synchronous full transfection pipeline (parity CLI / tests).

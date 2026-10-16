@@ -4,14 +4,6 @@ use std::path::Path;
 
 use crate::protocol::AnalysisCsvFile;
 
-pub fn collect_csv_outputs(workspace: &Path) -> Result<Vec<AnalysisCsvFile>, String> {
-    collect_outputs(workspace, true)
-}
-
-pub fn workspace_analysis_outputs(workspace: &Path) -> Result<Vec<AnalysisCsvFile>, String> {
-    collect_csv_outputs(workspace)
-}
-
 pub fn workspace_analysis_manifest(workspace: &Path) -> Result<Vec<AnalysisCsvFile>, String> {
     collect_outputs(workspace, false)
 }
@@ -242,7 +234,6 @@ mod tests {
 
         assert_eq!(manifest.len(), 1);
         assert!(manifest[0].csv.is_empty());
-        assert!(workspace_analysis_outputs(workspace.path()).is_err());
     }
 
     #[test]

@@ -7,10 +7,8 @@
 use std::cmp::Ordering;
 use std::path::{Path, PathBuf};
 
-use crate::analysis::output::collect_csv_outputs;
-use crate::analysis::progress::{analysis_progress, run_blocking};
 use crate::analysis::sample::{build_sample_mapping, parse_interval_minutes, SampleMapping};
-use crate::protocol::{AnalysisCsvFile, AnalysisProgress, AnalysisStage, AssayJsonFile};
+use crate::protocol::AssayJsonFile;
 
 use super::killing::to_killing_mapping;
 
@@ -43,35 +41,6 @@ pub fn run_position(
 
 pub fn write_summary(workspace: &Path, mapping: &SampleMapping) -> Result<(), String> {
     lisca_killing::write_engagement_summary(workspace, &to_killing_mapping(mapping))
-}
-
-pub async fn run<F>(
-    workspace_path: PathBuf,
-    request_id: String,
-    assay_json: AssayJsonFile,
-    update_progress: F,
-) -> Result<Vec<AnalysisCsvFile>, String>
-where
-    F: Fn(AnalysisProgress) + Send + Sync + 'static,
-{
-    update_progress(analysis_progress(
-        &request_id,
-        AnalysisStage::Preparing,
-        5.0,
-        "Preparing engagement counts",
-    ));
-    let count_workspace = workspace_path.clone();
-    let count_assay = assay_json;
-    run_blocking(move || run_sync(&count_workspace, &count_assay))
-        .await
-        .map_err(|error| format!("engagement analysis failed: {error}"))?;
-    update_progress(analysis_progress(
-        &request_id,
-        AnalysisStage::Completed,
-        100.0,
-        "Engagement counts completed",
-    ));
-    collect_csv_outputs(&workspace_path)
 }
 
 pub fn run_plot_traces(

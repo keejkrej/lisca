@@ -10,10 +10,8 @@ pub use lisca_killing::{PredictControl, PredictFailure};
 use std::path::{Path, PathBuf};
 use std::{collections::BTreeMap, fs};
 
-use crate::protocol::{AnalysisCsvFile, AnalysisProgress, AnalysisStage, AssayJsonFile};
+use crate::protocol::AssayJsonFile;
 
-use crate::analysis::output::collect_csv_outputs;
-use crate::analysis::progress::{analysis_progress, run_blocking};
 use crate::analysis::sample::{build_sample_mapping, parse_interval_minutes, SampleMapping};
 
 pub fn resolve_model_path(workspace: &Path) -> Result<PathBuf, String> {
@@ -188,63 +186,6 @@ pub fn run_plot_death_times_stage(
     interval: f64,
 ) -> Result<(), String> {
     plot::run_plot_death_times(workspace, mapping, interval)
-}
-
-pub async fn run<F>(
-    workspace_path: PathBuf,
-    request_id: String,
-    assay_json: AssayJsonFile,
-    update_progress: F,
-) -> Result<Vec<AnalysisCsvFile>, String>
-where
-    F: Fn(AnalysisProgress) + Send + Sync + 'static,
-{
-    update_progress(analysis_progress(
-        &request_id,
-        AnalysisStage::Preparing,
-        5.0,
-        "Measuring signal-channel fluorescence",
-    ));
-
-    let kill_workspace = workspace_path.clone();
-    let kill_assay = assay_json.clone();
-    run_blocking(move || run_sync(&kill_workspace, &kill_assay))
-        .await
-        .map_err(|error| format!("killing analysis failed: {error}"))?;
-
-    update_progress(analysis_progress(
-        &request_id,
-        AnalysisStage::Segment,
-        35.0,
-        "Measured fluorescence in each crop",
-    ));
-    update_progress(analysis_progress(
-        &request_id,
-        AnalysisStage::Traces,
-        65.0,
-        "Wrote per-cell fluorescence time series",
-    ));
-    update_progress(analysis_progress(
-        &request_id,
-        AnalysisStage::Auc,
-        85.0,
-        "Averaged fluorescence for each sample",
-    ));
-    update_progress(analysis_progress(
-        &request_id,
-        AnalysisStage::Fit,
-        98.0,
-        "Wrote sample comparison figures",
-    ));
-
-    let outputs = collect_csv_outputs(&workspace_path)?;
-    update_progress(analysis_progress(
-        &request_id,
-        AnalysisStage::Completed,
-        100.0,
-        "Killing analysis completed",
-    ));
-    Ok(outputs)
 }
 
 #[cfg(test)]
