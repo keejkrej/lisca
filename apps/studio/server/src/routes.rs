@@ -226,6 +226,7 @@ fn build_transfection_task(
         "analysis/transfection/plot-traces",
         trace_ids.clone(),
         Arc::new(move || {
+            transfection::publish_sample_traces_xlsx(&plot_traces_workspace, &plot_traces_mapping)?;
             transfection::run_plot_traces(
                 &plot_traces_workspace,
                 &plot_traces_mapping,
@@ -251,7 +252,14 @@ fn build_transfection_task(
     let plot_auc = analysis_step(
         "analysis/transfection/plot-auc",
         vec![auc_id.clone()],
-        Arc::new(move || transfection::run_plot_auc(&plot_auc_workspace, &plot_auc_mapping)),
+        Arc::new(move || {
+            transfection::publish_sample_tables_xlsx(
+                &plot_auc_workspace,
+                &plot_auc_mapping,
+                "auc",
+            )?;
+            transfection::run_plot_auc(&plot_auc_workspace, &plot_auc_mapping)
+        }),
     );
     let plot_auc_id = plot_auc.step_id().to_string();
     steps.push(plot_auc);
@@ -279,6 +287,11 @@ fn build_transfection_task(
         "analysis/transfection/plot-fit",
         vec![fit_id],
         Arc::new(move || {
+            transfection::publish_sample_tables_xlsx(
+                &plot_fit_workspace,
+                &plot_fit_mapping,
+                "fit",
+            )?;
             transfection::run_plot_fit(
                 &plot_fit_workspace,
                 &plot_fit_mapping,
