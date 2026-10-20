@@ -2604,19 +2604,17 @@ dependencies = [
  "tower-http",
  "tracing",
  "tracing-subscriber",
+ "ureq",
  "uuid",
 ]
 
 [[package]]
 name = "lisca-killing"
 version = "0.1.0"
-source = "git+https://github.com/keejkrej/lisca-killing-assay?rev=0d1d750e04ed5ec3fa1cbedb8ad9320b8103c3e4#0d1d750e04ed5ec3fa1cbedb8ad9320b8103c3e4"
+source = "git+https://github.com/keejkrej/lisca-killing-assay?rev=129caadb123e9f1efb1fdbc74a8151fe8fc8b679#129caadb123e9f1efb1fdbc74a8151fe8fc8b679"
 dependencies = [
  "csv",
- "image 0.25.10",
  "marray",
- "ndarray 0.17.2",
- "ort",
  "rust_xlsxwriter",
  "serde",
  "serde_json",
@@ -5081,7 +5079,6 @@ dependencies = [
  "aligner-server",
  "annotator-server",
  "axum",
- "base64 0.22.1",
  "lisca",
  "lisca-server",
  "serde_json",
@@ -6226,6 +6223,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dea7109cdcd5864d4eeb1b58a1648dc9bf520360d7af16ec26d0a9354bafcfc0"
 dependencies = [
  "base64 0.22.1",
+ "flate2",
  "log",
  "percent-encoding",
  "rustls",

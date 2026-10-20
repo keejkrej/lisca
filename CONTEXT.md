@@ -166,7 +166,7 @@ _Avoid_: membrane integrity, death label, PI assay
 
 **Label-free**:
 The killing kind that judges death from brightfield or phase-contrast morphology, with no death reporter.
-_Avoid_: phase-contrast model, ResNet killing
+_Avoid_: phase-contrast model, local kill model
 
 **Engagement**:
 One T cell whose membrane touches a tumor cell inside an ROI.

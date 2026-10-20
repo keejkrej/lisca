@@ -14,7 +14,7 @@ that assay only. Killing (death reporter) is `killing-death-reporter` on
 | Sibling package (R&D + prod kernels)                                               | Role                                                                                                                                                                                                          |
 | ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [`lisca-transfection-assay`](https://github.com/keejkrej/lisca-transfection-assay) | Transfection analysis: Python `transfection` + Rust `lisca-transfection` (git URL). Parity: that repo’s [`docs/parity.md`](https://github.com/keejkrej/lisca-transfection-assay/blob/main/docs/parity.md).    |
-| [`lisca-killing-assay`](https://github.com/keejkrej/lisca-killing-assay)           | Death-reporter fluorescence, fluorescent engagement, and the killing classifier (predict, clean, kill curve): Python `killing` + Rust `lisca-killing` (git URL). Label-free viability stays in that repo too. |
+| [`lisca-killing-assay`](https://github.com/keejkrej/lisca-killing-assay)           | Death-reporter fluorescence, fluorescent engagement, clean, and the kill curve: Python `killing` + Rust `lisca-killing` (git URL). Label-free viability (EmbeddingGemma 2 + linear head) stays in that repo's `killing.inference.register`. |
 | `lisca-binding-assay` (planned)                                                    | Binding / LNP-style assays before Studio registration                                                                                                                                                         |
 
 **Crop** (`lisca-crop`, ND2/CZI, bbox → `roi/`) stays in this monorepo. It is
@@ -24,9 +24,9 @@ shared across assays and is not part of `lisca-transfection-assay`.
 
 | Stay in this repo (product / any-assay)    | Assay brains (HF / sidecar; not long-term `models/` ownership)                                                |
 | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------- |
-| Smart exclude (`smart-exclusion-resnet18`) | Transfection pattern U-Net: HF `keejkrej/single-cell-pattern-unet`, `LISCA_PATTERN_SEG_MODEL`                 |
-| Smart segment (`smart-segment-slimsam`)    | Killing ResNet: HF `keejkrej/killing-assay-resnet18`; local cache or `LISCA_KILL_MODEL`, not in the installer |
-| `mupattern-resnet18` (legacy reference)    | Do not add new assay-specific weights under `models/`                                                         |
+| Smart exclude (`smart-exclusion-resnet18`) | Transfection pattern U-Net: HF `keejkrej/single-cell-pattern-unet`, `LISCA_PATTERN_SEG_MODEL` |
+| Smart segment (`smart-segment-slimsam`)    | Label-free killing viability: inference host in `lisca-killing-assay`, not in the installer  |
+| `mupattern-resnet18` (legacy reference)    | Do not add new assay-specific weights under `models/`                                        |
 
 Studio still hosts a **transfection ONNX segment adapter** (`segment_onnx.rs`)
 until `lisca-transfection` un-stubs its ONNX backend. That adapter must resolve
@@ -94,7 +94,7 @@ Cargo (this workspace):
 
 ```toml
 lisca-transfection = { git = "https://github.com/keejkrej/lisca-transfection-assay", rev = "0d2bfe9205d735918587a83f8a538172de90dbe5" }
-lisca-killing = { git = "https://github.com/keejkrej/lisca-killing-assay", rev = "0d1d750e04ed5ec3fa1cbedb8ad9320b8103c3e4" }
+lisca-killing = { git = "https://github.com/keejkrej/lisca-killing-assay", rev = "129caadb123e9f1efb1fdbc74a8151fe8fc8b679" }
 ```
 
 Python extra (`python/pyproject.toml`, `analysis` extra):
@@ -117,8 +117,10 @@ The `lisca-transfection` public API is workspace-path based: `run_segment`,
 `run_traces`, `run_auc`, `run_fit`, `run_pipeline`, `run_plot_*` (PNG only),
 `publish_sample_*_xlsx`, `load_assay_for_workspace`. The killing crate surface
 the product calls is `run_fluorescence`, `run_position_fluorescence`,
-`run_position_engagement`, and `write_engagement_summary`. `run_predict_to`
-and `run_clean` stay library functions and are not `lisca-analyze` commands.
+`run_position_engagement`, `write_engagement_summary`, and `run_clean`.
+`run_clean` is a library function, not a `lisca-analyze` command. This repo
+does not enable a local killing classifier; label-free scoring uses the
+inference host.
 
 ### ndarray / imageproc versions
 

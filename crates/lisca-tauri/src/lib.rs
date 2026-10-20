@@ -1,8 +1,8 @@
 use std::{
     collections::BTreeMap,
-    io::{self, Read, Write},
+    io::{Read, Write},
     net::TcpStream,
-    path::{Path, PathBuf},
+    path::Path,
     time::Duration,
 };
 
@@ -220,12 +220,6 @@ where
             updater::set_update_check_enabled
         ])
         .setup(move |app| {
-            if config.product == "studio" {
-                if let Some(model) = resolve_kill_model_path(app) {
-                    std::env::set_var("LISCA_KILL_MODEL", model);
-                }
-            }
-
             let router = tauri::async_runtime::block_on(async move { backend_factory() });
             app.manage(IpcBackend { router });
             create_window(app, &config)?;
@@ -453,34 +447,6 @@ async fn dispatch_request(router: Router, request: IpcRequest) -> Result<IpcResp
             body_base64: Some(BASE64.encode(error.into_bytes())),
         }),
     }
-}
-
-fn bundled_resource_candidates<R: tauri::Runtime, M: Manager<R>>(
-    app: &M,
-    relative: impl AsRef<Path>,
-) -> io::Result<Vec<PathBuf>> {
-    let relative = relative.as_ref();
-    let mut candidates = Vec::new();
-
-    if let Ok(resource_dir) = app.path().resource_dir() {
-        candidates.push(resource_dir.join(relative));
-    }
-
-    let exe = std::env::current_exe()?;
-    if let Some(exe_dir) = exe.parent() {
-        candidates.push(exe_dir.join(relative));
-        candidates.push(exe_dir.join("resources").join(relative));
-    }
-
-    Ok(candidates)
-}
-
-fn resolve_kill_model_path<R: tauri::Runtime, M: Manager<R>>(app: &M) -> Option<PathBuf> {
-    let relative = Path::new("models").join("killing-assay-resnet18");
-    bundled_resource_candidates(app, &relative)
-        .ok()?
-        .into_iter()
-        .find(|path| path.join("model.onnx").is_file())
 }
 
 fn create_window<R: tauri::Runtime, M: Manager<R>>(

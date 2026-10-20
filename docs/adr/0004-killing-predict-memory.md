@@ -1,7 +1,8 @@
 # ADR-0004: Killing predict runs one position at a time and keeps one batch of frames
 
-- **Status:** accepted
+- **Status:** superseded
 - **Date:** 2026-10-05
+- **Superseded by:** [ADR-0014](0014-label-free-killing-inference-host.md)
 
 ## Decision
 
@@ -15,7 +16,7 @@ exhausted an 8 GB laptop.
 A killing position on `jb4_nikon_portable` is about 100–240 ROIs by 75 frames of
 ~95×95 `f64` pixels: 0.5–1.2 GB if those frames are all kept. The scheduler's default
 capacity is one step per core, so a 6-core machine started six of those at once, plus
-a ResNet18 session per position. Batch 256 also builds activation tensors of hundreds
+a classifier session per position. Batch 256 also builds activation tensors of hundreds
 of megabytes per session.
 
 The plate still predicts correctly in batches of 32 (same probabilities; batch norm is

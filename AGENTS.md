@@ -12,10 +12,10 @@ Human install and run steps are in `README.md`. Domain language is in `CONTEXT.m
 
 Open the sibling that owns the behavior under change. Cite these by GitHub URL.
 
-| When                                                                           | Repository                                                                                                                           |
-| ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
-| Transfection segment, traces, AUC, fit, plots, or Python/Rust parity           | [lisca-transfection-assay](https://github.com/keejkrej/lisca-transfection-assay) (Python `transfection`, crate `lisca-transfection`) |
-| Death-reporter fluorescence, fluorescent engagement, or the killing classifier | [lisca-killing-assay](https://github.com/keejkrej/lisca-killing-assay) (crate `lisca-killing`)                                       |
+| When                                                                                            | Repository                                                                                                                           |
+| ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| Transfection segment, traces, AUC, fit, plots, or Python/Rust parity                            | [lisca-transfection-assay](https://github.com/keejkrej/lisca-transfection-assay) (Python `transfection`, crate `lisca-transfection`) |
+| Death-reporter fluorescence, fluorescent engagement, clean, kill curve, or label-free viability | [lisca-killing-assay](https://github.com/keejkrej/lisca-killing-assay) (crate `lisca-killing`)                                       |
 | Figure layout, axes, or PNG/SVG/PDF export                                     | [mplot-rs](https://github.com/keejkrej/mplot-rs) (crate `mplot`)                                                                     |
 | Zeiss CZI reads                                                                | [czi-rs](https://github.com/keejkrej/czi-rs) (crate `czi`)                                                                           |
 | Nikon ND2 reads                                                                | [nd2-rs](https://github.com/keejkrej/nd2-rs) (crate `nd2`)                                                                           |
@@ -56,7 +56,7 @@ cargo run -p lisca --bin lisca-crop --no-default-features -- --workspace WORKSPA
 cd python && uv run lisca crop --workspace WORKSPACE --source SOURCE.nd2 --positions 0,1,2
 ```
 
-Transfection stage names match `lisca-transfection`. Killing commands take a workspace path and require `assay.json` type `killing-death-reporter` or `killing-engagement`. Classifier predict, clean, and the kill curve stay in `lisca-killing-assay`; `lisca-analyze` runs the two measurement commands above. Analysis layout: `docs/analysis/analysis.md`.
+Transfection stage names match `lisca-transfection`. Killing commands take a workspace path and require `assay.json` type `killing-death-reporter` or `killing-engagement`. Clean and the kill curve stay in `lisca-killing-assay`; label-free viability uses that package's inference register. `lisca-analyze` runs the two measurement commands above. Analysis layout: `docs/analysis/analysis.md`.
 
 ## Project structure
 
