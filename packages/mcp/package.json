@@ -1,0 +1,32 @@
+{
+  "name": "@lisca/mcp",
+  "private": true,
+  "description": "Local MCP server that lets agents drive the whole Lisca lineup: Studio, Aligner, Annotator, the analyze/crop CLIs, and workspace fixtures.",
+  "bin": {
+    "lisca-mcp": "./src/main.ts"
+  },
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "mcp": "node src/main.ts",
+    "test": "vp test run",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.1"
+  },
+  "devDependencies": {
+    "@lisca/fixtures": "workspace:*",
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "engines": {
+    "node": ">=24"
+  }
+}
