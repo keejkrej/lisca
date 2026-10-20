@@ -48,6 +48,51 @@ is enough for almost everything. Point the selector at `aligner` or `annotator`
 when you are exercising those apps specifically. `server_status` tells you what
 is up.
 
+## Where lisca-mcp sits relative to the apps
+
+Nowhere inside them. The apps never launch lisca-mcp and know nothing about
+it — it is a _fourth process_, owned by the MCP host (Claude Code and friends
+spawn it over stdio; a container entrypoint runs it in HTTP mode). It is a
+second client of the same JSON API the web UI is (ADR-0002 keeps the Rust
+backend transport-neutral), which is why the whole toolset works without a
+single change to any Rust crate.
+
+The two product shells differ in how that API is reached, and it matters:
+
+```
+Dev / hosted / container
+  MCP host ──stdio──▶ lisca-mcp ──HTTP──▶ *-server :197xx ◀──fetch── web UI
+
+Packaged desktop (Tauri)
+  Claude Code ──stdio──▶ lisca-mcp ──HTTP──▶ ✗ no listener
+  webview ──Tauri IPC (lisca_request)──▶ router embedded in the Tauri process
+```
+
+- **Dev and hosted builds** run the standalone `*-server` binary
+  (`http::run_server`, port 19765/19766/19767) — a real TCP listener lisca-mcp
+  calls like any other HTTP client.
+- **Packaged desktop builds** embed the very same Axum router in the Tauri
+  process (`IpcBackend`) and dispatch webview requests through the
+  `lisca_request` Tauri command. Per ADR-0002, desktop bundles open no backend
+  TCP port at all — so lisca-mcp cannot reach a running desktop app, and no
+  amount of spawning changes that.
+
+Practical consequence: when only a packaged Studio/Aligner/Annotator desktop
+app is running, the contract tools have nothing to talk to. The CLI and
+workspace tools still work (they touch the disk, not the app), and
+`server_start` fixes the rest by booting the standalone server binary — which
+runs the identical `*_server::app()` router factory the desktop app embeds.
+Agent and user see the same handlers over the same workspace files; the one
+divergence is in-memory state (task progress in the spawned server is not the
+desktop app's), because they are two processes.
+
+If you ever want the desktop app to own the MCP server (a Settings toggle that
+exposes the app to agents and shuts down with it), two changes are required:
+a loopback listener for the embedded router in `crates/lisca-tauri` — which
+reverses an ADR-0002 consequence and needs its own ADR, token, and
+default-off gating — plus a bundled Node runtime for packaged installs.
+Until then, host-owned lisca-mcp plus `server_start` is the intended shape.
+
 ## Environment variables
 
 | Variable                   | Meaning                                                                               |
