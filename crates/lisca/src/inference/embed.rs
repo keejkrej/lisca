@@ -155,7 +155,10 @@ pub fn plane_to_png_data_uri(width: u32, height: u32, pixels: &[u16]) -> Result<
     PngEncoder::new(Cursor::new(&mut png_bytes))
         .write_image(&bytes, width, height, ExtendedColorType::L8)
         .map_err(|error| format!("failed to encode ROI frame PNG: {error}"))?;
-    Ok(format!("data:image/png;base64,{}", BASE64.encode(png_bytes)))
+    Ok(format!(
+        "data:image/png;base64,{}",
+        BASE64.encode(png_bytes)
+    ))
 }
 
 pub fn embed_planes(planes: &[PlaneInput<'_>]) -> Result<Vec<Vec<f32>>, String> {
@@ -283,7 +286,8 @@ mod tests {
         let uri = plane_to_png_data_uri(2, 2, &[0, 100, 200, 300]).expect("png uri");
         assert!(uri.starts_with("data:image/png;base64,"));
         let dark = plane_to_png_data_uri(2, 2, &[0, 0, 0, 0]).expect("dark uri");
-        let bright = plane_to_png_data_uri(2, 2, &[65535, 65535, 65535, 65535]).expect("bright uri");
+        let bright =
+            plane_to_png_data_uri(2, 2, &[65535, 65535, 65535, 65535]).expect("bright uri");
         assert_ne!(dark, bright);
     }
 

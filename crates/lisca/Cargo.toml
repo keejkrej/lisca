@@ -37,7 +37,7 @@ marray = { workspace = true, features = ["np", "sp"] }
 ndarray.workspace = true
 ndarray-stats.workspace = true
 lisca-transfection = { workspace = true, optional = true }
-lisca-killing = { workspace = true, optional = true, features = ["onnx"] }
+lisca-killing = { workspace = true, optional = true }
 lisca-workspace.workspace = true
 ort = { workspace = true, optional = true }
 

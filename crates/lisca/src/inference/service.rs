@@ -464,7 +464,9 @@ fn load_frame(
         z,
     };
     roi::load_roi_frame(workspace, request).map_err(|error| {
-        InferenceFailure::Io(format!("Pos{pos} Roi{roi} C{channel} T{time} Z{z}: {error}"))
+        InferenceFailure::Io(format!(
+            "Pos{pos} Roi{roi} C{channel} T{time} Z{z}: {error}"
+        ))
     })
 }
 
@@ -547,11 +549,7 @@ fn cached_embed_batch(
 
     if !missing_planes.is_empty() {
         let embedded = embed_planes(&missing_planes).map_err(InferenceFailure::Invalid)?;
-        for ((index, key), vector) in missing_indices
-            .into_iter()
-            .zip(missing_keys)
-            .zip(embedded)
-        {
+        for ((index, key), vector) in missing_indices.into_iter().zip(missing_keys).zip(embedded) {
             if disk.cache.len() >= CACHE_CAP {
                 disk.cache.remove(0);
             }

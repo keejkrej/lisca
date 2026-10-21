@@ -42,7 +42,7 @@ pnpm, Vite+, and Cargo monorepo.
 | `models/`                          | Product models (Smart exclude, Smart segment)                           |
 | `docs/`                            | Domain notes and ADRs                                                   |
 
-Assay weights (the transfection pattern U-Net, the killing ResNet) live with the assay repositories and on Hugging Face. See `models/README.md`.
+Assay weights (the transfection pattern U-Net) live with the assay repositories and on Hugging Face. Label-free killing viability uses the inference host. See `models/README.md`.
 
 ## Related repositories
 
@@ -51,7 +51,7 @@ Assay science and the microscopy readers are public sibling repositories under [
 | Repository                                                                       | What it owns                                                                                                                                     |
 | -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
 | [lisca-transfection-assay](https://github.com/keejkrej/lisca-transfection-assay) | Transfection analysis: Python `transfection` and Rust `lisca-transfection` (segment, traces, AUC, fit, plots), plus the Python/Rust parity tests |
-| [lisca-killing-assay](https://github.com/keejkrej/lisca-killing-assay)           | Death-reporter fluorescence, fluorescent engagement, and the killing classifier. Rust crate `lisca-killing`                                      |
+| [lisca-killing-assay](https://github.com/keejkrej/lisca-killing-assay)           | Death-reporter fluorescence, fluorescent engagement, clean, kill curve, and label-free viability. Rust crate `lisca-killing`                     |
 | [mplot-rs](https://github.com/keejkrej/mplot-rs)                                 | Rust 2D plotting (`mplot`). Analysis figures are rendered with this crate                                                                        |
 | [czi-rs](https://github.com/keejkrej/czi-rs)                                     | Zeiss CZI reader (`czi`)                                                                                                                         |
 | [nd2-rs](https://github.com/keejkrej/nd2-rs)                                     | Nikon ND2 reader (`nd2`)                                                                                                                         |

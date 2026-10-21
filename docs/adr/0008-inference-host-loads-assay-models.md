@@ -19,11 +19,13 @@ viable/dead kNN and SVM stay in `lisca-killing-assay`, and
 `lisca.inference.server` imports that package's `register` function.
 
 Studio still opens this host as a second private connection. ADR-0003's
-same-origin workspace API stays intact. The token stays in page memory. The
-in-tree killing ONNX pipeline is not redirected here.
+same-origin workspace API stays intact. The token stays in page memory.
+There is no local killing classifier in this repo; label-free scoring stays
+on this host ([ADR-0014](0014-label-free-killing-inference-host.md)).
 
 ## Looks like a bug when
 
 - EmbeddingGemma weights or the viable/dead SVM are imported from this repo.
 - Adding another encoder requires editing the batching or cache code.
 - The viability panel sends movies through the workspace API.
+- Studio Analyze resolves a local kill model instead of calling this host.

@@ -1,3 +1,10 @@
+//! Death-reporter fluorescence, plots, and prediction-shard merge.
+//!
+//! Label-free viability is not an in-tree ONNX path. Studio classifies through
+//! the inference host (`killing.inference.register`: frozen EmbeddingGemma 2
+//! plus a linear head). Analyze measures fluorescence and does not load a
+//! viability model.
+
 mod fluorescence;
 mod mapping;
 mod plot;
@@ -5,7 +12,6 @@ mod plot;
 pub(crate) use mapping::to_killing_mapping;
 
 pub use fluorescence::run_position_traces;
-pub use lisca_killing::{PredictControl, PredictFailure};
 
 use std::path::{Path, PathBuf};
 use std::{collections::BTreeMap, fs};
@@ -13,23 +19,6 @@ use std::{collections::BTreeMap, fs};
 use crate::protocol::AssayJsonFile;
 
 use crate::analysis::sample::{build_sample_mapping, parse_interval_minutes, SampleMapping};
-
-pub fn resolve_model_path(workspace: &Path) -> Result<PathBuf, String> {
-    // Killing-assay brain (HF keejkrej/killing-assay-resnet18). Installers do
-    // not ship the ONNX; resolve a local cache or LISCA_KILL_MODEL.
-    let mut candidates = vec![
-        workspace.join("models/killing-assay-resnet18"),
-        crate::config::config_dir().join("models/killing-assay-resnet18"),
-        crate::onnx::workspace_models_dir().join("killing-assay-resnet18"),
-        PathBuf::from("models/killing-assay-resnet18"),
-    ];
-    candidates.extend(
-        crate::onnx::bundled_models_dirs()
-            .into_iter()
-            .map(|dir| dir.join("killing-assay-resnet18")),
-    );
-    crate::onnx::resolve_model_path("LISCA_KILL_MODEL", candidates)
-}
 
 pub fn run_sync(workspace: &Path, assay_json: &AssayJsonFile) -> Result<(), String> {
     let interval = parse_interval_minutes(
@@ -42,38 +31,6 @@ pub fn run_sync(workspace: &Path, assay_json: &AssayJsonFile) -> Result<(), Stri
     fluorescence::run_traces(workspace, &mapping)?;
     plot::run_plot_traces(workspace, &mapping, interval, None)?;
     Ok(())
-}
-
-pub fn run_predict_shard(
-    workspace: &Path,
-    output_workspace: &Path,
-    mapping: &SampleMapping,
-    model_dir: &Path,
-) -> Result<(), String> {
-    lisca_killing::run_predict_to(
-        workspace,
-        output_workspace,
-        &to_killing_mapping(mapping),
-        model_dir,
-        lisca_killing::PredictOptions::default(),
-    )
-}
-
-pub fn run_predict_shard_controlled(
-    workspace: &Path,
-    output_workspace: &Path,
-    mapping: &SampleMapping,
-    model_dir: &Path,
-    control: &PredictControl<'_>,
-) -> Result<(), PredictFailure> {
-    lisca_killing::run_predict_to_controlled(
-        workspace,
-        output_workspace,
-        &to_killing_mapping(mapping),
-        model_dir,
-        lisca_killing::PredictOptions::default(),
-        control,
-    )
 }
 
 pub fn merge_prediction_shards(workspace: &Path, shards: &[PathBuf]) -> Result<(), String> {
@@ -432,60 +389,5 @@ mod scheduler_stage_tests {
     fn write_csv_with_binary_sidecar(path: &Path, csv: &str) {
         fs::write(path, csv).unwrap();
         fs::write(path.with_extension("xlsx"), [0xff, 0xfe, 0x00]).unwrap();
-    }
-}
-
-#[cfg(test)]
-mod model_path_tests {
-    use super::*;
-    use crate::config::test_lock::TEST_CONFIG_LOCK;
-
-    struct RestoreVar {
-        key: &'static str,
-        previous: Option<String>,
-    }
-
-    impl RestoreVar {
-        fn set(key: &'static str, value: Option<&str>) -> Self {
-            let previous = std::env::var(key).ok();
-            match value {
-                Some(value) => std::env::set_var(key, value),
-                None => std::env::remove_var(key),
-            }
-            Self { key, previous }
-        }
-    }
-
-    impl Drop for RestoreVar {
-        fn drop(&mut self) {
-            match &self.previous {
-                Some(value) => std::env::set_var(self.key, value),
-                None => std::env::remove_var(self.key),
-            }
-        }
-    }
-
-    #[test]
-    fn resolve_model_path_uses_the_user_config_cache() {
-        let _guard = TEST_CONFIG_LOCK.lock().unwrap();
-        let root = std::env::temp_dir().join(format!(
-            "lisca-kill-config-cache-{}-{}",
-            std::process::id(),
-            std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap()
-                .as_nanos()
-        ));
-        let _ = fs::remove_dir_all(&root);
-        let model_dir = root.join("models/killing-assay-resnet18");
-        fs::create_dir_all(&model_dir).unwrap();
-        fs::write(model_dir.join("model.onnx"), b"onnx").unwrap();
-        let workspace = root.join("workspace");
-        fs::create_dir_all(&workspace).unwrap();
-        let _config = RestoreVar::set("LISCA_CONFIG_DIR", Some(root.to_str().unwrap()));
-        let _model = RestoreVar::set("LISCA_KILL_MODEL", None);
-        let resolved = resolve_model_path(&workspace).unwrap();
-        assert_eq!(resolved, model_dir);
-        fs::remove_dir_all(root).unwrap();
     }
 }

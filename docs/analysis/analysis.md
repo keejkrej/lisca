@@ -63,7 +63,7 @@ via [**mplot-rs**](https://github.com/keejkrej/mplot-rs). Death-reporter killing
 
 ## Design stance
 
-Sibling **goal sources** (`lisca-*-assay` packages, mupattern) describe **what** to compute and **which files** to read/write. Mature transfection analysis is **imported** from `lisca-transfection-assay` (git crate + Python package). Death-reporter fluorescence, fluorescent engagement, and the killing classifier (predict, clean, kill curve) are imported from [`lisca-killing-assay`](https://github.com/keejkrej/lisca-killing-assay) the same way. Studio keeps scheduling, progress, and the figures.
+Sibling **goal sources** (`lisca-*-assay` packages, mupattern) describe **what** to compute and **which files** to read/write. Mature transfection analysis is **imported** from `lisca-transfection-assay` (git crate + Python package). Death-reporter fluorescence, fluorescent engagement, clean, and the kill curve are imported from [`lisca-killing-assay`](https://github.com/keejkrej/lisca-killing-assay) the same way. Label-free viability stays in that assay's inference register. Studio keeps scheduling, progress, and the figures.
 
 Rust in this crate should stay idiomatic:
 
@@ -74,12 +74,12 @@ Rust in this crate should stay idiomatic:
   the sidecar un-stubs it; resolve `keejkrej/single-cell-pattern-unet` via
   `LISCA_PATTERN_SEG_MODEL`, not as a lisca-owned assay brain.
 - Killing measurements: call `lisca-killing` (death-reporter fluorescence,
-  engagement counts, and the classifier: predict, monotonicity clean, death
-  times, and the kill curve). Do not keep a second copy of those kernels under
-  `assays/killing/`. Figures stay here, including the kill-curve and death-time
-  grids. Analyze does not load the ResNet. Desktop packaging does not download
-  or bundle ONNX weights. Predict loads `model.onnx` through the crate's
-  `onnx` feature.
+  engagement counts, monotonicity clean, death times, and the kill curve). Do
+  not keep a second copy of those kernels under `assays/killing/`. Figures
+  stay here, including the kill-curve and death-time grids. Analyze does not
+  run a viability classifier. Label-free viability uses the inference host
+  (`killing.inference.register`: frozen EmbeddingGemma 2 plus a linear head).
+  Desktop packaging does not download or bundle ONNX weights.
 - Parity for transfection is judged in the sidecar; this repo’s wrapper tests check the dispatch still writes the workspace contract.
 
 ## Transfection pipeline

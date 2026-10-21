@@ -46,7 +46,7 @@ function stageArtifacts(product: LiscaProduct, cfg: DesktopProductConfig): strin
   cpSync(brandSrc, join(resourcesDir, "brand"), { recursive: true });
 
   // ONNX weights stay off the installer. Smart tools are deferred to a hosted
-  // service, and killing predict resolves a local cache or LISCA_KILL_MODEL.
+  // service. Label-free killing classification uses the inference host.
   return desktopDir;
 }
 

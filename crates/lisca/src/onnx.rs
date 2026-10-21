@@ -1,4 +1,4 @@
-//! Shared ONNX mechanics for the ResNet18 image classifiers.
+//! Shared ONNX mechanics for the Smart exclude and transfection segment graphs.
 
 use std::path::{Path, PathBuf};
 
@@ -17,9 +17,9 @@ pub(crate) fn workspace_models_dir() -> PathBuf {
 /// Model roots next to a packaged server binary.
 ///
 /// Desktop installers place the server at `<resource_dir>/server/<bin>`.
-/// They do not ship ONNX weights. A killing model dropped beside the binary
-/// at `<resource_dir>/models/killing-assay-resnet18` is still accepted.
-#[cfg(any(feature = "studio", test))]
+/// They do not ship ONNX weights. A product model dropped beside the binary
+/// under `<resource_dir>/models/` is still accepted.
+#[cfg(test)]
 pub(crate) fn models_dirs_near_executable(exe: &Path) -> Vec<PathBuf> {
     let mut dirs = Vec::new();
     if let Some(exe_dir) = exe.parent() {
@@ -30,13 +30,6 @@ pub(crate) fn models_dirs_near_executable(exe: &Path) -> Vec<PathBuf> {
         dirs.push(exe_dir.join("resources").join("models"));
     }
     dirs
-}
-
-#[cfg(feature = "studio")]
-pub(crate) fn bundled_models_dirs() -> Vec<PathBuf> {
-    std::env::current_exe()
-        .map(|exe| models_dirs_near_executable(&exe))
-        .unwrap_or_default()
 }
 
 pub(crate) fn commit_onnx_file(path: &Path) -> Result<Session, String> {
@@ -155,12 +148,12 @@ mod tests {
 
     #[test]
     fn resolve_model_path_uses_candidate_dir_with_onnx() {
-        let root = std::env::temp_dir().join(format!("lisca-kill-model-{}", std::process::id()));
+        let root = std::env::temp_dir().join(format!("lisca-onnx-model-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&root);
         std::fs::create_dir_all(&root).unwrap();
         std::fs::write(root.join("model.onnx"), b"onnx").unwrap();
         let resolved =
-            resolve_model_path("LISCA_UNSET_KILL_MODEL_FOR_TEST", [root.clone()]).unwrap();
+            resolve_model_path("LISCA_UNSET_ONNX_MODEL_FOR_TEST", [root.clone()]).unwrap();
         assert_eq!(resolved, root);
         let _ = std::fs::remove_dir_all(&root);
     }
