@@ -25,6 +25,23 @@ export function deriveAutoContrast(frame: FrameResult | null): ContrastWindow {
   return frame?.appliedContrast ?? frame?.suggestedContrast ?? { min: domain.min, max: domain.max };
 }
 
+/**
+ * Contrast window to request for a frame that is not the one on screen.
+ *
+ * Unlocked viewers follow each frame's own auto contrast, so a manual window is
+ * dropped on every frame change (`null` = ask the server for auto). Locking pins
+ * the window: the manual one when the user set it, else whatever the outgoing
+ * frame was displayed with, which is the window they pressed Lock on.
+ */
+export function contrastForFrameChange(
+  contrast: ContrastWindow | null,
+  contrastLocked: boolean,
+  currentFrame: FrameResult | null,
+): ContrastWindow | null {
+  if (!contrastLocked) return null;
+  return contrast ?? deriveAutoContrast(currentFrame);
+}
+
 export function deriveContrastUiState(
   frame: FrameResult,
   contrast: ContrastWindow | null,

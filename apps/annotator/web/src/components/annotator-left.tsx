@@ -20,6 +20,7 @@ export function AnnotatorLeft() {
       <ContrastControl
         aria-label="Contrast"
         contrast={nav.contrast}
+        contrastLocked={nav.contrastLocked}
         disabled={!nav.frame}
         frame={nav.frame}
         role="region"
@@ -27,6 +28,7 @@ export function AnnotatorLeft() {
         sectionClassName="min-h-0 shrink-0"
         sectionContentClassName="flex min-h-0 flex-col"
         onContrastChange={nav.setContrast}
+        onContrastLockedChange={nav.setContrastLocked}
       />
       <Show when={dock.mode === "segmentation"}>
         <PanelSection appearance="rail" title="Tool">

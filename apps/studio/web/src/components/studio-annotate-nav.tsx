@@ -19,6 +19,7 @@ export function StudioAnnotateNav(props: { standard?: boolean }) {
       <ContrastControl
         aria-label="Contrast"
         contrast={nav.contrast}
+        contrastLocked={nav.contrastLocked}
         disabled={!nav.frame}
         frame={nav.frame}
         role="region"
@@ -26,6 +27,7 @@ export function StudioAnnotateNav(props: { standard?: boolean }) {
         sectionClassName="min-h-0 shrink-0"
         sectionContentClassName="flex min-h-0 flex-col"
         onContrastChange={nav.setContrast}
+        onContrastLockedChange={nav.setContrastLocked}
       />
     </>
   );

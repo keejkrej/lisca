@@ -24,3 +24,4 @@ Why a shipped choice looks the way it does. Agents write these during the change
 | [0011](0011-standard-rail-contrast.md)             | accepted   | Studio Contrast stays on the standard Align and Annotate rails               |
 | [0012](0012-two-studio-builds.md)                  | superseded | Two Studio builds share one inference protocol                               |
 | [0013](0013-openrouter-label-free-single-build.md) | accepted   | Single Studio build with OpenRouter Gemini Embedding 2 for label-free assays |
+| [0014](0014-locked-contrast-across-frames.md)      | accepted   | Auto contrast follows each frame unless the viewer locks the window          |

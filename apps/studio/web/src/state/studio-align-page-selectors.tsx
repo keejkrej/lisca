@@ -91,6 +91,9 @@ export function useStudioAlignNav() {
     get contrast() {
       return state.contrast;
     },
+    get contrastLocked() {
+      return state.contrastLocked;
+    },
     get alignPositions() {
       return state.alignPositions;
     },
@@ -100,6 +103,7 @@ export function useStudioAlignNav() {
     setSelection: state.setSelection,
     changePosition: state.changePosition,
     setContrast: state.setContrast,
+    setContrastLocked: state.setContrastLocked,
     goBack: state.goBack,
     resetCurrent: state.resetCurrent,
     get saving() {

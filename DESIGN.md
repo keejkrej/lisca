@@ -217,9 +217,11 @@ Every instrument surface is square: radius is 0px on sheets, dialogs, cards, inp
 
 Use the installed Zaidan Lyra catalog through `@lisca/ui/primitives` or a focused path such as `@lisca/ui/button` before creating a new primitive. Product code must not deep-import registry files or hand-roll a control already covered by the catalog. Keep product workflows in `@lisca/instrument` and shared presentation in `@lisca/ui/patterns` or `@lisca/ui/shell`. Refresh registry-owned primitives through `packages/ui/components.json` instead of editing their generated implementation ad hoc.
 
-State controls and actions must be distinguishable before interaction. **Show** and **Edit** are toggles: always render a persistent state indicator, set `aria-pressed`, and use the brand fill only when on. Save, Reset, Auto Range, Undo, and exclusion commands are momentary actions: never leave them looking selected.
+State controls and actions must be distinguishable before interaction. **Show** and **Edit** are toggles: always render a persistent state indicator, set `aria-pressed`, and use the brand fill only when on. Save, Reset, Auto, Undo, and exclusion commands are momentary actions: never leave them looking selected.
 
 Grid **Show / Reset** is a named two-column action pair: both labels are short, they share one grid-visibility task scope, and Show retains its persistent state indicator. This is the canonical toggle/reset exception to the full-width rule.
+
+Contrast **Lock / Auto** is the same named two-column pair, lock left and Auto right: both labels are short and they share one window scope, so Lock sits beside Auto rather than on its own row. Lock is the toggle (persistent indicator, `aria-pressed`, brand fill when on); Auto is the momentary action that refits the current window.
 
 Expert mode is a workspace-level setting. Show its compact checkmark toggle (same Show/Edit family: persistent indicator, `aria-pressed`, brand fill when on) in the Studio top bar only on routes that provide an expert view. It sits immediately after Tasks in the left cluster; the right cluster contains only Connected and theme. Never place Expert at the bottom of a scrolling rail.
 

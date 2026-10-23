@@ -347,6 +347,37 @@ describe("align-ui actions", () => {
     expect(next.contrast).toBeNull();
   });
 
+  it("defaults contrast to unlocked and toggles it independently of the window", () => {
+    const initial = { ...createInitialAlignUiState(), contrast: { min: 10, max: 20 } };
+    expect(initial.contrastLocked).toBe(false);
+
+    const locked = runReducer(initial, (set) => actions.setContrastLocked(set, true));
+    expect(locked.contrastLocked).toBe(true);
+    expect(locked.contrast).toEqual({ min: 10, max: 20 });
+
+    const unlocked = runReducer(locked, (set) => actions.setContrastLocked(set, false));
+    expect(unlocked.contrastLocked).toBe(false);
+    expect(unlocked.contrast).toEqual({ min: 10, max: 20 });
+  });
+
+  it("setSource releases the contrast lock with the window it pinned", () => {
+    const initial = {
+      ...createInitialAlignUiState(),
+      contrast: { min: 10, max: 20 },
+      contrastLocked: true,
+    };
+    const next = runReducer(initial, (set) =>
+      actions.setSource(set, {
+        kind: "folder",
+        path: "/src",
+        subfolderTemplate: "Pos{pos}",
+        filenameTemplate: "img.tif",
+      }),
+    );
+    expect(next.contrast).toBeNull();
+    expect(next.contrastLocked).toBe(false);
+  });
+
   it("setError returns same state reference when error is unchanged", () => {
     const initial = createInitialAlignUiState();
     const next = runReducer(initial, (set) => actions.setError(set, null));

@@ -57,6 +57,9 @@ export function useAlignCanvas() {
     get contrast() {
       return state().contrast;
     },
+    get contrastLocked() {
+      return state().contrastLocked;
+    },
     get frameLoading() {
       return meta.frameLoading;
     },
@@ -93,6 +96,7 @@ export function useAlignCanvas() {
     setPatternZoomLocked: (locked: boolean) => state().setPatternZoomLocked(locked),
     setManualExclusionEnabled: (enabled: boolean) => state().setManualExclusionEnabled(enabled),
     setContrast: (contrast: ContrastWindow | null) => state().setContrast(contrast),
+    setContrastLocked: (locked: boolean) => state().setContrastLocked(locked),
     setExcludedPatternsForCurrentPosition: (patterns: Iterable<AlignGridPatternCoord>) =>
       state().setExcludedPatternsForCurrentPosition(patterns),
   };

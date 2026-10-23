@@ -61,6 +61,8 @@ export type StudioAlignState = {
   setSelection: (patch: Partial<FrameRequest>) => void;
   contrast: ContrastWindow | null;
   setContrast: (contrast: ContrastWindow | null) => void;
+  contrastLocked: boolean;
+  setContrastLocked: (locked: boolean) => void;
   frame: FrameResult | null;
   grid: AlignGridState;
   drift: AlignDrift | null;
@@ -238,6 +240,7 @@ export function useStudioAlignState(): StudioAlignState {
   const lockedSelection = () => session.derived().selection;
   const {
     setContrast,
+    setContrastLocked,
     setExcludedPatternsForCurrentPosition,
     setGrid,
     setManualExclusionEnabled,
@@ -456,6 +459,10 @@ export function useStudioAlignState(): StudioAlignState {
       return ui().contrast;
     },
     setContrast,
+    get contrastLocked() {
+      return ui().contrastLocked;
+    },
+    setContrastLocked,
     get frame() {
       return ui().frame;
     },

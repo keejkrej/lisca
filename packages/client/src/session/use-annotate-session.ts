@@ -29,6 +29,7 @@ export type AnnotateSessionMeta = {
 export type AnnotateSessionActions = {
   setSelection: (patch: Partial<RoiSelection>) => void;
   setContrast: (contrast: AnnotatorUiState["contrast"]) => void;
+  setContrastLocked: (locked: boolean) => void;
   setMode: (mode: AnnotatorUiState["mode"]) => void;
   setTool: (tool: AnnotatorUiState["tool"]) => void;
   setBrushSize: (brushSize: number) => void;
@@ -83,6 +84,7 @@ export function useAnnotateSessionCore<State extends AnnotatorUiState>(
       actions.setSelection(setUi, patch);
     },
     setContrast: (contrast) => actions.setContrast(setUi, contrast),
+    setContrastLocked: (locked) => actions.setContrastLocked(setUi, locked),
     setMode: (mode) => actions.setMode(setUi, mode),
     setTool: (tool) => actions.setTool(setUi, tool),
     setBrushSize: (brushSize) => actions.setBrushSize(setUi, brushSize),
