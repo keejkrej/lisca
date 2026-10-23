@@ -151,6 +151,18 @@ describe("annotator-ui actions", () => {
     expect(next.contrastMax).toBe(20);
   });
 
+  it("defaults contrast to unlocked and toggles it without dropping the window", () => {
+    const initial = {
+      ...createInitialAnnotatorUiState(),
+      contrast: { min: 10, max: 20 },
+    };
+    expect(initial.contrastLocked).toBe(false);
+
+    const locked = runReducer(initial, (set) => actions.setContrastLocked(set, true));
+    expect(locked.contrastLocked).toBe(true);
+    expect(locked.contrast).toEqual({ min: 10, max: 20 });
+  });
+
   it("setWorkspacePath resets selection and frame state", () => {
     const withWorkspace = {
       ...createInitialAnnotatorUiState(),
@@ -158,6 +170,7 @@ describe("annotator-ui actions", () => {
       selection: { pos: 1, roi: 2, channel: 0, timeIndex: 0, zIndex: 0 },
       frame,
       contrast: { min: 1, max: 2 },
+      contrastLocked: true,
     };
     const next = runReducer(withWorkspace, (set) => actions.setWorkspacePath(set, "/new"));
     expect(next.workspacePath).toBe("/new");
@@ -170,6 +183,7 @@ describe("annotator-ui actions", () => {
     });
     expect(next.frame).toBeNull();
     expect(next.contrast).toBeNull();
+    expect(next.contrastLocked).toBe(false);
     expect(next.contrastDomain).toEqual({ min: 0, max: 65535 });
     expect(next.contrastMin).toBe(0);
     expect(next.contrastMax).toBe(65535);

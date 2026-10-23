@@ -42,6 +42,8 @@ export type AlignUiState = {
   loadedFrameSelection: FrameRequest | null;
   frame: FrameResult | null;
   contrast: ContrastWindow | null;
+  /** Keep `contrast` across frame changes instead of following each frame's auto window. */
+  contrastLocked: boolean;
   grid: AlignGridState;
   drift: AlignDrift | null;
   toolMode: AlignGridToolMode;
@@ -95,6 +97,7 @@ export function createInitialAlignUiState(): AlignUiState {
     loadedFrameSelection: null,
     frame: null,
     contrast: null,
+    contrastLocked: false,
     grid: normalizeAlignGridState(createDefaultAlignGrid()),
     drift: null,
     toolMode: "pan",
@@ -205,6 +208,7 @@ export function createAlignUiActions(persist: AlignUiPersist, behavior: AlignUiB
           loadedFrameSelection: null,
           frame: null,
           contrast: null,
+          contrastLocked: false,
           grid: normalizeAlignGridState(createDefaultAlignGrid()),
           drift: null,
           excludedPatternsByPosition: {},
@@ -242,6 +246,7 @@ export function createAlignUiActions(persist: AlignUiPersist, behavior: AlignUiB
           selection,
           frame: null,
           contrast: null,
+          contrastLocked: false,
           grid: createVisibleDefaultAlignGrid(),
           drift: null,
           excludedPatternsByPosition: {},
@@ -319,6 +324,11 @@ export function createAlignUiActions(persist: AlignUiPersist, behavior: AlignUiB
     ) {
       patchAlignUi(set, persist, (state) =>
         state.contrast === contrast ? state : { ...state, contrast },
+      );
+    },
+    setContrastLocked(set: (update: StateUpdater<AlignUiState>) => void, contrastLocked: boolean) {
+      patchAlignUi(set, persist, (state) =>
+        state.contrastLocked === contrastLocked ? state : { ...state, contrastLocked },
       );
     },
     setGrid(set: (update: StateUpdater<AlignUiState>) => void, next: StateUpdater<AlignGridState>) {

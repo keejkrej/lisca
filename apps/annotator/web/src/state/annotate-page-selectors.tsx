@@ -24,9 +24,13 @@ export function useAnnotateNav() {
     get contrast() {
       return state.contrast;
     },
+    get contrastLocked() {
+      return state.contrastLocked;
+    },
     changeSelection: bindLive(() => state.changeSelection),
     setSelection: bindLive(() => state.setSelection),
     setContrast: bindLive(() => state.setContrast),
+    setContrastLocked: bindLive(() => state.setContrastLocked),
   };
 }
 

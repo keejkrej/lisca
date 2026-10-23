@@ -6,8 +6,9 @@ import { createEffect, createSignal, Show, type JSX } from "solid-js";
 import { Button } from "@lisca/ui/button";
 import { Field, FieldLabel } from "@lisca/ui/field";
 import { Slider } from "@lisca/ui/slider";
+import { Toggle } from "@lisca/ui/toggle";
 import { cn } from "@lisca/ui/cn";
-import { Section } from "@lisca/ui/patterns";
+import { Section, StateToggleIndicator } from "@lisca/ui/patterns";
 
 export type { ContrastWindow };
 
@@ -15,6 +16,9 @@ export type ContrastControlProps = {
   frame: FrameResult | null;
   contrast: ContrastWindow | null;
   onContrastChange: (contrast: ContrastWindow | null) => void;
+  /** Whether the current window stays pinned across frame changes. */
+  contrastLocked?: boolean;
+  onContrastLockedChange?: (locked: boolean) => void;
   disabled?: boolean;
   title?: string;
   class?: string;
@@ -28,8 +32,14 @@ export type ContrastControlProps = {
 };
 
 /**
- * Renders in a {@link Section} card. Optional **title** inside the body before Auto Range.
- * Layout: **Auto Range** (optional) beside **Min** / **Max** sliders.
+ * Renders in a {@link Section} card. Optional **title** inside the body before the action row.
+ * Layout: **Lock** beside **Auto**, then the **Min** / **Max** sliders. The Lock toggle only
+ * appears when the host supplies `onContrastLockedChange`.
+ *
+ * Lock is a state toggle rather than an action, like the rail's Edit and Show toggles: it
+ * decides whether the window survives frame changes, not what the window is. Auto stays an
+ * action, because it only sets the current window. Unlocking does not rewrite the window; the
+ * next frame change returns to that frame's auto range.
  */
 export function ContrastControl(props: ContrastControlProps) {
   const controlState = () => {
@@ -48,6 +58,9 @@ export function ContrastControl(props: ContrastControlProps) {
       onAutoRange: () => props.onContrastChange(suggestedContrast),
       onMinCommit: (min: number) => props.onContrastChange({ min, max: value.max }),
       onMaxCommit: (max: number) => props.onContrastChange({ min: value.min, max }),
+      locked: props.contrastLocked ?? false,
+      onToggleLocked: () => props.onContrastLockedChange?.(!(props.contrastLocked ?? false)),
+      showLock: props.onContrastLockedChange != null,
     };
   };
 
@@ -59,6 +72,7 @@ export function ContrastControl(props: ContrastControlProps) {
       disabled={controlState().disabled}
       domainMax={controlState().domainMax}
       domainMin={controlState().domainMin}
+      locked={controlState().locked}
       maxValue={controlState().maxValue}
       minValue={controlState().minValue}
       role={props.role}
@@ -67,10 +81,12 @@ export function ContrastControl(props: ContrastControlProps) {
       sectionAppearance={props.sectionAppearance}
       sectionDescription={props.sectionDescription}
       sectionTitle={props.sectionTitle}
+      showLock={controlState().showLock}
       title={props.title}
       onAutoRange={controlState().onAutoRange}
       onMaxCommit={controlState().onMaxCommit}
       onMinCommit={controlState().onMinCommit}
+      onToggleLocked={controlState().onToggleLocked}
     />
   );
 }
@@ -82,9 +98,12 @@ function ContrastControlBody(props: {
   maxValue: number;
   disabled: boolean;
   autoRangeDisabled: boolean;
+  locked: boolean;
+  showLock: boolean;
   onAutoRange: () => void;
   onMinCommit: (min: number) => void;
   onMaxCommit: (max: number) => void;
+  onToggleLocked: () => void;
   title?: string;
   class?: string;
   sectionTitle?: string;
@@ -149,16 +168,45 @@ function ContrastControlBody(props: {
               props.sectionAppearance === "rail" ? "gap-2" : "gap-3",
             )}
           >
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              disabled={props.disabled || props.autoRangeDisabled}
-              class="h-8 w-full justify-center px-2.5 text-xs"
-              onClick={props.onAutoRange}
+            <div
+              class={cn(
+                "grid w-full min-w-0 items-center gap-2",
+                props.showLock ? "grid-cols-2" : "grid-cols-1",
+              )}
             >
-              Auto Range
-            </Button>
+              <Show when={props.showLock}>
+                <Toggle
+                  aria-label="Lock contrast across frames"
+                  aria-pressed={props.locked}
+                  class="h-8 min-w-0 justify-center gap-2 px-2 text-xs"
+                  data-instrument-state-toggle=""
+                  disabled={props.disabled}
+                  pressed={props.locked}
+                  size="sm"
+                  title={
+                    props.locked
+                      ? "Keep this contrast range for every frame"
+                      : "Follow each frame's auto range"
+                  }
+                  variant="outline"
+                  onChange={props.onToggleLocked}
+                >
+                  <StateToggleIndicator pressed={props.locked} />
+                  <span>Lock</span>
+                </Toggle>
+              </Show>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                disabled={props.disabled || props.autoRangeDisabled}
+                class="h-8 min-w-0 justify-center px-2 text-xs"
+                title="Fit this frame's range"
+                onClick={props.onAutoRange}
+              >
+                Auto
+              </Button>
+            </div>
 
             <div
               class={cn(

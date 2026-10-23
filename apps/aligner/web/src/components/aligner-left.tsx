@@ -13,6 +13,7 @@ export function AlignerLeft() {
       <ContrastControl
         aria-label="Contrast"
         contrast={canvas.contrast}
+        contrastLocked={canvas.contrastLocked}
         disabled={!canvas.frame}
         frame={canvas.frame}
         role="region"
@@ -20,6 +21,7 @@ export function AlignerLeft() {
         sectionClassName="min-h-0 shrink-0"
         sectionContentClassName="flex min-h-0 flex-col"
         onContrastChange={canvas.setContrast}
+        onContrastLockedChange={canvas.setContrastLocked}
       />
       <AlignToolSection
         mode={canvas.toolMode}

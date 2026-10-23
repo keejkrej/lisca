@@ -1,5 +1,5 @@
 import type { AnnotationLabel, RoiFrameRequest } from "@lisca/contracts";
-import { maskHasPixels, type FrameResult } from "@lisca/utils";
+import { contrastForFrameChange, maskHasPixels, type FrameResult } from "@lisca/utils";
 import { resultData, resultInFlight } from "../atoms/result-utils";
 import {
   useAnnotateSessionCore,
@@ -187,6 +187,10 @@ export function useAnnotateStateCore<State extends AnnotatorUiState>(
       return;
     }
     void requestKeyValue;
+    const frameContrast = untrack(() => {
+      const current = session.state();
+      return contrastForFrameChange(current.contrast, current.contrastLocked, current.frame);
+    });
     const cleanup = loadCanvasResources<{
       frame: FrameResult;
       annotation: {
@@ -195,7 +199,7 @@ export function useAnnotateStateCore<State extends AnnotatorUiState>(
       };
     }>({
       start: () => {
-        deps.annotatorUiActions.setContrast(setUi, null);
+        deps.annotatorUiActions.setContrast(setUi, frameContrast);
         deps.annotatorUiActions.setFrameLoading(setUi, true);
         deps.annotatorUiActions.setAnnotationLoading(setUi, true);
         deps.annotatorUiActions.setFrameError(setUi, null);
@@ -204,9 +208,12 @@ export function useAnnotateStateCore<State extends AnnotatorUiState>(
       },
       load: (signal) =>
         runClientEffect(
-          loadRoiFrameWithAnnotationEffect(deps.annotatorClient, workspacePath, request, null).pipe(
-            Effect.mapError(toClientError),
-          ),
+          loadRoiFrameWithAnnotationEffect(
+            deps.annotatorClient,
+            workspacePath,
+            request,
+            frameContrast,
+          ).pipe(Effect.mapError(toClientError)),
           {
             signal,
           },
@@ -414,6 +421,7 @@ export function useAnnotateStateCore<State extends AnnotatorUiState>(
       overlayOpacity: currentUi.overlayOpacity,
       frame: currentUi.frame,
       contrast: currentUi.contrast,
+      contrastLocked: currentUi.contrastLocked,
       contrastDomain: currentUi.contrastDomain,
       contrastMin: currentUi.contrastMin,
       contrastMax: currentUi.contrastMax,
@@ -440,6 +448,7 @@ export function useAnnotateStateCore<State extends AnnotatorUiState>(
       setLabelError: session.actions.setLabelError,
       setSelection: session.actions.setSelection,
       setContrast: session.actions.setContrast,
+      setContrastLocked: session.actions.setContrastLocked,
       setMode: session.actions.setMode,
       setTool: session.actions.setTool,
       setBrushSize: session.actions.setBrushSize,

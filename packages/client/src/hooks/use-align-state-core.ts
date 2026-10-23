@@ -39,6 +39,8 @@ export type AlignState = {
   setSelection: (patch: Partial<FrameRequest>) => void;
   contrast: ContrastWindow | null;
   setContrast: (contrast: ContrastWindow | null) => void;
+  contrastLocked: boolean;
+  setContrastLocked: (locked: boolean) => void;
   frame: FrameResult | null;
   grid: AlignGridState;
   drift: AlignDrift | null;
@@ -141,6 +143,7 @@ export function useAlignStateCore(deps: UseAlignStateCoreDeps): Accessor<AlignSt
     setSource,
     setSelection,
     setContrast,
+    setContrastLocked,
     setGrid,
     setToolMode,
     setSpacingZoomLocked,
@@ -165,6 +168,8 @@ export function useAlignStateCore(deps: UseAlignStateCoreDeps): Accessor<AlignSt
       setSelection,
       contrast: currentUi.contrast,
       setContrast,
+      contrastLocked: currentUi.contrastLocked,
+      setContrastLocked,
       frame: currentUi.frame,
       grid: currentUi.grid,
       drift: currentUi.drift,

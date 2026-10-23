@@ -22,6 +22,7 @@ import {
   computeVariationExcludePreview,
   initialVariationExcludeThreshold,
   countVisibleAlignGridPatterns,
+  contrastForFrameChange,
   effectiveAlignGrid,
   enumerateVisibleAlignGridPatterns,
   mergeExcludedAlignGridPatterns,
@@ -83,6 +84,7 @@ export type AlignSessionActions = {
   setSource: (source: AlignerSource | null) => void;
   setSelection: (patch: Partial<FrameRequest>) => void;
   setContrast: (contrast: ContrastWindow | null) => void;
+  setContrastLocked: (locked: boolean) => void;
   setGrid: (next: AlignGridState | ((current: AlignGridState) => AlignGridState)) => void;
   setToolMode: (mode: AlignGridToolMode) => void;
   setSpacingZoomLocked: (locked: boolean) => void;
@@ -193,6 +195,7 @@ export function useAlignSessionCore(options: UseAlignSessionCoreOptions) {
     setSource: (source: AlignerSource | null) => actions.setSource(setUi, source),
     setSelection: (patch) => actions.setSelection(setUi, patch),
     setContrast: (contrast) => actions.setContrast(setUi, contrast),
+    setContrastLocked: (locked) => actions.setContrastLocked(setUi, locked),
     setGrid: (next) => actions.setGrid(setUi, next),
     setToolMode: (mode) => actions.setToolMode(setUi, mode),
     setSpacingZoomLocked: (locked) => actions.setSpacingZoomLocked(setUi, locked),
@@ -276,9 +279,15 @@ export function useAlignSessionCore(options: UseAlignSessionCoreOptions) {
       return;
     }
     const stateKey = workspacePath ? savedAlignStateKey(workspacePath, selection.pos) : null;
+    // Untracked: dragging the sliders must not re-run this effect, which would
+    // race the contrast reload below. Locked contrast survives the frame change.
+    const frameContrast = untrack(() => {
+      const current = ui();
+      return contrastForFrameChange(current.contrast, current.contrastLocked, current.frame);
+    });
     const cleanup = resources.transact({
       start: () => {
-        actions.setContrast(setUi, null);
+        actions.setContrast(setUi, frameContrast);
         actions.setFrameLoading(setUi, true);
         actions.setError(setUi, null);
         actions.setStatus(setUi, "Loading frame");
@@ -286,7 +295,7 @@ export function useAlignSessionCore(options: UseAlignSessionCoreOptions) {
       load: (signal) =>
         runClientEffect(
           Effect.all([
-            backend.loadFrame(backend.client, source, selection, null),
+            backend.loadFrame(backend.client, source, selection, frameContrast),
             workspacePath
               ? backend.client.loadAlignState(workspacePath, selection.pos)
               : Effect.succeed(null as SavedAlignState | null),

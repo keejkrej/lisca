@@ -24,12 +24,16 @@ export function useStudioAnnotateNav() {
     get contrast() {
       return state.contrast;
     },
+    get contrastLocked() {
+      return state.contrastLocked;
+    },
     get workspaceMissing() {
       return state.workspaceMissing;
     },
     changeSelection: bindLive(() => state.changeSelection),
     setSelection: bindLive(() => state.setSelection),
     setContrast: bindLive(() => state.setContrast),
+    setContrastLocked: bindLive(() => state.setContrastLocked),
   };
 }
 

@@ -34,6 +34,8 @@ export type AnnotatorUiState = {
   overlayOpacity: number;
   frame: FrameResult | null;
   contrast: ContrastWindow | null;
+  /** Keep `contrast` across frame changes instead of following each frame's auto window. */
+  contrastLocked: boolean;
   contrastDomain: ContrastWindow;
   contrastMin: number;
   contrastMax: number;
@@ -70,6 +72,7 @@ export function createDefaultAnnotatorUiState(): AnnotatorUiState {
     overlayOpacity: 0.35,
     frame: null,
     contrast: null,
+    contrastLocked: false,
     contrastDomain: initialContrastDomain,
     contrastMin: 0,
     contrastMax: initialContrastDomain.max,
@@ -191,6 +194,7 @@ export function resetAnnotatorWorkspace<State extends AnnotatorUiState>(
     activeLabelId: null,
     frame: null,
     contrast: null,
+    contrastLocked: false,
     contrastDomain: initialContrastDomain,
     contrastMin: 0,
     contrastMax: initialContrastDomain.max,
@@ -273,6 +277,11 @@ export function createAnnotatorUiActions<State extends AnnotatorUiState = Annota
         contrastMin: contrast?.min ?? state.contrastDomain.min,
         contrastMax: contrast?.max ?? state.contrastDomain.max,
       }));
+    },
+    setContrastLocked(set: (update: StateUpdater<State>) => void, contrastLocked: boolean) {
+      patch(set, (state) =>
+        state.contrastLocked === contrastLocked ? state : { ...state, contrastLocked },
+      );
     },
     setContrastState(set: (update: StateUpdater<State>) => void, frame: FrameResult) {
       patch(set, (state) => ({

@@ -222,6 +222,9 @@ export function useStudioAnnotateState(): StudioAnnotateState {
     get contrast() {
       return annotate().contrast;
     },
+    get contrastLocked() {
+      return annotate().contrastLocked;
+    },
     get contrastDomain() {
       return annotate().contrastDomain;
     },
@@ -299,6 +302,9 @@ export function useStudioAnnotateState(): StudioAnnotateState {
     },
     get setContrast() {
       return annotate().setContrast;
+    },
+    get setContrastLocked() {
+      return annotate().setContrastLocked;
     },
     get setMode() {
       return annotate().setMode;
