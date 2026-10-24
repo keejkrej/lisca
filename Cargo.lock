@@ -2604,6 +2604,7 @@ dependencies = [
  "tower-http",
  "tracing",
  "tracing-subscriber",
+ "ureq",
  "uuid",
 ]
 
@@ -5081,7 +5082,6 @@ dependencies = [
  "aligner-server",
  "annotator-server",
  "axum",
- "base64 0.22.1",
  "lisca",
  "lisca-server",
  "serde_json",
@@ -6226,6 +6226,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dea7109cdcd5864d4eeb1b58a1648dc9bf520360d7af16ec26d0a9354bafcfc0"
 dependencies = [
  "base64 0.22.1",
+ "flate2",
  "log",
  "percent-encoding",
  "rustls",
