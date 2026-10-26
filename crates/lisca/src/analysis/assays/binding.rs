@@ -59,7 +59,7 @@ pub fn detect_params(
     let box_size = analysis
         .and_then(|config| config.box_size)
         .unwrap_or(DEFAULT_BOX_SIZE);
-    if box_size < 3 || box_size % 2 == 0 {
+    if box_size < 3 || box_size.is_multiple_of(2) {
         return Err(format!(
             "analysis.boxSize must be an odd integer >= 3, got {box_size}"
         ));

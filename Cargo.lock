@@ -2583,6 +2583,7 @@ dependencies = [
  "base64 0.22.1",
  "csv",
  "czi",
+ "font-kit",
  "image 0.25.10",
  "libc",
  "lisca-killing",
