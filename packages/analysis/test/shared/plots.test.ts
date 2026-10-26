@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
+import { BINDING_PLOTS } from "../../src/assays/binding/catalog";
 import { ENGAGEMENT_PLOTS, KILLING_PLOTS } from "../../src/assays/killing/catalog";
 import { TRANSFECTION_PLOTS } from "../../src/assays/transfection/catalog";
 import {
@@ -27,6 +28,34 @@ describe("inferResultAssayKind", () => {
   it("detects transfection from AUC or fit plot artifacts", () => {
     expect(inferResultAssayKind([{ fileName: "auc.png", path: "" }])).toBe("transfection");
     expect(inferResultAssayKind([{ fileName: "traces_fit.png", path: "" }])).toBe("transfection");
+  });
+
+  it("detects binding from its own figures", () => {
+    expect(
+      inferResultAssayKind([
+        {
+          fileName: "binding_traces_summary.png",
+          path: "/results/binding_traces_summary.png",
+        },
+      ]),
+    ).toBe("lnp-binding");
+    const plots = collectResultPlots(
+      [
+        { kind: "plot", fileName: "binding_traces.png", path: "/results/bound/binding_traces.png" },
+        {
+          kind: "plot",
+          fileName: "binding_traces_summary_shared_y.png",
+          path: "/results/bound/binding_traces_summary_shared_y.png",
+        },
+      ],
+      "lnp-binding",
+    );
+    expect(plots.map((plot) => plot.fileName)).toEqual([
+      "binding_traces.png",
+      "binding_traces_summary_shared_y.png",
+    ]);
+    expect(plots[0]?.section).toBe("traces");
+    expect(plots[1]?.section).toBe("traces-summary");
   });
 
   it("detects engagement from its own figures", () => {
@@ -227,6 +256,22 @@ describe("result sections", () => {
       ["traces_summary_shared_y.png", "traces-summary"],
     ]);
     expect(visibleResultPlotSections(plots)).toEqual(["traces", "traces-summary"]);
+  });
+
+  it("keeps binding on traces and traces summary", () => {
+    const plots = collectResultPlots(
+      BINDING_PLOTS.map((plot) => ({
+        kind: "plot" as const,
+        fileName: plot.fileName,
+        path: `/results/bound/${plot.fileName}`,
+      })),
+      "lnp-binding",
+    );
+    expect(visibleResultPlotSections(plots)).toEqual(["traces", "traces-summary"]);
+    expect(filterResultPlotsBySection(plots, "traces").map((plot) => plot.fileName)).toEqual([
+      "binding_traces.png",
+      "binding_traces_shared_y.png",
+    ]);
   });
 
   it("keeps engagement on traces and traces summary", () => {

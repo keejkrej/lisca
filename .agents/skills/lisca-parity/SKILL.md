@@ -157,7 +157,7 @@ documented or re-run; docs list the stage.
 | `transfection`           | `lisca-transfection-assay` (`transfection`) | git crate `lisca-transfection` + thin `assays/transfection/` | `lisca-analyze`                        |
 | `killing-death-reporter` | `lisca-killing-assay`                       | git crate `lisca-killing` + thin dispatch                    | `lisca-analyze killing-death-reporter` |
 | `killing-engagement`     | `lisca-killing-assay`                       | git crate `lisca-killing` + thin dispatch                    | `lisca-analyze killing-engagement`     |
-| binding (future)         | `../lisca-binding-assay`                    | (not registered until mature)                                | —                                      |
+| `lnp-binding`            | Picasso (`picasso-rs`); sidecar planned     | `analysis/assays/binding.rs`                                 | `lisca-analyze lnp-binding`            |
 
 ## Completion checklist
 

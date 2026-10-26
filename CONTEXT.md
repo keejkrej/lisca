@@ -172,6 +172,19 @@ _Avoid_: phase-contrast model, ResNet killing
 One T cell whose membrane touches a tumor cell inside an ROI.
 _Avoid_: interaction, contact, synapse
 
+### Binding
+
+**Binding**:
+The assay that counts fluorescently labelled LNPs (or LNPs carrying binders)
+attached to cells on the Pattern array. Picasso localizes spots in the Signal
+channel of each ROI crop.
+_Avoid_: site, particle tracking as the product readout (the product table is
+spot counts and intensities per ROI)
+
+**Spot**:
+One fitted fluorescent particle in an ROI frame (Picasso localization).
+_Avoid_: peak, blob, detection (for the counted object)
+
 ### Batch comparison
 
 **Control**:

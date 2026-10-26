@@ -56,6 +56,7 @@ Assay science and the microscopy readers are public sibling repositories under [
 | [czi-rs](https://github.com/keejkrej/czi-rs)                                     | Zeiss CZI reader (`czi`)                                                                                                                         |
 | [nd2-rs](https://github.com/keejkrej/nd2-rs)                                     | Nikon ND2 reader (`nd2`)                                                                                                                         |
 | [marray-rs](https://github.com/keejkrej/marray-rs)                               | Pure-Rust scientific computing (`marray`): array, signal, image, and classical ML modules in the NumPy / SciPy style                             |
+| [picasso-rs](https://github.com/keejkrej/picasso-rs)                             | Spot identify and Gaussian fit (`picasso`) for the LNP binding assay                                                                             |
 
 ## Install
 
@@ -121,13 +122,14 @@ pnpm run fixture:workspace -- --assay transfection --stage cropped --out ./tf-an
 
 See `packages/fixtures/README.md`.
 
-Run an assay on a workspace. Transfection stages call `lisca-transfection`. The killing commands call `lisca-killing` and require a matching `assay.json` type. Classifier training stays in `lisca-killing-assay`.
+Run an assay on a workspace. Transfection stages call `lisca-transfection`. The killing commands call `lisca-killing` and require a matching `assay.json` type. `lnp-binding` calls Picasso and requires type `lnp-binding`. Classifier training stays in `lisca-killing-assay`.
 
 ```sh
 cargo run -p lisca --bin lisca-analyze -- --help
 cargo run -p lisca --bin lisca-analyze -- pipeline WORKSPACE
 cargo run -p lisca --bin lisca-analyze -- killing-death-reporter WORKSPACE
 cargo run -p lisca --bin lisca-analyze -- killing-engagement WORKSPACE
+cargo run -p lisca --bin lisca-analyze -- lnp-binding WORKSPACE
 ```
 
 Crop an ND2 or CZI source into `roi/`:

@@ -18,6 +18,7 @@ import { Atom } from "effect/unstable/reactivity";
 import {
   ASSAY_CHOICE_LABEL,
   analysisConfigForAssay,
+  assayUsesBindingDetect,
   assayUsesMaxOnsetMinutes,
   assayUsesSkipSegment,
   buildStudioAssayJson as buildStudioAssayJsonCore,
@@ -492,7 +493,11 @@ export const studioWizardActions = {
     patch: Partial<AssayAnalysisConfig>,
   ) {
     patchStudioWizard(set, (current) => {
-      if (!assayUsesMaxOnsetMinutes(current.assayId) && !assayUsesSkipSegment(current.assayId)) {
+      if (
+        !assayUsesMaxOnsetMinutes(current.assayId) &&
+        !assayUsesSkipSegment(current.assayId) &&
+        !assayUsesBindingDetect(current.assayId)
+      ) {
         return { ...current, analysis: null };
       }
       return {

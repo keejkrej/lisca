@@ -73,13 +73,13 @@ export const OPERATION_DESCRIPTIONS: Record<string, string> = {
   "studio.saveAssayJson":
     "Write a workspace's assay.json — the typed assay description: assay kind, Image source, Positions, Channels, timing, Samples, and analysis config. Start of the Studio analyze flow.",
   "studio.startAnalysis":
-    "Start an Analysis run for a workspace. The assay.json root type selects the pipeline (transfection stages, killing-death-reporter, or killing-engagement). Long-running — follow it with analysis_wait or studio_get_analysis_progress.",
+    "Start an Analysis run for a workspace. The assay.json root type selects the pipeline (transfection stages, killing-death-reporter, killing-engagement, or lnp-binding). Long-running — follow it with analysis_wait or studio_get_analysis_progress.",
   "studio.getAnalysisProgress":
     "Poll one Analysis run by requestId. Stages: queued → preparing → segment → traces → auc → fit → completed (or error).",
   "studio.getLatestAnalysisProgress":
     "Get the latest Analysis run for a workspace (or null when none started).",
   "studio.getAnalysisResults":
-    "Get the results of the latest completed Analysis run for a workspace: per-file CSV contents (transfection ratio, AUC, fit parameters, killing traces, engagement).",
+    "Get the results of the latest completed Analysis run for a workspace: per-file CSV contents (transfection ratio, AUC, fit parameters, killing traces, engagement, binding spots).",
   "studio.labelFreeHealth":
     "Check whether label-free killing is configured (OpenRouter embedding key set).",
   "studio.saveLabelFreeKey": "Save the OpenRouter API key used by label-free killing.",

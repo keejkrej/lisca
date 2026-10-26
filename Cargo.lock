@@ -2588,13 +2588,15 @@ dependencies = [
  "lisca-killing",
  "lisca-transfection",
  "lisca-workspace",
- "marray",
- "mplot",
+ "marray 1.0.0 (git+https://github.com/keejkrej/marray-rs?rev=af67ac2d833f55e069f286022d0a0de0b9547bfb)",
+ "mplot 1.0.0 (git+https://github.com/keejkrej/mplot-rs?rev=8a596cdcb0f45eb1d48252b5c36c5d68ebfc2842)",
  "nd2",
  "ndarray 0.17.2",
  "ndarray-stats 0.7.0",
  "ort",
+ "picasso",
  "rayon",
+ "rust_xlsxwriter",
  "serde",
  "serde_json",
  "tempfile",
@@ -2615,7 +2617,7 @@ source = "git+https://github.com/keejkrej/lisca-killing-assay?rev=0d1d750e04ed5e
 dependencies = [
  "csv",
  "image 0.25.10",
- "marray",
+ "marray 1.0.0 (git+https://github.com/keejkrej/marray-rs?rev=af67ac2d833f55e069f286022d0a0de0b9547bfb)",
  "ndarray 0.17.2",
  "ort",
  "rust_xlsxwriter",
@@ -2660,8 +2662,8 @@ dependencies = [
  "csv",
  "image 0.25.10",
  "imageproc",
- "marray",
- "mplot",
+ "marray 1.0.0 (git+https://github.com/keejkrej/marray-rs?rev=af67ac2d833f55e069f286022d0a0de0b9547bfb)",
+ "mplot 1.0.0 (git+https://github.com/keejkrej/mplot-rs?rev=8a596cdcb0f45eb1d48252b5c36c5d68ebfc2842)",
  "ndarray 0.16.1",
  "ndarray-ndimage",
  "rayon",
@@ -2729,6 +2731,22 @@ dependencies = [
 name = "marray"
 version = "1.0.0"
 source = "git+https://github.com/keejkrej/marray-rs?rev=af67ac2d833f55e069f286022d0a0de0b9547bfb#af67ac2d833f55e069f286022d0a0de0b9547bfb"
+dependencies = [
+ "image 0.25.10",
+ "imageproc",
+ "nalgebra 0.33.3",
+ "ndarray 0.16.1",
+ "num-traits",
+ "rand 0.8.6",
+ "rand_distr",
+ "rustfft",
+ "special",
+]
+
+[[package]]
+name = "marray"
+version = "1.0.0"
+source = "git+https://github.com/keejkrej/marray-rs#af67ac2d833f55e069f286022d0a0de0b9547bfb"
 dependencies = [
  "image 0.25.10",
  "imageproc",
@@ -2847,6 +2865,16 @@ dependencies = [
 name = "mplot"
 version = "1.0.0"
 source = "git+https://github.com/keejkrej/mplot-rs?rev=8a596cdcb0f45eb1d48252b5c36c5d68ebfc2842#8a596cdcb0f45eb1d48252b5c36c5d68ebfc2842"
+dependencies = [
+ "num-traits",
+ "plotters",
+ "svg2pdf",
+]
+
+[[package]]
+name = "mplot"
+version = "1.0.0"
+source = "git+https://github.com/keejkrej/mplot-rs#fb4a4199d28ecba984a0a6f0428565682e84d73b"
 dependencies = [
  "num-traits",
  "plotters",
@@ -3630,6 +3658,23 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e57fef6bc5981e38c2ce2d63bfa546861309f875b8a75f092d1d54ae2d64f266"
 dependencies = [
  "siphasher",
+]
+
+[[package]]
+name = "picasso"
+version = "0.11.3"
+source = "git+https://github.com/keejkrej/picasso-rs?rev=bc1ba5e580fb012f861860030fef4fac748ec2f6#bc1ba5e580fb012f861860030fef4fac748ec2f6"
+dependencies = [
+ "csv",
+ "marray 1.0.0 (git+https://github.com/keejkrej/marray-rs)",
+ "mplot 1.0.0 (git+https://github.com/keejkrej/mplot-rs)",
+ "rayon",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+ "thiserror 2.0.18",
+ "tiff 0.10.3",
+ "yeslogic-fontconfig-sys",
 ]
 
 [[package]]
@@ -4755,6 +4800,19 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.117",
+]
+
+[[package]]
+name = "serde_yaml"
+version = "0.9.34+deprecated"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6a8b1a1a2ebf674015cc02edccce75287f1a0130d394307b36743c2f5d504b47"
+dependencies = [
+ "indexmap 2.14.0",
+ "itoa",
+ "ryu",
+ "serde",
+ "unsafe-libyaml",
 ]
 
 [[package]]
@@ -6212,6 +6270,12 @@ name = "unicode-xid"
 version = "0.2.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ebc1c04c71510c7f702b52b7c350734c9ff1295c464a03335b00bb84fc54f853"
+
+[[package]]
+name = "unsafe-libyaml"
+version = "0.2.11"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "673aac59facbab8a9007c7f6108d11f63b603f7cabff99fabf650fea5c32b861"
 
 [[package]]
 name = "untrusted"

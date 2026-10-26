@@ -8,6 +8,8 @@ pub mod assays;
 #[cfg(feature = "studio")]
 mod csv_io;
 #[cfg(feature = "studio")]
+mod export;
+#[cfg(feature = "studio")]
 mod output;
 #[cfg(feature = "studio")]
 mod plot;

@@ -7,6 +7,7 @@ Pure **results model** for the Studio web app. Layout mirrors Rust `analysis/ass
 - `shared/plots.ts` — catalog of Rust PNG artifacts, sectioning, assay inference
 - `assays/transfection/catalog.ts` — transfection plot filenames, labels, and workspace vs sample scope
 - `assays/killing/catalog.ts` — killing plot filenames and labels
+- `assays/binding/catalog.ts` — LNP-binding plot filenames and labels
 
 The package is pure model logic. Studio-coupled atoms live in
 `apps/studio/web/src/atoms/studio-analysis-atoms.ts`, where the model is wired to the
@@ -23,7 +24,7 @@ Per-sample titles include the sample folder (for example
 
 Views follow the assay. Every assay has Traces (each cell, plus a shared-y
 companion) and Traces summary (mean, median, and interquartile range, plus
-shared y). Killing stops there. Transfection also has Mask area, Traces fit,
+shared y). Killing and LNP binding stop there. Transfection also has Mask area, Traces fit,
 AUC, Parameters, and Parameters comparison. Per-sample plots use two columns.
 Plots that already contain every sample use one column.
 
@@ -157,6 +158,39 @@ Shared-y companions use the same names with `_shared_y`. Filenames stay off
 keeps `analysis/Pos{n}/ch{m}.csv` and `results/<sample>/traces.*`. There is no
 CSV under `results/`.
 
+## Binding pipeline
+
+LNP binding (`assayId` `lnp-binding`) localizes fluorescent particles in each
+ROI crop with [picasso-rs](https://github.com/keejkrej/picasso-rs) (`detect_spots_u16_slice`,
+net-gradient identify + 2D Gaussian fit). Spots are assigned to the Pattern ROI
+they were measured in. The Signal channel is the first `analysis.channels.signal`
+index. Detection knobs are `analysis.minGradient` (default **50**) and
+`analysis.boxSize` (odd, default **7**). There is no sibling `lisca-binding-assay`
+crate yet; kernels live in `analysis/assays/binding.rs`. See
+[ADR-0015](../adr/0015-in-tree-lnp-binding.md).
+
+```
+assay.json → analysis/Pos{n}/spots.csv + binding.csv → results/<sample>/binding.xlsx + binding_traces*.png
+```
+
+Studio steps: `analysis/lnp-binding/detect/Pos{n}` (one per Position), then
+`analysis/lnp-binding/plot-traces`, then finalize. The gallery plots `spot_count`.
+Filenames stay off `traces.png` and `engagement_traces.png`.
+
+| Path                                                         | Role                                                                                          |
+| ------------------------------------------------------------ | --------------------------------------------------------------------------------------------- |
+| `analysis/Pos{n}/spots.csv`                                  | Per-spot Picasso fit (`roi`, `t`, `x`, `y`, `intensity`, `photons`, `fwhm`, `sx`, `sy`, …)    |
+| `analysis/Pos{n}/binding.csv`                                | Per-frame `spot_count`, `intensity_sum`, `cumulative_count`                                   |
+| `analysis/Pos{n}/binding_summary.csv`                        | Mean counts per ROI                                                                           |
+| `results/<sample>/spots.xlsx`                                | Localizations for the sample, with a `pos` column                                             |
+| `results/<sample>/binding.xlsx`                              | Count rows for the sample, with a `pos` column                                                |
+| `results/<sample>/binding_summary.xlsx`                      | Mean counts per ROI, with a `pos` column                                                      |
+| `results/<sample>/binding_traces.png`, `binding_traces_shared_y.png` | Per-cell spot counts for that sample                                                   |
+| `results/<sample>/binding_traces_summary.png`, `binding_traces_summary_shared_y.png` | Mean, median, and interquartile range                             |
+
+`cumulative_count` is Picasso's new-event count: a later-frame spot increments it
+when it is at least 5 px from every earlier spot in that ROI.
+
 ## Workspace I/O
 
 Folder names, bbox CSV (`roi, x, y, w, h`), `roi/Pos{n}/index.json`, and locked
@@ -207,6 +241,8 @@ analysis/
       segment.rs       # Otsu → git crate; ONNX adapter stays here (HF weights)
       segment_onnx.rs  # Studio ONNX adapter (`LISCA_PATTERN_SEG_MODEL` / HF)
     killing.rs + killing/
+    killing_engagement.rs
+    binding.rs            # Picasso spot detect + LISCA tables/plots
 ```
 
 | Module                                | Goal                                                                       |
@@ -215,6 +251,7 @@ analysis/
 | `assays/transfection/segment_onnx.rs` | Studio ONNX adapter; weights via `LISCA_PATTERN_SEG_MODEL` / HF            |
 | `lisca-transfection` (git)            | Otsu, traces, AUC, kinetic fit, PNG plots, sample XLSX publishers          |
 | `assays/killing/`                     | Dispatch into `lisca-killing`; kill-curve and death-time figures stay here |
+| `assays/binding.rs`                   | Picasso detect + LISCA assignment, CSVs, XLSX, spot-count figures          |
 
 Adding a new assay type: create `assays/<name>.rs` plus `assays/<name>/`, implement `run` (async) and optionally `run_sync`, then register in `assays.rs`.
 
@@ -287,9 +324,12 @@ cargo build -p lisca --release --bin lisca-analyze
 # Killing assays (workspace path only; no --interval, no --assay)
 ./target/release/lisca-analyze killing-death-reporter ~/data/killing_pi
 ./target/release/lisca-analyze killing-engagement ~/data/killing_tcell
+
+# LNP binding (workspace path only; knobs on assay.json)
+./target/release/lisca-analyze lnp-binding ~/data/lnp_binding
 ```
 
-`killing-death-reporter` writes fluorescence CSVs, `results/<sample>/traces.xlsx`, and `traces.png`, `traces_shared_y.png`, `traces_summary.png`, `traces_summary_shared_y.png`. `killing-engagement` writes `engagement.csv`, `engagement_summary.csv`, the engagement workbooks, and `engagement_traces.png`, `engagement_traces_shared_y.png`, `engagement_traces_summary.png`, `engagement_traces_summary_shared_y.png`.
+`killing-death-reporter` writes fluorescence CSVs, `results/<sample>/traces.xlsx`, and `traces.png`, `traces_shared_y.png`, `traces_summary.png`, `traces_summary_shared_y.png`. `killing-engagement` writes `engagement.csv`, `engagement_summary.csv`, the engagement workbooks, and `engagement_traces.png`, `engagement_traces_shared_y.png`, `engagement_traces_summary.png`, `engagement_traces_summary_shared_y.png`. `lnp-binding` writes `spots.csv`, `binding.csv`, `binding_summary.csv`, the binding workbooks, and `binding_traces.png`, `binding_traces_shared_y.png`, `binding_traces_summary.png`, `binding_traces_summary_shared_y.png`.
 
 Transfection `--interval` / `--max-onset-minutes` may be omitted when `assay.json` has `interval` and optional `analysis.maxOnsetMinutes`. `--assay` defaults to `<workspace>/assay.json`. Plot commands also accept transfection-style paths (`…/analysis`, `…/analysis/PosN/auc.csv`, `…/analysis/PosN/fit.csv`). Those flags are transfection stage options.
 

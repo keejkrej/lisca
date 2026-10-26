@@ -9,6 +9,7 @@ use crate::analysis::array::Frame2D;
 
 #[derive(Debug, Clone)]
 pub struct RoiCrop {
+    pub roi: u32,
     pub file_name: String,
     pub shape: [u32; 5],
 }
@@ -53,7 +54,6 @@ struct IndexBboxJson {
 #[derive(Debug, Deserialize)]
 struct IndexRoiJson {
     /// Required key in index.json. The TIFF name identifies the crop.
-    #[allow(dead_code)]
     roi: u32,
     #[serde(rename = "fileName")]
     file_name: String,
@@ -88,6 +88,7 @@ pub fn read_position_index(pos_dir: &Path) -> Result<PositionIndex, String> {
         .rois
         .into_iter()
         .map(|entry| RoiCrop {
+            roi: entry.roi,
             file_name: entry.file_name,
             shape: [
                 raw.time_count,

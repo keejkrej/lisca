@@ -121,19 +121,7 @@ fn build_analysis_task(
         AssayType::KillingEngagement => {
             build_engagement_task(scheduler, workspace, assay, request_id)
         }
-        assay_id => {
-            let step = analysis_step(
-                format!("analysis/unsupported/{assay_id}"),
-                Vec::new(),
-                Arc::new(move || Err(format!("unsupported assay id '{assay_id}'"))),
-            );
-            scheduler.submit(TaskSpec::new(
-                format!("analysis/{assay_id}"),
-                workspace.to_string_lossy(),
-                true,
-                vec![step],
-            ))
-        }
+        AssayType::LnpBinding => build_binding_task(scheduler, workspace, assay, request_id),
     }
 }
 
@@ -503,6 +491,125 @@ fn build_engagement_task(
     ))
 }
 
+fn build_binding_task(
+    scheduler: &lisca_server::TaskScheduler,
+    workspace: PathBuf,
+    assay: AssayJsonFile,
+    _request_id: &str,
+) -> Result<lisca::protocol::TaskDetail, lisca_server::SchedulerError> {
+    use lisca::analysis::{
+        assays::binding,
+        sample::{build_sample_mapping, parse_interval_minutes},
+    };
+
+    let mapping = match build_sample_mapping(&assay) {
+        Ok(mapping) => Arc::new(mapping),
+        Err(message) => {
+            let step = analysis_step(
+                "analysis/lnp-binding/prepare",
+                Vec::new(),
+                Arc::new(move || Err(message.clone())),
+            );
+            return scheduler.submit(TaskSpec::new(
+                "analysis/lnp-binding",
+                workspace.to_string_lossy(),
+                true,
+                vec![step],
+            ));
+        }
+    };
+    let params = match binding::detect_params(assay.analysis.as_ref()) {
+        Ok(params) => params,
+        Err(message) => {
+            let step = analysis_step(
+                "analysis/lnp-binding/prepare",
+                Vec::new(),
+                Arc::new(move || Err(message.clone())),
+            );
+            return scheduler.submit(TaskSpec::new(
+                "analysis/lnp-binding",
+                workspace.to_string_lossy(),
+                true,
+                vec![step],
+            ));
+        }
+    };
+    let interval = parse_interval_minutes(assay.interval.value, Some(assay.interval.unit.as_str()))
+        .unwrap_or(1.0);
+    let mut steps = Vec::new();
+    let prepare = analysis_step(
+        "analysis/lnp-binding/prepare",
+        Vec::new(),
+        Arc::new(move || Ok(())),
+    );
+    let prepare_id = prepare.step_id().to_string();
+    steps.push(prepare);
+
+    let mut detect_ids = Vec::new();
+    let detect_weight = scheduler.capacity();
+    for position in mapping.positions() {
+        let step_mapping = Arc::new(mapping.for_position(position));
+        let step_workspace = workspace.clone();
+        let step = StepSpec::new(
+            format!("analysis/lnp-binding/detect/Pos{position}"),
+            detect_weight,
+            move |context| {
+                let step_workspace = step_workspace.clone();
+                let step_mapping = step_mapping.clone();
+                async move {
+                    context.checkpoint()?;
+                    let outcome = tokio::task::spawn_blocking(move || {
+                        binding::run_position(
+                            &step_workspace,
+                            &step_mapping,
+                            position,
+                            interval,
+                            params,
+                        )
+                    })
+                    .await
+                    .map_err(|error| {
+                        StepFailure::new("analysis_worker_failed", error.to_string())
+                    })?;
+                    outcome
+                        .map_err(|message| StepFailure::new("analysis_stage_failed", message))?;
+                    context.checkpoint()
+                }
+            },
+        )
+        .with_dependencies([prepare_id.clone()]);
+        detect_ids.push(step.step_id().to_string());
+        steps.push(step);
+    }
+
+    let plot_workspace = workspace.clone();
+    let summary_mapping = std::sync::Arc::clone(&mapping);
+    let plot_mapping = mapping;
+    let plot = analysis_step(
+        "analysis/lnp-binding/plot-traces",
+        detect_ids,
+        Arc::new(move || binding::run_plot_traces(&plot_workspace, &plot_mapping, interval)),
+    );
+    let plot_id = plot.step_id().to_string();
+    steps.push(plot);
+
+    let summary_workspace = workspace.clone();
+    steps.push(analysis_step(
+        "analysis/lnp-binding/finalize",
+        vec![plot_id],
+        Arc::new(move || {
+            binding::write_summary(&summary_workspace, &summary_mapping)?;
+            analysis::workspace_analysis_manifest(&summary_workspace).map(|_| ())
+        }),
+    ));
+    scheduler.submit(TaskSpec::new(
+        "analysis/lnp-binding",
+        workspace.to_string_lossy(),
+        true,
+        steps,
+    ))
+}
+
 async fn start_analysis_handler<S: HasAnalysisTasks + HasTaskScheduler>(
     State(state): State<S>,
     Json(payload): Json<AnalysisStartRequest>,
@@ -714,27 +821,27 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn unsupported_assays_surface_their_ids_in_analysis_progress() {
-        for assay_id in [AssayType::LnpBinding] {
-            let state = TestState::new();
-            let workspace = test_workspace(assay_id);
-            let request_id = format!("unsupported-{assay_id}");
-            let request = AnalysisStartRequest {
-                request_id: request_id.clone(),
-                workspace_path: workspace.to_string_lossy().into_owned(),
-            };
+    async fn binding_prepare_fails_when_the_sample_list_is_empty() {
+        let state = TestState::new();
+        let workspace = test_workspace(AssayType::LnpBinding);
+        let request_id = "binding-empty-samples".to_string();
+        let request = AnalysisStartRequest {
+            request_id: request_id.clone(),
+            workspace_path: workspace.to_string_lossy().into_owned(),
+        };
 
-            let _ = start_analysis_handler(State(state.clone()), axum::Json(request))
-                .await
-                .expect("analysis request should be accepted");
+        let _ = start_analysis_handler(State(state.clone()), axum::Json(request))
+            .await
+            .expect("analysis request should be accepted");
 
-            let progress = wait_for_terminal_progress(&state, &request_id).await;
-            let error = progress.error.expect("analysis error should be visible");
-            assert!(error.contains("unsupported assay id"));
-            assert!(error.contains(&assay_id.to_string()));
+        let progress = wait_for_terminal_progress(&state, &request_id).await;
+        let error = progress.error.expect("analysis error should be visible");
+        assert!(
+            error.contains("no samples") || error.contains("sample"),
+            "{error}"
+        );
 
-            fs::remove_dir_all(workspace).expect("test workspace should be removed");
-        }
+        fs::remove_dir_all(workspace).expect("test workspace should be removed");
     }
 
     fn graph_workspace(assay_id: AssayType) -> PathBuf {
@@ -765,6 +872,7 @@ mod tests {
             AssayType::Transfection,
             AssayType::KillingDeathReporter,
             AssayType::KillingEngagement,
+            AssayType::LnpBinding,
         ] {
             let state = TestState::new();
             let workspace = graph_workspace(assay_id);
@@ -776,7 +884,7 @@ mod tests {
                 AssayType::Transfection => "analysis/transfection",
                 AssayType::KillingDeathReporter => "analysis/killing",
                 AssayType::KillingEngagement => "analysis/killing-engagement",
-                _ => unreachable!(),
+                AssayType::LnpBinding => "analysis/lnp-binding",
             };
             let position_step_count = detail
                 .steps
@@ -786,6 +894,7 @@ mod tests {
                         || (assay_id == AssayType::KillingDeathReporter
                             && step.step_kind.starts_with(&format!("{prefix}/traces/Pos")))
                         || step.step_kind.starts_with(&format!("{prefix}/count/Pos"))
+                        || step.step_kind.starts_with(&format!("{prefix}/detect/Pos"))
                 })
                 .count();
             assert_eq!(position_step_count, 2);
@@ -796,6 +905,7 @@ mod tests {
                     step.step_kind == "analysis/transfection/auc"
                         || step.step_kind == "analysis/killing/plot-traces"
                         || step.step_kind == "analysis/killing-engagement/plot-traces"
+                        || step.step_kind == "analysis/lnp-binding/plot-traces"
                 })
                 .unwrap();
             assert_eq!(fan_in.dependencies.len(), 2);

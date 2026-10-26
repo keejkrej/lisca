@@ -2731,6 +2731,15 @@
           "items": {
             "$ref": "#/definitions/AssaySampleChannels"
           }
+        },
+        "minGradient": {
+          "type": "number",
+          "format": "double"
+        },
+        "boxSize": {
+          "type": "integer",
+          "minimum": 0,
+          "format": "uint32"
         }
       }
     },

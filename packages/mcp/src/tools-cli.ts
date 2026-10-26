@@ -135,8 +135,8 @@ export function cliLiscaTools(): LiscaTool[] {
       title: "Run the assay analysis CLI",
       description:
         "Run lisca-analyze on a workspace: transfection stages (segment, traces, auc, fit, plot-*, or `pipeline` " +
-        "for all of them) and the killing assays (killing-death-reporter, killing-engagement; their assay.json " +
-        "must carry the matching type). Prefer this over studio_start_analysis when you want the CLI's own stage " +
+        "for all of them), the killing assays (killing-death-reporter, killing-engagement), and lnp-binding. Killing and " +
+        "lnp-binding require a matching assay.json type. Prefer this over studio_start_analysis when you want the CLI's own stage " +
         "flags (extraArgs) or to run analysis without a server. Writes masks to mask/, tables to analysis/, " +
         "and figures to results/.",
       inputSchema: {
@@ -157,6 +157,7 @@ export function cliLiscaTools(): LiscaTool[] {
               "plot-fit",
               "killing-death-reporter",
               "killing-engagement",
+              "lnp-binding",
             ],
             description:
               "Which assay command to run. `pipeline`/`analyze`/`all` run every transfection stage.",
