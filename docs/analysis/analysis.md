@@ -177,16 +177,16 @@ Studio steps: `analysis/lnp-binding/detect/Pos{n}` (one per Position), then
 `analysis/lnp-binding/plot-traces`, then finalize. The gallery plots `spot_count`.
 Filenames stay off `traces.png` and `engagement_traces.png`.
 
-| Path                                                         | Role                                                                                          |
-| ------------------------------------------------------------ | --------------------------------------------------------------------------------------------- |
-| `analysis/Pos{n}/spots.csv`                                  | Per-spot Picasso fit (`roi`, `t`, `x`, `y`, `intensity`, `photons`, `fwhm`, `sx`, `sy`, …)    |
-| `analysis/Pos{n}/binding.csv`                                | Per-frame `spot_count`, `intensity_sum`, `cumulative_count`                                   |
-| `analysis/Pos{n}/binding_summary.csv`                        | Mean counts per ROI                                                                           |
-| `results/<sample>/spots.xlsx`                                | Localizations for the sample, with a `pos` column                                             |
-| `results/<sample>/binding.xlsx`                              | Count rows for the sample, with a `pos` column                                                |
-| `results/<sample>/binding_summary.xlsx`                      | Mean counts per ROI, with a `pos` column                                                      |
-| `results/<sample>/binding_traces.png`, `binding_traces_shared_y.png` | Per-cell spot counts for that sample                                                   |
-| `results/<sample>/binding_traces_summary.png`, `binding_traces_summary_shared_y.png` | Mean, median, and interquartile range                             |
+| Path                                                                                 | Role                                                                                       |
+| ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------ |
+| `analysis/Pos{n}/spots.csv`                                                          | Per-spot Picasso fit (`roi`, `t`, `x`, `y`, `intensity`, `photons`, `fwhm`, `sx`, `sy`, …) |
+| `analysis/Pos{n}/binding.csv`                                                        | Per-frame `spot_count`, `intensity_sum`, `cumulative_count`                                |
+| `analysis/Pos{n}/binding_summary.csv`                                                | Mean counts per ROI                                                                        |
+| `results/<sample>/spots.xlsx`                                                        | Localizations for the sample, with a `pos` column                                          |
+| `results/<sample>/binding.xlsx`                                                      | Count rows for the sample, with a `pos` column                                             |
+| `results/<sample>/binding_summary.xlsx`                                              | Mean counts per ROI, with a `pos` column                                                   |
+| `results/<sample>/binding_traces.png`, `binding_traces_shared_y.png`                 | Per-cell spot counts for that sample                                                       |
+| `results/<sample>/binding_traces_summary.png`, `binding_traces_summary_shared_y.png` | Mean, median, and interquartile range                                                      |
 
 `cumulative_count` is Picasso's new-event count: a later-frame spot increments it
 when it is at least 5 px from every earlier spot in that ROI.

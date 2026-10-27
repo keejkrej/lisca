@@ -646,6 +646,13 @@ mod tests {
         let error = cmd_killing_engagement(&[root.display().to_string()]).unwrap_err();
         assert_eq!(error, "invalid interval.value/unit in assay.json");
         assert!(!root.join("analysis").exists());
+
+        let binding_zero = tempfile::tempdir().unwrap();
+        let root = binding_zero.path();
+        write_assay(root, "lnp-binding", "0");
+        let error = cmd_lnp_binding(&[root.display().to_string()]).unwrap_err();
+        assert_eq!(error, "invalid interval.value/unit in assay.json");
+        assert!(!root.join("analysis").exists());
     }
 
     #[test]

@@ -6,6 +6,7 @@
 
 use std::cmp::Ordering;
 use std::collections::BTreeMap;
+use std::panic::{catch_unwind, AssertUnwindSafe};
 use std::path::{Path, PathBuf};
 
 use picasso::prelude::{
@@ -103,6 +104,9 @@ pub fn run_position(
         [] => return Err(format!("no sample in assay.json lists Pos{position}")),
         _ => return Err(format!("Pos{position} is listed by more than one sample")),
     };
+    if interval_minutes <= 0.0 {
+        return Err(format!("interval must be > 0, got {interval_minutes}"));
+    }
     let signal = *sample.signal.first().ok_or_else(|| {
         format!(
             "sample {} has no signal channel for lnp-binding",
@@ -115,25 +119,31 @@ pub fn run_position(
     let mut count_rows = Vec::new();
     for roi_crop in &index.rois {
         let stack = RoiStack::load(&pos_dir.join(&roi_crop.file_name), roi_crop.shape)?;
+        let config = BindingDetectConfig {
+            min_gradient: params.min_gradient,
+            box_size: params.box_size as usize,
+            fit_method: SpotFitMethod::GaussLq,
+            gauss_model: GaussModel::Elliptic,
+            gaussian_sigma: None,
+            camera_info: CameraInfo::default(),
+            pos: format!("Pos{position}"),
+            roi: roi_crop.roi.to_string(),
+            parallel: false,
+        };
         let mut roi_spots = Vec::new();
         for stack_t in 0..index.time_count {
             let source_t = index.time_indices[stack_t as usize];
             let frame = roi_frame_2d(&stack, &index.axis_order, stack_t, signal, 0)?;
             let pixels = frame_to_u16(frame.as_slice());
-            let config = BindingDetectConfig {
-                min_gradient: params.min_gradient,
-                box_size: params.box_size as usize,
-                fit_method: SpotFitMethod::GaussLq,
-                gauss_model: GaussModel::Elliptic,
-                gaussian_sigma: None,
-                camera_info: CameraInfo::default(),
-                pos: format!("Pos{position}"),
-                roi: roi_crop.roi.to_string(),
-                parallel: false,
-            };
-            let detected =
-                detect_spots_u16_slice(&pixels, frame.height, frame.width, source_t, &config)
-                    .map_err(|error| error.to_string())?;
+            let detected = detect_frame_spots(
+                &pixels,
+                frame.height,
+                frame.width,
+                source_t,
+                &config,
+                position,
+                roi_crop.roi,
+            )?;
             roi_spots.extend(detected);
         }
         spot_rows.extend(roi_spots.iter().cloned().map(|spot| SpotRow {
@@ -280,6 +290,41 @@ pub fn run_plot_traces(
         interval_minutes,
         mapping,
     )
+}
+
+/// Picasso `identify_in_frame` panics when a candidate sits on the detection-box
+/// border (`gradient_at` at row/col 0). Catch that so Studio does not abort.
+fn detect_frame_spots(
+    pixels: &[u16],
+    height: usize,
+    width: usize,
+    time: u32,
+    config: &BindingDetectConfig,
+    position: u32,
+    roi: u32,
+) -> Result<Vec<BindingSpot>, String> {
+    match catch_unwind(AssertUnwindSafe(|| {
+        detect_spots_u16_slice(pixels, height, width, time, config)
+    })) {
+        Ok(Ok(spots)) => Ok(spots),
+        Ok(Err(error)) => Err(error.to_string()),
+        Err(payload) => {
+            let detail = panic_payload_message(payload.as_ref());
+            Err(format!(
+                "Picasso identify aborted on Pos{position} Roi{roi} t={time}{detail}. A candidate on the detection-box border can panic picasso-rs. Use a smaller boxSize or a larger ROI."
+            ))
+        }
+    }
+}
+
+fn panic_payload_message(payload: &(dyn std::any::Any + Send)) -> String {
+    if let Some(message) = payload.downcast_ref::<&str>() {
+        format!(": {message}")
+    } else if let Some(message) = payload.downcast_ref::<String>() {
+        format!(": {message}")
+    } else {
+        String::new()
+    }
 }
 
 fn frame_to_u16(pixels: &[f64]) -> Vec<u16> {
@@ -760,6 +805,39 @@ mod tests {
     }
 
     #[test]
+    fn detect_params_reject_a_negative_threshold() {
+        let assay: AssayJsonFile = serde_json::from_str(
+            r#"{
+                "type": "lnp-binding",
+                "name": "binding",
+                "workspace": { "path": "" },
+                "data": { "type": "folder", "path": "", "template": { "subfolder": "", "filename": "" } },
+                "interval": { "value": 1.0, "unit": "minute" },
+                "samples": [{ "name": "bound", "positions": "1" }],
+                "analysis": { "channels": { "segmentation": 0, "signal": [1] }, "minGradient": -1 }
+            }"#,
+        )
+        .unwrap();
+        let error = detect_params(assay.analysis.as_ref()).unwrap_err();
+        assert!(error.contains("minGradient"), "{error}");
+    }
+
+    #[test]
+    fn run_sync_rejects_a_non_positive_interval() {
+        let root = unique_root("interval");
+        let _ = std::fs::remove_dir_all(&root);
+        std::fs::create_dir_all(&root).unwrap();
+        let mut assay = assay_json();
+        assay = assay.replace("\"value\": 1.0", "\"value\": 0");
+        std::fs::write(root.join("assay.json"), &assay).unwrap();
+        let assay: AssayJsonFile = serde_json::from_str(&assay).unwrap();
+        let error = run_sync(&root, &assay).unwrap_err();
+        assert!(error.contains("invalid interval"), "{error}");
+        assert!(!root.join("analysis").exists());
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
     fn synthetic_spots_are_counted_per_roi_and_frame() {
         let root = unique_root("spots");
         let _ = std::fs::remove_dir_all(&root);
@@ -849,6 +927,35 @@ mod tests {
             run_position(&root, &mapping, 1, 1.0, BindingDetectParams::default()).unwrap_err();
         assert!(error.contains("No ROI directory"), "{error}");
         assert!(!root.join("analysis/Pos1").exists());
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn a_border_candidate_does_not_abort_the_process() {
+        let root = unique_root("border");
+        let _ = std::fs::remove_dir_all(&root);
+        let mut frame = background_page(80);
+        paint_spot(&mut frame, 3.0, 16.0, 8000.0, 1.4);
+        write_position(&root, 1, &[frame]);
+        let mapping = SampleMapping(vec![SampleAnalysis {
+            name: "bound".into(),
+            positions: vec![1],
+            signal: vec![1],
+            segmentation: 0,
+        }]);
+        let result = run_position(&root, &mapping, 1, 1.0, BindingDetectParams::default());
+        match result {
+            Ok(()) => {
+                assert!(root.join("analysis/Pos1/binding.csv").is_file());
+            }
+            Err(error) => {
+                assert!(
+                    error.contains("Picasso") || error.contains("border"),
+                    "{error}"
+                );
+                assert!(!root.join("analysis/Pos1").exists());
+            }
+        }
         std::fs::remove_dir_all(root).unwrap();
     }
 }

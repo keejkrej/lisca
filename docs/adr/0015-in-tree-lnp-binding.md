@@ -36,3 +36,6 @@ to dispatch the way killing does.
 - Binding science changes land in this repo instead of a sidecar.
 - Picasso grows cell-mask filtering or camera calibration that LISCA does not
   yet read from `mask/` or `assay.json`.
+- A localization on the detection-box border panics inside Picasso
+  `gradient_at` (row/col 0). LISCA catches that unwind and fails the detect
+  step rather than aborting Studio. Fix belongs in picasso-rs.

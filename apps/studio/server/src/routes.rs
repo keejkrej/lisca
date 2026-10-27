@@ -534,8 +534,23 @@ fn build_binding_task(
             ));
         }
     };
-    let interval = parse_interval_minutes(assay.interval.value, Some(assay.interval.unit.as_str()))
-        .unwrap_or(1.0);
+    let interval =
+        match parse_interval_minutes(assay.interval.value, Some(assay.interval.unit.as_str())) {
+            Some(interval) => interval,
+            None => {
+                let step = analysis_step(
+                    "analysis/lnp-binding/prepare",
+                    Vec::new(),
+                    Arc::new(|| Err("invalid interval.value/unit in assay.json".to_string())),
+                );
+                return scheduler.submit(TaskSpec::new(
+                    "analysis/lnp-binding",
+                    workspace.to_string_lossy(),
+                    true,
+                    vec![step],
+                ));
+            }
+        };
     let mut steps = Vec::new();
     let prepare = analysis_step(
         "analysis/lnp-binding/prepare",
@@ -840,6 +855,44 @@ mod tests {
             error.contains("no samples") || error.contains("sample"),
             "{error}"
         );
+
+        fs::remove_dir_all(workspace).expect("test workspace should be removed");
+    }
+
+    #[tokio::test]
+    async fn binding_prepare_fails_when_the_interval_is_invalid() {
+        let state = TestState::new();
+        let workspace = graph_workspace(AssayType::LnpBinding);
+        let assay = format!(
+            r#"{{
+                "type": "lnp-binding",
+                "name": "Graph fixture",
+                "workspace": {{ "path": "" }},
+                "data": {{ "type": "folder", "path": "", "template": {{ "subfolder": "", "filename": "" }} }},
+                "interval": {{ "value": 0, "unit": "minute" }},
+                "samples": [{{
+                    "name": "sample",
+                    "positions": "0,1"
+                }}],
+                "analysis": {{
+                    "channels": {{ "segmentation": 0, "signal": [1] }}
+                }}
+            }}"#
+        );
+        fs::write(workspace.join("assay.json"), assay).unwrap();
+        let request_id = "binding-invalid-interval".to_string();
+        let request = AnalysisStartRequest {
+            request_id: request_id.clone(),
+            workspace_path: workspace.to_string_lossy().into_owned(),
+        };
+
+        let _ = start_analysis_handler(State(state.clone()), axum::Json(request))
+            .await
+            .expect("analysis request should be accepted");
+
+        let progress = wait_for_terminal_progress(&state, &request_id).await;
+        let error = progress.error.expect("analysis error should be visible");
+        assert!(error.contains("interval"), "{error}");
 
         fs::remove_dir_all(workspace).expect("test workspace should be removed");
     }

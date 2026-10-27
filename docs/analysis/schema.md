@@ -71,13 +71,13 @@ A file with no `drift` key is unchanged. Writers omit `drift` when `keyframes` i
 Contract source: `packages/contracts/src/assay.schema.ts`. A Sample is
 identified by its name.
 
-| Key                         | Shape                                                                                               |
-| --------------------------- | --------------------------------------------------------------------------------------------------- |
-| `samples[]`                 | `{ name, positions }`; `name` non-empty after trim and unique (trimmed) per assay                   |
-| `analysis.channels`         | `{ segmentation, signal[] }` — default Segmentation channel and Signal channels                     |
-| `analysis.sampleChannels[]` | `{ sample, segmentation, signal[] }` — override for the Sample named `sample`                       |
-| `analysis.minGradient`      | Picasso net-gradient threshold. Binding only; default 50. Other assays ignore it.                   |
-| `analysis.boxSize`          | Picasso odd box side length in pixels. Binding only; default 7. Other assays ignore it.             |
+| Key                         | Shape                                                                                   |
+| --------------------------- | --------------------------------------------------------------------------------------- |
+| `samples[]`                 | `{ name, positions }`; `name` non-empty after trim and unique (trimmed) per assay       |
+| `analysis.channels`         | `{ segmentation, signal[] }` — default Segmentation channel and Signal channels         |
+| `analysis.sampleChannels[]` | `{ sample, segmentation, signal[] }` — override for the Sample named `sample`           |
+| `analysis.minGradient`      | Picasso net-gradient threshold. Binding only; default 50. Other assays ignore it.       |
+| `analysis.boxSize`          | Picasso odd box side length in pixels. Binding only; default 7. Other assays ignore it. |
 
 There is no `slideChannel` and no `mask` channel key. Older files are rewritten
 by `migrate_workspace` (migration `assay_samples_by_name`) before parsing:
@@ -122,9 +122,9 @@ beside the CSV.
 | `fit.csv`                | `roi`, `baseline_intensity`, `onset_time`, `expression_rate`, `mrna_lifetime`, `protein_lifetime`, `success` |
 | `engagement.csv`         | `roi`, `t`, `minutes`, `tumor_cells`, `t_cells`, `engagements`                                               |
 | `engagement_summary.csv` | `roi`, `frames`, `engagements_mean`, `tumor_cells_mean`, `t_cells_mean`                                      |
-| `spots.csv`              | `roi`, `t`, `x`, `y`, `intensity`, `photons`, `fwhm`, `sx`, `sy`, `snb`, `probability`                        |
-| `binding.csv`            | `roi`, `t`, `minutes`, `spot_count`, `intensity_sum`, `cumulative_count`                                      |
-| `binding_summary.csv`    | `roi`, `frames`, `spots_mean`, `intensity_mean`, `cumulative_last`                                            |
+| `spots.csv`              | `roi`, `t`, `x`, `y`, `intensity`, `photons`, `fwhm`, `sx`, `sy`, `snb`, `probability`                       |
+| `binding.csv`            | `roi`, `t`, `minutes`, `spot_count`, `intensity_sum`, `cumulative_count`                                     |
+| `binding_summary.csv`    | `roi`, `frames`, `spots_mean`, `intensity_mean`, `cumulative_last`                                           |
 
 `channel` on `auc.csv` / `fit.csv` only if that Pos has more than one signal
 channel.
@@ -144,9 +144,9 @@ different file names so one workspace can hold both.
 | `fit.xlsx`                | `pos`, `roi`, `baseline_intensity`, `onset_time`, `expression_rate`, `mrna_lifetime`, `protein_lifetime`, `success` |
 | `engagement.xlsx`         | `pos`, `roi`, `t`, `minutes`, `tumor_cells`, `t_cells`, `engagements`                                               |
 | `engagement_summary.xlsx` | `pos`, `roi`, `frames`, `engagements_mean`, `tumor_cells_mean`, `t_cells_mean`                                      |
-| `spots.xlsx`              | `pos`, `roi`, `t`, `x`, `y`, `intensity`, `photons`, `fwhm`, `sx`, `sy`, `snb`, `probability`                        |
-| `binding.xlsx`            | `pos`, `roi`, `t`, `minutes`, `spot_count`, `intensity_sum`, `cumulative_count`                                      |
-| `binding_summary.xlsx`    | `pos`, `roi`, `frames`, `spots_mean`, `intensity_mean`, `cumulative_last`                                            |
+| `spots.xlsx`              | `pos`, `roi`, `t`, `x`, `y`, `intensity`, `photons`, `fwhm`, `sx`, `sy`, `snb`, `probability`                       |
+| `binding.xlsx`            | `pos`, `roi`, `t`, `minutes`, `spot_count`, `intensity_sum`, `cumulative_count`                                     |
+| `binding_summary.xlsx`    | `pos`, `roi`, `frames`, `spots_mean`, `intensity_mean`, `cumulative_last`                                           |
 
 `channel` only if that sample has more than one signal channel.
 
