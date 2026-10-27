@@ -91,6 +91,24 @@ describe("setAssayId interval handling", () => {
     expect(get().intervalValue).toBe(5);
   });
 
+  test("switching transfection -> LNP binding replaces the gene-expression default with 1 minute", () => {
+    const { set, get } = drive(createInitialStudioWizardState());
+
+    studioWizardActions.setAssayId(set, ASSAY_TYPE.LNP_BINDING);
+
+    expect(get().assayId).toBe(ASSAY_TYPE.LNP_BINDING);
+    expect(get().intervalValue).toBe(1);
+    expect(get().analysis?.minGradient).toBe(50);
+    expect(get().analysis?.boxSize).toBe(7);
+    expect(get().analysis?.skipSegment).toBeUndefined();
+
+    const json = buildStudioAssayJsonFromWizard(get());
+    expect(json.type).toBe(ASSAY_TYPE.LNP_BINDING);
+    expect(json.interval.value).toBe(1);
+    expect(json.analysis?.minGradient).toBe(50);
+    expect(json.analysis?.boxSize).toBe(7);
+  });
+
   test("switching killing -> transfection replaces the killing default with 10 minutes", () => {
     const { set, get } = drive(createInitialStudioWizardState());
     studioWizardActions.setAssayId(set, ASSAY_TYPE.KILLING_DEATH_REPORTER);

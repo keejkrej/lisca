@@ -64,6 +64,10 @@ lisca-transfection = { git = "https://github.com/keejkrej/lisca-transfection-ass
 # the same definitions. Lisca does not depend on it: the package also pulls
 # the label-free training stack.
 lisca-killing = { git = "https://github.com/keejkrej/lisca-killing-assay", rev = "0d1d750e04ed5ec3fa1cbedb8ad9320b8103c3e4" }
+# Picasso localization for the LNP binding assay (spot identify + Gaussian fit).
+# Not on crates.io; pin the git rev. `lisca-binding-assay` is not a crate yet.
+picasso = { git = "https://github.com/keejkrej/picasso-rs", rev = "bc1ba5e580fb012f861860030fef4fac748ec2f6" }
+rust_xlsxwriter = "0.90"
 tauri = "2"
 tauri-build = "2"
 tauri-plugin-dialog = "2"

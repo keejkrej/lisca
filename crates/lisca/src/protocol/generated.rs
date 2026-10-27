@@ -1029,6 +1029,15 @@ impl ::std::convert::TryFrom<::std::string::String> for AppId {
 #[doc = "    },"]
 #[doc = "    \"skipSegment\": {"]
 #[doc = "      \"type\": \"boolean\""]
+#[doc = "    },"]
+#[doc = "    \"minGradient\": {"]
+#[doc = "      \"type\": \"number\","]
+#[doc = "      \"format\": \"double\""]
+#[doc = "    },"]
+#[doc = "    \"boxSize\": {"]
+#[doc = "      \"type\": \"integer\","]
+#[doc = "      \"format\": \"uint32\","]
+#[doc = "      \"minimum\": 0.0"]
 #[doc = "    }"]
 #[doc = "  }"]
 #[doc = "}"]
@@ -1062,6 +1071,18 @@ pub struct AssayAnalysisConfig {
         skip_serializing_if = "::std::option::Option::is_none"
     )]
     pub skip_segment: ::std::option::Option<bool>,
+    #[serde(
+        rename = "minGradient",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub min_gradient: ::std::option::Option<f64>,
+    #[serde(
+        rename = "boxSize",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub box_size: ::std::option::Option<u32>,
 }
 impl ::std::default::Default for AssayAnalysisConfig {
     fn default() -> Self {
@@ -1071,6 +1092,8 @@ impl ::std::default::Default for AssayAnalysisConfig {
             sample_channels: Default::default(),
             segmentation_mode: Default::default(),
             skip_segment: Default::default(),
+            min_gradient: Default::default(),
+            box_size: Default::default(),
         }
     }
 }
@@ -8031,6 +8054,8 @@ pub mod builder {
             ::std::string::String,
         >,
         skip_segment: ::std::result::Result<::std::option::Option<bool>, ::std::string::String>,
+        min_gradient: ::std::result::Result<::std::option::Option<f64>, ::std::string::String>,
+        box_size: ::std::result::Result<::std::option::Option<u32>, ::std::string::String>,
     }
     impl ::std::default::Default for AssayAnalysisConfig {
         fn default() -> Self {
@@ -8040,6 +8065,8 @@ pub mod builder {
                 sample_channels: Ok(Default::default()),
                 segmentation_mode: Ok(Default::default()),
                 skip_segment: Ok(Default::default()),
+                min_gradient: Ok(Default::default()),
+                box_size: Ok(Default::default()),
             }
         }
     }
@@ -8094,6 +8121,26 @@ pub mod builder {
                 .map_err(|e| format!("error converting supplied value for skip_segment: {e}"));
             self
         }
+        pub fn min_gradient<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::option::Option<f64>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.min_gradient = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for min_gradient: {e}"));
+            self
+        }
+        pub fn box_size<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::option::Option<u32>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.box_size = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for box_size: {e}"));
+            self
+        }
     }
     impl ::std::convert::TryFrom<AssayAnalysisConfig> for super::AssayAnalysisConfig {
         type Error = super::error::ConversionError;
@@ -8106,6 +8153,8 @@ pub mod builder {
                 sample_channels: value.sample_channels?,
                 segmentation_mode: value.segmentation_mode?,
                 skip_segment: value.skip_segment?,
+                min_gradient: value.min_gradient?,
+                box_size: value.box_size?,
             })
         }
     }
@@ -8117,6 +8166,8 @@ pub mod builder {
                 sample_channels: Ok(value.sample_channels),
                 segmentation_mode: Ok(value.segmentation_mode),
                 skip_segment: Ok(value.skip_segment),
+                min_gradient: Ok(value.min_gradient),
+                box_size: Ok(value.box_size),
             }
         }
     }

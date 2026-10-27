@@ -1,7 +1,10 @@
 import type { AlignerSource } from "@lisca/contracts";
 import {
   ASSAY_TYPE,
+  assayUsesBindingDetect,
   assayUsesSkipSegment,
+  BINDING_DEFAULT_BOX_SIZE,
+  BINDING_DEFAULT_MIN_GRADIENT,
   type AssaySegmentationMode,
   type StudioDataSourceKind,
 } from "@lisca/contracts/assay";
@@ -255,6 +258,67 @@ export function MetadataFields(props: { hostPort: HostFilePickerOperations }) {
               />
               <InputGroupAddon align="inline-end">
                 <InputGroupText class="text-[13px]">min</InputGroupText>
+              </InputGroupAddon>
+            </InputGroup>
+          </Field>
+        </Show>
+        <Show when={assayUsesBindingDetect(wizard().assayId)}>
+          <Field class="w-full gap-2">
+            <FieldLabel class="text-sm font-medium leading-[18px]" id="studio-min-gradient-label">
+              Spot threshold
+            </FieldLabel>
+            <InputGroup>
+              <InputGroupInput
+                autocomplete="off"
+                aria-labelledby="studio-min-gradient-label"
+                class="h-8 px-3 font-mono text-[13px]"
+                min={0}
+                name="min-gradient"
+                step={1}
+                title="Picasso minimum radial net gradient. Lower finds dimmer spots."
+                type="number"
+                value={wizard().analysis?.minGradient ?? BINDING_DEFAULT_MIN_GRADIENT}
+                onChange={(event) => {
+                  const raw = event.currentTarget.value;
+                  if (raw.trim() === "") {
+                    setAnalysis({ minGradient: BINDING_DEFAULT_MIN_GRADIENT });
+                    return;
+                  }
+                  const value = Number(raw);
+                  if (Number.isNaN(value) || value < 0) return;
+                  setAnalysis({ minGradient: value });
+                }}
+              />
+            </InputGroup>
+          </Field>
+          <Field class="w-full gap-2">
+            <FieldLabel class="text-sm font-medium leading-[18px]" id="studio-box-size-label">
+              Detection box
+            </FieldLabel>
+            <InputGroup>
+              <InputGroupInput
+                autocomplete="off"
+                aria-labelledby="studio-box-size-label"
+                class="h-8 px-3 font-mono text-[13px]"
+                min={3}
+                name="box-size"
+                step={2}
+                title="Odd Picasso box side length in pixels for identify and fit."
+                type="number"
+                value={wizard().analysis?.boxSize ?? BINDING_DEFAULT_BOX_SIZE}
+                onChange={(event) => {
+                  const raw = event.currentTarget.value;
+                  if (raw.trim() === "") {
+                    setAnalysis({ boxSize: BINDING_DEFAULT_BOX_SIZE });
+                    return;
+                  }
+                  const value = Number(raw);
+                  if (Number.isNaN(value) || value < 3 || value % 2 === 0) return;
+                  setAnalysis({ boxSize: value });
+                }}
+              />
+              <InputGroupAddon align="inline-end">
+                <InputGroupText class="text-[13px]">px</InputGroupText>
               </InputGroupAddon>
             </InputGroup>
           </Field>

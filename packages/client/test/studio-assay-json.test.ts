@@ -56,4 +56,32 @@ describe("studio assay.json samples", () => {
     const json = build([row("a", "Control", "0", "1"), row("b", "CAR-T", "2", "1,3")]);
     expect(parseStudioAssayJson(JSON.stringify(json))).toEqual(json);
   });
+
+  test("writes Picasso detection knobs for LNP binding and omits them for killing", () => {
+    const binding = buildStudioAssayJson({
+      assayId: ASSAY_TYPE.LNP_BINDING,
+      name: "Run",
+      dataSourceKind: "nd2",
+      dataPath: "/data/run.nd2",
+      folderTemplate: { subfolder: "", filename: "" },
+      workspacePath: "/ws",
+      intervalValue: 1,
+      intervalUnit: "minute",
+      samples: [row("a", "bound", "0", "1")],
+      channelDefaults: { segmentation: "0", signal: "1" },
+    });
+    expect(binding.analysis).toEqual({
+      channels: { segmentation: 0, signal: [1] },
+      minGradient: 50,
+      boxSize: 7,
+    });
+    expect(binding.type).toBe(ASSAY_TYPE.LNP_BINDING);
+
+    const killing = build([row("a", "Control", "0", "1")]);
+    expect(killing.analysis).toEqual({
+      skipSegment: false,
+      segmentationMode: "logstd",
+      channels: { segmentation: 0, signal: [1] },
+    });
+  });
 });

@@ -61,6 +61,7 @@ export const ENABLED_STUDIO_ASSAY_IDS = [
   ASSAY_TYPE.TRANSFECTION,
   ASSAY_TYPE.KILLING_DEATH_REPORTER,
   ASSAY_TYPE.KILLING_ENGAGEMENT,
+  ASSAY_TYPE.LNP_BINDING,
 ] as const;
 
 export type EnabledStudioAssayId = (typeof ENABLED_STUDIO_ASSAY_IDS)[number];
@@ -75,7 +76,14 @@ export const ASSAY_DEFAULT_INTERVAL_MINUTES: Partial<Record<StudioAssayType, num
   [ASSAY_TYPE.TRANSFECTION]: 10,
   [ASSAY_TYPE.KILLING_DEATH_REPORTER]: 5,
   [ASSAY_TYPE.KILLING_ENGAGEMENT]: 5,
+  [ASSAY_TYPE.LNP_BINDING]: 1,
 };
+
+/** Picasso net-gradient threshold when `analysis.minGradient` is omitted. */
+export const BINDING_DEFAULT_MIN_GRADIENT = 50;
+
+/** Picasso odd box side length when `analysis.boxSize` is omitted. */
+export const BINDING_DEFAULT_BOX_SIZE = 7;
 
 /**
  * Transfection-only: default second-pass onset time t0 search cap (minutes).
@@ -94,6 +102,11 @@ export function assayUsesMaxOnsetMinutes(assayId: StudioAssayType | null): boole
  */
 export function assayUsesSkipSegment(assayId: StudioAssayType | null): boolean {
   return assayId === ASSAY_TYPE.TRANSFECTION || assayId === ASSAY_TYPE.KILLING_DEATH_REPORTER;
+}
+
+/** Whether the assay exposes Picasso spot-detection knobs (threshold, box size). */
+export function assayUsesBindingDetect(assayId: StudioAssayType | null): boolean {
+  return assayId === ASSAY_TYPE.LNP_BINDING;
 }
 
 export type StudioAssayId = StudioAssayType;

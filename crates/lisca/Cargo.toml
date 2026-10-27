@@ -13,7 +13,15 @@ workspace = true
 [features]
 default = ["studio"]
 smart = ["dep:ort"]
-studio = ["smart", "dep:mplot", "dep:lisca-transfection", "dep:lisca-killing"]
+studio = [
+  "smart",
+  "dep:mplot",
+  "dep:lisca-transfection",
+  "dep:lisca-killing",
+  "dep:picasso",
+  "dep:rust_xlsxwriter",
+  "dep:font-kit",
+]
 
 [dependencies]
 axum.workspace = true
@@ -38,7 +46,12 @@ ndarray.workspace = true
 ndarray-stats.workspace = true
 lisca-transfection = { workspace = true, optional = true }
 lisca-killing = { workspace = true, optional = true, features = ["onnx"] }
+picasso = { workspace = true, optional = true }
 lisca-workspace.workspace = true
+rust_xlsxwriter = { workspace = true, optional = true }
+# Picasso enables yeslogic-fontconfig-sys/dlopen. font-kit must use the same
+# path or identify/fit plots fail to compile (servo/font-kit#212).
+font-kit = { version = "0.14.3", optional = true, features = ["source-fontconfig-dlopen"] }
 ort = { workspace = true, optional = true }
 
 [target.'cfg(unix)'.dependencies]

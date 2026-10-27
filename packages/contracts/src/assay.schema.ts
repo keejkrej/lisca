@@ -103,6 +103,8 @@ export const AssaySegmentationModeSchema = Schema.Literals(["logstd", "smart"]).
  * `skipSegment` / `segmentationMode` apply to assays that segment a channel
  * (transfection and killing). `smart` segmentation is reserved for a hosted
  * service in version 1.0.
+ * `minGradient` / `boxSize` are LNP-binding Picasso detection knobs; other
+ * assays ignore them. The Signal channel is `channels.signal` (first index).
  * `channels` / `sampleChannels` resolve segmentation and signal (intensity) channel indices.
  */
 export const AssayAnalysisConfigSchema = Schema.Struct({
@@ -114,6 +116,16 @@ export const AssayAnalysisConfigSchema = Schema.Struct({
   segmentationMode: Schema.optional(AssaySegmentationModeSchema),
   channels: Schema.optional(AssayChannelsSchema),
   sampleChannels: Schema.optional(Schema.mutable(Schema.Array(AssaySampleChannelsSchema))),
+  /**
+   * Picasso minimum radial net gradient (`minimum_ng`). Binding only.
+   * Default 50 when omitted.
+   */
+  minGradient: Schema.optional(F64),
+  /**
+   * Picasso detection / fit box side length in pixels (odd). Binding only.
+   * Default 7 when omitted.
+   */
+  boxSize: Schema.optional(U32),
 }).annotate({ identifier: "AssayAnalysisConfig" });
 
 export const AssayJsonFileSchema = Schema.Struct({

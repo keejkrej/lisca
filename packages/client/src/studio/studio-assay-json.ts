@@ -12,8 +12,11 @@ import type {
 } from "@lisca/contracts/assay";
 import {
   ASSAY_DEFAULT_INTERVAL_MINUTES,
+  assayUsesBindingDetect,
   assayUsesMaxOnsetMinutes,
   assayUsesSkipSegment,
+  BINDING_DEFAULT_BOX_SIZE,
+  BINDING_DEFAULT_MIN_GRADIENT,
   DEFAULT_FOLDER_SOURCE_TEMPLATE,
   TRANSFECTION_DEFAULT_MAX_ONSET_MINUTES,
 } from "@lisca/contracts/assay";
@@ -31,8 +34,11 @@ export const ASSAY_CHOICE_LABEL: Record<StudioAssayType, string> = {
 
 export {
   ASSAY_DEFAULT_INTERVAL_MINUTES,
+  assayUsesBindingDetect,
   assayUsesMaxOnsetMinutes,
   assayUsesSkipSegment,
+  BINDING_DEFAULT_BOX_SIZE,
+  BINDING_DEFAULT_MIN_GRADIENT,
   TRANSFECTION_DEFAULT_MAX_ONSET_MINUTES,
 };
 
@@ -60,6 +66,12 @@ export function analysisConfigForAssay(
         segmentationMode: analysis?.segmentationMode ?? "logstd",
       }
     : {};
+  const binding = assayUsesBindingDetect(assayId)
+    ? {
+        minGradient: analysis?.minGradient ?? BINDING_DEFAULT_MIN_GRADIENT,
+        boxSize: analysis?.boxSize ?? BINDING_DEFAULT_BOX_SIZE,
+      }
+    : {};
 
   const channels = analysis?.channels;
   const sampleChannels = analysis?.sampleChannels;
@@ -67,6 +79,7 @@ export function analysisConfigForAssay(
   if (
     Object.keys(onset).length === 0 &&
     Object.keys(segment).length === 0 &&
+    Object.keys(binding).length === 0 &&
     channels == null &&
     (sampleChannels == null || sampleChannels.length === 0)
   ) {
@@ -76,6 +89,7 @@ export function analysisConfigForAssay(
   return {
     ...onset,
     ...segment,
+    ...binding,
     ...(channels != null ? { channels } : {}),
     ...(sampleChannels != null && sampleChannels.length > 0 ? { sampleChannels } : {}),
   };

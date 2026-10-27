@@ -1,4 +1,33 @@
+use std::fs::File;
 use std::path::Path;
+
+use csv::WriterBuilder;
+
+pub fn write_csv_only(path: &Path, headers: &[&str], rows: &[Vec<String>]) -> Result<(), String> {
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent).map_err(|error| error.to_string())?;
+    }
+    let file = File::create(path).map_err(|error| error.to_string())?;
+    let mut writer = WriterBuilder::new().has_headers(true).from_writer(file);
+    writer
+        .write_record(headers)
+        .map_err(|error| error.to_string())?;
+    for row in rows {
+        writer
+            .write_record(row)
+            .map_err(|error| error.to_string())?;
+    }
+    writer.flush().map_err(|error| error.to_string())?;
+    Ok(())
+}
+
+pub fn format_float(value: f64) -> String {
+    if value.is_finite() {
+        value.to_string()
+    } else {
+        "nan".to_string()
+    }
+}
 
 pub fn read_csv(path: &Path) -> Result<(Vec<String>, Vec<Vec<String>>), String> {
     let mut reader = csv::Reader::from_path(path).map_err(|error| error.to_string())?;

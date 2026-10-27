@@ -6,6 +6,8 @@ extern crate self as lisca;
 
 pub mod aligner;
 pub mod analysis;
+#[cfg(feature = "studio")]
+use font_kit as _;
 pub mod config;
 pub mod http;
 pub mod image_source;

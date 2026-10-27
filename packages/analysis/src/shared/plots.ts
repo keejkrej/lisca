@@ -1,3 +1,4 @@
+import { BINDING_PLOTS, type BindingPlotSpec } from "../assays/binding/catalog";
 import { ENGAGEMENT_PLOTS, KILLING_PLOTS, type KillingPlotSpec } from "../assays/killing/catalog";
 import { TRANSFECTION_PLOTS, type TransfectionPlotSpec } from "../assays/transfection/catalog";
 import { RESULT_PLOT_SECTIONS, type ResultPlotSection } from "./sections";
@@ -8,9 +9,10 @@ export type ResultAssayKind =
   | "transfection"
   | "killing-death-reporter"
   | "killing-engagement"
+  | "lnp-binding"
   | "unknown";
 
-export type ResultPlotSpec = TransfectionPlotSpec | KillingPlotSpec;
+export type ResultPlotSpec = TransfectionPlotSpec | KillingPlotSpec | BindingPlotSpec;
 
 export type ResultPlot = {
   fileName: string;
@@ -26,6 +28,16 @@ export type ResultFileRef = {
   fileName: string;
   path: string;
 };
+
+const BINDING_MARKERS = new Set([
+  "binding_traces.png",
+  "binding_traces_shared_y.png",
+  "binding_traces_summary.png",
+  "binding_traces_summary_shared_y.png",
+  "binding.csv",
+  "binding_summary.csv",
+  "spots.csv",
+]);
 
 const ENGAGEMENT_MARKERS = new Set([
   "engagement_traces.png",
@@ -58,6 +70,7 @@ export function isPlotFile(file: ResultFileRef): boolean {
 }
 
 export function inferResultAssayKind(files: ResultFileRef[]): ResultAssayKind {
+  if (files.some((file) => BINDING_MARKERS.has(file.fileName))) return "lnp-binding";
   if (files.some((file) => ENGAGEMENT_MARKERS.has(file.fileName))) return "killing-engagement";
   if (files.some((file) => KILLING_MARKERS.has(file.fileName))) return "killing-death-reporter";
   if (files.some((file) => TRANSFECTION_MARKERS.has(file.fileName))) return "transfection";
@@ -65,6 +78,7 @@ export function inferResultAssayKind(files: ResultFileRef[]): ResultAssayKind {
 }
 
 export function catalogForAssay(assay: ResultAssayKind): readonly ResultPlotSpec[] {
+  if (assay === "lnp-binding") return BINDING_PLOTS;
   if (assay === "killing-engagement") return ENGAGEMENT_PLOTS;
   if (assay === "killing-death-reporter") return KILLING_PLOTS;
   return TRANSFECTION_PLOTS;
@@ -89,6 +103,9 @@ export function resultSectionInstruction(
   assay: ResultAssayKind,
 ): string {
   if (section === "traces") {
+    if (assay === "lnp-binding") {
+      return "Spot count for each cell. Shared y uses one scale across samples.";
+    }
     if (assay === "killing-engagement") {
       return "Engager count for each cell. Shared y uses one scale across samples.";
     }
@@ -97,6 +114,9 @@ export function resultSectionInstruction(
       : "Intensity for each cell. Shared y uses one scale across samples.";
   }
   if (section === "traces-summary") {
+    if (assay === "lnp-binding") {
+      return "Mean, median, and interquartile range of spot counts for each sample.";
+    }
     if (assay === "killing-engagement") {
       return "Mean, median, and interquartile range of engager counts for each sample.";
     }
@@ -124,7 +144,13 @@ function guessPlotSection(fileName: string): ResultPlotSection {
   if (stem.includes("summary")) return "traces-summary";
   if (stem.startsWith("area")) return "area";
   if (stem.includes("fit")) return "traces-fit";
-  if (stem.startsWith("traces") || stem.startsWith("engagement_traces")) return "traces";
+  if (
+    stem.startsWith("traces") ||
+    stem.startsWith("engagement_traces") ||
+    stem.startsWith("binding_traces")
+  ) {
+    return "traces";
+  }
   return "parameters";
 }
 

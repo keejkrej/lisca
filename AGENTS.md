@@ -20,8 +20,9 @@ Open the sibling that owns the behavior under change. Cite these by GitHub URL.
 | Zeiss CZI reads                                                                | [czi-rs](https://github.com/keejkrej/czi-rs) (crate `czi`)                                                                           |
 | Nikon ND2 reads                                                                | [nd2-rs](https://github.com/keejkrej/nd2-rs) (crate `nd2`)                                                                           |
 | Array, signal, image, or classical ML primitives in Rust                       | [marray-rs](https://github.com/keejkrej/marray-rs) (crate `marray`)                                                                  |
+| LNP / fluorescent-particle spot detection and Gaussian fitting                 | [picasso-rs](https://github.com/keejkrej/picasso-rs) (crate `picasso`)                                                               |
 
-`Cargo.toml` and `python/pyproject.toml` pin `lisca-transfection-assay` and `lisca-killing-assay`. `Cargo.toml` also git-depends on `mplot-rs`, `marray-rs`, `czi-rs`, and `nd2-rs` at 1.0.0. When an assay has both a Cargo pin and a Python pin, keep them on the same commit.
+`Cargo.toml` and `python/pyproject.toml` pin `lisca-transfection-assay` and `lisca-killing-assay`. `Cargo.toml` also git-depends on `mplot-rs`, `marray-rs`, `czi-rs`, `nd2-rs`, and `picasso-rs`. When an assay has both a Cargo pin and a Python pin, keep them on the same commit.
 
 ## Install
 
@@ -52,11 +53,12 @@ pnpm run fixture:workspace -- --assay transfection --stage cropped --out ./tf-an
 cargo run -p lisca --bin lisca-analyze -- pipeline WORKSPACE
 cargo run -p lisca --bin lisca-analyze -- killing-death-reporter WORKSPACE
 cargo run -p lisca --bin lisca-analyze -- killing-engagement WORKSPACE
+cargo run -p lisca --bin lisca-analyze -- lnp-binding WORKSPACE
 cargo run -p lisca --bin lisca-crop --no-default-features -- --workspace WORKSPACE --source SOURCE.nd2
 cd python && uv run lisca crop --workspace WORKSPACE --source SOURCE.nd2 --positions 0,1,2
 ```
 
-Transfection stage names match `lisca-transfection`. Killing commands take a workspace path and require `assay.json` type `killing-death-reporter` or `killing-engagement`. Classifier predict, clean, and the kill curve stay in `lisca-killing-assay`; `lisca-analyze` runs the two measurement commands above. Analysis layout: `docs/analysis/analysis.md`.
+Transfection stage names match `lisca-transfection`. Killing commands take a workspace path and require `assay.json` type `killing-death-reporter` or `killing-engagement`. `lnp-binding` takes a workspace path and requires type `lnp-binding`; detection uses crate `picasso`. Classifier predict, clean, and the kill curve stay in `lisca-killing-assay`; `lisca-analyze` runs the measurement commands above. Analysis layout: `docs/analysis/analysis.md`.
 
 ## Project structure
 

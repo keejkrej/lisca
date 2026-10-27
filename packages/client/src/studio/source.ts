@@ -50,11 +50,13 @@ function firstOrZero(values: readonly number[] | undefined): number {
 
 export type StudioAlignFrameDefault = "first" | "last";
 
-/** Killing assays start on the first frame. Every other assay starts on the last. */
+/** Killing and LNP binding start on the first frame. Every other assay starts on the last. */
 export function studioAlignFrameDefault(
   assayId: string | null | undefined,
 ): StudioAlignFrameDefault {
-  return assayId === ASSAY_TYPE.KILLING_DEATH_REPORTER || assayId === ASSAY_TYPE.KILLING_ENGAGEMENT
+  return assayId === ASSAY_TYPE.KILLING_DEATH_REPORTER ||
+    assayId === ASSAY_TYPE.KILLING_ENGAGEMENT ||
+    assayId === ASSAY_TYPE.LNP_BINDING
     ? "first"
     : "last";
 }

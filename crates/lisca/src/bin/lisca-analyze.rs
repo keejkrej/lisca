@@ -1,7 +1,8 @@
 //! Assay analysis CLI. Transfection stages dispatch into `lisca-transfection`.
 //! `killing-death-reporter` and `killing-engagement` dispatch into the killing
-//! assay and take a workspace path only. `killing-death-reporter` requires
-//! `assay.json` type `killing-death-reporter`.
+//! assay and take a workspace path only. `lnp-binding` detects fluorescent
+//! spots with Picasso and takes a workspace path only. `killing-death-reporter`
+//! requires `assay.json` type `killing-death-reporter`.
 //!
 //! `--backend onnx` uses the local Studio ONNX segmenter; Otsu and all
 //! downstream transfection stages come from the sidecar crate.
@@ -12,6 +13,7 @@
 //! cargo run -p lisca --release --bin lisca-analyze -- pipeline ~/data/TF84
 //! cargo run -p lisca --bin lisca-analyze -- killing-death-reporter ~/data/killing_pi
 //! cargo run -p lisca --bin lisca-analyze -- killing-engagement ~/data/killing_tcell
+//! cargo run -p lisca --bin lisca-analyze -- lnp-binding ~/data/lnp_binding
 //! ```
 //!
 //! Requires the `studio` feature (default). Config is `assay.json` only.
@@ -22,6 +24,7 @@ use std::path::{Path, PathBuf};
 use std::process;
 use std::time::Instant;
 
+use lisca::analysis::assays::binding;
 use lisca::analysis::assays::killing;
 use lisca::analysis::assays::killing_engagement;
 use lisca::analysis::assays::transfection::{
@@ -62,6 +65,7 @@ fn run() -> Result<(), String> {
         "pipeline" | "analyze" | "all" => cmd_pipeline(rest),
         "killing-death-reporter" => cmd_killing_death_reporter(rest),
         "killing-engagement" => cmd_killing_engagement(rest),
+        "lnp-binding" => cmd_lnp_binding(rest),
         other => Err(format!(
             "unknown command {other:?}\n\nRun `lisca-analyze --help` for usage."
         )),
@@ -75,9 +79,11 @@ lisca-analyze — assay CLI
   segment | traces | auc | fit | plot-traces | plot-auc | plot-fit | pipeline
   killing-death-reporter <workspace>
   killing-engagement <workspace>
+  lnp-binding <workspace>
 
 Transfection stages call `lisca-transfection`. `killing-death-reporter` and
 `killing-engagement` call the killing dispatch and take a workspace path only.
+`lnp-binding` calls Picasso spot detection and takes a workspace path only.
 `killing-death-reporter` requires assay.json type `killing-death-reporter`. This binary does not
 run the classifier and has no `fluorescence`, `clean`, or `predict` command.
 
@@ -85,6 +91,7 @@ Usage:
   lisca-analyze <command> [options] <workspace>
   lisca-analyze killing-death-reporter <workspace>
   lisca-analyze killing-engagement <workspace>
+  lisca-analyze lnp-binding <workspace>
 
 Commands (transfection stage names):
   segment           Masks → mask/PosN/ (default Otsu; optional ONNX U-Net)
@@ -106,8 +113,13 @@ Commands (transfection stage names):
                     the engagement workbooks, engagement_traces.png,
                     engagement_traces_shared_y.png, engagement_traces_summary.png,
                     engagement_traces_summary_shared_y.png
+  lnp-binding
+                    LNP binding: spots.csv, binding.csv, binding_summary.csv,
+                    the binding workbooks, binding_traces.png,
+                    binding_traces_shared_y.png, binding_traces_summary.png,
+                    binding_traces_summary_shared_y.png. assay.json type `lnp-binding`.
 
-Transfection stage options (not accepted by killing-death-reporter or killing-engagement):
+Transfection stage options (not accepted by killing-death-reporter, killing-engagement, or lnp-binding):
   --assay PATH            assay.json (default: <workspace>/assay.json)
   --interval MINUTES      frame interval (default: assay.json interval.value/unit)
   --max-onset-minutes N   fit onset time t0 search cap (default: assay analysis.maxOnsetMinutes
@@ -131,6 +143,7 @@ Examples:
   lisca-analyze pipeline ~/data/TF84
   lisca-analyze killing-death-reporter ~/data/killing_pi
   lisca-analyze killing-engagement ~/data/killing_tcell
+  lisca-analyze lnp-binding ~/data/lnp_binding
 "
     );
 }
@@ -293,7 +306,7 @@ fn cmd_pipeline(args: &[String]) -> Result<(), String> {
 }
 
 fn cmd_killing_death_reporter(args: &[String]) -> Result<(), String> {
-    let workspace = killing_workspace(args, "killing-death-reporter")?;
+    let workspace = workspace_path_only(args, "killing-death-reporter")?;
     let assay = load_assay_json(&workspace)?;
     if assay.type_ != AssayType::KillingDeathReporter {
         return Err(format!(
@@ -307,7 +320,7 @@ fn cmd_killing_death_reporter(args: &[String]) -> Result<(), String> {
 }
 
 fn cmd_killing_engagement(args: &[String]) -> Result<(), String> {
-    let workspace = killing_workspace(args, "killing-engagement")?;
+    let workspace = workspace_path_only(args, "killing-engagement")?;
     let assay = load_assay_json(&workspace)?;
     if assay.type_ != AssayType::KillingEngagement {
         return Err(format!(
@@ -328,9 +341,21 @@ fn cmd_killing_engagement(args: &[String]) -> Result<(), String> {
     })
 }
 
+fn cmd_lnp_binding(args: &[String]) -> Result<(), String> {
+    let workspace = workspace_path_only(args, "lnp-binding")?;
+    let assay = load_assay_json(&workspace)?;
+    if assay.type_ != AssayType::LnpBinding {
+        return Err(format!(
+            "lisca-analyze lnp-binding requires assay.json type lnp-binding, found {}",
+            assay.type_
+        ));
+    }
+    timed("lnp-binding", || binding::run_sync(&workspace, &assay))
+}
+
 /// One workspace directory and no flags. A dashed argument is an error before
 /// the workspace is read, because `first_positional` would skip it.
-fn killing_workspace(args: &[String], command: &str) -> Result<PathBuf, String> {
+fn workspace_path_only(args: &[String], command: &str) -> Result<PathBuf, String> {
     if args.iter().any(|arg| arg.starts_with('-')) || args.len() != 1 {
         return Err(format!("{command} takes only a workspace path"));
     }
@@ -593,6 +618,17 @@ mod tests {
         );
         assert!(!root.join("analysis").exists());
         assert!(!root.join("results").exists());
+
+        let binding_on_engagement = tempfile::tempdir().unwrap();
+        let root = binding_on_engagement.path();
+        write_assay(root, "killing-engagement", "2.75");
+        let error = cmd_lnp_binding(&[root.display().to_string()]).unwrap_err();
+        assert_eq!(
+            error,
+            "lisca-analyze lnp-binding requires assay.json type lnp-binding, found killing-engagement"
+        );
+        assert!(!root.join("analysis").exists());
+        assert!(!root.join("results").exists());
     }
 
     #[test]
@@ -608,6 +644,13 @@ mod tests {
         let root = non_positive.path();
         write_assay(root, "killing-engagement", "0");
         let error = cmd_killing_engagement(&[root.display().to_string()]).unwrap_err();
+        assert_eq!(error, "invalid interval.value/unit in assay.json");
+        assert!(!root.join("analysis").exists());
+
+        let binding_zero = tempfile::tempdir().unwrap();
+        let root = binding_zero.path();
+        write_assay(root, "lnp-binding", "0");
+        let error = cmd_lnp_binding(&[root.display().to_string()]).unwrap_err();
         assert_eq!(error, "invalid interval.value/unit in assay.json");
         assert!(!root.join("analysis").exists());
     }
@@ -630,6 +673,10 @@ mod tests {
         assert_eq!(
             cmd_killing_engagement(&["-f".into(), "/tmp/ws".into()]).unwrap_err(),
             "killing-engagement takes only a workspace path"
+        );
+        assert_eq!(
+            cmd_lnp_binding(&["--interval".into(), "1".into()]).unwrap_err(),
+            "lnp-binding takes only a workspace path"
         );
     }
 
