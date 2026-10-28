@@ -18,7 +18,7 @@ import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
 const mocks = vi.hoisted(() => {
   const task = (
-    status: "running" | "cancelled",
+    status: "running" | "cancelled" | "failed",
     updatedAtMs: number,
     kind = "crop-roi",
     taskId = "crop-task",
@@ -36,14 +36,14 @@ const mocks = vi.hoisted(() => {
       blocked: 0,
       running: status === "running" ? 1 : 0,
       completed: 0,
-      failed: 0,
+      failed: status === "failed" ? 1 : 0,
       cancelled: status === "cancelled" ? 1 : 0,
       cancellationRequested: 0,
     },
     createdAtMs: 1,
     updatedAtMs,
   });
-  const step = (status: "running" | "cancelled") => ({
+  const step = (status: "running" | "cancelled" | "failed") => ({
     stepId: "crop-position-7",
     taskId: "crop-task",
     stepKind: "crop-position-7",
@@ -65,7 +65,7 @@ const mocks = vi.hoisted(() => {
       },
     ],
   });
-  const detail = (status: "running" | "cancelled", updatedAtMs: number) => ({
+  const detail = (status: "running" | "cancelled" | "failed", updatedAtMs: number) => ({
     task: task(status, updatedAtMs),
     steps: [step(status)],
   });

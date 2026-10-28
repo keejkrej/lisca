@@ -6,7 +6,7 @@
 //! Migration keeps the same physical positions or refuses. It never guesses a
 //! neighbour.
 
-use crate::protocol::{AssayData, AssayJsonFile, AssayType, WorkspaceScan};
+use crate::protocol::{AssayData, AssayJsonFile, WorkspaceScan};
 
 pub const POSITION_INDEX_VERSION: u32 = 1;
 
@@ -294,7 +294,7 @@ fn assay_with(positions: &str, version: Option<u32>, folder: bool) -> AssayJsonF
             name: "A".into(),
             positions: positions.into(),
         }]),
-        type_: AssayType::Transfection,
+        type_: crate::protocol::AssayType::Transfection,
         workspace: crate::protocol::AssayWorkspace {
             path: String::new(),
         },
