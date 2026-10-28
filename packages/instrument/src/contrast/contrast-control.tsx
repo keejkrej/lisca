@@ -38,8 +38,8 @@ export type ContrastControlProps = {
  *
  * Lock is a state toggle rather than an action, like the rail's Edit and Show toggles: it
  * decides whether the window survives frame changes, not what the window is. Auto stays an
- * action, because it only sets the current window. Unlocking does not rewrite the window; the
- * next frame change returns to that frame's auto range.
+ * action that also locks, so a chosen window applies to every frame. Unlocking does not
+ * rewrite the window; the next frame change returns to that frame's raw domain.
  */
 export function ContrastControl(props: ContrastControlProps) {
   const controlState = () => {
@@ -48,6 +48,12 @@ export function ContrastControl(props: ContrastControlProps) {
       props.contrast,
     );
     const disabled = props.disabled ?? !props.frame;
+    const pinWindow = (window: ContrastWindow) => {
+      if (props.onContrastLockedChange != null && !(props.contrastLocked ?? false)) {
+        props.onContrastLockedChange(true);
+      }
+      props.onContrastChange(window);
+    };
     return {
       domainMin: domain.min,
       domainMax: domain.max,
@@ -55,9 +61,9 @@ export function ContrastControl(props: ContrastControlProps) {
       maxValue: value.max,
       disabled,
       autoRangeDisabled: disabled,
-      onAutoRange: () => props.onContrastChange(suggestedContrast),
-      onMinCommit: (min: number) => props.onContrastChange({ min, max: value.max }),
-      onMaxCommit: (max: number) => props.onContrastChange({ min: value.min, max }),
+      onAutoRange: () => pinWindow(suggestedContrast),
+      onMinCommit: (min: number) => pinWindow({ min, max: value.max }),
+      onMaxCommit: (max: number) => pinWindow({ min: value.min, max }),
       locked: props.contrastLocked ?? false,
       onToggleLocked: () => props.onContrastLockedChange?.(!(props.contrastLocked ?? false)),
       showLock: props.onContrastLockedChange != null,
@@ -131,7 +137,9 @@ function ContrastControlBody(props: {
           appearance={props.sectionAppearance}
           aria-label={props["aria-label"]}
           contentClassName={props.sectionContentClassName}
-          description={props.sectionDescription}
+          description={
+            props.sectionDescription ?? "Display only. Analysis uses the original intensities."
+          }
           title={props.sectionTitle ?? "Contrast"}
           class={props.sectionClassName}
           role={props.role}
@@ -146,7 +154,9 @@ function ContrastControlBody(props: {
         appearance={props.sectionAppearance}
         aria-label={props["aria-label"]}
         contentClassName={props.sectionContentClassName}
-        description={props.sectionDescription}
+        description={
+          props.sectionDescription ?? "Display only. Analysis uses the original intensities."
+        }
         title={props.sectionTitle ?? "Contrast"}
         class={props.sectionClassName}
         role={props.role}
@@ -186,7 +196,7 @@ function ContrastControlBody(props: {
                   title={
                     props.locked
                       ? "Keep this contrast range for every frame"
-                      : "Follow each frame's auto range"
+                      : "Follow each frame's raw intensity range"
                   }
                   variant="outline"
                   onChange={props.onToggleLocked}

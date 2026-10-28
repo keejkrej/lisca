@@ -1,4 +1,8 @@
-import { ASSAY_TYPE, type StudioAssaySampleRow } from "@lisca/contracts/assay";
+import {
+  ASSAY_TYPE,
+  POSITION_INDEX_VERSION,
+  type StudioAssaySampleRow,
+} from "@lisca/contracts/assay";
 import { describe, expect, test } from "vite-plus/test";
 
 import { buildStudioAssayJson, parseStudioAssayJson } from "../src/atoms/studio-ui";
@@ -55,6 +59,27 @@ describe("studio assay.json samples", () => {
   test("round-trips sampleChannels by sample name when loading assay.json", () => {
     const json = build([row("a", "Control", "0", "1"), row("b", "CAR-T", "2", "1,3")]);
     expect(parseStudioAssayJson(JSON.stringify(json))).toEqual(json);
+  });
+
+  test("writes positionIndexVersion only for index-encoded assays", () => {
+    expect(build([row("a", "Control", "0", "1")]).positionIndexVersion).toBeUndefined();
+    const versioned = buildStudioAssayJson({
+      assayId: ASSAY_TYPE.KILLING_DEATH_REPORTER,
+      name: "Run",
+      dataSourceKind: "nd2",
+      dataPath: "/data/run.nd2",
+      folderTemplate: { subfolder: "", filename: "" },
+      workspacePath: "/ws",
+      intervalValue: 10,
+      intervalUnit: "minute",
+      samples: [row("a", "Control", "0", "1")],
+      channelDefaults: { segmentation: "0", signal: "1" },
+      positionIndexVersion: POSITION_INDEX_VERSION,
+    });
+    expect(versioned.positionIndexVersion).toBe(POSITION_INDEX_VERSION);
+    expect(parseStudioAssayJson(JSON.stringify(versioned)).positionIndexVersion).toBe(
+      POSITION_INDEX_VERSION,
+    );
   });
 
   test("writes Picasso detection knobs for LNP binding and omits them for killing", () => {

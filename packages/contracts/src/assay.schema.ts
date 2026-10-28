@@ -128,6 +128,18 @@ export const AssayAnalysisConfigSchema = Schema.Struct({
   boxSize: Schema.optional(U32),
 }).annotate({ identifier: "AssayAnalysisConfig" });
 
+/**
+ * Marker for `samples[].positions` encoding.
+ *
+ * Version 1 stores 0-based indices into the source position list (scan order).
+ * Those indices are never shown. The UI and plots display each source's own
+ * labels. A missing field is the pre-0.5.1 encoding: folder numbers are looked
+ * up by folder name then by index; ND2/CZI numbers are already 0-based indices.
+ * Loaders must migrate that encoding to version 1 (same physical positions) or
+ * refuse — never guess a neighbour.
+ */
+export const POSITION_INDEX_VERSION = 1 as const;
+
 export const AssayJsonFileSchema = Schema.Struct({
   type: AssayTypeSchema,
   name: Schema.String,
@@ -136,6 +148,7 @@ export const AssayJsonFileSchema = Schema.Struct({
   interval: AssayIntervalSchema,
   samples: AssaySamplesSchema,
   analysis: Schema.optional(AssayAnalysisConfigSchema),
+  positionIndexVersion: Schema.optional(U32),
 }).annotate({ identifier: "AssayJsonFile" });
 
 export type AssayType = typeof AssayTypeSchema.Type;

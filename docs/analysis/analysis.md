@@ -24,9 +24,14 @@ Per-sample titles include the sample folder (for example
 
 Views follow the assay. Every assay has Traces (each cell, plus a shared-y
 companion) and Traces summary (mean, median, and interquartile range, plus
-shared y). Killing and LNP binding stop there. Transfection also has Mask area, Traces fit,
-AUC, Parameters, and Parameters comparison. Per-sample plots use two columns.
-Plots that already contain every sample use one column.
+shared y). The light band on a summary plot is the interquartile range (25th to
+75th percentile) at each time. Killing and LNP binding stop there. Transfection
+also has Mask area (foreground pixel count of the segmentation mask vs time),
+Traces fit, AUC, Parameters, and Parameters comparison. Per-sample plots use two
+columns. Plots that already contain every sample use one column. Studio plot
+y-limits include every finite value with headroom so traces and engager counts
+are not clipped. Contrast sliders on Align and Annotate are display-only; they
+do not change analysis numbers.
 
 ## Workspace fixtures (e2e / agents)
 
@@ -138,8 +143,11 @@ ROI. The spot diameter is about 10 pixels (kept when the equivalent diameter is
 7 to 13 pixels). Every ROI in a position shares one scale: the median
 background, plus 8 robust noise widths. A crop is not stretched to its own
 brightest pixel. Two touching spots are split by a distance-transform
-watershed. `t_cells` is that spot count. `engagements` still records whether a
-spot touches the brightfield tumor mask. The gallery plots `t_cells`.
+watershed. `t_cells` is that integer spot count. `engagements` still records whether a
+spot touches the brightfield tumor mask. The gallery plots `t_cells`. Summary
+plots and `t_cells_mean` are fractional because they average those integer counts
+across ROIs or frames; the shaded band is the interquartile range of the same
+values.
 
 Studio offers the card in the picker. See
 [ADR-0009](../adr/0009-shared-killing-workspace.md).
@@ -286,7 +294,7 @@ Summary — full process, tolerances table, and lifecycle in [`parity.md`](./par
 - Fit uses the two-pass pooled-protein strategy on the **basic translation–degradation model** (onset time t0, expression rate m0 k_TL, mRNA/protein lifetimes τ = ln(2)/rate; **no maturation**). Optional `analysis.maxOnsetMinutes` in `assay.json` is **transfection-only** (default **`120`** when omitted for that assay; set `0` to fix onset time t0 at 0). Other assays ignore it. Public CSV/UI names: `onset_time`, `expression_rate`, `mrna_lifetime`, `protein_lifetime`, `baseline_intensity` (no alternate aliases). `mrna_degradation_rate` (δ), `protein_degradation_rate` (β), and `expression_amplitude` are internal solver fields, not CSV. Stored times are minutes; plots may show hours. See [`CONTEXT.md`](../../CONTEXT.md).
 - Comparing two finished Workspaces is not an analysis stage. The offline script is [`batch-harmonization.md`](./batch-harmonization.md).
 - Frame interval (`interval.value` / `interval.unit`) is **general**. Transfection defaults to **10 minutes** when omitted. Studio prefills death-reporter killing at **5 minutes**; analysis still requires an explicit positive interval for killing when `interval.value` is missing. Optional `analysis.skipSegment` skips Otsu and uses full-ROI p10 background.
-- Samples are `samples[]: {name, positions}`. `positions` is 0-based: one index (`3`), an inclusive range (`0:4`), or several of those separated by commas (`0:4,20:24`). A gap stays a gap. A Sample is identified by its name: non-empty after trim and unique within the assay (compared trimmed). The sample mapping (`build_sample_mapping` → `SampleMapping` of `SampleAnalysis`) keeps assay order. `results/<sample>/` uses the filesystem-safe name, prefixed with the 0-based assay index (`{index}_{safe}`) only when two names sanitize to the same folder.
+- Samples are `samples[]: {name, positions}`. With `positionIndexVersion: 1`, `positions` is 0-based indices into the source position list (never shown): one index (`3`), an inclusive range (`0:4`), or several of those separated by commas (`0:4,20:24`). A gap stays a gap. A missing version is the pre-0.5.1 encoding (folder name lookup, then index; ND2/CZI already indices) and must be migrated or refused so an old range cannot silently select a neighbour. A Sample is identified by its name: non-empty after trim and unique within the assay (compared trimmed). The sample mapping (`build_sample_mapping` → `SampleMapping` of `SampleAnalysis`) keeps assay order. `results/<sample>/` uses the filesystem-safe name, prefixed with the 0-based assay index (`{index}_{safe}`) only when two names sanitize to the same folder.
 - Channel indices live under `analysis`, not on sample rows: `analysis.channels.{segmentation,signal}` (default Segmentation channel and Signal channels) and optional `analysis.sampleChannels[]` overrides `{sample, segmentation, signal}`, where `sample` is a `samples[].name`. `signal` is a non-empty int list (one Trace CSV per Signal channel).
 
   ```json
@@ -341,3 +349,20 @@ cargo test -p lisca --test transfection_parity -- --ignored   # needs sibling as
 ```
 
 Unit tests live under each `analysis/` submodule. Integration tests in `crates/lisca/tests/transfection_parity.rs` build a minimal synthetic workspace and compare stages to transfection reference formulas. Tolerances and ignored Python e2e: [`parity.md`](./parity.md).
+
+## Troubleshooting
+
+Studio UI errors (crop access denied, stuck tasks, position encoding) are in
+[`docs/ui/troubleshooting.md`](../ui/troubleshooting.md).
+
+- **`positionIndexVersion` missing.** Pre-0.5.1 `assay.json` files use folder-name
+  lookup (then index) for folder sources and 0-based indices for ND2/CZI. Studio
+  and `lisca-analyze` migrate that encoding to the same physical positions or
+  refuse. They do not guess a neighbour. Re-select positions on Metadata if load
+  refuses.
+- **Version 1 without the image source.** Analysis will not treat those indices
+  as `Pos{n}` names. Open the original ND2, CZI, or folder.
+- **Plots clip traces or engager counts.** Y-limits now include min and max with
+  headroom. Re-run plot stages after upgrading to Studio 0.5.1.
+- **Brightness looks wrong.** Align/Annotate contrast does not change CSV values.
+  Unlock for raw domain, or press Auto and Lock to keep one window on every frame.

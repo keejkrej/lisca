@@ -37,6 +37,9 @@ export function createTaskPort(
     cancelTask(taskId) {
       return toTaskCommandEffect(client.tasks.cancelTask({ payload: { taskId } }));
     },
+    dismissTask(taskId) {
+      return toTaskCommandEffect(client.tasks.dismissTask({ payload: { taskId } }));
+    },
     cancelStep(stepId) {
       return toTaskCommandEffect(client.tasks.cancelStep({ payload: { stepId } }));
     },

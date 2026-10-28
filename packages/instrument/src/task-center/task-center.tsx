@@ -2,6 +2,7 @@ import type { TaskDetail, TaskSummary, StepDetail } from "@lisca/contracts";
 import * as Dialog from "@kobalte/core/dialog";
 import {
   canCancelTask,
+  canDismissTask,
   canRetryStep,
   deriveTaskProgress,
   deriveTaskCenterIndicator,
@@ -11,10 +12,13 @@ import {
   taskProgressNoun,
   taskStatusLabel,
   reconcileTaskCenterDetail,
+  reconcileTaskCenterDismissed,
   reconcileTaskCenterSnapshot,
   type TaskCenterGateway,
 } from "@lisca/utils";
 import IconArrowsClockwiseRegular from "phosphor-icons-solid/IconArrowsClockwiseRegular";
+import IconCaretDownRegular from "phosphor-icons-solid/IconCaretDownRegular";
+import IconCaretUpRegular from "phosphor-icons-solid/IconCaretUpRegular";
 import IconQueueRegular from "phosphor-icons-solid/IconQueueRegular";
 import IconWarningCircleRegular from "phosphor-icons-solid/IconWarningCircleRegular";
 import IconXRegular from "phosphor-icons-solid/IconXRegular";
@@ -333,6 +337,27 @@ export function TaskCenter(props: TaskCenterProps) {
     }
   };
 
+  const dismissTask = async (taskId: string) => {
+    const request = beginTaskRequest(taskId);
+    setBusyAction(`dismiss:${taskId}`);
+    setActionError(null);
+    try {
+      await props.gateway.dismissTask(taskId, request.controller.signal);
+      if (!isCurrentTaskRequest(taskId, request.generation)) return;
+      setState((current) => reconcileTaskCenterDismissed(current, taskId));
+      if (expandedTaskId() === taskId) setExpandedTaskId(null);
+    } catch (error) {
+      if (!request.controller.signal.aborted && isCurrentTaskRequest(taskId, request.generation)) {
+        setActionError(errorMessage(error));
+      }
+    } finally {
+      if (isCurrentTaskRequest(taskId, request.generation)) {
+        taskRequests.delete(taskId);
+      }
+      setBusyAction((current) => (current === `dismiss:${taskId}` ? null : current));
+    }
+  };
+
   const label = () => props.label ?? "Tasks";
   const title = () => props.title ?? "Task Center";
 
@@ -404,7 +429,8 @@ export function TaskCenter(props: TaskCenterProps) {
             <div class="space-y-1">
               <Dialog.Title class="font-semibold text-foreground text-lg">{title()}</Dialog.Title>
               <Dialog.Description class="text-muted-foreground text-sm">
-                {props.description ?? "Background computations and recent results"}
+                {props.description ??
+                  "Background computations and recent results. Click a task to expand its steps."}
               </Dialog.Description>
             </div>
             <Dialog.CloseButton
@@ -484,8 +510,24 @@ export function TaskCenter(props: TaskCenterProps) {
                           >
                             <span class="min-w-0 flex-1 space-y-2">
                               <span class="flex items-center justify-between gap-3">
-                                <span class="min-w-0 truncate font-medium text-foreground text-sm">
-                                  {taskKindLabel(task.kind)}
+                                <span class="flex min-w-0 items-center gap-1.5">
+                                  <Show
+                                    when={expanded()}
+                                    fallback={
+                                      <IconCaretDownRegular
+                                        aria-hidden="true"
+                                        class="size-3.5 shrink-0 text-muted-foreground"
+                                      />
+                                    }
+                                  >
+                                    <IconCaretUpRegular
+                                      aria-hidden="true"
+                                      class="size-3.5 shrink-0 text-muted-foreground"
+                                    />
+                                  </Show>
+                                  <span class="min-w-0 truncate font-medium text-foreground text-sm">
+                                    {taskKindLabel(task.kind)}
+                                  </span>
                                 </span>
                                 <span
                                   aria-hidden="true"
@@ -529,6 +571,21 @@ export function TaskCenter(props: TaskCenterProps) {
                                 <Spinner />
                               </Show>
                               Stop
+                            </Button>
+                          </Show>
+                          <Show when={canDismissTask(task)}>
+                            <Button
+                              class="mt-2.5 mr-2"
+                              disabled={taskBusy()}
+                              size="xs"
+                              type="button"
+                              variant="ghost"
+                              onClick={() => void dismissTask(task.taskId)}
+                            >
+                              <Show when={taskBusy()}>
+                                <Spinner />
+                              </Show>
+                              Dismiss
                             </Button>
                           </Show>
                         </div>

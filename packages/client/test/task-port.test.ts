@@ -117,11 +117,17 @@ describe("createTaskPort", () => {
     });
 
     await expect(Effect.runPromise(port.cancelTask("task-1"))).resolves.toEqual(detail);
+    await expect(Effect.runPromise(port.dismissTask("task-1"))).resolves.toEqual(detail);
     await expect(Effect.runPromise(port.cancelStep("step-1"))).resolves.toEqual(detail);
     await expect(Effect.runPromise(port.retryStep("step-1"))).resolves.toEqual(detail);
     expect(requested).toEqual([
       {
         url: "http://localhost:8765/tasks/task/cancel",
+        method: "POST",
+        body: { taskId: "task-1" },
+      },
+      {
+        url: "http://localhost:8765/tasks/task/dismiss",
         method: "POST",
         body: { taskId: "task-1" },
       },

@@ -41,6 +41,7 @@ import {
   studioAlignPositionNav,
   toStudioSource,
 } from "@lisca/client/studio/source";
+import { catalogFromScan, resolveStoredFileIds } from "@lisca/client/studio/position-index";
 import {
   collectAssayPositions,
   filterScanPositionsForAssay,
@@ -162,6 +163,7 @@ export function useStudioAlignState(): StudioAlignState {
   const samples = useStudioStore((state) => state.samples);
   const dataSourceKind = useStudioStore((state) => state.dataSourceKind);
   const assayId = useStudioStore((state) => state.assayId);
+  const positionIndexVersion = useStudioStore((state) => state.positionIndexVersion);
   const [preparingCrop, setPreparingCrop] = createSignal(false);
   const [savedPositions, setSavedPositions] = createSignal<ReadonlySet<number>>(new Set());
   const [baseline, setBaseline] = createSignal<AlignBaseline | null>(null);
@@ -176,8 +178,18 @@ export function useStudioAlignState(): StudioAlignState {
   );
   const activeWorkspacePath = createMemo(() => workspacePath().trim() || null);
   const assayPositions = createMemo(() => collectAssayPositions({ samples: samples() }));
-  const alignPositionsForScan = (scan: WorkspaceScan | null) =>
-    scan ? filterScanPositionsForAssay(scan.positions, assayPositions()) : [];
+  const alignPositionsForScan = (scan: WorkspaceScan | null) => {
+    if (!scan) return [];
+    const catalog = catalogFromScan(dataSourceKind(), scan);
+    if (!catalog) return filterScanPositionsForAssay(scan.positions, assayPositions());
+    const allowed = new Set<number>();
+    for (const row of samples()) {
+      const resolved = resolveStoredFileIds(row.positions, positionIndexVersion(), catalog);
+      if (!resolved.ok) continue;
+      for (const id of resolved.ids) allowed.add(id);
+    }
+    return scan.positions.filter((pos) => allowed.has(pos));
+  };
   const frameMemoryKey = () =>
     studioAlignFrameMemoryKey({
       workspacePath: activeWorkspacePath(),

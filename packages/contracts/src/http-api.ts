@@ -373,6 +373,13 @@ const tasksGroup = HttpApiGroup.make("tasks")
       success: TaskDetailSchema,
       error: [TaskCommandError, RequestError, Unauthorized],
     }),
+  )
+  .add(
+    HttpApiEndpoint.post("dismissTask", "/tasks/task/dismiss", {
+      payload: TaskCancelRequestSchema,
+      success: TaskDetailSchema,
+      error: [TaskCommandError, RequestError, Unauthorized],
+    }),
   );
 
 // --- studio group ------------------------------------------------------------

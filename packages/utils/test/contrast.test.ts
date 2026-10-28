@@ -78,7 +78,7 @@ describe("contrast helpers", () => {
     expect(deriveContrastControlState(frame, manual).value).toEqual(manual);
   });
 
-  it("contrastForFrameChange asks for auto while contrast is unlocked", () => {
+  it("contrastForFrameChange asks for the raw domain while contrast is unlocked", () => {
     expect(contrastForFrameChange(null, false, frame)).toBeNull();
     expect(contrastForFrameChange({ min: 5, max: 50 }, false, frame)).toBeNull();
   });

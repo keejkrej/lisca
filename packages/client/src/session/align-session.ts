@@ -294,7 +294,12 @@ export async function runCropRoi(options: RunCropRoiOptions): Promise<() => void
       onProgress(progress);
       if (!isDoneCropStatus(progress.status)) return;
       if (progress.status === "error") {
-        onError(progress.error ?? "Crop failed");
+        const failed = progress.error ?? "Crop failed";
+        onError(
+          progress.completedPositions > 0
+            ? `${progress.completedPositions} of ${progress.totalPositions} positions cropped. ${failed} Retry the failed position from Tasks; successful ROI stacks are kept.`
+            : failed,
+        );
       } else if (progress.status === "completed") {
         onCompleted(progress);
       }

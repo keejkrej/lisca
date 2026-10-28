@@ -62,7 +62,7 @@ impl SourceMetadata {
             channels: self.channels.clone(),
             times: self.times.clone(),
             z_slices: self.z_slices.clone(),
-            position_labels: u32_labels(&self.positions),
+            position_labels: one_based_position_labels(self.positions.len()),
             channel_labels: u32_labels(&self.channels),
             time_labels: u32_labels(&self.times),
             z_slice_labels: u32_labels(&self.z_slices),
@@ -211,4 +211,32 @@ fn validate_request_index(label: &str, index: u32, size: usize) -> Result<usize,
 
 fn u32_labels(values: &[u32]) -> Vec<String> {
     values.iter().map(|value| value.to_string()).collect()
+}
+
+/// NIS/ZEN show the first stage position as 1. Stored names overlay this when present.
+fn one_based_position_labels(count: usize) -> Vec<String> {
+    (1..=count).map(|index| index.to_string()).collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn nd2_and_czi_labels_are_one_based() {
+        assert_eq!(
+            one_based_position_labels(3),
+            vec!["1".to_string(), "2".to_string(), "3".to_string()]
+        );
+        let scan = SourceMetadata {
+            positions: vec![0, 1, 2],
+            channels: vec![0],
+            times: vec![0],
+            z_slices: vec![0],
+        }
+        .workspace_scan();
+        assert_eq!(scan.positions, vec![0, 1, 2]);
+        assert_eq!(scan.position_labels, vec!["1", "2", "3"]);
+        assert_eq!(scan.channel_labels, vec!["0"]);
+    }
 }

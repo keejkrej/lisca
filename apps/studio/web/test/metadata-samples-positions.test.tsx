@@ -2,15 +2,24 @@ import { RegistryProvider, useAtomValue } from "@effect/atom-solid";
 import { cleanup, fireEvent, render, screen, waitFor } from "@solidjs/testing-library";
 import { afterEach, describe, expect, it } from "vite-plus/test";
 
+import { sequentialCatalog, sparseFolderCatalog } from "@lisca/client/studio/position-index";
+
 import { MetadataSamples } from "../src/components/metadata-samples";
 import { createInitialStudioWizardState, studioWizardAtom } from "../src/state/studio-store";
 
+const ND2_CATALOG = sequentialCatalog("nd2", 80);
+
 afterEach(cleanup);
 
-function renderSamples(positions: string) {
+function renderSamples(
+  positions: string,
+  catalog = ND2_CATALOG,
+  positionIndexVersion: number | null = 1,
+) {
   const initial = createInitialStudioWizardState();
   const state = {
     ...initial,
+    positionIndexVersion,
     samples: initial.samples.map((row, index) => (index === 0 ? { ...row, positions } : row)),
   };
   let stored = () => state.samples[0]!;
@@ -27,7 +36,7 @@ function renderSamples(positions: string) {
           segmentation: wizard().segmentationChannel,
           signal: wizard().signalChannel,
         });
-        return <MetadataSamples />;
+        return <MetadataSamples catalog={catalog} />;
       })()}
     </RegistryProvider>
   ));
@@ -48,6 +57,7 @@ describe("MetadataSamples positions", () => {
     renderSamples("0:4,20:24");
     expect(screen.getByRole("button", { name: "Remove 1–5" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Remove 21–25" })).toBeTruthy();
+    expect(screen.getByTestId("resolved-positions").textContent).toBe("10 positions: 1 to 25");
     expect(screen.queryByRole("textbox", { name: "Position start" })).toBeNull();
     expect(screen.queryByRole("textbox", { name: "Position finish" })).toBeNull();
   });
@@ -69,6 +79,24 @@ describe("MetadataSamples positions", () => {
     expect(positions.value).toBe("foo");
     expect(positions.getAttribute("aria-invalid")).toBe("true");
     expect(stored().positions).toBe("0:7");
+  });
+
+  it("migrates a legacy folder range to the same physical positions", async () => {
+    const { stored } = renderSamples("138,144,161", sparseFolderCatalog([138, 144, 161]), null);
+    await waitFor(() => {
+      expect(stored().positions).toBe("0:2");
+    });
+    expect(screen.getByTestId("resolved-positions").textContent).toBe(
+      "3 positions: Pos138 to Pos161",
+    );
+    expect(screen.getByRole("button", { name: "Remove 138–161" })).toBeTruthy();
+  });
+
+  it("refuses a legacy folder number that is not in the source", async () => {
+    renderSamples("137", sparseFolderCatalog([138, 144, 161]), null);
+    await waitFor(() => {
+      expect(screen.getByRole("alert").textContent).toMatch(/Position 137 is not in this source/);
+    });
   });
 
   it("removes the last chip with Backspace and one chip from its button", () => {
@@ -111,7 +139,7 @@ describe("MetadataSamples columns", () => {
     (positionDetails[0] as HTMLButtonElement).focus();
     await waitFor(() => {
       expect(screen.getByRole("tooltip").textContent).toBe(
-        "Counting starts at 1. Type 1-5, 21-25, 28 and press Enter.",
+        "Type the source labels, for example 1-67 or 138, 144. Counting matches the folder names or NIS/ZEN position names.",
       );
     });
     (segmentationDetails[0] as HTMLButtonElement).focus();

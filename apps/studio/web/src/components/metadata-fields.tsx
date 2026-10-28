@@ -144,7 +144,8 @@ export function MetadataFields(props: { hostPort: HostFilePickerOperations }) {
         <div class="flex flex-col gap-2">
           <h1 class="text-2xl font-semibold leading-8 tracking-[-0.02em]">Info</h1>
           <p class="text-[13px] leading-[18px] text-muted-foreground">
-            Name the assay and choose its source data and workspace.
+            Name the assay, choose its image source, and pick the output folder where Studio writes
+            alignment, crops, and results (the workspace).
           </p>
         </div>
         <Field class="w-full gap-2">
@@ -169,13 +170,19 @@ export function MetadataFields(props: { hostPort: HostFilePickerOperations }) {
           onOpenFolder={() => openSourceBrowser("folder")}
           onOpenNd2={() => openSourceBrowser("nd2_file")}
         />
-        <PathPickerField
-          id="studio-workspace"
-          label="Workspace"
-          placeholder=""
-          value={wizard().workspacePath}
-          onOpen={() => setPathPicker({ kind: "save" })}
-        />
+        <div class="flex w-full min-w-0 flex-col gap-2">
+          <PathPickerField
+            id="studio-workspace"
+            label="Output folder"
+            placeholder=""
+            value={wizard().workspacePath}
+            onOpen={() => setPathPicker({ kind: "save" })}
+          />
+          <p class="text-[13px] leading-[18px] text-muted-foreground">
+            Studio writes assay.json, alignment, ROI crops, and analysis into this folder. It is the
+            workspace for this run.
+          </p>
+        </div>
         <Field class="w-full gap-2">
           <FieldLabel class="text-sm font-medium leading-[18px]" id="studio-timelapse-label">
             Interval
@@ -337,6 +344,11 @@ export function MetadataFields(props: { hostPort: HostFilePickerOperations }) {
               />
               <span>Skip segmentation</span>
             </label>
+            <p class="text-[13px] leading-[18px] text-muted-foreground">
+              When on, analysis uses the full crop and a 10th-percentile background instead of a
+              cell mask. Contrast on Align and Annotate is display-only and does not change these
+              numbers.
+            </p>
             <div class="flex flex-col gap-2 ps-[calc(1rem+0.625rem)]">
               <span
                 class="text-[13px] leading-[18px]"

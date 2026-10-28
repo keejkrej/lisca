@@ -4,11 +4,13 @@ import { describe, expect, it } from "vite-plus/test";
 import {
   canCancelTask,
   canCancelStep,
+  canDismissTask,
   canRetryStep,
   deriveTaskProgress,
   deriveTaskCenterIndicator,
   initialTaskCenterState,
   reconcileTaskCenterDetail,
+  reconcileTaskCenterDismissed,
   reconcileTaskCenterSnapshot,
   stepKindLabel,
   taskProgressNoun,
@@ -93,6 +95,29 @@ describe("Task Center headless state", () => {
     ["cancelled", false],
   ] as const)("derives task cancel for %s", (status, expected) => {
     expect(canCancelTask(summary("task-1", status, 1))).toBe(expected);
+  });
+
+  it.each([
+    ["queued", false],
+    ["running", false],
+    ["cancellation-requested", false],
+    ["partially-complete", true],
+    ["completed", true],
+    ["failed", true],
+    ["cancelled", true],
+  ] as const)("derives task dismiss for %s", (status, expected) => {
+    expect(canDismissTask(summary("task-1", status, 1))).toBe(expected);
+  });
+
+  it("drops a dismissed failed crop from the view model", () => {
+    const failed = summary("failed-crop", "failed", 2, { failed: 1, completed: 5 });
+    const kept = summary("other", "completed", 1);
+    const next = reconcileTaskCenterDismissed(
+      { tasks: [failed, kept], details: { "failed-crop": { task: failed, steps: [] } } },
+      "failed-crop",
+    );
+    expect(next.tasks.map((task) => task.taskId)).toEqual(["other"]);
+    expect(next.details["failed-crop"]).toBeUndefined();
   });
 
   it("labels killing stages by name and position steps as PosN", () => {

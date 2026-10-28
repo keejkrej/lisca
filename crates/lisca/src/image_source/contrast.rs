@@ -9,10 +9,12 @@ const CONTRAST_SAMPLE_SIZE: usize = 2048;
 pub(super) fn to_frame_payload(raw: RawFrame, contrast: Option<ContrastWindow>) -> FramePayload {
     let domain = raw.contrast_domain.clone();
     let suggested = auto_contrast(&raw.data);
+    // Omitted window = raw domain (full bit depth). Percentile auto is opt-in
+    // via suggested_contrast / the Auto button so killing frames do not load stretched.
     let applied = contrast
         .as_ref()
         .map(|window| normalize_contrast(window, &domain))
-        .unwrap_or_else(|| suggested.clone());
+        .unwrap_or_else(|| domain.clone());
     let pixels = apply_contrast(&raw.data, &applied);
 
     FramePayload {
@@ -97,7 +99,12 @@ fn apply_contrast(values: &[u16], contrast: &ContrastWindow) -> Vec<u8> {
 
 #[cfg(test)]
 mod tests {
-    use super::{quantile_floor_sorted_u16, quantile_floor_subsampled_u16, subsample_sorted_u16};
+    use super::{
+        quantile_floor_sorted_u16, quantile_floor_subsampled_u16, subsample_sorted_u16,
+        to_frame_payload,
+    };
+    use crate::image_source::RawFrame;
+    use crate::protocol::ContrastWindow;
 
     #[test]
     fn floor_quantile_uses_lower_index() {
@@ -115,5 +122,22 @@ mod tests {
     #[test]
     fn subsample_keeps_small_frames_intact() {
         assert_eq!(subsample_sorted_u16(&[3, 1, 2], 8), vec![1, 2, 3]);
+    }
+
+    #[test]
+    fn omitted_contrast_uses_the_raw_domain_not_auto() {
+        let raw = RawFrame {
+            width: 2,
+            height: 1,
+            data: vec![10, 200],
+            contrast_domain: ContrastWindow { min: 0, max: 255 },
+        };
+        let payload = to_frame_payload(raw, None);
+        assert_eq!(payload.applied_contrast.min, 0);
+        assert_eq!(payload.applied_contrast.max, 255);
+        assert!(
+            payload.suggested_contrast.min != payload.applied_contrast.min
+                || payload.suggested_contrast.max != payload.applied_contrast.max
+        );
     }
 }

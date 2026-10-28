@@ -36,7 +36,7 @@ pub fn figure_builder_single() -> FigureBuilder {
 /// Prefer [`figure_builder_for_grid`] so size tracks sample-aware layouts.
 #[allow(dead_code)] // public API
 pub fn figure_builder_grid() -> FigureBuilder {
-    figure_builder(FIGURE_GRID_WIDTH_IN, FIGURE_GRID_HEIGHT_IN, 0.12, 0.16)
+    figure_builder(FIGURE_GRID_WIDTH_IN, FIGURE_GRID_HEIGHT_IN, 0.16, 0.22)
 }
 
 /// Figure size in inches for an ``nrows`` × ``ncols`` subplot pack.
@@ -63,7 +63,7 @@ pub fn figure_size_for_grid(nrows: usize, ncols: usize) -> (f64, f64) {
 /// Multi-panel figure sized for a concrete grid shape.
 pub fn figure_builder_for_grid(nrows: usize, ncols: usize) -> FigureBuilder {
     let (width_in, height_in) = figure_size_for_grid(nrows, ncols);
-    figure_builder(width_in, height_in, 0.12, 0.16)
+    figure_builder(width_in, height_in, 0.16, 0.22)
 }
 
 /// Choose size from panel count via auto layout (1–12 sample table).
@@ -91,7 +91,7 @@ pub fn trace_line_style(color_name: &str, alpha: f64) -> LineStyle {
 
 /// Outer figure pad for multi-panel grids (`SaveOptions::pad_inches`).
 /// Matplotlib default `savefig.pad_inches` is 0.1.
-pub const SAVE_PAD_GRID_INCHES: f64 = 0.1;
+pub const SAVE_PAD_GRID_INCHES: f64 = 0.28;
 /// Outer figure pad for single-panel charts (AUC, fit params, …).
 /// Larger than the grid pad so tilted category labels and spines aren't
 /// flush with the PNG edge.

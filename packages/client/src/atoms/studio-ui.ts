@@ -11,6 +11,7 @@ import {
   ASSAY_TYPE,
   ENABLED_STUDIO_ASSAY_IDS,
   DEFAULT_FOLDER_SOURCE_TEMPLATE,
+  POSITION_INDEX_VERSION,
 } from "@lisca/contracts/assay";
 import { liscaSessionStorage, readStorageJson, writeStorageJson } from "@lisca/utils";
 import { Atom } from "effect/unstable/reactivity";
@@ -101,6 +102,7 @@ export function buildStudioAssayJson({
   samples,
   analysis,
   channelDefaults,
+  positionIndexVersion,
 }: {
   assayId: AssayId;
   name: string;
@@ -113,6 +115,7 @@ export function buildStudioAssayJson({
   samples: BasicInfoSampleRow[];
   analysis?: AssayAnalysisConfig | null;
   channelDefaults: { segmentation: string; signal: string };
+  positionIndexVersion?: number | null;
 }): StudioAssayJson {
   return buildStudioAssayJsonCore({
     assayId,
@@ -127,6 +130,7 @@ export function buildStudioAssayJson({
     analysis,
     channelDefaults,
     sampleRowToDisk,
+    positionIndexVersion,
   });
 }
 
@@ -151,6 +155,8 @@ export type StudioWizardState = {
   signalChannel: string;
   /** Assay-dependent analysis params (max onset for transfection; segmentation for transfection and killing). */
   analysis: AssayAnalysisConfig | null;
+  /** 1 once samples[].positions are 0-based source indices. Null = legacy encoding. */
+  positionIndexVersion: number | null;
   basicInfoSavedSnapshot: string | null;
 };
 
@@ -170,6 +176,7 @@ export function buildStudioAssayJsonFromWizard(
     | "segmentationChannel"
     | "signalChannel"
     | "analysis"
+    | "positionIndexVersion"
   >,
 ): StudioAssayJson {
   return buildStudioAssayJson({
@@ -187,6 +194,7 @@ export function buildStudioAssayJsonFromWizard(
       segmentation: state.segmentationChannel,
       signal: state.signalChannel,
     },
+    positionIndexVersion: state.positionIndexVersion,
   });
 }
 
@@ -205,6 +213,7 @@ export function serializeBasicInfoSnapshot(
     | "segmentationChannel"
     | "signalChannel"
     | "analysis"
+    | "positionIndexVersion"
   >,
 ): string {
   return serializeBasicInfoSnapshotCore(state);
@@ -338,6 +347,12 @@ function mergeStudioState(persisted: unknown, current: StudioWizardState): Studi
       persistedState.analysis !== undefined
         ? (analysisConfigForAssay(assayId, persistedState.analysis) ?? null)
         : current.analysis,
+    positionIndexVersion:
+      persistedState.positionIndexVersion !== undefined
+        ? persistedState.positionIndexVersion
+        : persistedState.samples
+          ? null
+          : current.positionIndexVersion,
     basicInfoSavedSnapshot:
       typeof persistedState.basicInfoSavedSnapshot === "string"
         ? persistedState.basicInfoSavedSnapshot
@@ -362,6 +377,7 @@ function createInitialWizardData(): StudioWizardState {
     segmentationChannel: "",
     signalChannel: "",
     analysis: initialAnalysis,
+    positionIndexVersion: POSITION_INDEX_VERSION,
     basicInfoSavedSnapshot: null,
   };
 }
@@ -437,6 +453,7 @@ export const studioWizardActions = {
     );
     const channelDefaults = assayChannelDefaultsFromAnalysis(assayJson.analysis);
     const nextAnalysis = analysisConfigForAssay(nextAssayId, assayJson.analysis) ?? null;
+    const positionIndexVersion = assayJson.positionIndexVersion ?? null;
     patchStudioWizard(set, {
       assayId: nextAssayId,
       infoStep: 1,
@@ -451,6 +468,7 @@ export const studioWizardActions = {
       segmentationChannel: channelDefaults.segmentation,
       signalChannel: channelDefaults.signal,
       analysis: nextAnalysis,
+      positionIndexVersion,
       basicInfoSavedSnapshot: JSON.stringify(
         buildStudioAssayJson({
           assayId: nextAssayId,
@@ -464,6 +482,7 @@ export const studioWizardActions = {
           samples,
           analysis: nextAnalysis,
           channelDefaults,
+          positionIndexVersion,
         }),
       ),
     });

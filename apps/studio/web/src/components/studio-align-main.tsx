@@ -82,7 +82,11 @@ export function StudioAlignMain() {
       error: state.error,
     });
   const positionLabel = createMemo(() => {
-    const label = formatSelectedAxisValueLabel(nav.alignPositions, nav.selection.pos);
+    const label = formatSelectedAxisValueLabel(
+      nav.alignPositions,
+      nav.selection.pos,
+      nav.scan?.positionLabels,
+    );
     return label || String(nav.selection.pos).padStart(2, "0");
   });
 

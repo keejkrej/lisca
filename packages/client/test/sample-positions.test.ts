@@ -8,7 +8,7 @@ import {
   expandPositionRange,
   expandStoredPositions,
   filterScanPositionsForAssay,
-  formatPositionChip,
+  formatIndexChip,
   formatSamplePositions,
   formatStoredPositions,
   isValidStoredPositions,
@@ -33,8 +33,8 @@ describe("sample positions", () => {
         { start: 20, end: 24 },
       ]),
     ).toBe("0:4,20:24");
-    expect(formatPositionChip({ start: 0, end: 4 })).toBe("1–5");
-    expect(formatPositionChip({ start: 7, end: 7 })).toBe("8");
+    expect(formatIndexChip({ start: 0, end: 4 })).toBe("1–5");
+    expect(formatIndexChip({ start: 7, end: 7 })).toBe("8");
     expect(commitDisplayPositionDraft("", "1-5, 21-25", true)).toEqual({
       positions: "0:4,20:24",
       draft: "",

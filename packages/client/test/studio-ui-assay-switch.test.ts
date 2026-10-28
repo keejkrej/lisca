@@ -132,4 +132,22 @@ describe("setAssayId interval handling", () => {
     expect(restored?.assayId).toBe(ASSAY_TYPE.KILLING_DEATH_REPORTER);
     expect(restored?.intervalValue).toBeNull();
   });
+
+  test("a session without positionIndexVersion stays legacy instead of becoming v1", () => {
+    const storage = createMemoryStorage();
+    configureLiscaStorage({ session: storage });
+    storage.setItem(
+      "lisca-studio-session",
+      JSON.stringify({
+        state: {
+          assayId: ASSAY_TYPE.TRANSFECTION,
+          samples: [{ id: "sample:0", name: "A", positions: "138", segmentation: "", signal: "" }],
+        },
+      }),
+    );
+
+    const restored = readStudioSession();
+    expect(restored?.positionIndexVersion).toBeNull();
+    expect(restored?.samples[0]?.positions).toBe("138");
+  });
 });

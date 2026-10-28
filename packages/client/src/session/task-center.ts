@@ -12,6 +12,8 @@ export function createTaskCenterGateway(port: TaskDataPort): TaskCenterGateway {
       runClientEffect(port.getStep(stepId), signal ? { signal } : undefined),
     cancelTask: (taskId, signal) =>
       runClientEffect(port.cancelTask(taskId), signal ? { signal } : undefined),
+    dismissTask: (taskId, signal) =>
+      runClientEffect(port.dismissTask(taskId), signal ? { signal } : undefined),
     cancelStep: (stepId, signal) =>
       runClientEffect(port.cancelStep(stepId), signal ? { signal } : undefined),
     retryStep: (stepId, signal) =>

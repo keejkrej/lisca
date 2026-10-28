@@ -4,10 +4,32 @@ import { Show } from "solid-js";
 
 import { useStudioAlignPage } from "../state/studio-align-page-context";
 
-function formatPositions(positions: number[]): string {
-  const shown = positions.slice(0, 6).map((pos) => `Pos${pos}`);
+function positionLabel(
+  pos: number,
+  scan: { positions: readonly number[]; positionLabels?: readonly string[] } | null | undefined,
+): string {
+  const index = scan?.positions.indexOf(pos) ?? -1;
+  const label = index >= 0 ? scan?.positionLabels?.[index] : undefined;
+  return `Pos${label ?? pos}`;
+}
+
+function formatPositions(
+  positions: number[],
+  scan: { positions: readonly number[]; positionLabels?: readonly string[] } | null | undefined,
+): string {
+  const shown = positions.slice(0, 6).map((pos) => positionLabel(pos, scan));
   const more = positions.length - shown.length;
   return more > 0 ? `${shown.join(", ")} and ${more} more` : shown.join(", ");
+}
+
+function formatResolvedRange(
+  positions: number[],
+  scan: { positions: readonly number[]; positionLabels?: readonly string[] } | null | undefined,
+): string {
+  if (positions.length === 0) return "0 positions";
+  const first = positionLabel(positions[0]!, scan);
+  const last = positionLabel(positions[positions.length - 1]!, scan);
+  return `${positions.length} positions: ${first} to ${last}`;
 }
 
 export function StudioCropStartModal() {
@@ -27,8 +49,8 @@ export function StudioCropStartModal() {
                 </h2>
                 <p class="text-muted-foreground text-sm">
                   {confirm().unaligned.length === 0
-                    ? `${confirm().positions.length} positions have saved alignment output. Crop ROI images from the aligned grid now?`
-                    : `${confirm().positions.length - confirm().unaligned.length} of ${confirm().positions.length} positions aligned. Save an alignment for ${formatPositions(confirm().unaligned)} before cropping.`}
+                    ? `${formatResolvedRange(confirm().positions, state.scan)} have saved alignment output. Crop ROI images from the aligned grid now?`
+                    : `${confirm().positions.length - confirm().unaligned.length} of ${confirm().positions.length} positions aligned. Save an alignment for ${formatPositions(confirm().unaligned, state.scan)} before cropping.`}
                 </p>
               </div>
               <div class="flex justify-end gap-2">

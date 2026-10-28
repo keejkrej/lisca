@@ -26,9 +26,10 @@ fn sample_label(sample: usize, mapping: &SampleMapping) -> String {
 
 /// Y-limits: ``low_margin * p_lo`` … ``p_hi / high_margin``.
 ///
-/// Default matches transfection Python: ``0.1 * p1`` … ``p99 / 0.9``.
+/// Default includes every finite value (p0–p100) with headroom above the max
+/// so traces, engager counts, and IQR bands are not clipped at the axis.
 pub fn percentile_ylim(values: &[f64]) -> (f64, f64) {
-    percentile_ylim_with(values, 1.0, 99.0, 0.1, 0.9)
+    percentile_ylim_with(values, 0.0, 100.0, 1.0, 0.9)
 }
 
 pub fn percentile_ylim_with(
@@ -205,10 +206,20 @@ mod tests {
     }
 
     #[test]
-    fn percentile_ylim_uses_p1_p99_with_margins() {
+    fn percentile_ylim_includes_every_finite_value() {
         let values: Vec<f64> = (0..=100).map(|v| v as f64).collect();
         let (low, high) = percentile_ylim(&values);
-        assert!((low - 0.1).abs() < 1e-9);
-        assert!((high - 110.0).abs() < 1e-9);
+        assert!((low - 0.0).abs() < 1e-9);
+        assert!((high - (100.0 / 0.9)).abs() < 1e-9);
+        assert!(low <= 0.0);
+        assert!(high >= 100.0);
+    }
+
+    #[test]
+    fn summary_style_ylim_keeps_iqr_extrema() {
+        let values = [0.0, 0.5, 1.0, 8.0];
+        let (low, high) = percentile_ylim(&values);
+        assert!(low <= 0.0);
+        assert!(high >= 8.0);
     }
 }

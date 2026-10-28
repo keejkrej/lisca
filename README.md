@@ -162,4 +162,4 @@ cd python && uv run pytest
 
 `pnpm run check` runs lint, TypeScript, contract generation, Rust check and Clippy, and the workspace tests. `pnpm run fmt` formats the JavaScript and TypeScript tree.
 
-Domain language is in `CONTEXT.md`. Decisions are in `docs/adr/`. Analysis layout is in `docs/analysis/analysis.md`.
+Domain language is in `CONTEXT.md`. Decisions are in `docs/adr/`. Analysis layout is in `docs/analysis/analysis.md`. Studio troubleshooting is in `docs/ui/troubleshooting.md`.

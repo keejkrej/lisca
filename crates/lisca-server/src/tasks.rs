@@ -29,6 +29,7 @@ where
         .route("/tasks/task", get(get_task::<S>))
         .route("/tasks/step", get(get_step::<S>))
         .route("/tasks/task/cancel", post(cancel_task::<S>))
+        .route("/tasks/task/dismiss", post(dismiss_task::<S>))
         .route("/tasks/step/cancel", post(cancel_step::<S>))
         .route("/tasks/step/retry", post(retry_step::<S>))
 }
@@ -73,6 +74,17 @@ async fn cancel_task<S: HasTaskScheduler>(
     state
         .task_scheduler()
         .cancel_task(&request.task_id)
+        .map(Json)
+        .map_err(TaskCommandHttpError::from)
+}
+
+async fn dismiss_task<S: HasTaskScheduler>(
+    State(state): State<S>,
+    Json(request): Json<TaskCancelRequest>,
+) -> Result<Json<TaskDetail>, TaskCommandHttpError> {
+    state
+        .task_scheduler()
+        .dismiss_task(&request.task_id)
         .map(Json)
         .map_err(TaskCommandHttpError::from)
 }

@@ -352,6 +352,10 @@ fn project_crop_progress(record: &CropTaskRecord, detail: &TaskDetail) -> CropRo
             .unwrap_or_else(|| "Cropping positions".to_string()),
         CropRoiStatus::Completed => "Crop completed".to_string(),
         CropRoiStatus::Cancelled => "Crop cancelled".to_string(),
+        CropRoiStatus::Error if detail.task.progress.completed > 0 => format!(
+            "{} of {} positions cropped. Retry failed positions from Tasks; successful ROI stacks are kept.",
+            detail.task.progress.completed, detail.task.progress.total
+        ),
         CropRoiStatus::Error => "Crop finished with position errors".to_string(),
     };
 
@@ -437,6 +441,10 @@ mod tests {
         assert_eq!(progress.completed_rois, 3);
         assert_eq!(progress.total_rois, 7);
         assert!(progress.error.unwrap().contains("Pos2"));
+        assert!(progress
+            .message
+            .unwrap()
+            .contains("1 of 2 positions cropped"));
     }
 
     #[tokio::test]

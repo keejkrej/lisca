@@ -1,5 +1,6 @@
 import type { CropRoiProgress } from "@lisca/contracts";
 import { logClientEvent } from "@lisca/client/client-log";
+import { isDoneCropStatus } from "@lisca/utils";
 
 import { studioClient } from "../api/studio-port";
 
@@ -36,7 +37,7 @@ export function refreshStudioRoi(workspacePath: string): void {
 }
 
 function isTerminal(status: CropRoiProgress["status"]): boolean {
-  return status === "completed" || status === "error";
+  return isDoneCropStatus(status);
 }
 
 /**
@@ -53,7 +54,7 @@ export function watchStudioCrop(requestId: string, workspacePath: string): void 
     cropStops.delete(key);
     finish?.();
     onCropSettled(progress, workspacePath);
-    if (progress.status === "completed") refreshStudioRoi(workspacePath);
+    refreshStudioRoi(workspacePath);
   });
   cropStops.set(key, stop);
 }
