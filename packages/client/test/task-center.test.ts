@@ -40,6 +40,7 @@ describe("Task Center client IO", () => {
       getTask: () => Effect.succeed(detail),
       getStep: () => Effect.die("not used"),
       cancelTask: () => Effect.succeed(detail),
+      dismissTask: () => Effect.succeed(detail),
       cancelStep: () => Effect.succeed(detail),
       retryStep: () => Effect.succeed(detail),
     };

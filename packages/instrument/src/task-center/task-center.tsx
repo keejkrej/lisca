@@ -2,6 +2,7 @@ import type { TaskDetail, TaskSummary, StepDetail } from "@lisca/contracts";
 import * as Dialog from "@kobalte/core/dialog";
 import {
   canCancelTask,
+  canDismissTask,
   canRetryStep,
   deriveTaskProgress,
   deriveTaskCenterIndicator,
@@ -11,6 +12,7 @@ import {
   taskProgressNoun,
   taskStatusLabel,
   reconcileTaskCenterDetail,
+  reconcileTaskCenterDismissed,
   reconcileTaskCenterSnapshot,
   type TaskCenterGateway,
 } from "@lisca/utils";
@@ -333,6 +335,27 @@ export function TaskCenter(props: TaskCenterProps) {
     }
   };
 
+  const dismissTask = async (taskId: string) => {
+    const request = beginTaskRequest(taskId);
+    setBusyAction(`dismiss:${taskId}`);
+    setActionError(null);
+    try {
+      await props.gateway.dismissTask(taskId, request.controller.signal);
+      if (!isCurrentTaskRequest(taskId, request.generation)) return;
+      setState((current) => reconcileTaskCenterDismissed(current, taskId));
+      if (expandedTaskId() === taskId) setExpandedTaskId(null);
+    } catch (error) {
+      if (!request.controller.signal.aborted && isCurrentTaskRequest(taskId, request.generation)) {
+        setActionError(errorMessage(error));
+      }
+    } finally {
+      if (isCurrentTaskRequest(taskId, request.generation)) {
+        taskRequests.delete(taskId);
+      }
+      setBusyAction((current) => (current === `dismiss:${taskId}` ? null : current));
+    }
+  };
+
   const label = () => props.label ?? "Tasks";
   const title = () => props.title ?? "Task Center";
 
@@ -529,6 +552,21 @@ export function TaskCenter(props: TaskCenterProps) {
                                 <Spinner />
                               </Show>
                               Stop
+                            </Button>
+                          </Show>
+                          <Show when={canDismissTask(task)}>
+                            <Button
+                              class="mt-2.5 mr-2"
+                              disabled={taskBusy()}
+                              size="xs"
+                              type="button"
+                              variant="ghost"
+                              onClick={() => void dismissTask(task.taskId)}
+                            >
+                              <Show when={taskBusy()}>
+                                <Spinner />
+                              </Show>
+                              Dismiss
                             </Button>
                           </Show>
                         </div>

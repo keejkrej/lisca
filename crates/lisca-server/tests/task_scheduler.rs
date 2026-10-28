@@ -476,6 +476,68 @@ async fn terminal_history_is_capped_without_evicting_active_tasks() {
 }
 
 #[tokio::test]
+async fn dismiss_removes_a_failed_task_and_rejects_running_tasks() {
+    let scheduler = TaskScheduler::new(SchedulerConfig {
+        capacity: 1,
+        history_cap: 10,
+    })
+    .unwrap();
+    let (started_tx, mut started_rx) = mpsc::unbounded_channel();
+    let running = scheduler
+        .submit(TaskSpec::new(
+            "running-crop",
+            "/workspace/running",
+            true,
+            vec![controlled_step("running-crop", 1, started_tx.clone())],
+        ))
+        .unwrap();
+    let running_step = next_started(&mut started_rx).await;
+    let running_id = running.task.task_id.clone();
+    assert!(matches!(
+        scheduler.dismiss_task(&running_id),
+        Err(lisca_server::SchedulerError::InvalidTransition {
+            command: "dismiss",
+            ..
+        })
+    ));
+
+    let failed = scheduler
+        .submit(TaskSpec::new(
+            "failed-crop",
+            "/workspace/failed",
+            true,
+            vec![StepSpec::new("failed-crop", 1, |_| async {
+                Err(lisca_server::StepFailure::new(
+                    "crop_failed",
+                    "Zugriff verweigert (os error 5)",
+                ))
+            })],
+        ))
+        .unwrap();
+    running_step.finish.send(Ok(())).unwrap();
+    let failed_id = failed.task.task_id.clone();
+    tokio::time::timeout(
+        Duration::from_secs(2),
+        scheduler.wait_for_task_terminal(&failed_id),
+    )
+    .await
+    .expect("failed crop should settle")
+    .unwrap();
+
+    let dismissed = scheduler.dismiss_task(&failed_id).unwrap();
+    assert_eq!(dismissed.task.task_id, failed_id);
+    assert!(matches!(
+        scheduler.task(&failed_id),
+        Err(lisca_server::SchedulerError::NotFound { .. })
+    ));
+    assert!(scheduler
+        .list_tasks()
+        .unwrap()
+        .iter()
+        .all(|task| task.task_id != failed_id));
+}
+
+#[tokio::test]
 async fn invalid_dependency_graphs_are_rejected_before_dispatch() {
     let scheduler = TaskScheduler::new(SchedulerConfig {
         capacity: 1,

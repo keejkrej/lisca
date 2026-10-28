@@ -133,6 +133,7 @@ function renderTaskCenter(
     getTask: async () => detail("running", 1),
     getStep: async () => step("running"),
     cancelTask: async () => detail("completed", 2),
+    dismissTask: async () => detail("failed", 2),
     cancelStep: async () => detail("completed", 2),
     retryStep: async () => detail("running", 2),
     ...gatewayOverrides,
@@ -377,6 +378,21 @@ describe("Task Center dialog", () => {
     expect(screen.getByText(/Crop analysis failed/)).toBeTruthy();
     expect(screen.getByRole("button", { name: "Retry" })).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Stop" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Dismiss" })).toBeTruthy();
     expect(screen.getByRole("button", { name: /Failed/ })).toBeTruthy();
+  });
+
+  it("dismisses a failed crop so it leaves the Task Center", async () => {
+    const dismissTask = vi.fn(async () => detail("failed", 2, [attempt("failed")]));
+    const view = renderTaskCenter({
+      getTask: async () => detail("failed", 2, [attempt("failed")]),
+      dismissTask,
+    });
+    view.snapshot([summary("failed", 2)]);
+
+    fireEvent.click(view.getByRole("button", { name: "Tasks, 1 need attention" }));
+    fireEvent.click(screen.getByRole("button", { name: "Dismiss" }));
+    await waitFor(() => expect(dismissTask).toHaveBeenCalledWith("task-1", expect.any(AbortSignal)));
+    await waitFor(() => expect(screen.queryByRole("button", { name: /Crop ROI/ })).toBeNull());
   });
 });

@@ -2,6 +2,7 @@ use std::{
     collections::{BTreeSet, VecDeque},
     fs,
     fs::File,
+    io::{self, Seek, SeekFrom, Write},
     path::{Path, PathBuf},
     sync::{
         atomic::{AtomicBool, Ordering as AtomicOrdering},
@@ -291,6 +292,14 @@ where
     });
 
     if let Some(error) = failed {
+        progress.status = CropRoiStatus::Error;
+        progress.error = Some(error.clone());
+        progress.message = Some(crop_partial_failure_message(
+            progress.completed_positions,
+            progress.total_positions,
+            &error,
+        ));
+        on_progress(progress);
         return Err(error);
     }
     if cancelled || cancel.load(AtomicOrdering::SeqCst) {
@@ -354,9 +363,35 @@ fn record_pages_written(progress: &mut CropRoiProgress, count: u32) {
         .min(progress.total_rois);
 }
 
+/// Flush and `sync_all` on drop so Windows can rename the staging directory.
+struct SyncedFile(File);
+
+impl Write for SyncedFile {
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        self.0.write(buf)
+    }
+
+    fn flush(&mut self) -> io::Result<()> {
+        self.0.flush()
+    }
+}
+
+impl Seek for SyncedFile {
+    fn seek(&mut self, pos: SeekFrom) -> io::Result<u64> {
+        self.0.seek(pos)
+    }
+}
+
+impl Drop for SyncedFile {
+    fn drop(&mut self) {
+        let _ = self.0.flush();
+        let _ = self.0.sync_all();
+    }
+}
+
 struct RoiTiffWriter {
     bbox: RoiBbox,
-    encoder: TiffEncoder<File>,
+    encoder: TiffEncoder<SyncedFile>,
 }
 
 impl RoiTiffWriter {
@@ -369,10 +404,10 @@ impl RoiTiffWriter {
                     path.display()
                 )
             } else {
-                error.to_string()
+                map_io_error(&format!("creating {}", path.display()), error)
             }
         })?;
-        let encoder = TiffEncoder::new(file).map_err(|error| error.to_string())?;
+        let encoder = TiffEncoder::new(SyncedFile(file)).map_err(|error| error.to_string())?;
         Ok(Self {
             bbox: bbox.clone(),
             encoder,
@@ -397,10 +432,28 @@ impl StagingDirectory {
 impl Drop for StagingDirectory {
     fn drop(&mut self) {
         if let Some(path) = self.path.take() {
-            if let Err(error) = fs::remove_dir_all(&path) {
+            if let Err(error) = super::fs_retry::remove_dir_all_retry(&path) {
                 tracing::warn!(path = %path.display(), %error, "failed to remove crop staging directory");
             }
         }
+    }
+}
+
+fn map_io_error(context: &str, error: io::Error) -> String {
+    if super::fs_retry::is_access_denied(&error) {
+        super::fs_retry::format_access_denied(context, &error)
+    } else {
+        format!("{context}: {error}")
+    }
+}
+
+fn crop_partial_failure_message(completed: u32, total: u32, error: &str) -> String {
+    if completed > 0 {
+        format!(
+            "{completed} of {total} positions cropped. {error} Retry the failed position from Tasks; successful ROI stacks are kept."
+        )
+    } else {
+        error.to_string()
     }
 }
 
@@ -410,7 +463,9 @@ fn publish_staged_directory(
     overwrite: bool,
 ) -> Result<(), CropPositionError> {
     if !target_dir.exists() {
-        return fs::rename(staging_dir, target_dir).map_err(|error| error.to_string().into());
+        return super::fs_retry::rename_retry(staging_dir, target_dir).map_err(|error| {
+            map_io_error(&format!("publishing {}", target_dir.display()), error).into()
+        });
     }
     if !overwrite {
         return Err(CropPositionError::Failed(format!(
@@ -427,17 +482,21 @@ fn publish_staged_directory(
         .and_then(|name| name.to_str())
         .unwrap_or("position");
     let backup_dir = parent.join(format!(".{file_name}.previous-{}", Uuid::new_v4()));
-    fs::rename(target_dir, &backup_dir).map_err(|error| error.to_string())?;
-    if let Err(error) = fs::rename(staging_dir, target_dir) {
-        let rollback = fs::rename(&backup_dir, target_dir);
+    super::fs_retry::rename_retry(target_dir, &backup_dir)
+        .map_err(|error| map_io_error(&format!("replacing {}", target_dir.display()), error))?;
+    if let Err(error) = super::fs_retry::rename_retry(staging_dir, target_dir) {
+        let rollback = super::fs_retry::rename_retry(&backup_dir, target_dir);
         return Err(CropPositionError::Failed(match rollback {
-            Ok(()) => error.to_string(),
+            Ok(()) => map_io_error(&format!("publishing {}", target_dir.display()), error),
             Err(rollback_error) => {
-                format!("{error}; failed to restore previous crop output: {rollback_error}")
+                format!(
+                    "{}; failed to restore previous crop output: {rollback_error}",
+                    map_io_error(&format!("publishing {}", target_dir.display()), error)
+                )
             }
         }));
     }
-    if let Err(error) = fs::remove_dir_all(&backup_dir) {
+    if let Err(error) = super::fs_retry::remove_dir_all_retry(&backup_dir) {
         tracing::warn!(
             path = %backup_dir.display(),
             %error,
@@ -579,9 +638,10 @@ where
     let roi_dir = target_dir
         .parent()
         .ok_or_else(|| CropPositionError::Failed("crop output has no parent".to_string()))?;
-    fs::create_dir_all(roi_dir).map_err(|error| error.to_string())?;
+    fs::create_dir_all(roi_dir).map_err(|error| map_io_error("creating roi directory", error))?;
     let staging_dir = roi_dir.join(format!(".Pos{pos}.crop-{}", Uuid::new_v4()));
-    fs::create_dir(&staging_dir).map_err(|error| error.to_string())?;
+    fs::create_dir(&staging_dir)
+        .map_err(|error| map_io_error(&format!("creating {}", staging_dir.display()), error))?;
     let mut staging = StagingDirectory::new(staging_dir.clone());
 
     write_roi_tiffs_frame_major(
@@ -833,7 +893,7 @@ fn log_crop_drift(pos: u32, scan: &WorkspaceScan, drift: &AlignDrift) {
 }
 
 fn write_roi_tiff_page(
-    encoder: &mut TiffEncoder<File>,
+    encoder: &mut TiffEncoder<SyncedFile>,
     bbox: &RoiBbox,
     pixels: &[u16],
 ) -> Result<(), String> {

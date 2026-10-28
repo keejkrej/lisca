@@ -48,6 +48,7 @@ export type TaskDataPort = {
   getTask(taskId: string): ClientEffect<TaskDetail>;
   getStep(stepId: string): ClientEffect<StepDetail>;
   cancelTask(taskId: string): ClientEffect<TaskDetail, TaskCommandError>;
+  dismissTask(taskId: string): ClientEffect<TaskDetail, TaskCommandError>;
   cancelStep(stepId: string): ClientEffect<TaskDetail, TaskCommandError>;
   retryStep(stepId: string): ClientEffect<TaskDetail, TaskCommandError>;
 };

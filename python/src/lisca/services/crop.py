@@ -6,12 +6,14 @@ import math
 import os
 import shutil
 import threading
+import time
 from collections import deque
 from collections.abc import Callable, Iterator
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
 from types import ModuleType
+from typing import TypeVar
 from uuid import uuid4
 
 import numpy as np
@@ -245,19 +247,60 @@ class _StagingDirectory:
             shutil.rmtree(self.path, ignore_errors=True)
 
 
+def _is_access_denied(exc: BaseException) -> bool:
+    if not isinstance(exc, OSError):
+        return False
+    winerror = getattr(exc, "winerror", None)
+    if winerror in {5, 32, 33}:
+        return True
+    return exc.errno in {errno.EACCES, errno.EPERM, errno.ETIMEDOUT}
+
+
+_T = TypeVar("_T")
+
+
+def _retry_fs(op: Callable[[], _T], *, attempts: int = 8) -> _T:
+    delay = 0.015
+    last: OSError | None = None
+    for index in range(attempts):
+        try:
+            return op()
+        except OSError as exc:
+            if not _is_access_denied(exc) or index + 1 >= attempts:
+                raise
+            last = exc
+            time.sleep(delay)
+            delay = min(delay * 2, 0.25)
+    assert last is not None
+    raise last
+
+
+def _rename_retry(source: Path, destination: Path) -> None:
+    _retry_fs(lambda: source.rename(destination))
+
+
 def _publish_staged_directory(staging_dir: Path, target_dir: Path) -> None:
     if not target_dir.exists():
-        staging_dir.rename(target_dir)
+        try:
+            _rename_retry(staging_dir, target_dir)
+        except OSError as error:
+            if _is_access_denied(error):
+                raise PermissionError(
+                    f"{target_dir}: {error}. Another program still has this folder open "
+                    "(antivirus, Explorer preview, or cloud sync). Close it, then retry "
+                    "the failed position. Positions that already finished are kept."
+                ) from error
+            raise
         return
 
     parent = target_dir.parent
     backup_dir = parent / f".{target_dir.name}.previous-{uuid4()}"
-    target_dir.rename(backup_dir)
+    _rename_retry(target_dir, backup_dir)
     try:
-        staging_dir.rename(target_dir)
+        _rename_retry(staging_dir, target_dir)
     except OSError as error:
         try:
-            backup_dir.rename(target_dir)
+            _rename_retry(backup_dir, target_dir)
         except OSError as rollback_error:
             raise ValueError(
                 f"{error}; failed to restore previous crop output: {rollback_error}"

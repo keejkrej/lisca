@@ -141,4 +141,21 @@ async fn lifecycle_routes_return_canonical_projections_and_typed_transition_erro
     let missing_body = response_body(missing).await;
     assert!(missing_body.contains(r#""code":"not-found""#));
     assert!(missing_body.contains(r#""entity":"step""#));
+
+    let dismiss_running = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/tasks/task/dismiss")
+                .header("content-type", "application/json")
+                .body(Body::from(format!(
+                    r#"{{"taskId":"{}"}}"#,
+                    task.task.task_id
+                )))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(dismiss_running.status(), axum::http::StatusCode::CONFLICT);
 }

@@ -597,6 +597,33 @@ impl TaskScheduler {
         Ok(detail)
     }
 
+    /// Remove a finished task from history so it no longer blocks the Task Center.
+    pub fn dismiss_task(&self, task_id: &str) -> Result<TaskDetail, SchedulerError> {
+        let mut state = self.lock()?;
+        let Some(task) = state.tasks.get(task_id) else {
+            return Err(SchedulerError::NotFound {
+                entity: "task",
+                id: task_id.to_string(),
+            });
+        };
+        if !task_status(task).is_terminal() {
+            return Err(SchedulerError::InvalidTransition {
+                entity: "task",
+                id: task_id.to_string(),
+                status: task_status_name(task_status(task)).to_string(),
+                command: "dismiss",
+                reason: Some("only finished tasks can be dismissed".to_string()),
+            });
+        }
+        let detail = project_task(task);
+        state.tasks.remove(task_id);
+        state.terminal_history.retain(|id| id != task_id);
+        state.task_order.retain(|id| id != task_id);
+        state.round_robin.retain(|id| id != task_id);
+        self.changed(&mut state);
+        Ok(detail)
+    }
+
     pub fn cancel_step(&self, step_id: &str) -> Result<TaskDetail, SchedulerError> {
         let mut state = self.lock()?;
         let Some(task_id) = state.tasks.values().find_map(|task| {

@@ -389,3 +389,18 @@ def test_crop_warns_when_keyframe_time_is_not_cropped(tmp_path: Path) -> None:
     stack = _read_roi_stack(result.output_dir / "Roi0.tif", (2, 1, 1, 2, 2))
     np.testing.assert_array_equal(stack[0, 0, 0], frame[1:3, 1:3])
     np.testing.assert_array_equal(stack[1, 0, 0], frame[0:2, 2:4])
+
+
+def test_retry_fs_retries_access_denied(monkeypatch: pytest.MonkeyPatch) -> None:
+    attempts = {"n": 0}
+
+    def flaky() -> str:
+        attempts["n"] += 1
+        if attempts["n"] < 3:
+            raise PermissionError(errno.EACCES, "Zugriff verweigert")
+        return "ok"
+
+    monkeypatch.setattr(crop.time, "sleep", lambda _delay: None)
+    assert crop._retry_fs(flaky) == "ok"
+    assert attempts["n"] == 3
+    assert crop._is_access_denied(OSError(errno.EACCES, "Zugriff verweigert (os error 5)"))

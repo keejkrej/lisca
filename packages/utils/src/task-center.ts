@@ -5,6 +5,7 @@ export type TaskCenterGateway = {
   getTask(taskId: string, signal?: AbortSignal): Promise<TaskDetail>;
   getStep(stepId: string, signal?: AbortSignal): Promise<StepDetail>;
   cancelTask(taskId: string, signal?: AbortSignal): Promise<TaskDetail>;
+  dismissTask(taskId: string, signal?: AbortSignal): Promise<TaskDetail>;
   cancelStep(stepId: string, signal?: AbortSignal): Promise<TaskDetail>;
   retryStep(stepId: string, signal?: AbortSignal): Promise<TaskDetail>;
 };
@@ -127,6 +128,25 @@ export function deriveTaskProgress(task: TaskSummary): TaskCenterProgress {
 
 export function canCancelTask(task: TaskSummary): boolean {
   return task.status === "queued" || task.status === "running";
+}
+
+/** Finished tasks can leave the Task Center so a failed crop does not block later work. */
+export function canDismissTask(task: TaskSummary): boolean {
+  return (
+    task.status === "completed" ||
+    task.status === "failed" ||
+    task.status === "cancelled" ||
+    task.status === "partially-complete"
+  );
+}
+
+/** Drop a dismissed task from the canonical view before the next list poll. */
+export function reconcileTaskCenterDismissed(state: TaskCenterState, taskId: string): TaskCenterState {
+  const { [taskId]: _removed, ...details } = state.details;
+  return {
+    tasks: state.tasks.filter((task) => task.taskId !== taskId),
+    details,
+  };
 }
 
 export function canCancelStep(step: StepDetail): boolean {

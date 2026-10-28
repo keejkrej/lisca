@@ -86,6 +86,7 @@ const mocks = vi.hoisted(() => {
       getTask,
       getStep: vi.fn(async () => step("running")),
       cancelTask: vi.fn(async () => detail("cancelled", 2)),
+      dismissTask: vi.fn(async () => detail("failed", 2)),
       cancelStep,
       retryStep,
     },

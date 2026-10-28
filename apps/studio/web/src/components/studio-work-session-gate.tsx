@@ -57,11 +57,14 @@ export function StudioWorkSessionGate(props: { children?: JSX.Element }) {
         onCropProgress: (progress) => studioAlignUiActions.setCropProgress(setAlignUi, progress),
         onRestoredCropTerminal: (progress) => {
           if (progress.status === "error") {
-            studioAlignUiActions.setError(setAlignUi, progress.error ?? "Crop failed");
+            studioAlignUiActions.setError(
+              setAlignUi,
+              progress.error ?? progress.message ?? "Crop failed",
+            );
           } else {
             studioAlignUiActions.setStatus(setAlignUi, progress.message ?? "Crop finished");
           }
-          if (progress.status === "completed") void invalidateRoi(workspacePath);
+          void invalidateRoi(workspacePath);
         },
         onAnalysisProgress: (progress: AnalysisProgress) =>
           studioAnnotateUiActions.setAnalysisProgress(setAnnotateUi, progress),

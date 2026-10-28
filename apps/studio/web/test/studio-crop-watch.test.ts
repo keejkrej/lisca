@@ -11,7 +11,11 @@ vi.mock("../src/api/studio-port", () => ({
   },
 }));
 
-import { bindStudioCropSettled, watchStudioCrop } from "../src/state/studio-crop-watch";
+import {
+  bindStudioCropRefresh,
+  bindStudioCropSettled,
+  watchStudioCrop,
+} from "../src/state/studio-crop-watch";
 
 function progress(status: CropRoiProgress["status"]): CropRoiProgress {
   return {
@@ -50,5 +54,30 @@ describe("watchStudioCrop", () => {
 
     expect(settled).toEqual([{ status: "completed", workspacePath: "/data/second-assay" }]);
     release();
+  });
+
+  it("reloads ROI after a failed crop so successful positions stay usable", () => {
+    let listener: ((progress: CropRoiProgress) => void) | undefined;
+    mocks.onCropRoiProgress.mockImplementation(
+      (_requestId: string, onProgress: typeof listener) => {
+        listener = onProgress;
+        return () => {};
+      },
+    );
+    const refreshed: string[] = [];
+    const releaseRefresh = bindStudioCropRefresh((workspacePath) => refreshed.push(workspacePath));
+    const releaseSettled = bindStudioCropSettled(() => {});
+
+    watchStudioCrop("crop-9", "/data/second-assay");
+    listener?.({
+      ...progress("error"),
+      completedPositions: 5,
+      totalPositions: 6,
+      error: "Zugriff verweigert (os error 5)",
+    });
+
+    expect(refreshed).toEqual(["/data/second-assay"]);
+    releaseRefresh();
+    releaseSettled();
   });
 });

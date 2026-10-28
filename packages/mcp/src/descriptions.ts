@@ -67,6 +67,7 @@ export const OPERATION_DESCRIPTIONS: Record<string, string> = {
   "tasks.getTask": "Get one task with its steps: status, dependencies, attempts, progress.",
   "tasks.getStep": "Get one step of a task in detail.",
   "tasks.cancelTask": "Cancel a task: requests cancellation of its running steps.",
+  "tasks.dismissTask": "Remove a finished task (completed, failed, or cancelled) from the Task Center.",
   "tasks.cancelStep": "Cancel one step of a task.",
   "tasks.retryStep": "Retry a failed or cancelled step of a task.",
 

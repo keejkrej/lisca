@@ -1,4 +1,5 @@
 mod crop;
+mod fs_retry;
 mod workspace;
 
 pub use crate::image_source::{load_frame_payload, scan_source, CachedSourceReader};
