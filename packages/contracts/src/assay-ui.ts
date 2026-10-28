@@ -12,6 +12,8 @@ import type {
   AssayWorkspace,
 } from "./assay.schema";
 
+export { POSITION_INDEX_VERSION } from "./assay.schema";
+
 export type {
   AssayAnalysisConfig,
   AssayChannels,
@@ -121,8 +123,8 @@ export type StudioAssaySampleRow = {
   /** Sample name; identifies the sample (non-empty after trim, unique). */
   name: string;
   /**
-   * 0-based positions this sample covers. assay.json grammar: `3` or `0:4,20:24`.
-   * The metadata editor shows these 1-based and can keep gaps.
+   * 0-based source indices this sample covers (`positionIndexVersion` 1).
+   * assay.json grammar: `3` or `0:4,20:24`. The metadata editor shows source labels.
    */
   positions: string;
   /**

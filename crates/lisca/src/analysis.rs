@@ -14,6 +14,8 @@ mod output;
 #[cfg(feature = "studio")]
 mod plot;
 #[cfg(feature = "studio")]
+pub mod position_index;
+#[cfg(feature = "studio")]
 mod roi_stack;
 #[cfg(feature = "studio")]
 pub mod sample;

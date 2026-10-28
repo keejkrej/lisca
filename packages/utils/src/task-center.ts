@@ -141,7 +141,10 @@ export function canDismissTask(task: TaskSummary): boolean {
 }
 
 /** Drop a dismissed task from the canonical view before the next list poll. */
-export function reconcileTaskCenterDismissed(state: TaskCenterState, taskId: string): TaskCenterState {
+export function reconcileTaskCenterDismissed(
+  state: TaskCenterState,
+  taskId: string,
+): TaskCenterState {
   const { [taskId]: _removed, ...details } = state.details;
   return {
     tasks: state.tasks.filter((task) => task.taskId !== taskId),

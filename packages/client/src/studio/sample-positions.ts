@@ -1,7 +1,7 @@
 import type { AssayAnalysisConfig, AssaySampleRow } from "@lisca/contracts";
 import type { StudioAssaySampleRow, StudioAssaySamples } from "@lisca/contracts/assay";
 
-/** Inclusive 0-based position span, as stored in assay.json. */
+/** Inclusive 0-based index span, as stored in assay.json (positionIndexVersion 1). */
 export type StoredPositionRange = {
   start: number;
   end: number;
@@ -54,8 +54,8 @@ export function formatStoredPositions(ranges: readonly StoredPositionRange[]): s
     .join(",");
 }
 
-/** 1-based chip label. A span uses an en dash. */
-export function formatPositionChip(range: StoredPositionRange): string {
+/** 1-based chip label when no source catalog is available. Prefer `formatPositionChip` from position-index. */
+export function formatIndexChip(range: StoredPositionRange): string {
   const start = range.start + 1;
   const end = range.end + 1;
   return start === end ? String(start) : `${start}–${end}`;
@@ -118,7 +118,7 @@ export type DisplayPositionParse = {
   invalid: string;
 };
 
-/** Parse 1-based text (`1-5, 21-25` or `8`). Hyphen and colon both count. */
+/** Parse 1-based text (`1-5, 21-25` or `8`). Hyphen and colon both count. Prefer label parsing. */
 export function parseDisplayPositionList(raw: string): DisplayPositionParse {
   const ranges: StoredPositionRange[] = [];
   const invalid: string[] = [];
@@ -154,7 +154,7 @@ export function splitDisplayDraft(
   return { ready: readyTokens.join(","), pending: last };
 }
 
-/** Apply typed 1-based text onto the stored 0-based positions string. */
+/** Apply typed 1-based text onto the stored 0-based index string. Prefer the catalog-aware helper. */
 export function commitDisplayPositionDraft(
   stored: string,
   draft: string,

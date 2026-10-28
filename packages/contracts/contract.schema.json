@@ -2766,6 +2766,11 @@
         },
         "analysis": {
           "$ref": "#/definitions/AssayAnalysisConfig"
+        },
+        "positionIndexVersion": {
+          "type": "integer",
+          "minimum": 0,
+          "format": "uint32"
         }
       },
       "required": [

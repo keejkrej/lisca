@@ -110,7 +110,7 @@ export function validateAssayForAnalysis(input: {
     }
     if (!isValidStoredPositions(row.positions)) {
       errors.push(
-        `${rowLabel}: positions must be whole numbers from 1. Separate ranges with a comma.`,
+        `${rowLabel}: positions must match the source labels (folder names or NIS/ZEN numbers). Separate ranges with a comma.`,
       );
     }
     if (!validChannelOverride(row.segmentation, parseNonNegativeInteger)) {

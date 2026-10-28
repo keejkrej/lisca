@@ -1,5 +1,5 @@
 import { AssayJsonFileSchema, decodeJsonResult, formatSchemaError } from "@lisca/contracts";
-import { ASSAY_TYPE } from "@lisca/contracts/assay";
+import { ASSAY_TYPE, POSITION_INDEX_VERSION } from "@lisca/contracts/assay";
 import type {
   AssayAnalysisConfig,
   AssayData,
@@ -144,6 +144,7 @@ export function buildStudioAssayJson({
   analysis,
   channelDefaults,
   sampleRowToDisk,
+  positionIndexVersion,
 }: {
   assayId: StudioAssayType;
   name: string;
@@ -158,6 +159,8 @@ export function buildStudioAssayJson({
   /** Typed assay-wide segmentation and signal channels. Card fields are overrides. */
   channelDefaults: { segmentation: string; signal: string };
   sampleRowToDisk: (row: StudioAssaySampleRow) => AssaySampleRow;
+  /** Omit until samples[].positions are 0-based source indices. */
+  positionIndexVersion?: number | null;
 }): StudioAssayJson {
   const derivedChannels = analysisChannelsFromSamples(channelDefaults, samples);
   // Overrides are keyed by sample name: once channels are derived from the rows, drop any
@@ -179,6 +182,9 @@ export function buildStudioAssayJson({
     interval: { value: intervalValue, unit: intervalUnit },
     samples: samples.map(sampleRowToDisk),
     ...(analysisSection ? { analysis: analysisSection } : {}),
+    ...(positionIndexVersion === POSITION_INDEX_VERSION
+      ? { positionIndexVersion: POSITION_INDEX_VERSION }
+      : {}),
   };
 }
 
@@ -228,5 +234,6 @@ export function parseStudioAssayJson(
     analysis: root.analysis,
     channelDefaults: assayChannelDefaultsFromAnalysis(root.analysis),
     sampleRowToDisk,
+    positionIndexVersion: root.positionIndexVersion ?? null,
   });
 }

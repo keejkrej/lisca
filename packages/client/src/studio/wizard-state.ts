@@ -26,6 +26,8 @@ export type BasicInfoSnapshotState = {
   signalChannel: string;
   /** Assay-dependent analysis options (e.g. transfection maxOnsetMinutes). */
   analysis: AssayAnalysisConfig | null;
+  /** 1 once samples[].positions are 0-based source indices. Null = legacy encoding. */
+  positionIndexVersion: number | null;
 };
 
 export type BasicInfoDirtyState = BasicInfoSnapshotState & {
@@ -54,6 +56,7 @@ export function serializeBasicInfoSnapshot(state: BasicInfoSnapshotState): strin
         signal: state.signalChannel,
       },
       sampleRowToDisk,
+      positionIndexVersion: state.positionIndexVersion,
     }),
   );
 }

@@ -392,7 +392,9 @@ describe("Task Center dialog", () => {
 
     fireEvent.click(view.getByRole("button", { name: "Tasks, 1 need attention" }));
     fireEvent.click(screen.getByRole("button", { name: "Dismiss" }));
-    await waitFor(() => expect(dismissTask).toHaveBeenCalledWith("task-1", expect.any(AbortSignal)));
+    await waitFor(() =>
+      expect(dismissTask).toHaveBeenCalledWith("task-1", expect.any(AbortSignal)),
+    );
     await waitFor(() => expect(screen.queryByRole("button", { name: /Crop ROI/ })).toBeNull());
   });
 });

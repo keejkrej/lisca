@@ -9,7 +9,11 @@ use std::collections::{BTreeMap, HashMap, HashSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use crate::protocol::{AssayAnalysisConfig, AssayJsonFile, AssaySamples};
+use crate::protocol::{AssayAnalysisConfig, AssayData, AssayJsonFile, AssaySamples, ImageSource};
+
+use super::position_index::{
+    resolve_stored_file_ids, PositionCatalog, SourceKind, POSITION_INDEX_VERSION,
+};
 
 /// Analysis settings for one Sample: its Positions and channel roles.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -100,12 +104,71 @@ impl FromIterator<SampleAnalysis> for SampleMapping {
 }
 
 pub fn build_sample_mapping(assay: &AssayJsonFile) -> Result<SampleMapping, String> {
-    build_sample_mapping_from_parts(&assay.samples, assay.analysis.as_ref())
+    match catalog_from_assay(assay) {
+        Ok(catalog) => {
+            build_sample_mapping_from_parts_resolved(
+                &assay.samples,
+                assay.analysis.as_ref(),
+                assay.position_index_version,
+                Some(&catalog),
+            )
+        }
+        Err(error) if assay.position_index_version == Some(POSITION_INDEX_VERSION) => Err(format!(
+            "assay.json positionIndexVersion {POSITION_INDEX_VERSION} stores 0-based source indices. \
+             Open the original image source to resolve them; refusing to guess neighbouring positions ({error})."
+        )),
+        Err(_) => build_sample_mapping_from_parts(&assay.samples, assay.analysis.as_ref()),
+    }
+}
+
+fn catalog_from_assay(assay: &AssayJsonFile) -> Result<PositionCatalog, String> {
+    let source = source_from_assay_data(&assay.data)?;
+    let scan = crate::image_source::scan_source(source)?;
+    Ok(PositionCatalog::from_scan(
+        SourceKind::from_assay_data(&assay.data),
+        &scan,
+    ))
+}
+
+fn source_from_assay_data(data: &AssayData) -> Result<ImageSource, String> {
+    match data {
+        AssayData::Folder { path, template } => {
+            if path.trim().is_empty() {
+                return Err("assay.json data.path is empty".into());
+            }
+            Ok(ImageSource::Folder {
+                path: path.clone(),
+                subfolder_template: template.subfolder.clone(),
+                filename_template: template.filename.clone(),
+            })
+        }
+        AssayData::Nd2 { path } => {
+            if path.trim().is_empty() {
+                return Err("assay.json data.path is empty".into());
+            }
+            Ok(ImageSource::Nd2 { path: path.clone() })
+        }
+        AssayData::Czi { path } => {
+            if path.trim().is_empty() {
+                return Err("assay.json data.path is empty".into());
+            }
+            Ok(ImageSource::Czi { path: path.clone() })
+        }
+    }
 }
 
 pub fn build_sample_mapping_from_parts(
     samples: &AssaySamples,
     analysis: Option<&AssayAnalysisConfig>,
+) -> Result<SampleMapping, String> {
+    build_sample_mapping_from_parts_resolved(samples, analysis, None, None)
+}
+
+fn build_sample_mapping_from_parts_resolved(
+    samples: &AssaySamples,
+    analysis: Option<&AssayAnalysisConfig>,
+    position_index_version: Option<u32>,
+    catalog: Option<&PositionCatalog>,
 ) -> Result<SampleMapping, String> {
     let mut names = HashSet::new();
     for (index, row) in samples.iter().enumerate() {
@@ -154,7 +217,14 @@ pub fn build_sample_mapping_from_parts(
                 "sample {name:?}: signal channel list must be non-empty"
             ));
         }
-        let positions = parse_positions(&row.positions)?;
+        let positions = if let Some(catalog) = catalog {
+            resolve_stored_file_ids(&row.positions, position_index_version, catalog)?
+        } else {
+            parse_positions(&row.positions)?
+        };
+        if positions.is_empty() {
+            return Err(format!("sample {name:?}: no valid positions in sample row"));
+        }
         mapping.push(SampleAnalysis {
             name,
             positions,
@@ -492,5 +562,34 @@ mod tests {
         )
         .unwrap_err();
         assert_eq!(err, "assay.json defines no samples");
+    }
+
+    #[test]
+    fn versioned_positions_without_a_source_are_refused() {
+        let err = mapping_from(
+            r#"{
+                "positionIndexVersion": 1,
+                "samples": [{ "name": "WT", "positions": "0" }],
+                "analysis": { "channels": { "segmentation": 0, "signal": [1] } }
+            }"#,
+        )
+        .unwrap_err();
+        assert!(
+            err.contains("positionIndexVersion 1")
+                && err.contains("refusing to guess neighbouring positions"),
+            "{err}"
+        );
+    }
+
+    #[test]
+    fn legacy_positions_without_a_source_keep_file_ids() {
+        let mapping = mapping_from(
+            r#"{
+                "samples": [{ "name": "WT", "positions": "138" }],
+                "analysis": { "channels": { "segmentation": 0, "signal": [1] } }
+            }"#,
+        )
+        .unwrap();
+        assert_eq!(mapping.get(0).unwrap().positions, vec![138]);
     }
 }

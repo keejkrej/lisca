@@ -8,23 +8,82 @@ import {
   TooltipTrigger,
 } from "@lisca/ui/primitives";
 import { useAtomSet, useAtomValue } from "@effect/atom-solid";
+import { resultData } from "@lisca/client/atoms";
+import { toStudioSource } from "@lisca/client/studio/source";
 import {
+  catalogFromScan,
   commitDisplayPositionDraft,
   formatPositionChip,
+  formatResolvedPreview,
+  migrateSamplePositions,
+  POSITION_INDEX_VERSION,
+  storedIndexSet,
+  toggleIndexInStored,
+  type PositionCatalog,
+} from "@lisca/client/studio/position-index";
+import {
+  collectAssayPositions,
   formatStoredPositions,
   storedPositionRanges,
   type StoredPositionRange,
 } from "@lisca/client/studio/sample-positions";
-import { createEffect, createSignal, createUniqueId, For, Show, type JSX } from "solid-js";
+import {
+  createEffect,
+  createMemo,
+  createSignal,
+  createUniqueId,
+  For,
+  Show,
+  type JSX,
+} from "solid-js";
 import IconInfoRegular from "phosphor-icons-solid/IconInfoRegular";
 import IconTrashRegular from "phosphor-icons-solid/IconTrashRegular";
 import IconXRegular from "phosphor-icons-solid/IconXRegular";
 
+import { scanIdleAtom, scanSourceAtom } from "../atoms/studio-query-atoms";
 import { studioWizardActions, studioWizardAtom } from "../state/studio-store";
 
-export function MetadataSamples() {
+export function MetadataSamples(props: { catalog?: PositionCatalog | null }) {
   const wizard = useAtomValue(() => studioWizardAtom);
   const setWizard = useAtomSet(() => studioWizardAtom);
+  const source = createMemo(() =>
+    toStudioSource({
+      kind: wizard().dataSourceKind,
+      dataPath: wizard().dataPath,
+      folderTemplate: wizard().folderTemplate,
+    }),
+  );
+  const scanResult = useAtomValue(() => {
+    if (props.catalog !== undefined) return scanIdleAtom;
+    const src = source();
+    return src ? scanSourceAtom(JSON.stringify(src)) : scanIdleAtom;
+  });
+  const catalog = createMemo(() => {
+    if (props.catalog !== undefined) return props.catalog;
+    const scan = resultData(scanResult());
+    return scan ? catalogFromScan(wizard().dataSourceKind, scan) : null;
+  });
+  const [encodingError, setEncodingError] = createSignal<string | null>(null);
+
+  createEffect(() => {
+    const cat = catalog();
+    const state = wizard();
+    if (!cat || state.positionIndexVersion === POSITION_INDEX_VERSION) {
+      setEncodingError(null);
+      return;
+    }
+    const migrated = migrateSamplePositions(state.samples, state.positionIndexVersion, cat);
+    if (!migrated.ok) {
+      setEncodingError(migrated.error);
+      return;
+    }
+    setEncodingError(null);
+    studioWizardActions.patchWizard(setWizard, {
+      samples: migrated.samples,
+      positionIndexVersion: POSITION_INDEX_VERSION,
+    });
+  });
+
   const updateSample = (
     index: number,
     patch: Parameters<typeof studioWizardActions.updateSample>[2],
@@ -33,6 +92,11 @@ export function MetadataSamples() {
   const removeSample = (index: number) => studioWizardActions.removeSample(setWizard, index);
 
   const samples = () => wizard().samples;
+  const resolvedPreview = createMemo(() => {
+    const cat = catalog();
+    if (!cat) return null;
+    return formatResolvedPreview(collectAssayPositions({ samples: samples() }), cat);
+  });
 
   return (
     <section
@@ -45,8 +109,26 @@ export function MetadataSamples() {
         </h2>
         <p class="text-[13px] leading-[18px] text-muted-foreground">
           Each card is one sample: a unique name and the positions it covers. Set the segmentation
-          and signal channels once for the assay. A card can override them.
+          and signal channels once for the assay. A card can override them. Position numbers follow
+          the source labels (folder names, or NIS/ZEN 1-based names).
         </p>
+        <Show when={encodingError()}>
+          {(message) => (
+            <p class="text-[13px] leading-[18px] text-destructive" role="alert">
+              {message()}
+            </p>
+          )}
+        </Show>
+        <Show when={resolvedPreview()}>
+          {(preview) => (
+            <p
+              class="font-mono text-[13px] leading-[18px] text-foreground"
+              data-testid="resolved-positions"
+            >
+              {preview()}
+            </p>
+          )}
+        </Show>
       </div>
       <div class="grid w-full min-w-0 grid-cols-1 gap-4 sm:grid-cols-2">
         <SampleField
@@ -99,6 +181,7 @@ export function MetadataSamples() {
               <Show when={row()}>
                 {(current) => (
                   <SampleCard
+                    catalog={catalog()}
                     index={index()}
                     row={current()}
                     onChange={(patch) => updateSample(index(), patch)}
@@ -118,6 +201,7 @@ export function MetadataSamples() {
 }
 
 function SampleCard(props: {
+  catalog: PositionCatalog | null | undefined;
   index: number;
   row: {
     name: string;
@@ -162,11 +246,12 @@ function SampleCard(props: {
           />
         </div>
         <SampleField
-          hint="Counting starts at 1. Type 1-5, 21-25, 28 and press Enter."
+          hint="Type the source labels, for example 1-67 or 138, 144. Counting matches the folder names or NIS/ZEN position names."
           label="Positions"
         >
           {(fieldId) => (
             <SamplePositionsInput
+              catalog={props.catalog}
               id={fieldId}
               name={`samples.${props.index}.positions`}
               value={props.row.positions}
@@ -174,6 +259,16 @@ function SampleCard(props: {
             />
           )}
         </SampleField>
+        <Show when={props.catalog}>
+          {(cat) => (
+            <PositionCheckboxList
+              catalog={cat()}
+              sampleIndex={props.index}
+              value={props.row.positions}
+              onChange={(positions) => props.onChange({ positions })}
+            />
+          )}
+        </Show>
         <SampleField
           hint="Override for this sample only. Leave empty to use the assay segmentation channel."
           label="Segmentation channel"
@@ -209,6 +304,42 @@ function SampleCard(props: {
         </SampleField>
       </CardContent>
     </Card>
+  );
+}
+
+function PositionCheckboxList(props: {
+  catalog: PositionCatalog;
+  sampleIndex: number;
+  value: string;
+  onChange: (positions: string) => void;
+}) {
+  const selected = () => storedIndexSet(props.value);
+  return (
+    <div
+      aria-label={`Detected positions for sample ${props.sampleIndex + 1}`}
+      class="flex flex-col gap-1 border border-input p-2"
+    >
+      <For each={props.catalog.labels}>
+        {(label, index) => {
+          const checked = () => selected().has(index());
+          const display = props.catalog.kind === "folder" ? `Pos${label}` : label;
+          return (
+            <label class="flex items-center gap-2 font-mono text-[12px] text-foreground">
+              <input
+                checked={checked()}
+                type="checkbox"
+                onChange={(event) =>
+                  props.onChange(
+                    toggleIndexInStored(props.value, index(), event.currentTarget.checked),
+                  )
+                }
+              />
+              {display}
+            </label>
+          );
+        }}
+      </For>
+    </div>
   );
 }
 
@@ -251,10 +382,11 @@ function SampleField(props: {
 }
 
 /**
- * Edits 0-based assay positions as 1-based chips. `1-5, 21-25` becomes two chips.
- * A token that is not a position stays in the field and is not saved.
+ * Edits 0-based source indices as source-label chips. `1-5, 21-25` matches
+ * displayed labels, not a hidden +1 conversion.
  */
 function SamplePositionsInput(props: {
+  catalog: PositionCatalog | null | undefined;
   id: string;
   name: string;
   value: string;
@@ -262,7 +394,6 @@ function SamplePositionsInput(props: {
 }) {
   const [draft, setDraft] = createSignal("");
   const [invalid, setInvalid] = createSignal(false);
-  // The field can commit twice before the wizard prop catches up (comma, then blur).
   let committed = props.value;
   let seen = props.value;
   const [ranges, setRanges] = createSignal(storedPositionRanges(props.value));
@@ -281,7 +412,13 @@ function SamplePositionsInput(props: {
   };
 
   const applyDraft = (raw: string, commitTrailing: boolean) => {
-    const next = commitDisplayPositionDraft(committed, raw, commitTrailing);
+    const catalog = props.catalog;
+    if (!catalog) {
+      setDraft(raw);
+      setInvalid(raw.trim().length > 0);
+      return;
+    }
+    const next = commitDisplayPositionDraft(committed, raw, commitTrailing, catalog);
     publish(next.positions);
     setDraft(next.draft);
     setInvalid(next.invalid);
@@ -302,7 +439,10 @@ function SamplePositionsInput(props: {
     >
       <For each={ranges()}>
         {(range) => {
-          const label = () => formatPositionChip(range);
+          const label = () => {
+            const catalog = props.catalog;
+            return catalog ? formatPositionChip(range, catalog) : `${range.start}–${range.end}`;
+          };
           return (
             <span class="inline-flex h-6 max-w-full items-center gap-0.5 bg-muted px-1.5 font-mono text-[12px] text-foreground">
               <span class="truncate">{label()}</span>

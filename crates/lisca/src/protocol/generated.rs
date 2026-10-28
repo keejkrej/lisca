@@ -1729,6 +1729,12 @@ pub struct AssayJsonFile {
     pub data: AssayData,
     pub interval: AssayInterval,
     pub name: ::std::string::String,
+    #[serde(
+        rename = "positionIndexVersion",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub position_index_version: ::std::option::Option<u32>,
     pub samples: AssaySamples,
     #[serde(rename = "type")]
     pub type_: AssayType,
@@ -8518,6 +8524,8 @@ pub mod builder {
         data: ::std::result::Result<super::AssayData, ::std::string::String>,
         interval: ::std::result::Result<super::AssayInterval, ::std::string::String>,
         name: ::std::result::Result<::std::string::String, ::std::string::String>,
+        position_index_version:
+            ::std::result::Result<::std::option::Option<u32>, ::std::string::String>,
         samples: ::std::result::Result<super::AssaySamples, ::std::string::String>,
         type_: ::std::result::Result<super::AssayType, ::std::string::String>,
         workspace: ::std::result::Result<super::AssayWorkspace, ::std::string::String>,
@@ -8529,6 +8537,7 @@ pub mod builder {
                 data: Err("no value supplied for data".to_string()),
                 interval: Err("no value supplied for interval".to_string()),
                 name: Err("no value supplied for name".to_string()),
+                position_index_version: Ok(Default::default()),
                 samples: Err("no value supplied for samples".to_string()),
                 type_: Err("no value supplied for type_".to_string()),
                 workspace: Err("no value supplied for workspace".to_string()),
@@ -8576,6 +8585,16 @@ pub mod builder {
                 .map_err(|e| format!("error converting supplied value for name: {e}"));
             self
         }
+        pub fn position_index_version<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::option::Option<u32>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.position_index_version = value.try_into().map_err(|e| {
+                format!("error converting supplied value for position_index_version: {e}")
+            });
+            self
+        }
         pub fn samples<T>(mut self, value: T) -> Self
         where
             T: ::std::convert::TryInto<super::AssaySamples>,
@@ -8617,6 +8636,7 @@ pub mod builder {
                 data: value.data?,
                 interval: value.interval?,
                 name: value.name?,
+                position_index_version: value.position_index_version?,
                 samples: value.samples?,
                 type_: value.type_?,
                 workspace: value.workspace?,
@@ -8630,6 +8650,7 @@ pub mod builder {
                 data: Ok(value.data),
                 interval: Ok(value.interval),
                 name: Ok(value.name),
+                position_index_version: Ok(value.position_index_version),
                 samples: Ok(value.samples),
                 type_: Ok(value.type_),
                 workspace: Ok(value.workspace),

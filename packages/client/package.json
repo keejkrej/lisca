@@ -163,6 +163,10 @@
       "types": "./src/studio/sample-positions.ts",
       "import": "./src/studio/sample-positions.ts"
     },
+    "./studio/position-index": {
+      "types": "./src/studio/position-index.ts",
+      "import": "./src/studio/position-index.ts"
+    },
     "./studio/assay-validation": {
       "types": "./src/studio/assay-validation.ts",
       "import": "./src/studio/assay-validation.ts"
