@@ -24,9 +24,14 @@ Per-sample titles include the sample folder (for example
 
 Views follow the assay. Every assay has Traces (each cell, plus a shared-y
 companion) and Traces summary (mean, median, and interquartile range, plus
-shared y). Killing and LNP binding stop there. Transfection also has Mask area, Traces fit,
-AUC, Parameters, and Parameters comparison. Per-sample plots use two columns.
-Plots that already contain every sample use one column.
+shared y). The light band on a summary plot is the interquartile range (25th to
+75th percentile) at each time. Killing and LNP binding stop there. Transfection
+also has Mask area (foreground pixel count of the segmentation mask vs time),
+Traces fit, AUC, Parameters, and Parameters comparison. Per-sample plots use two
+columns. Plots that already contain every sample use one column. Studio plot
+y-limits include every finite value with headroom so traces and engager counts
+are not clipped. Contrast sliders on Align and Annotate are display-only; they
+do not change analysis numbers.
 
 ## Workspace fixtures (e2e / agents)
 
@@ -138,8 +143,11 @@ ROI. The spot diameter is about 10 pixels (kept when the equivalent diameter is
 7 to 13 pixels). Every ROI in a position shares one scale: the median
 background, plus 8 robust noise widths. A crop is not stretched to its own
 brightest pixel. Two touching spots are split by a distance-transform
-watershed. `t_cells` is that spot count. `engagements` still records whether a
-spot touches the brightfield tumor mask. The gallery plots `t_cells`.
+watershed. `t_cells` is that integer spot count. `engagements` still records whether a
+spot touches the brightfield tumor mask. The gallery plots `t_cells`. Summary
+plots and `t_cells_mean` are fractional because they average those integer counts
+across ROIs or frames; the shaded band is the interquartile range of the same
+values.
 
 Studio offers the card in the picker. See
 [ADR-0009](../adr/0009-shared-killing-workspace.md).
@@ -341,3 +349,20 @@ cargo test -p lisca --test transfection_parity -- --ignored   # needs sibling as
 ```
 
 Unit tests live under each `analysis/` submodule. Integration tests in `crates/lisca/tests/transfection_parity.rs` build a minimal synthetic workspace and compare stages to transfection reference formulas. Tolerances and ignored Python e2e: [`parity.md`](./parity.md).
+
+## Troubleshooting
+
+Studio UI errors (crop access denied, stuck tasks, position encoding) are in
+[`docs/ui/troubleshooting.md`](../ui/troubleshooting.md).
+
+- **`positionIndexVersion` missing.** Pre-0.5.1 `assay.json` files use folder-name
+  lookup (then index) for folder sources and 0-based indices for ND2/CZI. Studio
+  and `lisca-analyze` migrate that encoding to the same physical positions or
+  refuse. They do not guess a neighbour. Re-select positions on Metadata if load
+  refuses.
+- **Version 1 without the image source.** Analysis will not treat those indices
+  as `Pos{n}` names. Open the original ND2, CZI, or folder.
+- **Plots clip traces or engager counts.** Y-limits now include min and max with
+  headroom. Re-run plot stages after upgrading to Studio 0.5.1.
+- **Brightness looks wrong.** Align/Annotate contrast does not change CSV values.
+  Unlock for raw domain, or press Auto and Lock to keep one window on every frame.

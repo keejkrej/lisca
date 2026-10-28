@@ -38,6 +38,12 @@ function intervalInput(container: HTMLElement): HTMLInputElement {
 afterEach(cleanup);
 
 describe("MetadataFields misc", () => {
+  it("labels the workspace picker as Output folder", () => {
+    renderWizard();
+    expect(screen.getByText("Output folder")).toBeTruthy();
+    expect(screen.getByText(/workspace for this run/)).toBeTruthy();
+  });
+
   it("shows segmentation settings for transfection and killing, and keeps smart segmentation unavailable", async () => {
     renderWizard();
     expect(screen.getByText("Misc")).toBeTruthy();

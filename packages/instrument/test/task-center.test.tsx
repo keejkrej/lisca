@@ -176,7 +176,11 @@ describe("Task Center dialog", () => {
     const generic = renderTaskCenter();
     fireEvent.click(generic.getByRole("button", { name: "Tasks, 0 active" }));
     expect(await screen.findByRole("dialog", { name: "Task Center" })).toBeTruthy();
-    expect(screen.getByText("Background computations and recent results")).toBeTruthy();
+    expect(
+      screen.getByText(
+        "Background computations and recent results. Click a task to expand its steps.",
+      ),
+    ).toBeTruthy();
     expect(screen.getByText("No tasks yet")).toBeTruthy();
     expect(screen.getByText("Long-running computations will appear here.")).toBeTruthy();
     expect(screen.queryByText(/while you keep working/)).toBeNull();

@@ -13,14 +13,14 @@ export function instructionForStep(step: StudioStep): string {
     return "Open a saved assay, or pick an assay type and press New to start a blank one.";
   }
   if (step === "metadata") {
-    return "Choose the image source, workspace folder, and time between frames. Set the segmentation and signal channels, then name each sample and the positions it covers.";
+    return "Choose the image source, output folder, and time between frames. Set the segmentation and signal channels, then name each sample and the positions it covers. Press Save, then open Align in the left rail.";
   }
   if (step === "alignPattern") {
-    return "Drag the grid onto the micropattern, exclude empty patterns, then press Save. Once every position is saved, press Crop.";
+    return "Drag the grid onto the micropattern. Exclude empty patterns and any pattern with more than one cell. Save each position, then Crop. Expert mode adds Position, Z, Geometry, and Drift (key frames for drift correction).";
   }
   return "Finish the Metadata step before aligning.";
 }
 
 export function instructionForAnnotate(): string {
-  return "Pick a label, paint the ROI, then press Save. Press Analyze when every ROI is done.";
+  return "Pick a class and paint the ROI mask if you need a hand-drawn foreground. Analysis measures every cropped ROI; annotations label cells, they do not drop unpainted ones. Skip segmentation on Metadata uses the full crop instead of a mask. Expert mode adds Position, ROI, and Z. Press Analyze when the crop is done.";
 }

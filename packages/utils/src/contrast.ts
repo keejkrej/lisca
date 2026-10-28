@@ -28,8 +28,8 @@ export function deriveAutoContrast(frame: FrameResult | null): ContrastWindow {
 /**
  * Contrast window to request for a frame that is not the one on screen.
  *
- * Unlocked viewers follow each frame's own auto contrast, so a manual window is
- * dropped on every frame change (`null` = ask the server for auto). Locking pins
+ * Unlocked viewers follow each frame's raw intensity domain, so a manual window is
+ * dropped on every frame change (`null` = ask the server for the domain). Locking pins
  * the window: the manual one when the user set it, else whatever the outgoing
  * frame was displayed with, which is the window they pressed Lock on.
  */

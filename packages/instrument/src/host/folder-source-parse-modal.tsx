@@ -16,6 +16,9 @@ export type FolderSourceParseModalProps = {
   onConfirm: (source: FolderSource) => void;
 };
 
+const TEMPLATE_HELP =
+  "Tokens are {p} or {position}, {t} or {time}, {c} or {channel}, and {z}. Subfolder and filename are both required. Digit width is not fixed: Pos1 and Pos001 both match Pos{p}.";
+
 export function FolderSourceParseModal(props: FolderSourceParseModalProps) {
   const modal = useFolderSourceParseModal(() => ({
     path: props.path,
@@ -44,6 +47,7 @@ export function FolderSourceParseModal(props: FolderSourceParseModalProps) {
             <p aria-live="polite" class="text-muted-foreground text-sm" role="status">
               {modal.statusMessage()}
             </p>
+            <p class="text-muted-foreground text-sm">{TEMPLATE_HELP}</p>
 
             <Field class="gap-2">
               <FieldLabel for="folder-subfolder-template">Subfolder template</FieldLabel>

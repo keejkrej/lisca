@@ -17,6 +17,8 @@ import {
   type TaskCenterGateway,
 } from "@lisca/utils";
 import IconArrowsClockwiseRegular from "phosphor-icons-solid/IconArrowsClockwiseRegular";
+import IconCaretDownRegular from "phosphor-icons-solid/IconCaretDownRegular";
+import IconCaretUpRegular from "phosphor-icons-solid/IconCaretUpRegular";
 import IconQueueRegular from "phosphor-icons-solid/IconQueueRegular";
 import IconWarningCircleRegular from "phosphor-icons-solid/IconWarningCircleRegular";
 import IconXRegular from "phosphor-icons-solid/IconXRegular";
@@ -427,7 +429,8 @@ export function TaskCenter(props: TaskCenterProps) {
             <div class="space-y-1">
               <Dialog.Title class="font-semibold text-foreground text-lg">{title()}</Dialog.Title>
               <Dialog.Description class="text-muted-foreground text-sm">
-                {props.description ?? "Background computations and recent results"}
+                {props.description ??
+                  "Background computations and recent results. Click a task to expand its steps."}
               </Dialog.Description>
             </div>
             <Dialog.CloseButton
@@ -507,8 +510,24 @@ export function TaskCenter(props: TaskCenterProps) {
                           >
                             <span class="min-w-0 flex-1 space-y-2">
                               <span class="flex items-center justify-between gap-3">
-                                <span class="min-w-0 truncate font-medium text-foreground text-sm">
-                                  {taskKindLabel(task.kind)}
+                                <span class="flex min-w-0 items-center gap-1.5">
+                                  <Show
+                                    when={expanded()}
+                                    fallback={
+                                      <IconCaretDownRegular
+                                        aria-hidden="true"
+                                        class="size-3.5 shrink-0 text-muted-foreground"
+                                      />
+                                    }
+                                  >
+                                    <IconCaretUpRegular
+                                      aria-hidden="true"
+                                      class="size-3.5 shrink-0 text-muted-foreground"
+                                    />
+                                  </Show>
+                                  <span class="min-w-0 truncate font-medium text-foreground text-sm">
+                                    {taskKindLabel(task.kind)}
+                                  </span>
                                 </span>
                                 <span
                                   aria-hidden="true"
