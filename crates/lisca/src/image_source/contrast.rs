@@ -133,10 +133,11 @@ mod tests {
             contrast_domain: ContrastWindow { min: 0, max: 255 },
         };
         let payload = to_frame_payload(raw, None);
-        assert_eq!(
-            payload.applied_contrast,
-            ContrastWindow { min: 0, max: 255 }
+        assert_eq!(payload.applied_contrast.min, 0);
+        assert_eq!(payload.applied_contrast.max, 255);
+        assert!(
+            payload.suggested_contrast.min != payload.applied_contrast.min
+                || payload.suggested_contrast.max != payload.applied_contrast.max
         );
-        assert_ne!(payload.suggested_contrast, payload.applied_contrast);
     }
 }
