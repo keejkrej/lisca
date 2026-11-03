@@ -10,7 +10,7 @@ Three apps share that workspace:
 
 Studio includes the Aligner and Annotator flows. GitHub Releases publish one desktop app per tag (`studio-v*`, `aligner-v*`, or `annotator-v*`). Notebook zips use `notebooks-v*`.
 
-The user-facing analysis manual lives in `manual/` (separate from the developer docs in `docs/`) and is published at [keejkrej.github.io/lisca](https://keejkrej.github.io/lisca/).
+The user-facing manual (workflow, assays, plots, how to cite) is a MkDocs site at [keejkrej.github.io/lisca](https://keejkrej.github.io/lisca/). Pages live in `docs/manual/`; the rest of `docs/` is developer notes and ADRs.
 
 ## Desktop app
 
@@ -42,8 +42,7 @@ pnpm, Vite+, and Cargo monorepo.
 | `python/`                          | ROI crop, dataset building, and training                                |
 | `notebooks/`                       | Jupyter export for Hub and local zip users (tags `notebooks-v*`)        |
 | `models/`                          | Product models (Smart exclude, Smart segment)                           |
-| `docs/`                            | Domain notes and ADRs                                                   |
-| `manual/`                          | User-facing analysis manual (MkDocs Material)                           |
+| `docs/`                            | Domain notes and ADRs; user manual in `docs/manual/`                    |
 
 Assay weights (the transfection pattern U-Net, the killing ResNet) live with the assay repositories and on Hugging Face. See `models/README.md`.
 
