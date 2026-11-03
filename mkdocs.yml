@@ -1,0 +1,30 @@
+# User-facing analysis manual. Developer docs stay in docs/; do not point
+# docs_dir there.
+site_name: LISCA user manual
+site_url: https://keejkrej.github.io/lisca/
+repo_url: https://github.com/keejkrej/lisca
+edit_uri: edit/main/manual/
+docs_dir: manual
+
+theme:
+  name: material
+
+markdown_extensions:
+  - admonition
+  - tables
+  - pymdownx.arithmatex:
+      generic: true
+
+extra_javascript:
+  - https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js
+
+nav:
+  - index.md
+  - workflow.md
+  - Assays:
+      - assays/transfection.md
+      - assays/pi-death.md
+      - assays/engagement.md
+      - assays/lnp-binding.md
+  - plots.md
+  - troubleshooting.md
