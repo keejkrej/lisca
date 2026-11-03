@@ -12,7 +12,7 @@ with \( N \) the number of pixels in the crop. There is no fit and no classifier
 
 **Input:** a fluorescence time-lapse with a fixed interval (required; the default is 5 min).
 
-**Outputs:** `analysis/Pos{n}/ch{m}.csv`, `results/<sample>/traces.xlsx`, and trace and summary plots (mean, median, IQR).
+**Outputs:** `analysis/Pos{n}/ch{m}.csv` (columns `roi, t, area, background, sum, corrected`), `results/<sample>/traces.xlsx`, and trace and summary plots (mean, median, IQR).
 
 !!! quote "Cite this method"
-    Background: 10th percentile of each ROI crop, subtracted per frame as area × background. LISCA does not classify cells as dead or alive. Software: LISCA `[citation]`.
+    Background: 10th percentile of each ROI crop, subtracted per frame as area × background. LISCA does not classify cells as dead or alive. A citable reference for LISCA is in preparation.

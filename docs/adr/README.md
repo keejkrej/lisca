@@ -27,3 +27,4 @@ Why a shipped choice looks the way it does. Agents write these during the change
 | [0014](0014-locked-contrast-across-frames.md)      | accepted   | Auto contrast follows each frame unless the viewer locks the window          |
 | [0015](0015-in-tree-lnp-binding.md)                | accepted   | LNP binding uses Picasso in this repo until a sidecar exists                 |
 | [0016](0016-position-index-version.md)             | accepted   | Position ranges are versioned 0-based indices                                |
+| [0017](0017-user-manual-github-pages.md)           | accepted   | User manual lives beside developer docs and ships as GitHub Pages            |

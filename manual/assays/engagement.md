@@ -9,7 +9,7 @@
 
 **Counts per ROI and frame (whole numbers):** `t_cells`, `engagements` (spots touching the tumour mask), and `tumor_cells`. Summary plots show means over ROIs, so fractional values like 0.5 are expected.
 
-**Outputs:** `engagement.csv`, `engagement_summary.csv`, `.xlsx`, and trace plots.
+**Outputs:** `analysis/Pos{n}/engagement.csv`, `engagement_summary.csv`, `results/<sample>/engagement.xlsx`, `engagement_summary.xlsx`, and trace plots.
 
 !!! quote "Cite this method"
-    Otsu (1979), as above; robust threshold via the median absolute deviation. Software: LISCA `[citation]`.
+    Otsu (1979), as above; robust threshold via the median absolute deviation. A citable reference for LISCA is in preparation.

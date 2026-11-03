@@ -21,15 +21,15 @@ Each frame of the phase-contrast channel is segmented into cell versus backgroun
 
 Recomputed for every ROI in every frame, on the fluorescence channel.
 
-- **With segmentation:** the background \( B \) is the median of the pixels *outside* the cell mask \( M \).
-$$ F_\text{corr} = \sum_{p \in M} I_p - |M|\,B $$
+- **With segmentation:** the background \( B \) is the median of the pixels _outside_ the cell mask \( M \).
+  $$ F_\text{corr} = \sum_{p \in M} I_p - |M|\,B $$
 - **Segmentation skipped:** \( B \) is the 10th percentile of all pixels in the crop, and the sum runs over the whole crop.
 
-This is a local, per-cell background, not a polynomial fit over the full image (as in Schwarzfischer et al. `[full reference]`). Because each cell sits on its own pattern spot, the pixels around it are the most direct estimate of its local background.
+This is a local, per-cell background, not a polynomial fit over the full image (as in Schwarzfischer et al.). Because each cell sits on its own pattern spot, the pixels around it are the most direct estimate of its local background.
 
 ## Kinetic model
 
-LISCA fits the translation–degradation model without maturation (Müller et al. 2024, Eq. 3 `[full reference]`):
+LISCA fits the translation–degradation model without maturation (Müller et al. 2024, Eq. 3):
 
 $$ F(t) = b + A\left(e^{-\beta (t-t_0)} - e^{-\delta (t-t_0)}\right), \quad t \ge t_0; \qquad F(t) = b, \quad t < t_0 $$
 
@@ -43,13 +43,13 @@ with \( \delta > \beta \) and \( A > 0 \). It follows from \( \dot m = -\delta m
 - **Every cell therefore shares one protein degradation rate.**
 - A trace fails with fewer than 3 points or no signal.
 
-| Output column | Meaning |
-|---|---|
-| `onset_time` | \( t_0 \) |
-| `expression_rate` | \( A(\delta-\beta) = m_0 k_{TL} \) |
-| `mrna_lifetime` | \( \ln 2/\delta \), a **half-life** |
-| `protein_lifetime` | \( \ln 2/\beta \), a **half-life**, shared by all cells |
-| `baseline_intensity` | \( b \) |
+| Output column        | Meaning                                                 |
+| -------------------- | ------------------------------------------------------- |
+| `onset_time`         | \( t_0 \)                                               |
+| `expression_rate`    | \( A(\delta-\beta) = m_0 k_{TL} \)                      |
+| `mrna_lifetime`      | \( \ln 2/\delta \), a **half-life**                     |
+| `protein_lifetime`   | \( \ln 2/\beta \), a **half-life**, shared by all cells |
+| `baseline_intensity` | \( b \)                                                 |
 
 **Half-life versus mean lifetime:** the columns named `lifetime` are half-lives, \( t_{1/2} = \ln 2/k \). The mean lifetime is \( \tau = 1/k = t_{1/2}/\ln 2 \approx 1.44\, t_{1/2} \). Say which one you report.
 
@@ -57,7 +57,7 @@ with \( \delta > \beta \) and \( A > 0 \). It follows from \( \dot m = -\delta m
 
 ## Outputs
 
-`analysis/Pos{n}/ch{m}.csv` (columns `roi, t, area, background, intensity, corrected`), `auc.csv` and `fit.csv`, plus `results/<sample>/traces.xlsx`, `auc.xlsx`, `fit.xlsx` and the plots.
+`analysis/Pos{n}/ch{m}.csv` (columns `roi, t, area, background, sum, corrected`), `auc.csv` and `fit.csv`, plus `results/<sample>/traces.xlsx`, `auc.xlsx`, `fit.xlsx` and the plots.
 
 **Apparent values:** the model has no maturation step, so `onset_time` includes the reporter's maturation time and the half-lives are apparent, not molecular. Expect an offset against fits that model maturation explicitly.
 
@@ -66,4 +66,4 @@ with \( \delta > \beta \) and \( A > 0 \). It follows from \( \dot m = -\delta m
 **Limitation:** the model assumes a single delivery with exponential decay. It doesn't describe, for example, a knock-down after a second transfection.
 
 !!! quote "Cite this method"
-    Background: median of non-cell pixels in each ROI, subtracted per frame as area × background (or the 10th percentile of the crop if segmentation was skipped; say which). Kinetic model: Müller et al. 2024 `[full reference]`. Segmentation threshold: N. Otsu, *IEEE Trans. Syst. Man Cybern.* 9, 62–66 (1979). Software: LISCA `[citation]`.
+    Background: median of non-cell pixels in each ROI, subtracted per frame as area × background (or the 10th percentile of the crop if segmentation was skipped; say which). Kinetic model: Müller et al. 2024. Segmentation threshold: N. Otsu, _IEEE Trans. Syst. Man Cybern._ 9, 62–66 (1979). A citable reference for LISCA is in preparation.
