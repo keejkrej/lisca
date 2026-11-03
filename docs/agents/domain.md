@@ -20,10 +20,14 @@ If any of these files don't exist, **proceed silently**. Don't flag their absenc
 ├── docs/adr/
 │   ├── 0001-....md
 │   └── 0002-....md
+├── manual/               # user-facing MkDocs site (GitHub Pages)
 ├── apps/
 ├── packages/
 └── crates/
 ```
+
+The public user manual is `manual/` (`mkdocs.yml` `docs_dir`). Do not treat
+it as the developer tree, and do not copy ADRs into it.
 
 ## Use the glossary's vocabulary
 

@@ -17,8 +17,8 @@ LISCA turns a raw time-lapse into one intensity trace per cell. Each step has a 
 
 - Fit the grid to the pattern, then click spots to switch them on or off. Switch off empty spots and **spots with two cells**: two cells in one ROI add up to one wrong trace.
 - **Expert mode** exposes the pattern geometry and drift correction. Use drift correction when the stage moves during the experiment.
-- **Contrast is display-only.** It never changes the numbers. Use *Lock* to keep one contrast setting across all frames.
-- Save with `Ctrl+S`, then click *Align*.
+- **Contrast is display-only.** It never changes the numbers. Use _Lock_ to keep one contrast setting across all frames.
+- Save with `Ctrl+S`, then click _Align_.
 
 ## 3. Crop
 
@@ -28,8 +28,8 @@ LISCA turns a raw time-lapse into one intensity trace per cell. Each step has a 
 
 **Aim:** give LISCA human labels.
 
-- *Classification mode:* click a label for each cell (for example alive or dead).
-- *Segmentation mode:* draw the cell outline.
+- _Classification mode:_ click a label for each cell (for example alive or dead).
+- _Segmentation mode:_ draw the cell outline.
 
 Fluorescence assays (transfection, PI) don't need annotation. Use this step to check crops and drop bad ones before analysis.
 
