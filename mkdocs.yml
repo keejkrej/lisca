@@ -1,12 +1,10 @@
-# User-facing analysis manual. Developer docs stay in docs/; do not point
-# docs_dir there.
 site_name: LISCA user manual
 site_description: How LISCA analyses time-lapse microscopy of cells on micropattern arrays.
 site_url: https://keejkrej.github.io/lisca/
 repo_url: https://github.com/keejkrej/lisca
 repo_name: keejkrej/lisca
-edit_uri: edit/main/manual/
-docs_dir: manual
+edit_uri: edit/main/docs/manual/
+docs_dir: docs/manual
 site_dir: site
 strict: true
 

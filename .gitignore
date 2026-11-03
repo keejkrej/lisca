@@ -34,7 +34,7 @@ apps/*/desktop/release/
 mcps/
 .repos/
 
-# MkDocs user-manual build output (see mkdocs.yml, docs_dir: manual).
+# MkDocs Material build (user manual → GitHub Pages).
 /site/
 
 # Fixture workspace written by `pnpm run dev:studio-mock`.

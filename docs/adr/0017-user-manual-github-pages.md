@@ -6,8 +6,9 @@
 ## Decision
 
 We will publish a user-facing LISCA manual as a MkDocs Material site from
-`manual/`, with `mkdocs.yml` setting `docs_dir: manual`, and deploy it to
-GitHub Pages on push to `main`. Developer notes and ADRs stay under `docs/`.
+`docs/manual/`, with `mkdocs.yml` setting `docs_dir: docs/manual`, and deploy
+it to GitHub Pages on push to `main`. Developer notes and ADRs stay under the
+rest of `docs/`.
 
 ## Why
 
@@ -26,9 +27,11 @@ Rejected alternatives:
   rendered equations, and no stable public URL to cite.
 - Put the pages in a separate repository. Assay formulae would drift from the
   code that this repo pins.
+- Put a second copy at repo-root `manual/` with its own MkDocs config and
+  Pages workflow. GitHub Pages deploys one site; two trees would drift.
 
 ## Looks like a bug when
 
 A collaborator opens `docs/` looking for the user manual and finds only ADRs,
 or edits an ADR expecting it to appear on the Pages site. The user manual is
-`manual/`; Pages builds only that folder.
+`docs/manual/`; Pages builds only that folder.
