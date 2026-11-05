@@ -72,14 +72,21 @@ function createPreparedFrameBitmap(frame: FrameResult): HTMLCanvasElement {
   return canvas;
 }
 
-const preparedBitmapCache = { key: "", bitmap: null as HTMLCanvasElement | null };
+const preparedBitmapCache = {
+  key: "",
+  pixels: null as FrameResult["pixels"] | null,
+  bitmap: null as HTMLCanvasElement | null,
+};
 
 function getPreparedFrameBitmap(frame: FrameResult | null): HTMLCanvasElement | null {
   if (!frame) return null;
   const key = frameBitmapCacheKey(frame);
-  if (preparedBitmapCache.key === key) return preparedBitmapCache.bitmap;
+  if (preparedBitmapCache.pixels === frame.pixels && preparedBitmapCache.key === key) {
+    return preparedBitmapCache.bitmap;
+  }
   const bitmap = createPreparedFrameBitmap(frame);
   preparedBitmapCache.key = key;
+  preparedBitmapCache.pixels = frame.pixels;
   preparedBitmapCache.bitmap = bitmap;
   return bitmap;
 }
