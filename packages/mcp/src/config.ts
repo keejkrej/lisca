@@ -122,9 +122,13 @@ export function mcpStateDir(): string {
   return path.join(repoRoot(), "target", "mcp");
 }
 
-/** Path to a cargo target binary (release or debug), without existence checks. */
+/**
+ * Path to a cargo target binary (release or debug), without existence checks.
+ * Cargo writes `<name>.exe` on Windows, so the suffix has to follow the host.
+ */
 export function targetBinary(name: string, release: boolean): string {
-  return path.join(repoRoot(), "target", release ? "release" : "debug", name);
+  const file = process.platform === "win32" ? `${name}.exe` : name;
+  return path.join(repoRoot(), "target", release ? "release" : "debug", file);
 }
 
 export function isProductId(value: unknown): value is ProductId {

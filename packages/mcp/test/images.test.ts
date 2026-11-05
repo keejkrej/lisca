@@ -88,6 +88,17 @@ describe("renderFrame", () => {
     expect(ranged.applied).toEqual({ min: 10, max: 20 });
   });
 
+  it("does not apply a raw 16-bit window to pre-rendered 8-bit pixels", () => {
+    const rendered = renderFrame(
+      frame(1, 2, new Uint8Array([28, 220]), "uint8", {
+        suggestedContrast: { min: 15_889, max: 22_118 },
+        contrastDomain: { min: 0, max: 65_535 },
+      }),
+    );
+    expect(rendered.applied).toEqual({ min: 0, max: 255 });
+    expect(Array.from(pngIdat(rendered.png).gray)).toEqual([28, 220]);
+  });
+
   it("decodes uint16 little-endian pixels", () => {
     const buffer = new ArrayBuffer(4);
     const view = new DataView(buffer);

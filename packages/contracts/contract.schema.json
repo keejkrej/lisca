@@ -2228,13 +2228,10 @@
       ]
     },
     "LabelFreeProvider": {
-      "anyOf": [
-        {
-          "type": "string",
-          "enum": [
-            "openrouter"
-          ]
-        }
+      "type": "string",
+      "enum": [
+        "openrouter",
+        "ollama"
       ]
     },
     "LabelFreeHealth": {
@@ -2289,11 +2286,11 @@
       "properties": {
         "apiKey": {
           "type": "string"
+        },
+        "provider": {
+          "$ref": "#/definitions/LabelFreeProvider"
         }
-      },
-      "required": [
-        "apiKey"
-      ]
+      }
     },
     "LabelFreeLabelCount": {
       "type": "object",
@@ -2382,6 +2379,14 @@
           "type": "integer",
           "minimum": 0,
           "format": "uint32"
+        },
+        "positions": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 0,
+            "format": "uint32"
+          }
         }
       },
       "required": [

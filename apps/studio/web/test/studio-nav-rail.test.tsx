@@ -169,6 +169,7 @@ function renderStudioShell(initial = "/align?position=7") {
 afterEach(() => {
   clearStudioTaskCenterOpen();
   cleanup();
+  Reflect.deleteProperty(window, "liscaDesktop");
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
 });
@@ -176,6 +177,32 @@ afterEach(() => {
 Object.defineProperty(window, "scrollTo", { value: vi.fn(), writable: true });
 
 describe("StudioNavRail Task Center", () => {
+  it("replaces the normal top bar with the agent control strip", async () => {
+    Object.defineProperty(window, "liscaDesktop", {
+      configurable: true,
+      value: {
+        product: "studio",
+        controlList: async () => [
+          {
+            workspacePath: "/experiments/studio-demo",
+            mode: "agent-running",
+            agentName: "Claude Code",
+            operation: { label: "Cropping Pos41", detail: "12/100 ROI frames" },
+            revision: 3,
+          },
+        ],
+      },
+    });
+    renderStudioShell("/align");
+
+    expect(await screen.findByText(/Cropping Pos41/)).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Take over" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Stop" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Settings" })).toBeNull();
+    expect(screen.queryByRole("button", { name: /Expert mode$/ })).toBeNull();
+    expect(screen.queryByText("Studio")).toBeNull();
+  });
+
   it("hides tasks on Align and on pages that do not wait on a run", async () => {
     renderStudioShell("/align");
     expect(await screen.findByRole("button", { name: /Expert mode$/ })).toBeTruthy();
@@ -248,6 +275,8 @@ describe("StudioNavRail Task Center", () => {
     expect(nav.classList.contains("pl-12")).toBe(false);
     expect(nav.contains(trigger)).toBe(false);
     expect(statusBar.contains(trigger)).toBe(true);
+    expect(statusBar.classList.contains("grid")).toBe(true);
+    expect(screen.getByText("Studio").classList.contains("absolute")).toBe(false);
     expect(trigger.parentElement?.contains(expert)).toBe(true);
     expect(trigger.compareDocumentPosition(expert) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
 

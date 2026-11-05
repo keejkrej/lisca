@@ -14,18 +14,22 @@ use crate::protocol::{
     LabelFreeReferenceSetList,
 };
 
-use super::embed::{self, BATCH_SIZE, DIMENSIONS, MODEL_ID, REVISION};
+use super::embed::{self, Provider, DIMENSIONS, REVISION};
 use super::service::{self, ClassificationRow, InferenceFailure, ReferenceSetSummary, CACHE_CAP};
 
 pub fn health_report() -> LabelFreeHealth {
+    let provider = embed::provider();
     LabelFreeHealth {
         api_version: 1,
-        provider: LabelFreeProvider::OpenRouter,
-        configured: embed::has_api_key(),
-        model_id: MODEL_ID.to_string(),
+        provider: match provider {
+            Provider::OpenRouter => LabelFreeProvider::OpenRouter,
+            Provider::Ollama => LabelFreeProvider::Ollama,
+        },
+        configured: embed::has_credentials(),
+        model_id: provider.model_id().to_string(),
         revision: REVISION.to_string(),
         dimensions: DIMENSIONS as u32,
-        batch_size: BATCH_SIZE as u32,
+        batch_size: provider.batch_size() as u32,
         cache_cap: CACHE_CAP as u32,
     }
 }
@@ -37,7 +41,10 @@ pub async fn health() -> Json<LabelFreeHealth> {
 pub async fn save_key(
     Json(body): Json<LabelFreeKeyRequest>,
 ) -> Result<Json<LabelFreeHealth>, FsError> {
-    embed::set_api_key(&body.api_key);
+    let provider = body
+        .provider
+        .and_then(|provider| Provider::parse(&provider.to_string()));
+    embed::configure(provider, body.api_key.as_deref());
     Ok(Json(health_report()))
 }
 
@@ -65,8 +72,14 @@ pub async fn build_references(
 pub async fn classify(
     Json(body): Json<LabelFreeClassifyRequest>,
 ) -> Result<Json<LabelFreeClassificationList>, FsError> {
+    let positions = body.positions.clone();
     let rows = spawn_inference(move || {
-        service::classify(&body.workspace_path, &body.name, body.limit as usize)
+        service::classify(
+            &body.workspace_path,
+            &body.name,
+            body.limit as usize,
+            &positions,
+        )
     })
     .await?;
     let wire = rows
@@ -137,15 +150,31 @@ fn failure_error(failure: InferenceFailure) -> FsError {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::inference::embed::{set_provider, OPENROUTER_MODEL_ID};
 
     #[test]
     fn health_reports_openrouter_configuration() {
+        let _lock = crate::inference::provider_test_lock();
+        set_provider(Provider::OpenRouter);
         let health = health_report();
         let value = serde_json::to_value(&health).expect("health json");
         assert_eq!(value["apiVersion"], 1);
         assert_eq!(value["provider"], "openrouter");
-        assert_eq!(value["modelId"], MODEL_ID);
+        assert_eq!(value["modelId"], OPENROUTER_MODEL_ID);
         assert_eq!(value["revision"], REVISION);
         assert_eq!(value["dimensions"], serde_json::json!(DIMENSIONS));
+    }
+
+    #[test]
+    fn health_reports_the_local_ollama_provider() {
+        let _lock = crate::inference::provider_test_lock();
+        set_provider(Provider::Ollama);
+        let health = health_report();
+        let value = serde_json::to_value(&health).expect("health json");
+        assert_eq!(value["provider"], "ollama");
+        assert_eq!(value["modelId"], super::super::embed::OLLAMA_MODEL_ID);
+        // Local inference needs no credential.
+        assert_eq!(value["configured"], true);
+        set_provider(Provider::OpenRouter);
     }
 }

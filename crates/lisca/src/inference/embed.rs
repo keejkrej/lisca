@@ -1,8 +1,17 @@
-//! OpenRouter multimodal image embedding (`google/gemini-embedding-2`) for
-//! label-free reference sets and trajectory classification.
+//! Label-free image embeddings for reference sets and trajectory classification.
 //!
-//! There is no CPU fallback: if no OpenRouter API key is configured or the
-//! OpenRouter request fails, embedding fails fast.
+//! Two providers, selected at runtime from Studio Settings or
+//! `LISCA_EMBEDDING_PROVIDER`:
+//!
+//! - `openrouter`: `google/gemini-embedding-2` over `POST /api/v1/embeddings`
+//!   (needs an OpenRouter key, ADR-0013).
+//! - `ollama`: a local multimodal embedding model (`embeddinggemma-2`) over
+//!   `POST /api/embed`, for users with capable local hardware. No key, no
+//!   network egress.
+//!
+//! Encoder identity includes the provider, so reference sets and the plane cache
+//! built with one provider never mix with the other. There is no CPU fallback:
+//! a missing key or an unreachable provider fails fast.
 
 use std::io::Cursor;
 use std::sync::Mutex;
@@ -13,15 +22,79 @@ use image::codecs::png::PngEncoder;
 use image::{ExtendedColorType, ImageEncoder};
 use serde::{Deserialize, Serialize};
 
-pub const MODEL_ID: &str = "google/gemini-embedding-2";
+pub const OPENROUTER_MODEL_ID: &str = "google/gemini-embedding-2";
+pub const OLLAMA_MODEL_ID: &str = "embeddinggemma-2:latest";
 pub const REVISION: &str = "v1";
-pub const ENCODER_ID: &str = "google/gemini-embedding-2:v1:768";
 pub const DIMENSIONS: usize = 768;
 pub const BATCH_SIZE: usize = 32;
+/// Smaller requests keep a local CPU/GPU runner responsive.
+pub const OLLAMA_BATCH_SIZE: usize = 8;
+/// Constant text prompt paired with every frame on the local model: it is part of
+/// the embedding, so it must never vary between reference frames and queries.
+const OLLAMA_PROMPT: &str = "label-free microscopy ROI frame";
 
 const DEFAULT_OPENROUTER_EMBEDDINGS_URL: &str = "https://openrouter.ai/api/v1/embeddings";
+const DEFAULT_OLLAMA_URL: &str = "http://127.0.0.1:11434";
 
 static API_KEY: Mutex<Option<String>> = Mutex::new(None);
+static PROVIDER: Mutex<Option<Provider>> = Mutex::new(None);
+
+/// Embedding provider for label-free frames.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Provider {
+    OpenRouter,
+    Ollama,
+}
+
+impl Provider {
+    pub fn parse(value: &str) -> Option<Self> {
+        match value.trim().to_ascii_lowercase().as_str() {
+            "openrouter" | "cloud" => Some(Self::OpenRouter),
+            "ollama" | "local" => Some(Self::Ollama),
+            _ => None,
+        }
+    }
+
+    pub fn model_id(self) -> &'static str {
+        match self {
+            Self::OpenRouter => OPENROUTER_MODEL_ID,
+            Self::Ollama => OLLAMA_MODEL_ID,
+        }
+    }
+
+    pub fn batch_size(self) -> usize {
+        match self {
+            Self::OpenRouter => BATCH_SIZE,
+            Self::Ollama => OLLAMA_BATCH_SIZE,
+        }
+    }
+}
+
+/// Active provider: explicit selection first, then `LISCA_EMBEDDING_PROVIDER`.
+pub fn provider() -> Provider {
+    let selected = *PROVIDER
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
+    if let Some(provider) = selected {
+        return provider;
+    }
+    std::env::var("LISCA_EMBEDDING_PROVIDER")
+        .ok()
+        .and_then(|value| Provider::parse(&value))
+        .unwrap_or(Provider::OpenRouter)
+}
+
+pub fn set_provider(provider: Provider) {
+    let mut guard = PROVIDER
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
+    *guard = Some(provider);
+}
+
+/// Content-addressed encoder identity (`<model>:<revision>:<dimensions>`).
+pub fn encoder_id() -> String {
+    format!("{}:{REVISION}:{DIMENSIONS}", provider().model_id())
+}
 
 pub struct PlaneInput<'a> {
     pub width: u32,
@@ -87,6 +160,25 @@ pub fn set_api_key(api_key: &str) {
     }
 }
 
+/// Apply a settings update: switch provider and/or store (or clear) the key.
+pub fn configure(provider: Option<Provider>, api_key: Option<&str>) {
+    if let Some(provider) = provider {
+        set_provider(provider);
+    }
+    if let Some(key) = api_key {
+        set_api_key(key);
+    }
+}
+
+pub fn has_credentials() -> bool {
+    match provider() {
+        Provider::OpenRouter => has_api_key(),
+        // A local Ollama server needs no credential; the first embed call is what
+        // proves it is reachable, and it fails fast when it is not.
+        Provider::Ollama => true,
+    }
+}
+
 pub fn has_api_key() -> bool {
     resolve_api_key().is_ok()
 }
@@ -107,7 +199,11 @@ pub fn resolve_api_key() -> Result<String, String> {
             return Ok(trimmed.to_string());
         }
     }
-    Err("Save an OpenRouter API key in Settings before embedding label-free frames.".to_string())
+    Err(
+        "Save an OpenRouter API key in Settings → Inference before embedding label-free \
+         frames, or switch the provider to the local Ollama server."
+            .to_string(),
+    )
 }
 
 fn embeddings_url() -> String {
@@ -120,9 +216,29 @@ fn embeddings_url() -> String {
     DEFAULT_OPENROUTER_EMBEDDINGS_URL.to_string()
 }
 
+/// Base URL of the local Ollama server (`LISCA_OLLAMA_URL`), without `/api/embed`.
+fn ollama_base_url() -> String {
+    if let Ok(custom) = std::env::var("LISCA_OLLAMA_URL") {
+        let trimmed = custom.trim().trim_end_matches('/');
+        if !trimmed.is_empty() {
+            return trimmed.to_string();
+        }
+    }
+    DEFAULT_OLLAMA_URL.to_string()
+}
+
 /// Normalize a 16-bit microscopy plane using 1st-99th percentile linear stretching
 /// and encode it as an 8-bit grayscale PNG data URI (`data:image/png;base64,...`).
 pub fn plane_to_png_data_uri(width: u32, height: u32, pixels: &[u16]) -> Result<String, String> {
+    Ok(format!(
+        "data:image/png;base64,{}",
+        plane_to_png_base64(width, height, pixels)?
+    ))
+}
+
+/// Same rendering as [`plane_to_png_data_uri`] without the data-URI prefix, which
+/// is the shape Ollama's `/api/embed` accepts for the `image` field.
+pub fn plane_to_png_base64(width: u32, height: u32, pixels: &[u16]) -> Result<String, String> {
     let expected = (width as usize)
         .checked_mul(height as usize)
         .ok_or_else(|| "ROI frame dimensions overflow".to_string())?;
@@ -155,13 +271,93 @@ pub fn plane_to_png_data_uri(width: u32, height: u32, pixels: &[u16]) -> Result<
     PngEncoder::new(Cursor::new(&mut png_bytes))
         .write_image(&bytes, width, height, ExtendedColorType::L8)
         .map_err(|error| format!("failed to encode ROI frame PNG: {error}"))?;
-    Ok(format!("data:image/png;base64,{}", BASE64.encode(png_bytes)))
+    Ok(BASE64.encode(png_bytes))
+}
+
+#[derive(Serialize)]
+struct OllamaEmbedRequest<'a> {
+    model: &'a str,
+    input: Vec<OllamaEmbedInput>,
+}
+
+#[derive(Serialize)]
+struct OllamaEmbedInput {
+    text: &'static str,
+    /// Raw base64 PNG. Ollama rejects a `data:` URI and also rejects `images`
+    /// (plural) on embedding inputs — the field is `image`.
+    image: String,
+}
+
+#[derive(Deserialize)]
+struct OllamaEmbedResponse {
+    embeddings: Vec<Vec<f32>>,
 }
 
 pub fn embed_planes(planes: &[PlaneInput<'_>]) -> Result<Vec<Vec<f32>>, String> {
     if planes.is_empty() {
         return Ok(Vec::new());
     }
+    match provider() {
+        Provider::OpenRouter => embed_openrouter(planes),
+        Provider::Ollama => embed_ollama(planes),
+    }
+}
+
+fn embed_ollama(planes: &[PlaneInput<'_>]) -> Result<Vec<Vec<f32>>, String> {
+    let model = provider().model_id();
+    let url = format!("{}/api/embed", ollama_base_url());
+    let mut all_vectors = Vec::with_capacity(planes.len());
+
+    for chunk in planes.chunks(provider().batch_size()) {
+        let mut input = Vec::with_capacity(chunk.len());
+        for plane in chunk {
+            input.push(OllamaEmbedInput {
+                text: OLLAMA_PROMPT,
+                image: plane_to_png_base64(plane.width, plane.height, plane.pixels)?,
+            });
+        }
+        let body = serde_json::to_string(&OllamaEmbedRequest { model, input })
+            .map_err(|error| format!("failed to serialize Ollama request: {error}"))?;
+        let response = ureq::post(&url)
+            .header("Content-Type", "application/json")
+            .config()
+            .http_status_as_error(false)
+            .build()
+            .send(&body)
+            .map_err(|error| {
+                format!(
+                    "Ollama request to {url} failed: {error}. Start Ollama and pull {model} \
+                     (`ollama pull {model}`), or point LISCA_OLLAMA_URL at the server."
+                )
+            })?;
+        let status = response.status().as_u16();
+        let response_text = response
+            .into_body()
+            .read_to_string()
+            .map_err(|error| format!("failed to read Ollama response: {error}"))?;
+        if !(200..300).contains(&status) {
+            return Err(format!(
+                "Ollama returned HTTP {status}: {}",
+                response_text.trim()
+            ));
+        }
+        let parsed: OllamaEmbedResponse = serde_json::from_str(&response_text)
+            .map_err(|error| format!("invalid Ollama embedding response: {error}"))?;
+        if parsed.embeddings.len() != chunk.len() {
+            return Err(format!(
+                "Ollama returned {} embeddings for {} input frames",
+                parsed.embeddings.len(),
+                chunk.len()
+            ));
+        }
+        for embedding in parsed.embeddings {
+            all_vectors.push(normalize_vector(embedding)?);
+        }
+    }
+    Ok(all_vectors)
+}
+
+fn embed_openrouter(planes: &[PlaneInput<'_>]) -> Result<Vec<Vec<f32>>, String> {
     let api_key = resolve_api_key()?;
     let url = embeddings_url();
 
@@ -186,7 +382,7 @@ pub fn embed_planes(planes: &[PlaneInput<'_>]) -> Result<Vec<Vec<f32>>, String> 
             })
             .collect();
         let payload = OpenRouterEmbeddingRequest {
-            model: MODEL_ID,
+            model: OPENROUTER_MODEL_ID,
             dimensions: DIMENSIONS,
             encoding_format: "float",
             input,
@@ -246,7 +442,9 @@ pub fn embed_planes(planes: &[PlaneInput<'_>]) -> Result<Vec<Vec<f32>>, String> 
 pub fn normalize_vector(mut vector: Vec<f32>) -> Result<Vec<f32>, String> {
     if vector.len() != DIMENSIONS {
         return Err(format!(
-            "expected {DIMENSIONS}-dimensional embedding from {MODEL_ID}, got {}",
+            "expected {DIMENSIONS}-dimensional embedding from {}, got {}. Use another embedding model \
+             or pin the provider whose reference sets match it.",
+            provider().model_id(),
             vector.len()
         ));
     }
@@ -283,7 +481,8 @@ mod tests {
         let uri = plane_to_png_data_uri(2, 2, &[0, 100, 200, 300]).expect("png uri");
         assert!(uri.starts_with("data:image/png;base64,"));
         let dark = plane_to_png_data_uri(2, 2, &[0, 0, 0, 0]).expect("dark uri");
-        let bright = plane_to_png_data_uri(2, 2, &[65535, 65535, 65535, 65535]).expect("bright uri");
+        let bright =
+            plane_to_png_data_uri(2, 2, &[65535, 65535, 65535, 65535]).expect("bright uri");
         assert_ne!(dark, bright);
     }
 

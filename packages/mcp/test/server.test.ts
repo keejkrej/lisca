@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 
 import { createLiscaMcpServer, liscaTools } from "../src/server.ts";
+import { targetBinary } from "../src/config.ts";
 
 async function connectedClient() {
   const server = createLiscaMcpServer();
@@ -14,6 +15,13 @@ async function connectedClient() {
 }
 
 describe("lisca MCP server", () => {
+  it("uses the host executable suffix for cargo binaries", () => {
+    expect(
+      targetBinary("studio-server", false).endsWith(
+        process.platform === "win32" ? "studio-server.exe" : "studio-server",
+      ),
+    ).toBe(true);
+  });
   it("lists every contract and helper tool with input schemas", async () => {
     const client = await connectedClient();
     const { tools } = await client.listTools();
@@ -32,6 +40,7 @@ describe("lisca MCP server", () => {
     expect(names).toContain("tasks_list_tasks");
     expect(names).toContain("profile_list_profiles");
     expect(names).toContain("cli_analyze");
+    expect(names).toContain("cli_align");
     expect(names).toContain("cli_crop");
     expect(names).toContain("cli_fixture_workspace");
     expect(names).toContain("workspace_overview");

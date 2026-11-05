@@ -5331,13 +5331,10 @@
         "additionalProperties": false
       },
       "LabelFreeProvider": {
-        "anyOf": [
-          {
-            "type": "string",
-            "enum": [
-              "openrouter"
-            ]
-          }
+        "type": "string",
+        "enum": [
+          "openrouter",
+          "ollama"
         ]
       },
       "LabelFreeHealth": {
@@ -5408,12 +5405,26 @@
         "type": "object",
         "properties": {
           "apiKey": {
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "provider": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LabelFreeProvider"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
-        "required": [
-          "apiKey"
-        ],
         "additionalProperties": false
       },
       "LabelFreeLabelCount": {
@@ -5516,6 +5527,25 @@
               {
                 "minimum": 0,
                 "format": "uint32"
+              }
+            ]
+          },
+          "positions": {
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "allOf": [
+                    {
+                      "minimum": 0,
+                      "format": "uint32"
+                    }
+                  ]
+                }
+              },
+              {
+                "type": "null"
               }
             ]
           }

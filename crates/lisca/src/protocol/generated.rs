@@ -3150,6 +3150,8 @@ impl ::std::convert::From<::std::vec::Vec<LabelFreeClassification>>
 pub struct LabelFreeClassifyRequest {
     pub limit: u32,
     pub name: ::std::string::String,
+    #[serde(default, skip_serializing_if = "::std::vec::Vec::is_empty")]
+    pub positions: ::std::vec::Vec<u32>,
     #[serde(rename = "workspacePath")]
     pub workspace_path: ::std::string::String,
 }
@@ -3172,8 +3174,14 @@ pub struct LabelFreeHealth {
 #[doc = "`LabelFreeKeyRequest`"]
 #[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
 pub struct LabelFreeKeyRequest {
-    #[serde(rename = "apiKey")]
-    pub api_key: ::std::string::String,
+    #[serde(
+        rename = "apiKey",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub api_key: ::std::option::Option<::std::string::String>,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub provider: ::std::option::Option<LabelFreeProvider>,
 }
 #[doc = "`LabelFreeLabelCount`"]
 #[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
@@ -3197,11 +3205,14 @@ pub struct LabelFreeLabelCount {
 pub enum LabelFreeProvider {
     #[serde(rename = "openrouter")]
     OpenRouter,
+    #[serde(rename = "ollama")]
+    Ollama,
 }
 impl ::std::fmt::Display for LabelFreeProvider {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
             Self::OpenRouter => f.write_str("openrouter"),
+            Self::Ollama => f.write_str("ollama"),
         }
     }
 }
@@ -3210,6 +3221,7 @@ impl ::std::str::FromStr for LabelFreeProvider {
     fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
         match value {
             "openrouter" => Ok(Self::OpenRouter),
+            "ollama" => Ok(Self::Ollama),
             _ => Err("invalid value".into()),
         }
     }

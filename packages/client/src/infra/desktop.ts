@@ -37,6 +37,40 @@ export type LiscaDesktopBridge = {
   updateCheckEnabled?: () => Promise<boolean>;
   /** Persist the startup update check. Desktop only. */
   setUpdateCheckEnabled?: (enabled: boolean) => Promise<void>;
+  /** Status and connection details for the desktop-owned MCP server. */
+  mcpStatus?: () => Promise<LiscaDesktopMcpStatus>;
+  /** Enable or disable the desktop-owned MCP server. */
+  mcpSetEnabled?: (enabled: boolean) => Promise<LiscaDesktopMcpStatus>;
+  /** Current human/agent workspace ownership states. */
+  controlList?: () => Promise<LiscaWorkspaceControl[]>;
+  controlPause?: (workspacePath: string) => Promise<LiscaWorkspaceControl>;
+  controlTakeover?: (workspacePath: string) => Promise<LiscaWorkspaceControl>;
+  controlHandback?: (workspacePath: string) => Promise<LiscaWorkspaceControl>;
+  controlStop?: (workspacePath: string) => Promise<LiscaWorkspaceControl>;
+};
+
+export type LiscaWorkspaceControl = {
+  workspacePath: string;
+  mode: "human-control" | "agent-running" | "agent-paused" | "user-takeover";
+  agentName?: string;
+  operation?: {
+    requestId: string;
+    kind: "mutation" | "crop" | "analysis";
+    label: string;
+    detail?: string;
+  };
+  revision: number;
+};
+
+export type LiscaDesktopMcpStatus = {
+  product: string;
+  enabled: boolean;
+  running: boolean;
+  url: string;
+  token: string;
+  toolCount: number;
+  claudeCommand: string;
+  error?: string;
 };
 
 declare global {

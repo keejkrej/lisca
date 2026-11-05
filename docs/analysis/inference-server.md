@@ -5,13 +5,18 @@ assays without any `fluorescence`, `label-free`, or `cuda` Cargo feature split
 and without bundling ONNX Runtime CUDA libraries (ADR-0013).
 
 For v1 label-free assays, the Studio router (`/studio/label-free/*`) embeds ROI
-frames through OpenRouter using `google/gemini-embedding-2` (768 dimensions). It
-uses the same client transport as the rest of Studio: Tauri IPC in the desktop
-app and same-origin HTTP when Studio is hosted (ADR-0002). Users configure their
-OpenRouter API key in **Settings → Inference** (stored in memory for the
-session via `POST /studio/label-free/key`, or supplied via the
-`OPENROUTER_API_KEY` environment variable); there is no custom inference
-endpoint URL setting in Studio.
+frames through one of two providers (ADR-0018):
+
+- **OpenRouter** — `google/gemini-embedding-2` (768 dimensions), configured with
+  an API key in **Settings → Inference** (stored in memory for the session via
+  `POST /studio/label-free/key`, or supplied via `OPENROUTER_API_KEY`).
+- **Local Ollama** — `embeddinggemma-2` over `POST /api/embed` on
+  `LISCA_OLLAMA_URL` (default `http://127.0.0.1:11434`), selected with
+  `{"provider": "ollama"}` or `LISCA_EMBEDDING_PROVIDER=ollama`. No key, no
+  egress.
+
+There is no custom inference endpoint URL setting in Studio, and switching
+provider changes the encoder id, so reference sets never mix across providers.
 
 ## OpenRouter label-free pipeline and temporal optimization
 

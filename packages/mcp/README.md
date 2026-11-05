@@ -1,12 +1,21 @@
 # @lisca/mcp
 
-Local MCP server for the whole LiSCA lineup — Aligner, Annotator, and Studio. An
-MCP host (Claude Code, Claude Desktop, Cline, …) connects to `lisca-mcp` and can
-then drive the products end to end:
+Local MCP server for source checkouts and hosted deployments of the whole LiSCA
+lineup — Aligner, Annotator, and Studio.
+
+**Packaged desktop users do not need this package.** Desktop Studio, Aligner, and
+Annotator expose their own Rust MCP server inside the app (ADR-0019). Enable it
+under **Settings → Agents**, then paste the displayed `claude mcp add` command.
+That listener uses the running app's live backend and task state and needs no
+Node.js, repository, or standalone server.
+
+Use this TypeScript server when developing against a checkout, driving a hosted
+HTTP deployment, or running in a container. An MCP host (Claude Code, Claude
+Desktop, Cline, …) connects to `lisca-mcp` and can then drive the products end to end:
 
 - **Contract tools** — every operation in the JSON API (`packages/contracts/openapi.json`) becomes one MCP tool: `align_scan_source`, `annotate_smart_segment`, `studio_start_analysis`, `fs_list_directory`, `tasks_list_tasks`, …
 - **Server lifecycle** — `server_status` / `server_start` / `server_stop` boot the Rust product servers for a local checkout.
-- **CLIs** — `cli_analyze`, `cli_crop`, and `cli_fixture_workspace` run `lisca-analyze`, `lisca-crop`, and the fixture materializer.
+- **CLIs** — `cli_align`, `cli_analyze`, `cli_crop`, and `cli_fixture_workspace` run `lisca-align`, `lisca-analyze`, `lisca-crop`, and the fixture materializer. `cli_align` detects the micropattern lattice from one frame (island segmentation + least-squares hex/rect fit) and, with `apply`, writes `bbox/Pos{n}.csv` and `align/Pos{n}.json` — the Aligner canvas step an agent otherwise cannot perform.
 - **Workspace reads** — `workspace_overview`, `workspace_read_file`, `workspace_read_plot` introspect a workspace on disk (assay.json, bbox, ROI crops, annotations, analysis CSVs, result figures).
 - **Waits** — `task_wait`, `analysis_wait`, `crop_wait` poll long-running jobs until they finish.
 
@@ -50,7 +59,11 @@ is up.
 
 ## Where lisca-mcp sits relative to the apps
 
-Nowhere inside them. The apps never launch lisca-mcp and know nothing about
+It is a separate, host-owned process for **development and hosted deployments**.
+Packaged desktop apps instead serve MCP natively from their Tauri process
+(ADR-0019); do not make desktop users install this package.
+
+For a source checkout, the apps never launch `lisca-mcp` and know nothing about
 it — it is a _fourth process_, owned by the MCP host (Claude Code and friends
 spawn it over stdio; a container entrypoint runs it in HTTP mode). It is a
 second client of the same JSON API the web UI is (ADR-0002 keeps the Rust
@@ -64,34 +77,25 @@ Dev / hosted / container
   MCP host ──stdio──▶ lisca-mcp ──HTTP──▶ *-server :197xx ◀──fetch── web UI
 
 Packaged desktop (Tauri)
-  Claude Code ──stdio──▶ lisca-mcp ──HTTP──▶ ✗ no listener
-  webview ──Tauri IPC (lisca_request)──▶ router embedded in the Tauri process
+  Claude Code ──HTTP + bearer──▶ native MCP :197xx ─┐
+  webview ──Tauri IPC (lisca_request)──────────────┴─▶ same router + task state
 ```
 
 - **Dev and hosted builds** run the standalone `*-server` binary
   (`http::run_server`, port 19765/19766/19767) — a real TCP listener lisca-mcp
   calls like any other HTTP client.
-- **Packaged desktop builds** embed the very same Axum router in the Tauri
-  process (`IpcBackend`) and dispatch webview requests through the
-  `lisca_request` Tauri command. Per ADR-0002, desktop bundles open no backend
-  TCP port at all — so lisca-mcp cannot reach a running desktop app, and no
-  amount of spawning changes that.
+- **Packaged desktop** embeds the same Axum router in the Tauri process and, when
+  the user enables **Settings → Agents**, serves only the MCP endpoint on
+  loopback from that process. There is still no general backend TCP listener.
+  Use the desktop's native endpoint; `lisca-mcp` cannot reach Tauri IPC.
 
-Practical consequence: when only a packaged Studio/Aligner/Annotator desktop
-app is running, the contract tools have nothing to talk to. The CLI and
-workspace tools still work (they touch the disk, not the app), and
-`server_start` fixes the rest by booting the standalone server binary — which
-runs the identical `*_server::app()` router factory the desktop app embeds.
-Agent and user see the same handlers over the same workspace files; the one
-divergence is in-memory state (task progress in the spawned server is not the
-desktop app's), because they are two processes.
-
-If you ever want the desktop app to own the MCP server (a Settings toggle that
-exposes the app to agents and shuts down with it), two changes are required:
-a loopback listener for the embedded router in `crates/lisca-tauri` — which
-reverses an ADR-0002 consequence and needs its own ADR, token, and
-default-off gating — plus a bundled Node runtime for packaged installs.
-Until then, host-owned lisca-mcp plus `server_start` is the intended shape.
+Practical consequence for source-based MCP: when only a packaged desktop app is
+running with its native MCP disabled, these contract tools have nothing to talk
+to. The CLI and workspace tools still work (they touch the disk, not the app),
+and `server_start` can boot the standalone server binary for development.
+Prefer the app's own MCP endpoint for an installed desktop app; a separately
+spawned server has different in-memory state even though it shares workspace
+files.
 
 ## Environment variables
 

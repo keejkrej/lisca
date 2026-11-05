@@ -13,7 +13,7 @@ use crate::image_source::RawFrame;
 use crate::protocol::RoiFrameRequest;
 use crate::roi::{self, ClassifiedFrame};
 
-use super::embed::{embed_planes, PlaneInput, DIMENSIONS, ENCODER_ID, MODEL_ID, REVISION};
+use super::embed::{self, embed_planes, PlaneInput, DIMENSIONS, REVISION};
 
 const QUERY_CAP: usize = 64;
 const COARSE_STRIDE: usize = 16;
@@ -105,7 +105,7 @@ pub fn list_reference_sets(workspace: &str) -> Result<Vec<ReferenceSetSummary>, 
     Ok(disk
         .sets
         .iter()
-        .filter(|set| set.encoder_id == ENCODER_ID)
+        .filter(|set| set.encoder_id == embed::encoder_id())
         .map(summary)
         .collect())
 }
@@ -129,12 +129,13 @@ pub fn build_from_annotations(
         ));
     }
 
+    let encoder_id = embed::encoder_id();
     let _guard = store_lock();
     let mut disk = read_disk(workspace)?;
     if disk
         .sets
         .iter()
-        .any(|set| set.name == name && set.encoder_id == ENCODER_ID)
+        .any(|set| set.name == name && set.encoder_id == encoder_id)
     {
         return Err(InferenceFailure::Conflict(format!(
             "Reference set '{name}' already exists for this encoder. Choose a new name."
@@ -173,8 +174,8 @@ pub fn build_from_annotations(
 
     let stored = StoredSet {
         name: name.to_string(),
-        encoder_id: ENCODER_ID.to_string(),
-        model_id: MODEL_ID.to_string(),
+        encoder_id,
+        model_id: embed::provider().model_id().to_string(),
         revision: REVISION.to_string(),
         dimensions: DIMENSIONS,
         examples,
@@ -189,15 +190,17 @@ pub fn classify(
     workspace: &str,
     name: &str,
     limit: usize,
+    positions: &[u32],
 ) -> Result<Vec<ClassificationRow>, InferenceFailure> {
     validate_name(name)?;
     let limit = limit.clamp(1, QUERY_CAP);
+    let encoder_id = embed::encoder_id();
     let _guard = store_lock();
     let mut disk = read_disk(workspace)?;
     let set = disk
         .sets
         .iter()
-        .find(|set| set.name == name && set.encoder_id == ENCODER_ID)
+        .find(|set| set.name == name && set.encoder_id == encoder_id)
         .cloned()
         .ok_or_else(|| {
             InferenceFailure::Missing(format!(
@@ -214,6 +217,9 @@ pub fn classify(
 
     let mut targets: Vec<(u32, u32, Vec<u32>)> = Vec::new();
     for position in scan.positions {
+        if !positions.is_empty() && !positions.contains(&position.pos) {
+            continue;
+        }
         if !position.channels.contains(&channel) || !position.z_slices.contains(&z) {
             continue;
         }
@@ -464,7 +470,9 @@ fn load_frame(
         z,
     };
     roi::load_roi_frame(workspace, request).map_err(|error| {
-        InferenceFailure::Io(format!("Pos{pos} Roi{roi} C{channel} T{time} Z{z}: {error}"))
+        InferenceFailure::Io(format!(
+            "Pos{pos} Roi{roi} C{channel} T{time} Z{z}: {error}"
+        ))
     })
 }
 
@@ -520,6 +528,7 @@ fn cached_embed_batch(
     disk: &mut Disk,
     frames: &[RawFrame],
 ) -> Result<Vec<Vec<f32>>, InferenceFailure> {
+    let encoder_id = embed::encoder_id();
     let mut results: Vec<Option<Vec<f32>>> = vec![None; frames.len()];
     let mut missing_indices = Vec::new();
     let mut missing_keys = Vec::new();
@@ -527,7 +536,7 @@ fn cached_embed_batch(
 
     for (index, frame) in frames.iter().enumerate() {
         let key = format!(
-            "{ENCODER_ID}:{}x{}:{}",
+            "{encoder_id}:{}x{}:{}",
             frame.width,
             frame.height,
             fnv64(&frame.data)
@@ -547,11 +556,7 @@ fn cached_embed_batch(
 
     if !missing_planes.is_empty() {
         let embedded = embed_planes(&missing_planes).map_err(InferenceFailure::Invalid)?;
-        for ((index, key), vector) in missing_indices
-            .into_iter()
-            .zip(missing_keys)
-            .zip(embedded)
-        {
+        for ((index, key), vector) in missing_indices.into_iter().zip(missing_keys).zip(embedded) {
             if disk.cache.len() >= CACHE_CAP {
                 disk.cache.remove(0);
             }
@@ -647,7 +652,7 @@ fn write_disk(workspace: &str, disk: &Disk) -> Result<(), InferenceFailure> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::inference::embed::set_api_key;
+    use crate::inference::embed::{set_api_key, set_provider, Provider, OPENROUTER_MODEL_ID};
     use crate::protocol::{AnnotationLabel, RoiFrameAnnotationPayload};
     use base64::engine::general_purpose::STANDARD as BASE64;
     use base64::Engine;
@@ -734,7 +739,7 @@ mod tests {
 
                 let response_json = serde_json::to_string(&serde_json::json!({
                     "data": data,
-                    "model": MODEL_ID,
+                    "model": OPENROUTER_MODEL_ID,
                 }))
                 .expect("serialize response");
                 let response = format!(
@@ -754,6 +759,7 @@ mod tests {
         let (mock_url, embedded_inputs) = start_mock_openrouter();
         std::env::set_var("LISCA_OPENROUTER_EMBEDDINGS_URL", &mock_url);
         set_api_key("test-openrouter-key");
+        set_provider(Provider::OpenRouter);
 
         let workspace = temp_workspace("references");
         let path = workspace.to_string_lossy().to_string();
@@ -763,12 +769,13 @@ mod tests {
         assert_eq!(built.count, 2);
         assert_eq!(built.labels.get("low").copied(), Some(1));
         assert_eq!(built.labels.get("high").copied(), Some(1));
-        assert_eq!(built.model_id, MODEL_ID);
+        assert_eq!(built.model_id, OPENROUTER_MODEL_ID);
 
         let again = build_from_annotations(&path, "annotations");
         assert!(matches!(again, Err(InferenceFailure::Conflict(_))));
 
-        let rows = classify(&path, "annotations", 8).expect("classify");
+        let rows = classify(&path, "annotations", 8, &[]).expect("classify");
+
         assert_eq!(rows.len(), 2);
         // Roi2 is constant low across all 33 timepoints -> short-circuits at T=0
         assert_eq!(rows[0].roi, 2);
