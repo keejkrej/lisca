@@ -12,11 +12,15 @@ export function AlignerRight() {
   return (
     <RailSidebar>
       <AlignGridRail
-        disabled={!canvas.frame}
+        detectLowConfidence={canvas.detectLowConfidence}
+        detectReport={canvas.detectReport}
+        detecting={canvas.detecting}
+        disabled={!canvas.frame || canvas.detecting}
         grid={canvas.grid}
         sectionAppearance="rail"
         shownTranslation={{ tx: canvas.effectiveGrid.tx, ty: canvas.effectiveGrid.ty }}
         translationEditable={isAlignDriftTranslationEditable(canvas.drift, canvas.selection.time)}
+        onDetectGrid={(shape) => void canvas.detectGrid(shape)}
         onGridChange={canvas.setGrid}
         onTranslationDelta={canvas.adjustTranslation}
       />

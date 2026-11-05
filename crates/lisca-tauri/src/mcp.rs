@@ -360,7 +360,7 @@ async fn dispatch_rpc(
                     "version": env!("CARGO_PKG_VERSION")
                 },
                 "instructions": format!(
-                    "Drive the running LiSCA {product} desktop app. Contract tools use the same live backend and task state as its UI. Use cli_align to detect a micropattern grid, align_crop_roi to crop, annotate_* to label frames, and studio_* for inference and analysis. Changes are saved in the workspace; the UI may need a reload to show them."
+                    "Drive the running LiSCA {product} desktop app. Contract tools use the same live backend and task state as its UI. Use align_detect_grid for Auto-detect (preview; persist with align_save_bbox), align_crop_roi to crop, annotate_* to label frames, and studio_* for inference and analysis. Changes are saved in the workspace; the UI may need a reload to show them."
                 )
             }),
         ),
@@ -1094,6 +1094,7 @@ mod tests {
             .map(|tool| tool.name.as_str())
             .collect::<Vec<_>>();
         assert!(names.contains(&"align_crop_roi"));
+        assert!(names.contains(&"align_detect_grid"));
         assert!(names.contains(&"annotate_load_roi_frame"));
         assert!(names.contains(&"studio_classify_label_free"));
         assert!(names.contains(&"cli_align"));
@@ -1113,6 +1114,7 @@ mod tests {
     fn aligner_catalog_does_not_offer_studio_only_routes() {
         let tools = catalog("aligner").expect("catalog");
         assert!(tools.iter().any(|tool| tool.name == "align_load_frame"));
+        assert!(tools.iter().any(|tool| tool.name == "align_detect_grid"));
         assert!(!tools
             .iter()
             .any(|tool| tool.name == "studio_start_analysis"));

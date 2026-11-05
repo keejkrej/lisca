@@ -12,5 +12,6 @@ describe("createStudioPort", () => {
     expect(typeof port.saveRoiFrameAnnotation).toBe("function");
     expect(typeof port.scanRoiWorkspace).toBe("function");
     expect(typeof port.loadRoiFrame).toBe("function");
+    expect(typeof port.detectGrid).toBe("function");
   });
 });

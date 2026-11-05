@@ -1,6 +1,7 @@
 import type {
   AlignDrift,
   AlignGridPatternCoord,
+  AlignGridShape,
   AlignGridState,
   AlignerSource,
   VariationExcludePreviewResponse,
@@ -14,8 +15,10 @@ import type { FrameResult } from "@lisca/utils";
 import {
   adjustAlignDriftTranslation,
   alignStateFromCurrent,
+  applyDetectedAlignGrid,
   applyDisplayedAlignGridCommit,
   buildBboxCsv,
+  detectGridReport,
   clearAlignDriftKeyframe,
   clearAlignDriftPins,
   collectAlignGridEdgePatterns,
@@ -171,6 +174,9 @@ export function useAlignSessionCore(options: UseAlignSessionCoreOptions) {
   const [variationExcludePreview, setVariationExcludePreview] =
     createSignal<VariationExcludePreview | null>(null);
   const [variationExcludeLoading, setVariationExcludeLoading] = createSignal(false);
+  const [detecting, setDetecting] = createSignal(false);
+  const [detectReport, setDetectReport] = createSignal<string | null>(null);
+  const [detectLowConfidence, setDetectLowConfidence] = createSignal(false);
   let stopCropProgress: () => void = () => {};
   onCleanup(() => stopCropProgress());
 
@@ -692,6 +698,43 @@ export function useAlignSessionCore(options: UseAlignSessionCoreOptions) {
   const writeLattice = (next: { grid?: AlignGridState; drift?: AlignDrift | null }) => {
     actions.setLattice(setUi, next);
   };
+  const detectCurrentGrid = async (shape?: AlignGridShape) => {
+    const currentUi = ui();
+    const source = currentUi.source;
+    if (!source || !currentUi.frame || detecting()) return;
+    const selection = navSelection();
+    setDetecting(true);
+    actions.setError(setUi, null);
+    setDetectReport(null);
+    setDetectLowConfidence(false);
+    actions.setStatus(setUi, "Detecting grid");
+    try {
+      const result = await runClientEffect(
+        backend.client.detectGrid({
+          source,
+          request: selection,
+          ...(shape ? { shape } : {}),
+        }),
+      );
+      writeLattice({
+        grid: applyDetectedAlignGrid(currentUi.grid, currentUi.drift, selection.time, result.grid),
+      });
+      sessionActions.setExcludedPatternsForCurrentPosition([]);
+      const report = detectGridReport(result);
+      setDetectReport(report.text);
+      setDetectLowConfidence(report.lowConfidence);
+      actions.setStatus(setUi, report.text);
+    } catch (cause) {
+      setDetectReport(null);
+      setDetectLowConfidence(false);
+      actions.setError(
+        setUi,
+        `${backend.toErrorMessage(cause, "Grid detection failed")} Place the grid by hand.`,
+      );
+    } finally {
+      setDetecting(false);
+    }
+  };
   const setDriftDelta = (dx: number, dy: number) => {
     const current = ui();
     const next = setAlignDriftDelta(
@@ -774,6 +817,10 @@ export function useAlignSessionCore(options: UseAlignSessionCoreOptions) {
       return rest;
     },
     saveCurrent,
+    detectGrid: detectCurrentGrid,
+    detecting,
+    detectReport,
+    detectLowConfidence,
     saveWithSmartExclusion,
     applySmartExclusion,
     adjustTranslation,

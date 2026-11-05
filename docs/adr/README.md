@@ -31,3 +31,4 @@ Why a shipped choice looks the way it does. Agents write these during the change
 | [0018](0018-local-ollama-embedding-provider.md)    | accepted   | Local Ollama embeddings are a second label-free provider                     |
 | [0019](0019-desktop-owned-mcp.md)                  | accepted   | Desktop apps own their local MCP server                                      |
 | [0020](0020-workspace-control-and-takeover.md)     | accepted   | One workspace writer with explicit human takeover                            |
+| [0021](0021-auto-detect-grid-preview.md)           | accepted   | Auto-detect grid is a preview; persist stays Save bbox                       |

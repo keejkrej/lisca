@@ -4,7 +4,7 @@ import type { ProductId } from "./config.ts";
  * Which standalone product servers mount a given operation. Route groups follow
  * the routers merged in each app's `server/src/lib.rs`:
  *
- * - Aligner serves `/fs` and its eight lightweight `/align` routes.
+ * - Aligner serves `/fs` and its lightweight `/align` routes (including Auto-detect).
  * - Annotator serves `/fs`, `/annotate`, and `/tasks`.
  * - Studio serves `/fs`, `/align` (including the crop routes), `/annotate`,
  *   `/tasks`, `/profile`, `/memory`, and `/studio`.

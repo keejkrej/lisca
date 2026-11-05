@@ -9,6 +9,8 @@ import { decodeJsonEither, formatSchemaError } from "../src/decode";
 import {
   AlignerSourceSchema,
   FramePayloadSchema,
+  DetectGridRequestSchema,
+  DetectGridResponseSchema,
   LoadFrameRequestSchema,
   TaskDetailSchema,
   RoiIndexEntrySchema,
@@ -66,6 +68,39 @@ describe("golden wire roundtrip", () => {
     const decoded = decodeFixture(SaveBboxRequestSchema, "save-bbox-request.json");
     expect(decoded.workspacePath).toBe("/workspace/Pos0");
     expect(decoded.alignState.excludedPatterns).toEqual([{ i: 0, j: 1 }]);
+  });
+
+  it("decodes DetectGridRequest with an optional shape override", () => {
+    const decoded = decodeFixture(DetectGridRequestSchema, "detect-grid-request.json");
+    expect(decoded.source.kind).toBe("nd2");
+    expect(decoded.request.pos).toBe(1);
+    expect(decoded.shape).toBe("hex");
+    expect(decoded.patternWidth).toBeUndefined();
+  });
+
+  it("decodes DetectGridResponse quality fields", () => {
+    const decoded = decodeJsonEither(DetectGridResponseSchema, {
+      grid: {
+        enabled: true,
+        shape: "hex",
+        tx: 1.5,
+        ty: -2.25,
+        rotation: 0.21,
+        spacingA: 40,
+        spacingB: 40,
+        patternWidth: 32,
+        patternHeight: 32,
+        opacity: 0.35,
+      },
+      count: 96,
+      islands: 102,
+      confidence: 0.94,
+      residualPx: 1.2,
+    });
+    if (Result.isFailure(decoded)) throw new Error(formatSchemaError(decoded.failure));
+    expect(decoded.success.count).toBe(96);
+    expect(decoded.success.confidence).toBe(0.94);
+    expect(decoded.success.grid.shape).toBe("hex");
   });
 
   it("decodes WorkspaceScan dimensions", () => {

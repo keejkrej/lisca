@@ -160,6 +160,26 @@ export const SaveBboxRequestSchema = Schema.Struct({
   alignState: SavedAlignStateSchema,
 }).annotate({ identifier: "SaveBboxRequest" });
 
+/** POST /align/detect-grid request body. Preview only: does not write bbox or align files. */
+export const DetectGridRequestSchema = Schema.Struct({
+  source: AlignerSourceSchema,
+  request: FrameRequestSchema,
+  shape: Schema.optional(AlignGridShapeSchema),
+  patternWidth: Schema.optional(F64),
+  patternHeight: Schema.optional(F64),
+  minSpacing: Schema.optional(F64),
+  maxSpacing: Schema.optional(F64),
+}).annotate({ identifier: "DetectGridRequest" });
+
+/** POST /align/detect-grid response. Lattice for the editable Align session; persist with save-bbox. */
+export const DetectGridResponseSchema = Schema.Struct({
+  grid: AlignGridStateSchema,
+  count: U32,
+  islands: U32,
+  confidence: F64,
+  residualPx: F64,
+}).annotate({ identifier: "DetectGridResponse" });
+
 export const LoadAlignStateQuerySchema = Schema.Struct({
   workspacePath: Schema.String,
   pos: U32FromString,
@@ -212,6 +232,8 @@ export type RoiPosExistsResponse = typeof RoiPosExistsResponseSchema.Type;
 export type ScanSourceRequest = typeof ScanSourceRequestSchema.Type;
 export type LoadFrameRequest = typeof LoadFrameRequestSchema.Type;
 export type SaveBboxRequest = typeof SaveBboxRequestSchema.Type;
+export type DetectGridRequest = typeof DetectGridRequestSchema.Type;
+export type DetectGridResponse = typeof DetectGridResponseSchema.Type;
 export type LoadAlignStateQuery = typeof LoadAlignStateQuerySchema.Type;
 export type OutputPathsQuery = typeof OutputPathsQuerySchema.Type;
 export type SavedBboxPositionsQuery = typeof SavedBboxPositionsQuerySchema.Type;

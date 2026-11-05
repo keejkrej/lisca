@@ -146,6 +146,28 @@ describe("AlignGrid section placement", () => {
     expect(onGridChange).not.toHaveBeenCalled();
   });
 
+  it("runs Auto-detect from the Grid section without requiring a Save", () => {
+    const onDetectGrid = vi.fn();
+    render(() => (
+      <AlignGridRail
+        grid={createDefaultAlignGrid()}
+        onDetectGrid={onDetectGrid}
+        onGridChange={() => undefined}
+        sectionAppearance="rail"
+      />
+    ));
+
+    const grid = within(sectionFor("Grid"));
+    expect(grid.getByRole("button", { name: "Auto-detect" })).toBeTruthy();
+    expect(grid.getByLabelText("Detect shape")).toBeTruthy();
+    expect(
+      within(sectionFor("Geometry")).queryByRole("button", { name: "Auto-detect" }),
+    ).toBeNull();
+
+    fireEvent.click(grid.getByRole("button", { name: "Auto-detect" }));
+    expect(onDetectGrid).toHaveBeenCalledWith(undefined);
+  });
+
   it("preserves the established combined framed section", () => {
     render(() => <GridFixture />);
 

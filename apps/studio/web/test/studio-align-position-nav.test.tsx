@@ -81,6 +81,10 @@ function pageValue(pos: Accessor<number>): StudioAlignPageContextValue {
     setExcludedPatternsForCurrentPosition: () => {},
     setVariationExcludeThreshold: () => {},
     saveCurrentPosition: async () => true,
+    detecting: false,
+    detectReport: null,
+    detectLowConfidence: false,
+    detectGrid: async () => {},
     goBack: () => {},
     goNext: () => {},
     requestCrop: async () => {},
@@ -124,6 +128,7 @@ describe("Studio Align position buttons", () => {
     expect(screen.queryByText("Position")).toBeNull();
     expect(screen.queryByText("Z plane")).toBeNull();
     expect(screen.queryByRole("button", { name: "Drift" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Auto-detect" })).toBeTruthy();
   });
 
   it("enables Back and disables Next on the last position", () => {
