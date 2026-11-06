@@ -72,6 +72,16 @@ export function useAlignCanvas() {
     get status() {
       return state().status;
     },
+    get detecting() {
+      return state().detecting;
+    },
+    get detectReport() {
+      return state().detectReport;
+    },
+    get detectLowConfidence() {
+      return state().detectLowConfidence;
+    },
+    detectGrid: (shape?: Parameters<AlignState["detectGrid"]>[0]) => state().detectGrid(shape),
     get workspacePath() {
       return state().workspacePath;
     },

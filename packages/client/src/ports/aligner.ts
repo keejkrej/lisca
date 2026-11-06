@@ -47,6 +47,9 @@ export function createAlignerPort(
         client.align.saveBbox({ payload: { workspacePath, pos, csv, alignState } }),
       );
     },
+    detectGrid(request) {
+      return toClientEffect(client.align.detectGrid({ payload: request }));
+    },
     listSavedBboxPositions(workspacePath) {
       return toClientEffect(client.align.listSavedBboxPositions({ query: { workspacePath } }));
     },

@@ -11,6 +11,8 @@ import type {
   CropRoiProgress,
   CropRoiRequest,
   CropRoiResponse,
+  DetectGridRequest,
+  DetectGridResponse,
   FrameRequest,
   HostListDirectoryResult,
   HostWindowsDrivesResponse,
@@ -105,6 +107,7 @@ export type AlignerDataPort = HostPort &
       csv: string,
       alignState: SavedAlignState,
     ): ClientEffect<SaveBboxResponse>;
+    detectGrid(request: DetectGridRequest): ClientEffect<DetectGridResponse>;
     listSavedBboxPositions(workspacePath: string): ClientEffect<number[]>;
     cropRoi(request: CropRoiRequest): ClientEffect<CropRoiResponse>;
     getLatestCropProgress(workspacePath: string): ClientEffect<CropRoiProgress | null>;
@@ -124,7 +127,10 @@ export type StudioDataPort = AlignerDataPort &
     getAnalysisResults(workspacePath: string): ClientEffect<AnalysisProgress | null>;
     getLatestAnalysisProgress(workspacePath: string): ClientEffect<AnalysisProgress | null>;
     labelFreeHealth(): ClientEffect<LabelFreeHealth>;
-    saveLabelFreeKey(apiKey: string): ClientEffect<LabelFreeHealth>;
+    saveLabelFreeKey(
+      apiKey?: string,
+      provider?: "openrouter" | "ollama",
+    ): ClientEffect<LabelFreeHealth>;
     listLabelFreeReferences(workspacePath: string): ClientEffect<LabelFreeReferenceSet[]>;
     buildLabelFreeReferences(
       workspacePath: string,

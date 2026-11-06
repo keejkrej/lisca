@@ -1,4 +1,4 @@
-import type { AlignGridState } from "@lisca/contracts";
+import type { AlignGridShape, AlignGridState } from "@lisca/contracts";
 import { createDefaultAlignGrid, degreesToRadians, radiansToDegrees } from "@lisca/utils";
 import { AlignGrid } from "./align-grid";
 
@@ -13,6 +13,10 @@ export function AlignGridRail(props: {
   disabled?: boolean;
   sectionAppearance?: "framed" | "rail";
   railPart?: "all" | "grid" | "geometry";
+  detecting?: boolean;
+  detectReport?: string | null;
+  detectLowConfidence?: boolean;
+  onDetectGrid?: (shape?: AlignGridShape) => void;
   onGridChange: (next: AlignGridState | ((current: AlignGridState) => AlignGridState)) => void;
 }) {
   const disabled = () => props.disabled ?? false;
@@ -92,8 +96,12 @@ export function AlignGridRail(props: {
           spacingB,
         })
       }
+      detectLowConfidence={props.detectLowConfidence}
+      detectReport={props.detectReport}
+      detecting={props.detecting}
       overlayOpacity={props.grid.opacity}
       overlayVisible={props.grid.enabled}
+      onDetectGrid={props.onDetectGrid}
       patternHeight={props.grid.patternHeight}
       patternMin={1}
       patternWidth={props.grid.patternWidth}

@@ -8,6 +8,7 @@ import type {
 } from "@lisca/contracts";
 import {
   adjustAlignDriftTranslation,
+  interpolateAlignDrift,
   normalizeAlignDrift,
   type AlignDriftInput,
 } from "./align-drift";
@@ -148,6 +149,52 @@ export function createDefaultAlignGrid(): AlignGridState {
     patternWidth: 128,
     patternHeight: 128,
     opacity: 0.35,
+  };
+}
+
+/** Fraction of islands that must land on-lattice before Auto-detect is treated as confident. */
+export const ALIGN_DETECT_LOW_CONFIDENCE = 0.7;
+
+export type DetectGridQuality = {
+  confidence: number;
+  residualPx: number;
+  count: number;
+};
+
+export type DetectGridReport = {
+  lowConfidence: boolean;
+  text: string;
+};
+
+/** Copy a detected lattice into the editable session, keeping overlay opacity and current-time drift. */
+export function applyDetectedAlignGrid(
+  current: AlignGridState,
+  drift: AlignDrift | null,
+  time: number,
+  detected: AlignGridState,
+): AlignGridState {
+  const { dx, dy } = interpolateAlignDrift(drift, time);
+  return normalizeAlignGridState({
+    ...detected,
+    enabled: true,
+    opacity: current.opacity,
+    tx: detected.tx - dx,
+    ty: detected.ty - dy,
+  });
+}
+
+export function detectGridReport(quality: DetectGridQuality): DetectGridReport {
+  const percent = Math.round(quality.confidence * 100);
+  const residual = Number.isFinite(quality.residualPx) ? quality.residualPx.toFixed(1) : "—";
+  if (quality.confidence < ALIGN_DETECT_LOW_CONFIDENCE) {
+    return {
+      lowConfidence: true,
+      text: `Low confidence (${percent}%, residual ${residual} px). Review the overlay and adjust, or place the grid by hand.`,
+    };
+  }
+  return {
+    lowConfidence: false,
+    text: `Detected ${quality.count} patterns · ${percent}% confidence · ${residual} px residual`,
   };
 }
 

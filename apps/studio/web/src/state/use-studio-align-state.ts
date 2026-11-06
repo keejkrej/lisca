@@ -1,6 +1,7 @@
 import type {
   AlignDrift,
   AlignGridPatternCoord,
+  AlignGridShape,
   AlignGridState,
   AlignerSource,
   VariationExcludePreviewResponse,
@@ -135,6 +136,10 @@ export type StudioAlignState = {
   showVariationExcludePreview: (preview: VariationExcludePreviewResponse) => void;
   reportStatus: (message: string | null) => void;
   reportError: (message: string | null) => void;
+  detecting: boolean;
+  detectReport: string | null;
+  detectLowConfidence: boolean;
+  detectGrid: (shape?: AlignGridShape) => Promise<void>;
 };
 export type AlignPositionSaveState = "saved" | "unsaved" | "changed";
 type AlignBaseline = {
@@ -582,5 +587,15 @@ export function useStudioAlignState(): StudioAlignState {
     showVariationExcludePreview: session.variation.showPreview,
     reportStatus: setStatus,
     reportError: setError,
+    get detecting() {
+      return session.detecting();
+    },
+    get detectReport() {
+      return session.detectReport();
+    },
+    get detectLowConfidence() {
+      return session.detectLowConfidence();
+    },
+    detectGrid: session.detectGrid,
   };
 }

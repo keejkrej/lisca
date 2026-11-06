@@ -225,13 +225,117 @@ export function cliLiscaTools(): LiscaTool[] {
       },
     },
     {
+      name: "cli_align",
+      title: "Detect the micropattern grid (auto-align)",
+      description:
+        "Detect the micropattern lattice on one frame and return the AlignGridState plus a bbox CSV, so an " +
+        "agent can align a Position without the Aligner canvas. Segments the pattern islands, fits the " +
+        "hexagonal or rectangular lattice by least squares, and reports confidence/residualPx so a bad " +
+        "frame can be rejected. apply=true persists bbox/Pos{n}.csv and align/Pos{n}.json exactly like the " +
+        "Aligner's Save bbox action (use --shape/pattern to override the inference). Run lisca-align through " +
+        "cargo when the binary is not built yet.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          workspace: {
+            type: "string",
+            description: "Workspace path (assay.json or Pos{n} frames).",
+          },
+          pos: { type: "integer", minimum: 0, description: "Position number to align." },
+          source: {
+            type: "string",
+            description:
+              "Frame source: ND2/CZI file or a folder of frames. Defaults to assay.json, then the workspace.",
+          },
+          channel: { type: "integer", minimum: 0, description: "Channel to detect on. Default 0." },
+          time: { type: "integer", minimum: 0, description: "Timepoint to detect on. Default 0." },
+          z: { type: "integer", minimum: 0, description: "Z index to detect on. Default 0." },
+          shape: {
+            type: "string",
+            enum: ["rect", "square", "hex"],
+            description: "Force the lattice geometry instead of inferring it.",
+          },
+          patternSize: {
+            type: "number",
+            description: "Pattern box size in pixels. Defaults to 0.8 x pitch.",
+          },
+          minSpacing: { type: "number", description: "Shortest accepted pitch in pixels." },
+          maxSpacing: { type: "number", description: "Longest accepted pitch in pixels." },
+          apply: {
+            type: "boolean",
+            description: "Persist bbox/Pos{n}.csv + align/Pos{n}.json. Default false (dry run).",
+          },
+          timeoutMs: {
+            type: "integer",
+            minimum: 1000,
+            description: `Default ${DEFAULT_CLI_TIMEOUT_MS}.`,
+          },
+        },
+        required: ["workspace", "pos"],
+      },
+      handler: async (args) => {
+        try {
+          const workspace = path.resolve(stringArg(args.workspace, "workspace"));
+          const common = ["--workspace", workspace, "--pos", String(positiveInt(args.pos, 0))];
+          if (args.source !== undefined) {
+            common.push("--source", path.resolve(stringArg(args.source, "source")));
+          }
+          for (const [key, flag] of [
+            ["channel", "--channel"],
+            ["time", "--time"],
+            ["z", "--z"],
+          ] as const) {
+            if (args[key] !== undefined) {
+              common.push(flag, String(positiveInt(args[key], 0)));
+            }
+          }
+          if (args.shape !== undefined) {
+            common.push("--shape", stringArg(args.shape, "shape"));
+          }
+          if (args.patternSize !== undefined) {
+            common.push("--pattern", String(Number(args.patternSize)));
+          }
+          if (args.minSpacing !== undefined) {
+            common.push("--min-spacing", String(Number(args.minSpacing)));
+          }
+          if (args.maxSpacing !== undefined) {
+            common.push("--max-spacing", String(Number(args.maxSpacing)));
+          }
+          if (args.apply === true) {
+            common.push("--apply");
+          }
+          const binary = resolveCliBinary("lisca-align");
+          const argv = binary
+            ? [binary, ...common]
+            : [
+                "cargo",
+                "run",
+                "-p",
+                "lisca",
+                "--bin",
+                "lisca-align",
+                "--no-default-features",
+                "--",
+                ...common,
+              ];
+          const result = await runCommand(argv, {
+            cwd: repoRoot(),
+            timeoutMs: positiveInt(args.timeoutMs, DEFAULT_CLI_TIMEOUT_MS),
+          });
+          return commandResult(result);
+        } catch (cause) {
+          return errorFrom(cause);
+        }
+      },
+    },
+    {
       name: "cli_crop",
       title: "Run the ROI crop CLI",
       description:
         "Crop ROI image stacks from an Image source into a workspace's roi/ folder: per-ROI TIFF stacks plus " +
         "index.json, preserving Position and ROI identity. Rust lisca-crop (default) or the Python crop " +
-        "(implementation=python, needs uv). Requires saved ROI boxes (bbox/Pos{n}.csv) — save alignment first " +
-        "with align_save_bbox or align_crop_roi.",
+        "(implementation=python, needs uv). Requires saved ROI boxes (bbox/Pos{n}.csv) — align with " +
+        "cli_align (apply=true) or align_save_bbox first.",
       inputSchema: {
         type: "object",
         properties: {

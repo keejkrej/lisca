@@ -178,6 +178,22 @@ mod contract_tests {
     }
 
     #[test]
+    fn detect_grid_request_omits_optional_overrides() {
+        let value = json!({
+            "source": { "kind": "nd2", "path": "/data/experiment.nd2" },
+            "request": { "pos": 1, "channel": 0, "time": 0, "z": 0 },
+            "shape": "hex"
+        });
+        let request: DetectGridRequest = serde_json::from_value(value.clone()).unwrap();
+        assert_eq!(request.request.pos, 1);
+        assert_eq!(request.shape, Some(AlignGridShape::Hex));
+        assert!(request.pattern_width.is_none());
+        let serialized = serde_json::to_value(&request).unwrap();
+        assert_eq!(serialized["shape"], "hex");
+        assert!(serialized.get("patternWidth").is_none());
+    }
+
+    #[test]
     fn windows_drives_response_lists_letters_only() {
         let value = json!({
             "windows": true,

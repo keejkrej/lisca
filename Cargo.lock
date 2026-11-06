@@ -2645,6 +2645,7 @@ version = "0.1.0"
 dependencies = [
  "axum",
  "base64 0.22.1",
+ "image 0.25.10",
  "lisca",
  "serde",
  "serde_json",
@@ -2653,6 +2654,7 @@ dependencies = [
  "tauri-plugin-updater",
  "tokio",
  "tower",
+ "uuid",
 ]
 
 [[package]]

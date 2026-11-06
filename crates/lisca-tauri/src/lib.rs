@@ -19,7 +19,9 @@ const MAIN_WINDOW_LABEL: &str = "main";
 use tauri_plugin_dialog::DialogExt;
 use tower::ServiceExt;
 
+mod control;
 mod host_wayland;
+mod mcp;
 mod updater;
 
 /// Product-specific configuration for a Lisca Tauri desktop shell.
@@ -216,6 +218,13 @@ where
             lisca_request,
             lisca_save_file,
             lisca_pick_path,
+            mcp::mcp_status,
+            mcp::mcp_set_enabled,
+            control::control_list,
+            control::control_pause,
+            control::control_takeover,
+            control::control_handback,
+            control::control_stop,
             updater::update_check_enabled,
             updater::set_update_check_enabled
         ])
@@ -227,7 +236,21 @@ where
             }
 
             let router = tauri::async_runtime::block_on(async move { backend_factory() });
-            app.manage(IpcBackend { router });
+            let control = control::ControlCenter::default();
+            let router = control.wrap(router);
+            control.attach_router(router.clone());
+            app.manage(control.clone());
+            app.manage(IpcBackend {
+                router: router.clone(),
+            });
+            let mcp_path = mcp::preference_path(app).unwrap_or_else(|error| {
+                eprintln!("[lisca-mcp] {error}; using ./mcp.json");
+                PathBuf::from("mcp.json")
+            });
+            let mcp = mcp::McpManager::new(router, config.product, mcp_path, control);
+            let restore_mcp = mcp.clone();
+            tauri::async_runtime::spawn(async move { restore_mcp.restore() });
+            app.manage(mcp);
             create_window(app, &config)?;
             Ok(())
         })
@@ -262,6 +285,13 @@ fn allow_bridge_commands(authority: &mut tauri::ipc::RuntimeAuthority, context: 
         "lisca_request",
         "lisca_save_file",
         "lisca_pick_path",
+        "mcp_status",
+        "mcp_set_enabled",
+        "control_list",
+        "control_pause",
+        "control_takeover",
+        "control_handback",
+        "control_stop",
         "update_check_enabled",
         "set_update_check_enabled",
     ] {
@@ -494,7 +524,14 @@ fn create_window<R: tauri::Runtime, M: Manager<R>>(
             saveFile: (request) => window.__TAURI_INTERNALS__.invoke("lisca_save_file", {{ request }}),
             pickPath: (request) => window.__TAURI_INTERNALS__.invoke("lisca_pick_path", {{ request }}),
             updateCheckEnabled: () => window.__TAURI_INTERNALS__.invoke("update_check_enabled"),
-            setUpdateCheckEnabled: (enabled) => window.__TAURI_INTERNALS__.invoke("set_update_check_enabled", {{ enabled }})
+            setUpdateCheckEnabled: (enabled) => window.__TAURI_INTERNALS__.invoke("set_update_check_enabled", {{ enabled }}),
+            mcpStatus: () => window.__TAURI_INTERNALS__.invoke("mcp_status"),
+            mcpSetEnabled: (enabled) => window.__TAURI_INTERNALS__.invoke("mcp_set_enabled", {{ enabled }}),
+            controlList: () => window.__TAURI_INTERNALS__.invoke("control_list"),
+            controlPause: (workspacePath) => window.__TAURI_INTERNALS__.invoke("control_pause", {{ workspacePath }}),
+            controlTakeover: (workspacePath) => window.__TAURI_INTERNALS__.invoke("control_takeover", {{ workspacePath }}),
+            controlHandback: (workspacePath) => window.__TAURI_INTERNALS__.invoke("control_handback", {{ workspacePath }}),
+            controlStop: (workspacePath) => window.__TAURI_INTERNALS__.invoke("control_stop", {{ workspacePath }})
         }});"#,
         config.product
     );

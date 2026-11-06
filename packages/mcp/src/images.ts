@@ -171,6 +171,13 @@ export function renderFrame(frame: FramePixels, contrast?: ContrastWindow | null
       max: Number.isFinite(pixelMax) ? pixelMax : 255,
     };
   applied = { min: applied.min, max: Math.max(applied.max, applied.min) };
+  if (isPreRendered(pixelType, applied, pixelMin, pixelMax)) {
+    // The product routes return 8-bit planes that they already contrast-mapped,
+    // while `contrastDomain`/`suggestedContrast` stay in raw 16-bit units. Mapping
+    // such a plane through the raw window turns every frame black, so render it
+    // exactly as the server produced it.
+    applied = { min: 0, max: 255 };
+  }
   const span = applied.max - applied.min;
   const gray = new Uint8Array(count);
   if (span === 0) {
@@ -183,6 +190,23 @@ export function renderFrame(frame: FramePixels, contrast?: ContrastWindow | null
     }
   }
   return { png: encodeGrayPng(width, height, gray), applied, pixelMin, pixelMax };
+}
+
+/** True when a payload already carries display-mapped 8-bit pixels and the
+ * contrast window therefore describes a different (raw) value space. */
+function isPreRendered(
+  pixelType: PixelType,
+  window: ContrastWindow,
+  pixelMin: number,
+  pixelMax: number,
+): boolean {
+  if (pixelType !== "uint8" && pixelType !== "uint8clamped") {
+    return false;
+  }
+  if (window.min === 0 && window.max === 255) {
+    return false;
+  }
+  return window.min > pixelMax || window.max < pixelMin;
 }
 
 /** True when a buffer starts with a PNG signature. */

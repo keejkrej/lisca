@@ -1,0 +1,8 @@
+{
+  "source": {
+    "kind": "nd2",
+    "path": "/data/experiment.nd2"
+  },
+  "request": { "pos": 1, "channel": 0, "time": 0, "z": 0 },
+  "shape": "hex"
+}

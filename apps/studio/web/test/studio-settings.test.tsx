@@ -85,6 +85,58 @@ describe("StudioSettings", () => {
     expect(screen.getByText(/OpenRouter API key saved for this session/i)).toBeTruthy();
   });
 
+  it("switches label-free embedding to the local Ollama provider", async () => {
+    const transport = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = input instanceof Request ? input.url : String(input);
+      const method = input instanceof Request ? input.method : (init?.method ?? "GET");
+      if (method === "POST" && url.includes("/studio/label-free/key")) {
+        return Response.json({
+          ...unconfiguredHealth,
+          provider: "ollama",
+          configured: true,
+          modelId: "embeddinggemma-2:latest",
+          batchSize: 8,
+        });
+      }
+      return Response.json(unconfiguredHealth);
+    });
+    fetchHandler = transport;
+
+    openSettings();
+    fireEvent.click(screen.getByRole("button", { name: "Inference" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Local Ollama" }));
+
+    expect(await screen.findByText(/Local inference needs no API key/i)).toBeTruthy();
+    expect(screen.queryByLabelText("OpenRouter API key")).toBeNull();
+  });
+
+  it("enables the desktop-owned MCP server from the Agents tab", async () => {
+    const status = {
+      product: "studio",
+      enabled: true,
+      running: true,
+      url: "http://127.0.0.1:19770/mcp",
+      token: "test-token",
+      toolCount: 49,
+      claudeCommand:
+        'claude mcp add --transport http lisca-studio http://127.0.0.1:19770/mcp --header "Authorization: Bearer test-token"',
+    };
+    const mcpStatus = vi.fn(async () => status);
+    const mcpSetEnabled = vi.fn(async (enabled: boolean) => ({ ...status, enabled }));
+    Object.defineProperty(window, "liscaDesktop", {
+      configurable: true,
+      value: { product: "studio", mcpStatus, mcpSetEnabled },
+    });
+
+    openSettings();
+    fireEvent.click(screen.getByRole("button", { name: "Agents" }));
+
+    expect(await screen.findByText(/MCP is running with 49 tools/i)).toBeTruthy();
+    expect(screen.getByText(/claude mcp add --transport http/i)).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Disable MCP" }));
+    expect(mcpSetEnabled).toHaveBeenCalledWith(false);
+  });
+
   it("explains desktop update checks in the browser", () => {
     render(() => <StudioSettings />);
     const gear = screen.getByRole("button", { name: "Settings" });

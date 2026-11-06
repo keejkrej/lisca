@@ -31,8 +31,8 @@ export function createStudioPort(deps: StudioPortDeps = {}): StudioDataPort {
     labelFreeHealth() {
       return toClientEffect(client.studio.labelFreeHealth());
     },
-    saveLabelFreeKey(apiKey) {
-      return toClientEffect(client.studio.saveLabelFreeKey({ payload: { apiKey } }));
+    saveLabelFreeKey(apiKey, provider) {
+      return toClientEffect(client.studio.saveLabelFreeKey({ payload: { apiKey, provider } }));
     },
     listLabelFreeReferences(workspacePath) {
       return toClientEffect(client.studio.listLabelFreeReferences({ query: { workspacePath } }));

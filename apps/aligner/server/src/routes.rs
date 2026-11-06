@@ -20,7 +20,7 @@ use lisca::{
 };
 use lisca_server::{HasTaskScheduler, StepFailure, StepSpec, TaskSpec};
 
-/// Lightweight Aligner routes: scan, frame load, bbox save, smart exclude.
+/// Lightweight Aligner routes: scan, frame load, bbox save, grid detect, smart exclude.
 /// Does **not** include ROI crop (long-running); Studio mounts [`crop_router`].
 pub fn router<S>() -> Router<S>
 where
@@ -30,6 +30,7 @@ where
         .route("/align/scan-source", post(scan_source_handler))
         .route("/align/load-frame", post(load_frame_handler))
         .route("/align/save-bbox", post(save_bbox_handler))
+        .route("/align/detect-grid", post(detect_grid_handler))
         .route("/align/align-state", get(load_align_state_handler))
         .route("/align/output-paths", get(output_paths_handler))
         .route(
@@ -110,6 +111,14 @@ async fn save_bbox_handler(
     })
     .await
     .map(Json)
+}
+
+async fn detect_grid_handler(
+    Json(payload): Json<lisca::protocol::DetectGridRequest>,
+) -> Result<Json<lisca::protocol::DetectGridResponse>, FsError> {
+    run_blocking("grid detect", move || aligner::detect_grid_preview(payload))
+        .await
+        .map(Json)
 }
 
 async fn load_align_state_handler(
@@ -819,5 +828,66 @@ mod crop_step_tests {
         );
         assert_eq!(attached.record.request_id, "crop-1");
         assert!(!created_second.load(Ordering::SeqCst));
+    }
+}
+
+#[cfg(test)]
+mod detect_grid_tests {
+    use super::*;
+    use image::{GrayImage, Luma};
+    use lisca::protocol::{AlignerSource, DetectGridRequest, FrameRequest};
+    use std::fs;
+
+    #[tokio::test]
+    async fn detect_grid_handler_returns_the_lattice_without_writing_bbox() {
+        let root = tempfile::tempdir().expect("temp");
+        let source = root.path().join("source");
+        let workspace = root.path().join("workspace");
+        fs::create_dir_all(source.join("Pos0")).expect("source");
+        fs::create_dir_all(&workspace).expect("workspace");
+        let mut image = GrayImage::from_pixel(512, 512, Luma([200]));
+        for j in -6..=6 {
+            for i in -6..=6 {
+                let center_x = 256 + i * 64;
+                let center_y = 256 + j * 64;
+                for dy in -25..=25 {
+                    for dx in -25..=25 {
+                        let x = center_x + dx;
+                        let y = center_y + dy;
+                        if (0..512).contains(&x) && (0..512).contains(&y) {
+                            image.put_pixel(x as u32, y as u32, Luma([40]));
+                        }
+                    }
+                }
+            }
+        }
+        image
+            .save(source.join("Pos0/img_channel0_position0_time0_z0.png"))
+            .expect("frame");
+
+        let Json(response) = detect_grid_handler(Json(DetectGridRequest {
+            max_spacing: None,
+            min_spacing: None,
+            pattern_height: None,
+            pattern_width: None,
+            request: FrameRequest {
+                pos: 0,
+                channel: 0,
+                time: 0,
+                z: 0,
+            },
+            shape: None,
+            source: AlignerSource::Folder {
+                path: source.to_string_lossy().into_owned(),
+                subfolder_template: "Pos{p}".to_string(),
+                filename_template: "img_channel{c}_position{p}_time{t}_z{z}.png".to_string(),
+            },
+        }))
+        .await
+        .expect("detect");
+        assert!(response.grid.enabled);
+        assert!(response.count > 20);
+        assert!(!workspace.join("bbox").exists());
+        assert!(!workspace.join("align").exists());
     }
 }

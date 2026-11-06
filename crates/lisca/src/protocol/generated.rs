@@ -2667,6 +2667,58 @@ impl ::std::convert::TryFrom<::std::string::String> for CropRoiStatus {
         value.parse()
     }
 }
+#[doc = "`DetectGridRequest`"]
+#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
+pub struct DetectGridRequest {
+    #[serde(
+        rename = "maxSpacing",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub max_spacing: ::std::option::Option<f64>,
+    #[serde(
+        rename = "minSpacing",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub min_spacing: ::std::option::Option<f64>,
+    #[serde(
+        rename = "patternHeight",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub pattern_height: ::std::option::Option<f64>,
+    #[serde(
+        rename = "patternWidth",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub pattern_width: ::std::option::Option<f64>,
+    pub request: FrameRequest,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub shape: ::std::option::Option<AlignGridShape>,
+    pub source: AlignerSource,
+}
+impl DetectGridRequest {
+    pub fn builder() -> builder::DetectGridRequest {
+        Default::default()
+    }
+}
+#[doc = "`DetectGridResponse`"]
+#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
+pub struct DetectGridResponse {
+    pub confidence: f64,
+    pub count: u32,
+    pub grid: AlignGridState,
+    pub islands: u32,
+    #[serde(rename = "residualPx")]
+    pub residual_px: f64,
+}
+impl DetectGridResponse {
+    pub fn builder() -> builder::DetectGridResponse {
+        Default::default()
+    }
+}
 #[doc = "`DriftKeyframe`"]
 #[doc = r""]
 #[doc = r" <details><summary>JSON schema</summary>"]
@@ -3150,6 +3202,8 @@ impl ::std::convert::From<::std::vec::Vec<LabelFreeClassification>>
 pub struct LabelFreeClassifyRequest {
     pub limit: u32,
     pub name: ::std::string::String,
+    #[serde(default, skip_serializing_if = "::std::vec::Vec::is_empty")]
+    pub positions: ::std::vec::Vec<u32>,
     #[serde(rename = "workspacePath")]
     pub workspace_path: ::std::string::String,
 }
@@ -3172,8 +3226,14 @@ pub struct LabelFreeHealth {
 #[doc = "`LabelFreeKeyRequest`"]
 #[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
 pub struct LabelFreeKeyRequest {
-    #[serde(rename = "apiKey")]
-    pub api_key: ::std::string::String,
+    #[serde(
+        rename = "apiKey",
+        default,
+        skip_serializing_if = "::std::option::Option::is_none"
+    )]
+    pub api_key: ::std::option::Option<::std::string::String>,
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub provider: ::std::option::Option<LabelFreeProvider>,
 }
 #[doc = "`LabelFreeLabelCount`"]
 #[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
@@ -3197,11 +3257,14 @@ pub struct LabelFreeLabelCount {
 pub enum LabelFreeProvider {
     #[serde(rename = "openrouter")]
     OpenRouter,
+    #[serde(rename = "ollama")]
+    Ollama,
 }
 impl ::std::fmt::Display for LabelFreeProvider {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         match *self {
             Self::OpenRouter => f.write_str("openrouter"),
+            Self::Ollama => f.write_str("ollama"),
         }
     }
 }
@@ -3210,6 +3273,7 @@ impl ::std::str::FromStr for LabelFreeProvider {
     fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
         match value {
             "openrouter" => Ok(Self::OpenRouter),
+            "ollama" => Ok(Self::Ollama),
             _ => Err("invalid value".into()),
         }
     }
@@ -9393,6 +9457,229 @@ pub mod builder {
                 disposition: Ok(value.disposition),
                 request_id: Ok(value.request_id),
                 status: Ok(value.status),
+            }
+        }
+    }
+    #[derive(Clone, Debug)]
+    pub struct DetectGridRequest {
+        max_spacing: ::std::result::Result<::std::option::Option<f64>, ::std::string::String>,
+        min_spacing: ::std::result::Result<::std::option::Option<f64>, ::std::string::String>,
+        pattern_height: ::std::result::Result<::std::option::Option<f64>, ::std::string::String>,
+        pattern_width: ::std::result::Result<::std::option::Option<f64>, ::std::string::String>,
+        request: ::std::result::Result<super::FrameRequest, ::std::string::String>,
+        shape: ::std::result::Result<
+            ::std::option::Option<super::AlignGridShape>,
+            ::std::string::String,
+        >,
+        source: ::std::result::Result<super::AlignerSource, ::std::string::String>,
+    }
+    impl ::std::default::Default for DetectGridRequest {
+        fn default() -> Self {
+            Self {
+                max_spacing: Ok(Default::default()),
+                min_spacing: Ok(Default::default()),
+                pattern_height: Ok(Default::default()),
+                pattern_width: Ok(Default::default()),
+                request: Err("no value supplied for request".to_string()),
+                shape: Ok(Default::default()),
+                source: Err("no value supplied for source".to_string()),
+            }
+        }
+    }
+    impl DetectGridRequest {
+        pub fn max_spacing<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::option::Option<f64>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.max_spacing = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for max_spacing: {e}"));
+            self
+        }
+        pub fn min_spacing<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::option::Option<f64>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.min_spacing = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for min_spacing: {e}"));
+            self
+        }
+        pub fn pattern_height<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::option::Option<f64>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.pattern_height = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for pattern_height: {e}"));
+            self
+        }
+        pub fn pattern_width<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::option::Option<f64>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.pattern_width = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for pattern_width: {e}"));
+            self
+        }
+        pub fn request<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<super::FrameRequest>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.request = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for request: {e}"));
+            self
+        }
+        pub fn shape<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<::std::option::Option<super::AlignGridShape>>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.shape = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for shape: {e}"));
+            self
+        }
+        pub fn source<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<super::AlignerSource>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.source = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for source: {e}"));
+            self
+        }
+    }
+    impl ::std::convert::TryFrom<DetectGridRequest> for super::DetectGridRequest {
+        type Error = super::error::ConversionError;
+        fn try_from(
+            value: DetectGridRequest,
+        ) -> ::std::result::Result<Self, super::error::ConversionError> {
+            Ok(Self {
+                max_spacing: value.max_spacing?,
+                min_spacing: value.min_spacing?,
+                pattern_height: value.pattern_height?,
+                pattern_width: value.pattern_width?,
+                request: value.request?,
+                shape: value.shape?,
+                source: value.source?,
+            })
+        }
+    }
+    impl ::std::convert::From<super::DetectGridRequest> for DetectGridRequest {
+        fn from(value: super::DetectGridRequest) -> Self {
+            Self {
+                max_spacing: Ok(value.max_spacing),
+                min_spacing: Ok(value.min_spacing),
+                pattern_height: Ok(value.pattern_height),
+                pattern_width: Ok(value.pattern_width),
+                request: Ok(value.request),
+                shape: Ok(value.shape),
+                source: Ok(value.source),
+            }
+        }
+    }
+    #[derive(Clone, Debug)]
+    pub struct DetectGridResponse {
+        confidence: ::std::result::Result<f64, ::std::string::String>,
+        count: ::std::result::Result<u32, ::std::string::String>,
+        grid: ::std::result::Result<super::AlignGridState, ::std::string::String>,
+        islands: ::std::result::Result<u32, ::std::string::String>,
+        residual_px: ::std::result::Result<f64, ::std::string::String>,
+    }
+    impl ::std::default::Default for DetectGridResponse {
+        fn default() -> Self {
+            Self {
+                confidence: Err("no value supplied for confidence".to_string()),
+                count: Err("no value supplied for count".to_string()),
+                grid: Err("no value supplied for grid".to_string()),
+                islands: Err("no value supplied for islands".to_string()),
+                residual_px: Err("no value supplied for residual_px".to_string()),
+            }
+        }
+    }
+    impl DetectGridResponse {
+        pub fn confidence<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<f64>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.confidence = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for confidence: {e}"));
+            self
+        }
+        pub fn count<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<u32>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.count = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for count: {e}"));
+            self
+        }
+        pub fn grid<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<super::AlignGridState>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.grid = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for grid: {e}"));
+            self
+        }
+        pub fn islands<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<u32>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.islands = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for islands: {e}"));
+            self
+        }
+        pub fn residual_px<T>(mut self, value: T) -> Self
+        where
+            T: ::std::convert::TryInto<f64>,
+            T::Error: ::std::fmt::Display,
+        {
+            self.residual_px = value
+                .try_into()
+                .map_err(|e| format!("error converting supplied value for residual_px: {e}"));
+            self
+        }
+    }
+    impl ::std::convert::TryFrom<DetectGridResponse> for super::DetectGridResponse {
+        type Error = super::error::ConversionError;
+        fn try_from(
+            value: DetectGridResponse,
+        ) -> ::std::result::Result<Self, super::error::ConversionError> {
+            Ok(Self {
+                confidence: value.confidence?,
+                count: value.count?,
+                grid: value.grid?,
+                islands: value.islands?,
+                residual_px: value.residual_px?,
+            })
+        }
+    }
+    impl ::std::convert::From<super::DetectGridResponse> for DetectGridResponse {
+        fn from(value: super::DetectGridResponse) -> Self {
+            Self {
+                confidence: Ok(value.confidence),
+                count: Ok(value.count),
+                grid: Ok(value.grid),
+                islands: Ok(value.islands),
+                residual_px: Ok(value.residual_px),
             }
         }
     }

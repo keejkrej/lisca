@@ -61,11 +61,11 @@ export const LatestAnalysisQuerySchema = Schema.Struct({
   workspacePath: Schema.String,
 }).annotate({ identifier: "LatestAnalysisQuery" });
 
-export const LabelFreeProviderSchema = Schema.Literals(["openrouter"]).annotate({
+export const LabelFreeProviderSchema = Schema.Literals(["openrouter", "ollama"]).annotate({
   identifier: "LabelFreeProvider",
 });
 
-/** OpenRouter label-free status on the Studio API. Desktop sends it over IPC; hosted web uses same-origin HTTP. */
+/** Label-free inference status on the Studio API. Desktop sends it over IPC; hosted web uses same-origin HTTP. */
 export const LabelFreeHealthSchema = Schema.Struct({
   apiVersion: U32,
   provider: LabelFreeProviderSchema,
@@ -77,8 +77,10 @@ export const LabelFreeHealthSchema = Schema.Struct({
   cacheCap: U32,
 }).annotate({ identifier: "LabelFreeHealth" });
 
+/** Select the embedding provider (`openrouter` needs a key, `ollama` runs locally). */
 export const LabelFreeKeyRequestSchema = Schema.Struct({
-  apiKey: Schema.String,
+  apiKey: Schema.optional(Schema.String),
+  provider: Schema.optional(LabelFreeProviderSchema),
 }).annotate({ identifier: "LabelFreeKeyRequest" });
 
 export const LabelFreeReferenceQuerySchema = Schema.Struct({
@@ -94,6 +96,8 @@ export const LabelFreeClassifyRequestSchema = Schema.Struct({
   workspacePath: Schema.String,
   name: Schema.String,
   limit: U32,
+  /** Restrict the scan to these Positions; omit to walk every Position. */
+  positions: Schema.optional(Schema.mutable(Schema.Array(U32))),
 }).annotate({ identifier: "LabelFreeClassifyRequest" });
 
 export const LabelFreeLabelCountSchema = Schema.Struct({

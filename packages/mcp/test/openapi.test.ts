@@ -29,6 +29,7 @@ describe("contractTools", () => {
     const tools = contractTools(doc);
     expect(tools.length).toBeGreaterThanOrEqual(46);
     expect(tools.map((tool) => tool.name)).toContain("align_scan_source");
+    expect(tools.map((tool) => tool.name)).toContain("align_detect_grid");
     expect(tools.map((tool) => tool.name)).toContain("studio_start_analysis");
     expect(tools.map((tool) => tool.name)).toContain("fs_list_directory");
   });
@@ -83,6 +84,8 @@ describe("contractTools", () => {
       "studio",
     ]);
     expect(byId.get("align.loadFrame")?.products).toEqual(["aligner", "studio"]);
+    expect(byId.get("align.detectGrid")?.products).toEqual(["aligner", "studio"]);
+    expect(byId.get("align.detectGrid")?.path).toBe("/align/detect-grid");
     expect(byId.get("annotate.scanRoiWorkspace")?.products).toEqual(["annotator", "studio"]);
     expect(byId.get("align.cropRoi")?.products).toEqual(["studio"]);
     expect(byId.get("align.cropRoi")?.inputSchema.properties.product).toBeUndefined();

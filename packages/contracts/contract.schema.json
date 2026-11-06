@@ -632,6 +632,73 @@
         "error"
       ]
     },
+    "DetectGridRequest": {
+      "type": "object",
+      "properties": {
+        "source": {
+          "$ref": "#/definitions/AlignerSource"
+        },
+        "request": {
+          "$ref": "#/definitions/FrameRequest"
+        },
+        "shape": {
+          "$ref": "#/definitions/AlignGridShape"
+        },
+        "patternWidth": {
+          "type": "number",
+          "format": "double"
+        },
+        "patternHeight": {
+          "type": "number",
+          "format": "double"
+        },
+        "minSpacing": {
+          "type": "number",
+          "format": "double"
+        },
+        "maxSpacing": {
+          "type": "number",
+          "format": "double"
+        }
+      },
+      "required": [
+        "source",
+        "request"
+      ]
+    },
+    "DetectGridResponse": {
+      "type": "object",
+      "properties": {
+        "grid": {
+          "$ref": "#/definitions/AlignGridState"
+        },
+        "count": {
+          "type": "integer",
+          "minimum": 0,
+          "format": "uint32"
+        },
+        "islands": {
+          "type": "integer",
+          "minimum": 0,
+          "format": "uint32"
+        },
+        "confidence": {
+          "type": "number",
+          "format": "double"
+        },
+        "residualPx": {
+          "type": "number",
+          "format": "double"
+        }
+      },
+      "required": [
+        "grid",
+        "count",
+        "islands",
+        "confidence",
+        "residualPx"
+      ]
+    },
     "AlignOutputPaths": {
       "type": "object",
       "properties": {
@@ -2228,13 +2295,10 @@
       ]
     },
     "LabelFreeProvider": {
-      "anyOf": [
-        {
-          "type": "string",
-          "enum": [
-            "openrouter"
-          ]
-        }
+      "type": "string",
+      "enum": [
+        "openrouter",
+        "ollama"
       ]
     },
     "LabelFreeHealth": {
@@ -2289,11 +2353,11 @@
       "properties": {
         "apiKey": {
           "type": "string"
+        },
+        "provider": {
+          "$ref": "#/definitions/LabelFreeProvider"
         }
-      },
-      "required": [
-        "apiKey"
-      ]
+      }
     },
     "LabelFreeLabelCount": {
       "type": "object",
@@ -2382,6 +2446,14 @@
           "type": "integer",
           "minimum": 0,
           "format": "uint32"
+        },
+        "positions": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 0,
+            "format": "uint32"
+          }
         }
       },
       "required": [
