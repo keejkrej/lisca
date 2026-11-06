@@ -406,6 +406,58 @@
         }
       }
     },
+    "/align/detect-grid": {
+      "post": {
+        "tags": [
+          "align"
+        ],
+        "operationId": "align.detectGrid",
+        "parameters": [],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "DetectGridResponse",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DetectGridResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "RequestError",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestErrorEncoded"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedEncoded"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DetectGridRequest"
+              }
+            }
+          },
+          "required": true
+        }
+      }
+    },
     "/align/align-state": {
       "get": {
         "tags": [
@@ -3284,6 +3336,142 @@
         "required": [
           "ok",
           "error"
+        ],
+        "additionalProperties": false
+      },
+      "DetectGridRequest": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "$ref": "#/components/schemas/AlignerSource"
+          },
+          "request": {
+            "$ref": "#/components/schemas/FrameRequest"
+          },
+          "shape": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AlignGridShape"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "patternWidth": {
+            "anyOf": [
+              {
+                "type": "number",
+                "allOf": [
+                  {
+                    "format": "double"
+                  }
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "patternHeight": {
+            "anyOf": [
+              {
+                "type": "number",
+                "allOf": [
+                  {
+                    "format": "double"
+                  }
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "minSpacing": {
+            "anyOf": [
+              {
+                "type": "number",
+                "allOf": [
+                  {
+                    "format": "double"
+                  }
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "maxSpacing": {
+            "anyOf": [
+              {
+                "type": "number",
+                "allOf": [
+                  {
+                    "format": "double"
+                  }
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "source",
+          "request"
+        ],
+        "additionalProperties": false
+      },
+      "DetectGridResponse": {
+        "type": "object",
+        "properties": {
+          "grid": {
+            "$ref": "#/components/schemas/AlignGridState"
+          },
+          "count": {
+            "type": "integer",
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          },
+          "islands": {
+            "type": "integer",
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          },
+          "confidence": {
+            "type": "number",
+            "allOf": [
+              {
+                "format": "double"
+              }
+            ]
+          },
+          "residualPx": {
+            "type": "number",
+            "allOf": [
+              {
+                "format": "double"
+              }
+            ]
+          }
+        },
+        "required": [
+          "grid",
+          "count",
+          "islands",
+          "confidence",
+          "residualPx"
         ],
         "additionalProperties": false
       },

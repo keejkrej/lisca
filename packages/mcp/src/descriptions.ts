@@ -19,6 +19,8 @@ export const OPERATION_DESCRIPTIONS: Record<string, string> = {
     "Load one frame of an Image: a 2D grayscale image picked by Position, Channel, Frame (time), and Z. Returns pixel metadata plus the frame rendered as a PNG image you can view. Pass a contrast window to control the display mapping.",
   "align.saveBbox":
     "Save the alignment for one Position: the fitted pattern grid state (shape, translation, rotation, spacing, pattern box size), excluded patterns, and drift keyframes. Persists bbox/Pos{n}.csv (ROI boxes) and align/Pos{n}.json in the workspace. ROI crop and annotation read these.",
+  "align.detectGrid":
+    "Auto-detect grid: recover the micropattern lattice on the current frame (island segmentation + least-squares hex/rect fit) and return AlignGridState plus confidence and residualPx. Same action as the Aligner Auto-detect control. Does not write bbox or align files — review the overlay and persist with align.saveBbox. Pass shape to force hex or rectangular instead of inferring.",
   "align.loadAlignState":
     "Load the saved alignment state for one Position of a workspace (grid, exclusions, drift), or null when the Position has not been aligned yet.",
   "align.outputPaths":

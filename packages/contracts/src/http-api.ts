@@ -12,6 +12,8 @@ import {
   CropRoiProgressSchema,
   CropRoiRequestSchema,
   CropRoiResponseSchema,
+  DetectGridRequestSchema,
+  DetectGridResponseSchema,
   CreateDirectoryRequestSchema,
   CreateDirectoryResponseSchema,
   FramePayloadSchema,
@@ -166,6 +168,13 @@ const alignGroup = HttpApiGroup.make("align")
     HttpApiEndpoint.post("saveBbox", "/align/save-bbox", {
       payload: SaveBboxRequestSchema,
       success: SaveBboxResponseSchema,
+      error: [RequestError, Unauthorized],
+    }),
+  )
+  .add(
+    HttpApiEndpoint.post("detectGrid", "/align/detect-grid", {
+      payload: DetectGridRequestSchema,
+      success: DetectGridResponseSchema,
       error: [RequestError, Unauthorized],
     }),
   )

@@ -16,6 +16,7 @@ LISCA turns a raw time-lapse into one intensity trace per cell. Each step has a 
 **Aim:** place a grid over the pattern array so that each pattern spot becomes one region of interest (ROI).
 
 - Fit the grid to the pattern, then click spots to switch them on or off. Switch off empty spots and **spots with two cells**: two cells in one ROI add up to one wrong trace.
+- **Auto-detect** places the grid on the current frame. Check the overlay, nudge it with the usual tools if needed, then Save. Auto-detect does not write ROI boxes on its own. If detection fails or confidence is low, place the grid by hand. Use _Detect shape_ to force Square or Hex when the inferred geometry is wrong.
 - **Expert mode** exposes the pattern geometry and drift correction. Use drift correction when the stage moves during the experiment.
 - **Contrast is display-only.** It never changes the numbers. Use _Lock_ to keep one contrast setting across all frames.
 - Save with `Ctrl+S`, then click _Align_.

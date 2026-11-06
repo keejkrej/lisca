@@ -27,7 +27,10 @@ export {
   type SmartExcludeModelDialogProps,
 } from "./align/smart-exclude-model-dialog";
 export {
+  AlignDetectShapeToggle,
   AlignGridShapeToggle,
+  type AlignDetectShape,
+  type AlignDetectShapeToggleProps,
   type AlignGridShapeToggleProps,
 } from "./align/align-grid-shape-toggle";
 export { AlignSelectionCounts } from "./align/align-selection-counts";

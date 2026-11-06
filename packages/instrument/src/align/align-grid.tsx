@@ -1,6 +1,7 @@
 import type { AlignGridShape } from "@lisca/contracts";
 import { clamp } from "@lisca/utils";
 import { createEffect, createSignal, Show } from "solid-js";
+import { cn } from "@lisca/ui/cn";
 
 import { Button } from "@lisca/ui/button";
 import { Field, FieldLabel } from "@lisca/ui/field";
@@ -11,7 +12,11 @@ import { AlignNumberInput } from "./align-number-input";
 import { Slider } from "@lisca/ui/slider";
 import { PanelSection } from "@lisca/ui/patterns";
 import { RailActionPair, RailControlStack, RailFieldPair } from "@lisca/ui/patterns";
-import { AlignGridShapeToggle } from "./align-grid-shape-toggle";
+import {
+  AlignDetectShapeToggle,
+  AlignGridShapeToggle,
+  type AlignDetectShape,
+} from "./align-grid-shape-toggle";
 import { AlignStateToggleIndicator } from "@lisca/ui/patterns";
 
 function formatDegrees(value: number) {
@@ -54,6 +59,11 @@ export type AlignGridProps = {
   onReset?: () => void;
   resetDisabled?: boolean;
 
+  detecting?: boolean;
+  detectReport?: string | null;
+  detectLowConfidence?: boolean;
+  onDetectGrid?: (shape?: AlignGridShape) => void;
+
   disabled?: boolean;
 
   sectionTitle?: string;
@@ -75,6 +85,7 @@ export function AlignGrid(props: AlignGridProps) {
   const patternMin = () => props.patternMin ?? 1;
   const [rotationDraft, setRotationDraft] = createSignal(props.rotationDegrees);
   const [overlayOpacityDraft, setOverlayOpacityDraft] = createSignal(props.overlayOpacity);
+  const [detectShape, setDetectShape] = createSignal<AlignDetectShape>("auto");
 
   createEffect(() => {
     setRotationDraft(props.rotationDegrees);
@@ -153,6 +164,49 @@ export function AlignGrid(props: AlignGridProps) {
     </Field>
   );
 
+  const DetectControls = () => (
+    <Show when={props.onDetectGrid}>
+      {(detectGrid) => (
+        <div class="flex min-w-0 w-full flex-col gap-2">
+          <Button
+            class="w-full justify-center text-xs"
+            disabled={props.disabled || props.detecting}
+            size="sm"
+            type="button"
+            variant="outline"
+            onClick={() => {
+              const shape = detectShape();
+              detectGrid()(shape === "auto" ? undefined : shape);
+            }}
+          >
+            {props.detecting ? "Detecting…" : "Auto-detect"}
+          </Button>
+          <Field class="min-w-0 w-full">
+            <FieldLabel>Detect shape</FieldLabel>
+            <AlignDetectShapeToggle
+              disabled={props.disabled || props.detecting}
+              shape={detectShape()}
+              onShapeChange={setDetectShape}
+            />
+          </Field>
+          <Show when={props.detectReport}>
+            {(report) => (
+              <p
+                class={cn(
+                  "text-xs leading-snug",
+                  props.detectLowConfidence ? "text-warning-foreground" : "text-muted-foreground",
+                )}
+                role={props.detectLowConfidence ? "status" : undefined}
+              >
+                {report()}
+              </p>
+            )}
+          </Show>
+        </div>
+      )}
+    </Show>
+  );
+
   const GridControls = (controlProps: { rail?: boolean }) =>
     controlProps.rail ? (
       <>
@@ -162,6 +216,7 @@ export function AlignGrid(props: AlignGridProps) {
         </RailActionPair>
         <OpacityControl showValue />
         <ShapeControl />
+        <DetectControls />
       </>
     ) : (
       <>
@@ -171,6 +226,7 @@ export function AlignGrid(props: AlignGridProps) {
         </div>
         <OpacityControl />
         <ShapeControl />
+        <DetectControls />
       </>
     );
 

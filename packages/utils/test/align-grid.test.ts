@@ -4,6 +4,7 @@ import {
   alignGridBasis,
   applyAlignGridPointerGesture,
   applyAlignGridWheelGesture,
+  applyDetectedAlignGrid,
   beginAlignGridPointerGesture,
   classifyAlignGridPointerGesture,
   classifyAlignGridWheelGesture,
@@ -11,6 +12,7 @@ import {
   collectAlignGridStrokeTogglePatterns,
   countVisibleAlignGridPatterns,
   createDefaultAlignGrid,
+  detectGridReport,
   degreesToRadians,
   enumerateVisibleAlignGridPatterns,
   findAlignGridPatternAtPoint,
@@ -330,5 +332,49 @@ describe("align grid utils", () => {
     const withPatterns = setExcludedAlignGridPatternsForPosition({}, 4, [{ i: 0, j: 0 }]);
     expect(withPatterns).toEqual({ 4: [{ i: 0, j: 0 }] });
     expect(setExcludedAlignGridPatternsForPosition(withPatterns, 4, [])).toEqual({});
+  });
+
+  test("applyDetectedAlignGrid keeps overlay opacity and subtracts current-time drift", () => {
+    const current = normalizeAlignGridState({ ...createDefaultAlignGrid(), opacity: 0.8 });
+    const detected = normalizeAlignGridState({
+      ...createDefaultAlignGrid(),
+      enabled: true,
+      shape: "hex",
+      tx: 12,
+      ty: 4,
+      spacingA: 40,
+      spacingB: 40,
+      patternWidth: 32,
+      patternHeight: 32,
+    });
+    const applied = applyDetectedAlignGrid(
+      current,
+      {
+        referenceTime: 0,
+        interpolation: "linear",
+        keyframes: [{ time: 5, dx: 3, dy: -1 }],
+      },
+      5,
+      detected,
+    );
+    expect(applied.enabled).toBe(true);
+    expect(applied.shape).toBe("hex");
+    expect(applied.opacity).toBe(0.8);
+    expect(applied.tx).toBe(9);
+    expect(applied.ty).toBe(5);
+    expect(applied.spacingA).toBe(40);
+  });
+
+  test("detectGridReport flags low confidence for manual fallback", () => {
+    expect(detectGridReport({ confidence: 0.94, residualPx: 1.2, count: 96 })).toEqual({
+      lowConfidence: false,
+      text: "Detected 96 patterns · 94% confidence · 1.2 px residual",
+    });
+    expect(detectGridReport({ confidence: 0.52, residualPx: 8.4, count: 40 }).lowConfidence).toBe(
+      true,
+    );
+    expect(detectGridReport({ confidence: 0.52, residualPx: 8.4, count: 40 }).text).toMatch(
+      /place the grid by hand/,
+    );
   });
 });

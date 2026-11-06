@@ -1,6 +1,7 @@
 import type {
   AlignDrift,
   AlignGridPatternCoord,
+  AlignGridShape,
   AlignGridState,
   AlignerSource,
   VariationExcludePreviewResponse,
@@ -96,6 +97,10 @@ export type AlignState = {
   excludeEdgeAndVariation: () => Promise<void>;
   applySmartExclusion: (modelPatterns: AlignGridPatternCoord[]) => void;
   reportError: (message: string | null) => void;
+  detecting: boolean;
+  detectReport: string | null;
+  detectLowConfidence: boolean;
+  detectGrid: (shape?: AlignGridShape) => Promise<void>;
 };
 
 export type UseAlignStateCoreDeps = {
@@ -218,6 +223,10 @@ export function useAlignStateCore(deps: UseAlignStateCoreDeps): Accessor<AlignSt
       excludeEdgeAndVariation: variation.excludeEdgeAndVariation,
       applySmartExclusion: session.applySmartExclusion,
       reportError: session.actions.reportError,
+      detecting: session.detecting(),
+      detectReport: session.detectReport(),
+      detectLowConfidence: session.detectLowConfidence(),
+      detectGrid: session.detectGrid,
     };
   });
 }

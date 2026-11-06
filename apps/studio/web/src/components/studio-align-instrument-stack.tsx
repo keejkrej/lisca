@@ -70,7 +70,10 @@ export function StudioAlignInstrumentStack(props: { expert?: boolean }) {
 
   const gridRail = (railPart: "grid" | "geometry") => (
     <AlignGridRail
-      disabled={disabled()}
+      detectLowConfidence={state.detectLowConfidence}
+      detectReport={state.detectReport}
+      detecting={state.detecting}
+      disabled={disabled() || state.detecting}
       grid={state.grid}
       railPart={railPart}
       sectionAppearance="rail"
@@ -79,6 +82,7 @@ export function StudioAlignInstrumentStack(props: { expert?: boolean }) {
         state.drift ?? null,
         state.selection.time,
       )}
+      onDetectGrid={(shape) => void state.detectGrid(shape)}
       onGridChange={state.setGrid}
       onTranslationDelta={state.adjustTranslation}
     />

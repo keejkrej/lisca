@@ -1,9 +1,11 @@
 //! Automatic micropattern-lattice detection ("auto-align").
 //!
-//! The Aligner UI finds the pattern lattice with pointer gestures and persists
-//! it through `align/save-bbox`, which leaves agents and scripted runs unable to
-//! align a Position at all. This module recovers the same [`AlignGridState`] from
-//! a single frame:
+//! The Aligner UI can place the pattern lattice with pointer gestures or with
+//! Auto-detect (`align/detect-grid`). Both load [`AlignGridState`] into the
+//! editable session; persist stays `align/save-bbox`. `lisca-align` and MCP
+//! `align_detect_grid` share this kernel so agents invoke the same control as
+//! a human click. Detection recovers the same [`AlignGridState`] from a single
+//! frame:
 //!
 //! 1. downsample the frame to a workable width,
 //! 2. threshold the micropattern islands (both polarities) and label components,
@@ -938,6 +940,20 @@ mod tests {
             detection.patterns.len()
         );
         assert!(detection.csv.starts_with("roi,x,y,w,h\n"));
+    }
+
+    #[test]
+    fn honors_a_forced_rectangular_shape() {
+        let frame = synthetic_lattice(480, 480, 40.0, 0.21, AlignGridShape::Hex, 30.0, 100, 900);
+        let detection = detect_grid(
+            &frame,
+            &DetectOptions {
+                shape: Some(AlignGridShape::Rect),
+                ..DetectOptions::default()
+            },
+        )
+        .expect("detect");
+        assert_eq!(detection.grid.shape, AlignGridShape::Rect);
     }
 
     #[test]
