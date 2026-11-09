@@ -32,3 +32,5 @@ Why a shipped choice looks the way it does. Agents write these during the change
 | [0019](0019-desktop-owned-mcp.md)                  | accepted   | Desktop apps own their local MCP server                                      |
 | [0020](0020-workspace-control-and-takeover.md)     | accepted   | One workspace writer with explicit human takeover                            |
 | [0021](0021-auto-detect-grid-preview.md)           | accepted   | Auto-detect grid is a preview; persist stays Save bbox                       |
+| [0022](0022-two-transfection-paths.md)             | superseded | Studio and the notebooks keep separate transfection traces                   |
+| [0023](0023-notebooks-follow-studio-assay.md)      | accepted   | Notebooks follow the Studio assay and alignment                             |

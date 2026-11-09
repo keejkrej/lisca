@@ -38,6 +38,7 @@ extra_javascript:
 nav:
   - Home: index.md
   - The workflow: workflow.md
+  - Studio, then the notebooks: paths.md
   - Drive Studio with Claude Code: agents.md
   - Assays:
       - Transfection kinetics: assays/transfection.md
