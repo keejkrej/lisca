@@ -2,6 +2,8 @@
 
 LISCA turns a raw time-lapse into one intensity trace per cell. Each step has a single job.
 
+These steps are the Studio path. After Metadata and Align, transfection of an ND2 or CZI can continue in the Jupyter notebooks. [Studio, then the notebooks](paths.md) is that handoff. The notebooks read the assay you saved here.
+
 ## 1. Import (metadata)
 
 **Aim:** tell LISCA where your images are and how positions, time points and channels are encoded.
@@ -32,7 +34,7 @@ LISCA turns a raw time-lapse into one intensity trace per cell. Each step has a 
 - _Classification mode:_ click a label for each cell (for example alive or dead).
 - _Segmentation mode:_ draw the cell outline.
 
-Fluorescence assays (transfection, PI) don't need annotation. Use this step to check crops and drop bad ones before analysis.
+Fluorescence assays (transfection, PI) don't need annotation. Analysis measures every cropped ROI. To leave a cell out, switch that pattern off in Align before Crop.
 
 ## 5. Analyze
 

@@ -110,7 +110,8 @@ export function MetadataSamples(props: { catalog?: PositionCatalog | null }) {
         <p class="text-[13px] leading-[18px] text-muted-foreground">
           Each card is one sample: a unique name and the positions it covers. Set the segmentation
           and signal channels once for the assay. A card can override them. Position numbers follow
-          the source labels (folder names, or NIS/ZEN 1-based names).
+          the source labels (folder names, or NIS/ZEN 1-based names). Jupyter reads these
+          cards from the saved assay after Align. It does not ask for the list again.
         </p>
         <Show when={encodingError()}>
           {(message) => (

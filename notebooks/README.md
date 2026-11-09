@@ -94,15 +94,26 @@ Windows: `.\scripts\jupyter-notebook.ps1`.
 
 This starts Jupyter Notebook in the `notebooks/` folder.
 
+## Which path
+
+Define the assay and align in Studio. These notebooks crop and analyze that workspace. They read `assay.json` and the saved ROI boxes. They do not ask for sample names or positions again.
+
+1. In Studio, save Metadata (source, interval, channels, samples) and Align. Save each position so `bbox/Pos{n}.csv` exists.
+2. `crop.ipynb` crops the ND2 or CZI from the assay, limited to positions that have a saved grid. A TIFF folder is cropped in Studio.
+3. `analyze.ipynb` runs the transfection pipeline from `assay.json`. Otsu when Skip segmentation is off, the full crop when it is on.
+4. `results.ipynb` writes tables and plots for the samples already in `assay.json`.
+
+Death reporter, engagement, and LNP binding stay on Studio Analyze. The manual page is [Studio, then the notebooks](https://keejkrej.github.io/lisca/paths/).
+
 ## Config cells
 
 Set these in the first code cell of each notebook. Paths are the mounted or local Workspace, not this zip.
 
 | Notebook        | Config                                                                                                          |
 | --------------- | --------------------------------------------------------------------------------------------------------------- |
-| `crop.ipynb`    | `WORKSPACE`, `SOURCE` (ND2/CZI), `POSITIONS` (zero-based; `range(0, 159)` is Pos 0..158)                        |
-| `analyze.ipynb` | `WORKSPACE`, `INTERVAL_MINUTES`, `MAX_ONSET_MINUTES` (onset time t0 cap), `SIGNAL_CHANNEL` (one int, every Pos) |
-| `results.ipynb` | `WORKSPACE`, `INTERVAL_MINUTES`, `SAMPLES` (unique names + positions). No `SIGNAL_CHANNEL`.                     |
+| `crop.ipynb`    | `WORKSPACE`. Source and positions come from `assay.json` and `bbox/`.                                      |
+| `analyze.ipynb` | `WORKSPACE`. Interval, channels, Skip segmentation, and max onset come from `assay.json`.                   |
+| `results.ipynb` | `WORKSPACE`. Samples and the interval come from `assay.json`. No sample list in the notebook.              |
 
 `analyze.ipynb` writes `analysis/` CSVs only. `results.ipynb` writes `samples[]` into `assay.json`, then Tables (`traces.xlsx` / `auc.xlsx` / `fit.xlsx`) and Plots (per-sample PNGs and root boxplots) as separate cells. Re-run Plots without re-running Tables or analyze.
 

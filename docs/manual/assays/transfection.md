@@ -15,7 +15,7 @@ Each frame of the phase-contrast channel is segmented into cell versus backgroun
 
 **Mask area** is the number of cell pixels in the ROI. Double cells are **not** split, so exclude them in step 2.
 
-**Skipping segmentation** treats the whole crop as the cell and changes the background rule (below).
+**Skipping segmentation** treats the whole crop as the cell and changes the background rule (below). Studio and the notebooks both follow the Skip segmentation switch in `assay.json`. [Studio, then the notebooks](../paths.md).
 
 ## Background correction
 

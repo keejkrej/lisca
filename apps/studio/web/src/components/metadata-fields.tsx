@@ -346,8 +346,8 @@ export function MetadataFields(props: { hostPort: HostFilePickerOperations }) {
             </label>
             <p class="text-[13px] leading-[18px] text-muted-foreground">
               When on, analysis uses the full crop and a 10th-percentile background instead of a
-              cell mask. Contrast on Align and Annotate is display-only and does not change these
-              numbers.
+              cell mask. The transfection notebooks follow this switch. Contrast on Align and
+              Annotate is display-only and does not change these numbers.
             </p>
             <div class="flex flex-col gap-2 ps-[calc(1rem+0.625rem)]">
               <span

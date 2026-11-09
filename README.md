@@ -10,6 +10,8 @@ Three apps share that workspace:
 
 Studio includes the Aligner and Annotator flows. GitHub Releases publish one desktop app per tag (`studio-v*`, `aligner-v*`, or `annotator-v*`). Notebook zips use `notebooks-v*`.
 
+Transfection can continue in the notebooks after Studio has saved the assay and the alignment. The notebooks read that `assay.json`. They do not ask for samples again. The handoff is [Studio, then the notebooks](docs/manual/paths.md).
+
 The user-facing manual (workflow, assays, plots, how to cite) is a MkDocs site at [keejkrej.github.io/lisca](https://keejkrej.github.io/lisca/). Pages live in `docs/manual/`; the rest of `docs/` is developer notes and ADRs.
 
 ## Desktop app

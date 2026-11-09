@@ -16,6 +16,7 @@ When you publish results produced with LISCA, cite LISCA and the method behind t
 ## Contents
 
 - [The workflow, steps 1–5](workflow.md): what each step is for.
+- [Studio, then the notebooks](paths.md): define the assay and align in Studio, then crop and analyze in Jupyter.
 - [Transfection kinetics](assays/transfection.md)
 - [PI death reporter](assays/pi-death.md)
 - [T-cell engagement](assays/engagement.md)
