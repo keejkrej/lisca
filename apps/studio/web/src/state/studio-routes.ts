@@ -10,7 +10,7 @@ export { isValidStoredPositions } from "@lisca/client/studio/assay-validation";
 
 export function instructionForStep(step: StudioStep): string {
   if (step === "chooseAssay") {
-    return "Open a saved assay, or pick an assay type and press New to start a blank one.";
+    return "Filter by research area or browse all assays. Open a saved assay, or pick an assay workflow and press New to start a blank one.";
   }
   if (step === "metadata") {
     return "Choose the image source, output folder, and time between frames. Set the segmentation and signal channels, then name each sample and the positions it covers. Press Save, then open Align in the left rail.";

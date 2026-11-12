@@ -1,8 +1,8 @@
+import { useAtomSet, useAtomValue } from "@effect/atom-solid";
 import { forgetStudioAssay } from "@lisca/client/studio/wizard-memory";
 import { CanvasToastStack, HostFilePickerDialog } from "@lisca/instrument";
 import { AppShell } from "@lisca/ui/shell";
 import { createFileRoute } from "@tanstack/solid-router";
-import { useAtomSet, useAtomValue } from "@effect/atom-solid";
 import { createMemo, createSignal } from "solid-js";
 
 import { studioHostOperations } from "../api/studio-port";
@@ -12,9 +12,9 @@ import { StudioLeft } from "../components/studio-left";
 import { useReplaceDocumentGuard } from "../components/studio-replace-document-guard";
 import { StudioRightPanel } from "../components/studio-right-panel";
 import { StudioTopBar } from "../components/studio-top-bar";
-import { instructionForStep } from "../state/studio-routes";
 import { useStudioMemoryRecent } from "../hooks/use-studio-memory-recent";
 import { useStudioNavigate } from "../navigation/use-studio-navigate";
+import { instructionForStep } from "../state/studio-routes";
 import { useStudioSession } from "../state/studio-session-context";
 import { studioWizardActions, studioWizardAtom } from "../state/studio-store";
 import { recordStudioAssayMemory } from "../utils/studio-memory";
@@ -24,7 +24,7 @@ export const Route = createFileRoute("/assay")({
 });
 
 function AssayPage() {
-  const { navigateTo } = useStudioNavigate();
+  const { navigate, navigateTo } = useStudioNavigate();
   const { openAssay } = useStudioSession();
   const [openingAssay, setOpeningAssay] = createSignal(false);
   const [assayPickerOpen, setAssayPickerOpen] = createSignal(false);
@@ -42,6 +42,16 @@ function AssayPage() {
       studioWizardActions.newAssay(setWizard, wizard().assayId);
       navigateTo("/metadata");
     });
+
+  const openGuide = () => {
+    void navigate({ to: "/onboarding", search: { step: "guide" } });
+  };
+  const openInterests = () => {
+    void navigate({ to: "/onboarding", search: { step: "interests" } });
+  };
+  const openFeedback = () => {
+    void navigate({ to: "/help-us" });
+  };
 
   const openAssayJson = async (path: string) => {
     setAssayPickerOpen(false);
@@ -79,7 +89,11 @@ function AssayPage() {
               }
             />
             <AppShell.MainScroll contentClass="max-w-[52rem] items-center justify-center px-4 py-6 md:px-12 md:py-10">
-              <ChooseAssay />
+              <ChooseAssay
+                onChangeInterests={openInterests}
+                onOpenFeedback={openFeedback}
+                onOpenGuide={openGuide}
+              />
             </AppShell.MainScroll>
           </AppShell.Main>
         </AppShell.MainColumn>
@@ -88,8 +102,11 @@ function AssayPage() {
             <StudioAssayActions
               assayPickerOpen={assayPickerOpen()}
               openingAssay={openingAssay()}
+              onChangeInterests={openInterests}
               onNewAssay={newAssay}
               onOpenAssay={() => setAssayPickerOpen(true)}
+              onOpenFeedback={openFeedback}
+              onOpenGuide={openGuide}
             />
           </StudioRightPanel>
         </AppShell.Right>

@@ -14,7 +14,9 @@ import { Route as AlignRouteImport } from './routes/align'
 import { Route as AnalysisRouteImport } from './routes/analysis'
 import { Route as AnnotateRouteImport } from './routes/annotate'
 import { Route as AssayRouteImport } from './routes/assay'
+import { Route as HelpUsRouteImport } from './routes/help-us'
 import { Route as MetadataRouteImport } from './routes/metadata'
+import { Route as OnboardingRouteImport } from './routes/onboarding'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -41,9 +43,19 @@ const AssayRoute = AssayRouteImport.update({
   path: '/assay',
   getParentRoute: () => rootRouteImport,
 } as any)
+const HelpUsRoute = HelpUsRouteImport.update({
+  id: '/help-us',
+  path: '/help-us',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MetadataRoute = MetadataRouteImport.update({
   id: '/metadata',
   path: '/metadata',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OnboardingRoute = OnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -53,7 +65,9 @@ export interface FileRoutesByFullPath {
   '/analysis': typeof AnalysisRoute
   '/annotate': typeof AnnotateRoute
   '/assay': typeof AssayRoute
+  '/help-us': typeof HelpUsRoute
   '/metadata': typeof MetadataRoute
+  '/onboarding': typeof OnboardingRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -61,7 +75,9 @@ export interface FileRoutesByTo {
   '/analysis': typeof AnalysisRoute
   '/annotate': typeof AnnotateRoute
   '/assay': typeof AssayRoute
+  '/help-us': typeof HelpUsRoute
   '/metadata': typeof MetadataRoute
+  '/onboarding': typeof OnboardingRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -70,13 +86,31 @@ export interface FileRoutesById {
   '/analysis': typeof AnalysisRoute
   '/annotate': typeof AnnotateRoute
   '/assay': typeof AssayRoute
+  '/help-us': typeof HelpUsRoute
   '/metadata': typeof MetadataRoute
+  '/onboarding': typeof OnboardingRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/align' | '/analysis' | '/annotate' | '/assay' | '/metadata'
+  fullPaths:
+    | '/'
+    | '/align'
+    | '/analysis'
+    | '/annotate'
+    | '/assay'
+    | '/help-us'
+    | '/metadata'
+    | '/onboarding'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/align' | '/analysis' | '/annotate' | '/assay' | '/metadata'
+  to:
+    | '/'
+    | '/align'
+    | '/analysis'
+    | '/annotate'
+    | '/assay'
+    | '/help-us'
+    | '/metadata'
+    | '/onboarding'
   id:
     | '__root__'
     | '/'
@@ -84,7 +118,9 @@ export interface FileRouteTypes {
     | '/analysis'
     | '/annotate'
     | '/assay'
+    | '/help-us'
     | '/metadata'
+    | '/onboarding'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -93,7 +129,9 @@ export interface RootRouteChildren {
   AnalysisRoute: typeof AnalysisRoute
   AnnotateRoute: typeof AnnotateRoute
   AssayRoute: typeof AssayRoute
+  HelpUsRoute: typeof HelpUsRoute
   MetadataRoute: typeof MetadataRoute
+  OnboardingRoute: typeof OnboardingRoute
 }
 
 declare module '@tanstack/solid-router' {
@@ -133,11 +171,25 @@ declare module '@tanstack/solid-router' {
       preLoaderRoute: typeof AssayRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/help-us': {
+      id: '/help-us'
+      path: '/help-us'
+      fullPath: '/help-us'
+      preLoaderRoute: typeof HelpUsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/metadata': {
       id: '/metadata'
       path: '/metadata'
       fullPath: '/metadata'
       preLoaderRoute: typeof MetadataRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/onboarding': {
+      id: '/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof OnboardingRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -149,7 +201,9 @@ const rootRouteChildren: RootRouteChildren = {
   AnalysisRoute: AnalysisRoute,
   AnnotateRoute: AnnotateRoute,
   AssayRoute: AssayRoute,
+  HelpUsRoute: HelpUsRoute,
   MetadataRoute: MetadataRoute,
+  OnboardingRoute: OnboardingRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
