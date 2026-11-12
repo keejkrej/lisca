@@ -1,12 +1,14 @@
 import { FolderSourceParseModal, HostFilePickerDialog, SourcePickerModal } from "@lisca/instrument";
 import type { AlignerSource } from "@lisca/contracts";
 import {
+  forgetRecentSource,
+  forgetRecentWorkspace,
   readRecentMemory,
   recentSourceByPath,
   recentSourcePickerItems,
   touchRecentMemory,
 } from "@lisca/client/session/recent-memory";
-import { ShellNavbar, useShellWorkspace } from "@lisca/ui/shell";
+import { ShellNavbar, useShellWorkspace, type ShellWorkspaceControlSession } from "@lisca/ui/shell";
 import type { HostFilePickerMode } from "@lisca/instrument";
 import { createSignal } from "solid-js";
 
@@ -25,7 +27,9 @@ function filePickerTitle(mode: HostFilePickerMode): string {
 export function AlignerHeader() {
   const alignSource = useAlignSource();
   const workspace = useShellWorkspace();
+  const lastRevisionByWorkspace = new Map<string, number>();
   let pickerMode: HostFilePickerMode | null = null;
+  const [recentVersion, setRecentVersion] = createSignal(0);
   const [sourcePickerOpen, setSourcePickerOpen] = createSignal(false);
   const [folderSourcePath, setFolderSourcePath] = createSignal<string | null>(null);
   const [filePicker, setFilePicker] = createSignal<{
@@ -39,11 +43,22 @@ export function AlignerHeader() {
     workspace.setWorkspacePath(path);
     alignSource.setSource(null);
     touchRecentMemory("aligner", { kind: "workspace", path });
+    setRecentVersion((version) => version + 1);
   };
   const applySource = (source: AlignerSource) => {
     workspace.setSourcePath(source.path);
     alignSource.setSource(source);
     touchRecentMemory("aligner", { kind: "source", source });
+    setRecentVersion((version) => version + 1);
+  };
+
+  const handleAgentSessionsChange = (sessions: ShellWorkspaceControlSession[]) => {
+    const current = sessions[0];
+    if (!current) return;
+    const previousRevision = lastRevisionByWorkspace.get(current.workspacePath);
+    if (previousRevision === current.revision) return;
+    lastRevisionByWorkspace.set(current.workspacePath, current.revision);
+    void alignSource.refreshAgentWorkspace(current.workspacePath);
   };
 
   const openFilePicker = (mode: HostFilePickerMode) => {
@@ -72,6 +87,7 @@ export function AlignerHeader() {
     <>
       <ShellNavbar.Aligner
         appearance="stage"
+        onAgentSessionsChange={handleAgentSessionsChange}
         onPickSource={() => setSourcePickerOpen(true)}
         onPickWorkspace={() => openFilePicker("workspace")}
       />
@@ -107,11 +123,24 @@ export function AlignerHeader() {
         onPickFile={applyPickFile}
         recentItems={
           filePicker().open
-            ? filePicker().mode === "workspace"
-              ? readRecentMemory("aligner").workspaces
-              : recentSourcePickerItems(readRecentMemory("aligner").sources, filePicker().mode)
+            ? (() => {
+                recentVersion();
+                const memory = readRecentMemory("aligner");
+                return filePicker().mode === "workspace"
+                  ? memory.workspaces
+                  : recentSourcePickerItems(memory.sources, filePicker().mode);
+              })()
             : undefined
         }
+        onRemoveRecent={(path) => {
+          const mode = filePicker().mode;
+          if (mode === "workspace") {
+            forgetRecentWorkspace("aligner", path);
+          } else {
+            forgetRecentSource("aligner", mode, path);
+          }
+          setRecentVersion((version) => version + 1);
+        }}
         onPickRecent={(path) => {
           const mode = filePicker().mode;
           setFilePicker((current) => ({ ...current, open: false }));

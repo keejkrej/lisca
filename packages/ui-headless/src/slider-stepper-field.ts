@@ -38,9 +38,18 @@ export function useSliderStepperField(options: () => UseSliderStepperFieldOption
       : label;
   };
 
+  const commitDraftValue = (nextValue: number, commit?: (value: number) => void) => {
+    setDraftValue(nextValue);
+    commit?.(nextValue);
+    queueMicrotask(() => {
+      setDraftValue(options().value);
+    });
+  };
+
   return {
     draftValue: draftValue as Accessor<number>,
     setDraftValue,
+    commitDraftValue,
     displayLabel,
     ariaValueText,
   };

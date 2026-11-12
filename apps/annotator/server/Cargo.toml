@@ -23,3 +23,6 @@ axum.workspace = true
 lisca = { workspace = true, default-features = false, features = ["smart"] }
 lisca-server.workspace = true
 tokio.workspace = true
+
+[dev-dependencies]
+tower = { version = "0.5", features = ["util"] }

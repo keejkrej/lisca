@@ -59,15 +59,11 @@ lisca-server = { path = "crates/lisca-server" }
 # ndarray 0.16 / imageproc 0.25 in that crate; this workspace stays on 0.17 / 0.27.
 # Call workspace-path APIs so ndarray types are not unified across the boundary.
 lisca-transfection = { git = "https://github.com/keejkrej/lisca-transfection-assay", rev = "0d2bfe9205d735918587a83f8a538172de90dbe5" }
-# Death-reporter fluorescence, fluorescent engagement, and the killing
-# classifier (predict, clean, kill curve). Python `killing` in that repo is
-# the same definitions. Lisca does not depend on it: the package also pulls
-# the label-free training stack.
-lisca-killing = { git = "https://github.com/keejkrej/lisca-killing-assay", rev = "0d1d750e04ed5ec3fa1cbedb8ad9320b8103c3e4" }
-# Picasso localization for the LNP binding assay (spot identify + Gaussian fit).
-# Not on crates.io; pin the git rev. `lisca-binding-assay` is not a crate yet.
-picasso = { git = "https://github.com/keejkrej/picasso-rs", rev = "bc1ba5e580fb012f861860030fef4fac748ec2f6" }
-rust_xlsxwriter = "0.90"
+# Death-reporter fluorescence, viability, fluorescent engagement, and the
+# killing classifier (predict, clean, kill curve, figures).
+lisca-killing = { git = "https://github.com/keejkrej/lisca-killing-assay", rev = "28a8d88252874782aa1b28c2c438d03f1009e99b" }
+# LNP binding assay (Picasso spot detection + Gaussian fit, per-ROI counts, figures).
+lisca-binding = { git = "https://github.com/keejkrej/lisca-binding-assay", rev = "647db5dbca16decc1690a1b28c1499cda149fee0" }
 tauri = "2"
 tauri-build = "2"
 tauri-plugin-dialog = "2"

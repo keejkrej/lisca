@@ -106,6 +106,7 @@ dependencies = [
  "lisca",
  "lisca-server",
  "tokio",
+ "tower",
 ]
 
 [[package]]
@@ -2586,18 +2587,16 @@ dependencies = [
  "font-kit",
  "image 0.25.10",
  "libc",
+ "lisca-binding",
  "lisca-killing",
  "lisca-transfection",
  "lisca-workspace",
  "marray 1.0.0 (git+https://github.com/keejkrej/marray-rs?rev=af67ac2d833f55e069f286022d0a0de0b9547bfb)",
- "mplot 1.0.0 (git+https://github.com/keejkrej/mplot-rs?rev=8a596cdcb0f45eb1d48252b5c36c5d68ebfc2842)",
  "nd2",
  "ndarray 0.17.2",
  "ndarray-stats 0.7.0",
  "ort",
- "picasso",
  "rayon",
- "rust_xlsxwriter",
  "serde",
  "serde_json",
  "tempfile",
@@ -2612,13 +2611,32 @@ dependencies = [
 ]
 
 [[package]]
-name = "lisca-killing"
+name = "lisca-binding"
 version = "0.1.0"
-source = "git+https://github.com/keejkrej/lisca-killing-assay?rev=0d1d750e04ed5ec3fa1cbedb8ad9320b8103c3e4#0d1d750e04ed5ec3fa1cbedb8ad9320b8103c3e4"
+source = "git+https://github.com/keejkrej/lisca-binding-assay?rev=647db5dbca16decc1690a1b28c1499cda149fee0#647db5dbca16decc1690a1b28c1499cda149fee0"
 dependencies = [
  "csv",
+ "font-kit",
+ "marray 1.0.0 (git+https://github.com/keejkrej/marray-rs?rev=af67ac2d833f55e069f286022d0a0de0b9547bfb)",
+ "mplot 1.0.0 (git+https://github.com/keejkrej/mplot-rs?rev=8a596cdcb0f45eb1d48252b5c36c5d68ebfc2842)",
+ "picasso",
+ "rayon",
+ "rust_xlsxwriter",
+ "serde",
+ "serde_json",
+ "tiff 0.10.3",
+]
+
+[[package]]
+name = "lisca-killing"
+version = "0.1.0"
+source = "git+https://github.com/keejkrej/lisca-killing-assay?rev=28a8d88252874782aa1b28c2c438d03f1009e99b#28a8d88252874782aa1b28c2c438d03f1009e99b"
+dependencies = [
+ "csv",
+ "font-kit",
  "image 0.25.10",
  "marray 1.0.0 (git+https://github.com/keejkrej/marray-rs?rev=af67ac2d833f55e069f286022d0a0de0b9547bfb)",
+ "mplot 1.0.0 (git+https://github.com/keejkrej/mplot-rs?rev=8a596cdcb0f45eb1d48252b5c36c5d68ebfc2842)",
  "ndarray 0.17.2",
  "ort",
  "rust_xlsxwriter",
@@ -5152,7 +5170,7 @@ dependencies = [
 
 [[package]]
 name = "studio-tauri"
-version = "0.5.1"
+version = "0.5.2"
 dependencies = [
  "lisca-tauri",
  "serde_json",

@@ -1,5 +1,4 @@
 import { mergeAlignGridEdgeExclusion } from "@lisca/client/align-session";
-import { useSmartExclude } from "@lisca/smart/exclude/request";
 import { useVarExclude } from "@lisca/smart/var-exclude";
 import { createMemo, onCleanup } from "solid-js";
 import type { JSX } from "solid-js";
@@ -7,25 +6,10 @@ import type { JSX } from "solid-js";
 import { StudioAlignVariationExcludeDialog } from "../components/studio-align-variation-exclude-dialog";
 import { useStudioAlignState } from "./use-studio-align-state";
 import { StudioAlignPageContext } from "./studio-align-page-context";
-import { createStudioSmartExcludeProvider } from "./studio-smart-exclude";
 import { createStudioVarExcludeProvider } from "./studio-var-exclude";
 
 export function StudioAlignPageProvider(props: { children?: JSX.Element }) {
   const state = useStudioAlignState();
-  const smartExcludeProvider = createStudioSmartExcludeProvider({
-    source: () => state.source,
-    selection: () => state.selection,
-    contrast: () => state.contrast,
-  });
-  const smartExclude = useSmartExclude({
-    provider: smartExcludeProvider,
-    frame: () => state.frame,
-    grid: () => state.effectiveGrid,
-    currentExcludedPatterns: () => state.currentExcludedPatterns,
-    enabled: () => Boolean(state.frame) && !state.saving,
-    onComplete: state.applySmartExclusion,
-    onError: state.reportError,
-  });
   const varExclude = useVarExclude({
     provider: createStudioVarExcludeProvider(),
     frame: () => state.frame,
@@ -37,7 +21,7 @@ export function StudioAlignPageProvider(props: { children?: JSX.Element }) {
     onError: state.reportError,
   });
 
-  const excludeActive = createMemo(() => varExclude.active() || smartExclude.active());
+  const excludeActive = createMemo(() => varExclude.active());
 
   /** Selection var exclude: additive on current exclusions, plus edge patterns once applied. */
   const requestVarExclude = async (): Promise<void> => {
@@ -68,7 +52,6 @@ export function StudioAlignPageProvider(props: { children?: JSX.Element }) {
     <StudioAlignPageContext.Provider
       value={{
         state,
-        smartExclude,
         varExclude,
         excludeActive,
         requestVarExclude,

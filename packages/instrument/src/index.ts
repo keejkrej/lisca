@@ -23,10 +23,6 @@ export { AlignGridRail } from "./align/align-grid-rail";
 export { AlignDriftRail, type AlignDriftRailProps } from "./align/align-drift-rail";
 export { AlignSelectionRail, type AlignSelectionRailProps } from "./align/align-selection-rail";
 export {
-  SmartExcludeModelDialog,
-  type SmartExcludeModelDialogProps,
-} from "./align/smart-exclude-model-dialog";
-export {
   AlignDetectShapeToggle,
   AlignGridShapeToggle,
   type AlignDetectShape,
@@ -116,6 +112,11 @@ export {
 } from "./host/host-file-picker-dialog";
 export { PathPickerField, type PathPickerFieldProps } from "./host/path-picker-field";
 export type { HostFilePickerMode, HostFilePickerOperations } from "@lisca/utils";
+export {
+  InferenceSettingsPanel,
+  LabelFreeReferencesPanel,
+  type LabelFreeClient,
+} from "./annotate/label-free-panel";
 export {
   LabelCreationDialog,
   type LabelCreationDialogProps,

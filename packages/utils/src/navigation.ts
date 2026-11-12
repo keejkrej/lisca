@@ -64,6 +64,7 @@ export type AxisIndexSliderControl = {
   disabled?: boolean;
   previousDisabled?: boolean;
   nextDisabled?: boolean;
+  onChange?: (value: number) => void;
   onCommit?: (value: number) => void;
   onPrevious: () => void;
   onNext: () => void;
@@ -158,6 +159,9 @@ export function createAxisIndexSliderControl(args: {
   const baseDisabled = args.disabled ?? false;
   const sliderDisabled = baseDisabled || max <= 0;
 
+  const applyIndex = (nextValue: number) =>
+    args.onIndexChange(clamp(Math.round(nextValue), 0, max));
+
   return {
     value: index,
     min: 0,
@@ -169,7 +173,8 @@ export function createAxisIndexSliderControl(args: {
     disabled: sliderDisabled,
     previousDisabled: baseDisabled || index <= 0,
     nextDisabled: baseDisabled || index >= max,
-    onCommit: (nextValue) => args.onIndexChange(clamp(Math.round(nextValue), 0, max)),
+    onChange: applyIndex,
+    onCommit: applyIndex,
     onPrevious: () => args.onIndexChange(Math.max(0, index - 1)),
     onNext: () => args.onIndexChange(Math.min(max, index + 1)),
   };

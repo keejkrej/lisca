@@ -40,7 +40,7 @@ export function AlignFrameNavigation() {
         get disabled() {
           return disabled();
         },
-        onChange: (pos) => nav.setSelection({ pos }),
+        onChange: (pos) => nav.changePosition(pos),
         get previousDisabled() {
           return disabled() || posIndex() <= 0;
         },
@@ -49,11 +49,11 @@ export function AlignFrameNavigation() {
         },
         onPrevious: () => {
           const next = stepNavigationValue(positionOptions(), nav.selection.pos, -1);
-          if (next != null) nav.setSelection({ pos: next });
+          if (next != null) nav.changePosition(next);
         },
         onNext: () => {
           const next = stepNavigationValue(positionOptions(), nav.selection.pos, 1);
-          if (next != null) nav.setSelection({ pos: next });
+          if (next != null) nav.changePosition(next);
         },
       }}
       channel={{
@@ -126,6 +126,10 @@ export function AlignFrameNavigation() {
           const idx = clamp(timeIndex(), 0, max);
           return baseDisabled || idx >= max;
         },
+        onChange: (nextValue) => {
+          const max = Math.max(0, (nav.scan?.times?.length ?? 1) - 1);
+          nav.setSelection({ time: nav.scan?.times?.[clamp(Math.round(nextValue), 0, max)] ?? 0 });
+        },
         onCommit: (nextValue) => {
           const max = Math.max(0, (nav.scan?.times?.length ?? 1) - 1);
           nav.setSelection({ time: nav.scan?.times?.[clamp(Math.round(nextValue), 0, max)] ?? 0 });
@@ -186,6 +190,10 @@ export function AlignFrameNavigation() {
           const max = Math.max(0, (nav.scan?.zSlices?.length ?? 1) - 1);
           const idx = clamp(zIndex(), 0, max);
           return baseDisabled || idx >= max;
+        },
+        onChange: (nextValue) => {
+          const max = Math.max(0, (nav.scan?.zSlices?.length ?? 1) - 1);
+          nav.setSelection({ z: nav.scan?.zSlices?.[clamp(Math.round(nextValue), 0, max)] ?? 0 });
         },
         onCommit: (nextValue) => {
           const max = Math.max(0, (nav.scan?.zSlices?.length ?? 1) - 1);

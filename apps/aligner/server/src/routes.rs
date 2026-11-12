@@ -20,7 +20,7 @@ use lisca::{
 };
 use lisca_server::{HasTaskScheduler, StepFailure, StepSpec, TaskSpec};
 
-/// Lightweight Aligner routes: scan, frame load, bbox save, grid detect, smart exclude.
+/// Lightweight Aligner routes: scan, frame load, bbox save, grid detect.
 /// Does **not** include ROI crop (long-running); Studio mounts [`crop_router`].
 pub fn router<S>() -> Router<S>
 where
@@ -38,7 +38,6 @@ where
             get(saved_bbox_positions_handler),
         )
         .route("/align/roi-pos-exists", get(roi_pos_exists_handler))
-        .route("/align/smart-exclude", post(smart_exclude_handler))
 }
 
 /// ROI crop task routes + step-manager integration. Owned by Studio (and CLI),
@@ -68,16 +67,6 @@ where
         .await
         .map_err(|error| FsError::internal(format!("{label} worker failed: {error}")))?
         .map_err(FsError::new)
-}
-
-async fn smart_exclude_handler(
-    Json(payload): Json<lisca::protocol::SmartExcludeRequest>,
-) -> Result<Json<lisca::protocol::SmartExcludeResponse>, FsError> {
-    run_blocking("smart exclude", move || {
-        lisca::smart::exclude::classify_exclusion(payload)
-    })
-    .await
-    .map(Json)
 }
 
 async fn scan_source_handler(

@@ -1,7 +1,8 @@
 # ADR-0015: LNP binding uses Picasso in this repo until a sidecar exists
 
-- **Status:** accepted
+- **Status:** superseded
 - **Date:** 2026-10-26
+- **Superseded by:** [ADR-0027](0027-thin-sidecar-assay-callers.md)
 
 ## Decision
 

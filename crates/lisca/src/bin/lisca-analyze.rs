@@ -1,11 +1,8 @@
 //! Assay analysis CLI. Transfection stages dispatch into `lisca-transfection`.
-//! `killing-death-reporter` and `killing-engagement` dispatch into the killing
-//! assay and take a workspace path only. `lnp-binding` detects fluorescent
-//! spots with Picasso and takes a workspace path only. `killing-death-reporter`
+//! `killing-death-reporter` and `killing-engagement` dispatch into
+//! `lisca-killing` and take a workspace path only. `lnp-binding` dispatches
+//! into `lisca-binding` and takes a workspace path only. `killing-death-reporter`
 //! requires `assay.json` type `killing-death-reporter`.
-//!
-//! `--backend onnx` uses the local Studio ONNX segmenter; Otsu and all
-//! downstream transfection stages come from the sidecar crate.
 //!
 //! ```text
 //! cargo run -p lisca --bin lisca-analyze -- --help
@@ -25,17 +22,16 @@ use std::process;
 use std::time::Instant;
 
 use lisca::analysis::assays::binding;
-use lisca::analysis::assays::killing;
-use lisca::analysis::assays::killing_engagement;
+use lisca::analysis::assays::killing::{
+    death_reporter as killing, engagement as killing_engagement,
+};
 use lisca::analysis::assays::transfection::{
     default_fit_jobs, default_jobs, default_traces_jobs, interval_minutes, max_onset_minutes,
     publish_sample_tables_xlsx, publish_sample_traces_xlsx, run_auc, run_fit, run_plot_auc,
     run_plot_fit, run_plot_traces, run_segment, run_sync_with_mode, run_traces_with_mode,
     skip_segment, SegmentBackend, SegmentOptions,
 };
-use lisca::analysis::sample::{
-    build_sample_mapping, load_mapping_for_workspace, parse_interval_minutes, resolve_assay_path,
-};
+use lisca::analysis::sample::{load_mapping_for_workspace, resolve_assay_path};
 use lisca::protocol::{AssayJsonFile, AssayType};
 
 fn main() {
@@ -82,8 +78,8 @@ lisca-analyze — assay CLI
   lnp-binding <workspace>
 
 Transfection stages call `lisca-transfection`. `killing-death-reporter` and
-`killing-engagement` call the killing dispatch and take a workspace path only.
-`lnp-binding` calls Picasso spot detection and takes a workspace path only.
+`killing-engagement` call `lisca-killing` and take a workspace path only.
+`lnp-binding` calls `lisca-binding` and takes a workspace path only.
 `killing-death-reporter` requires assay.json type `killing-death-reporter`. This binary does not
 run the classifier and has no `fluorescence`, `clean`, or `predict` command.
 
@@ -94,7 +90,7 @@ Usage:
   lisca-analyze lnp-binding <workspace>
 
 Commands (transfection stage names):
-  segment           Masks → mask/PosN/ (default Otsu; optional ONNX U-Net)
+  segment           Masks → mask/PosN/ (Otsu local-variation segmentation)
   traces            Intensity traces → analysis/Pos{{n}}/ch{{n}}.csv
   auc               Trapezoidal AUC → analysis/Pos{{n}}/auc.csv
   fit               Two-exponential kinetic fit → analysis/Pos{{n}}/fit.csv
@@ -128,11 +124,7 @@ Transfection stage options (not accepted by killing-death-reporter, killing-enga
    analysis.skipSegment, not a CLI flag)
   --variation-radius N    segment local-variation radius (default: 2)
   --gaussian-sigma F      segment Gaussian sigma (default: 1.0)
-  --backend otsu|onnx     segment backend (default: otsu)
-  --model-dir PATH        ONNX dir (LISCA_PATTERN_SEG_MODEL / HF pattern U-Net)
-  --image-size N          ONNX input size (default: 128)
-  --threshold F           ONNX sigmoid threshold (default: 0.5)
-  --batch-size N          ONNX frame batch size (default: 32)
+  --backend otsu          segment backend (default: otsu)
   --force, -f             segment: overwrite existing masks
   --columns N             plot grid columns (default: 3)
 
@@ -163,16 +155,9 @@ fn cmd_segment(args: &[String]) -> Result<(), String> {
         force: has_flag(args, "--force") || has_flag(args, "-f"),
         jobs: default_jobs(),
         backend,
-        model_dir: flag_path(args, "--model-dir"),
-        image_size: flag_u32(args, "--image-size")?.unwrap_or(128),
-        threshold: flag_f64(args, "--threshold")?.unwrap_or(0.5) as f32,
-        batch_size: flag_usize(args, "--batch-size")?.unwrap_or(32),
     };
     if options.gaussian_sigma < 0.0 {
         return Err("--gaussian-sigma must be >= 0".to_string());
-    }
-    if options.image_size == 0 {
-        return Err("--image-size must be > 0".to_string());
     }
     eprintln!(
         "segment workspace={} assay={} backend={:?} jobs={} force={}",
@@ -328,16 +313,8 @@ fn cmd_killing_engagement(args: &[String]) -> Result<(), String> {
             assay.type_
         ));
     }
-    let interval = parse_interval_minutes(assay.interval.value, Some(assay.interval.unit.as_str()))
-        .ok_or_else(|| "invalid interval.value/unit in assay.json".to_string())?;
-    let mapping = build_sample_mapping(&assay)?;
     timed("killing-engagement", || {
-        for position in mapping.positions() {
-            killing_engagement::run_position(&workspace, &mapping, position, interval)?;
-        }
-        killing_engagement::run_plot_traces(&workspace, &mapping, interval)?;
-        killing_engagement::write_summary(&workspace, &mapping)?;
-        Ok(())
+        killing_engagement::run_sync(&workspace, &assay)
     })
 }
 

@@ -8,6 +8,7 @@ import {
   fillPolygon,
   frameViewWheelFactor,
   hexToRgb,
+  prepareFrameRgba,
   smartSegmentPromptRadius,
   strokeMask,
 } from "@lisca/utils";
@@ -58,16 +59,8 @@ function prepareFrameCanvas(frame: FrameResult) {
   canvas.height = frame.height;
   const ctx = canvas.getContext("2d");
   if (!ctx) return canvas;
-  const rgba = new Uint8ClampedArray(frame.width * frame.height * 4);
-  for (let index = 0; index < frame.pixels.length; index += 1) {
-    const value = clamp(Math.round(Number(frame.pixels[index] ?? 0)), 0, 255);
-    const offset = index * 4;
-    rgba[offset] = value;
-    rgba[offset + 1] = value;
-    rgba[offset + 2] = value;
-    rgba[offset + 3] = 255;
-  }
-  ctx.putImageData(new ImageData(rgba, frame.width, frame.height), 0, 0);
+  const rgba = prepareFrameRgba(frame);
+  ctx.putImageData(new ImageData(new Uint8ClampedArray(rgba), frame.width, frame.height), 0, 0);
   return canvas;
 }
 
@@ -107,11 +100,52 @@ export function AnnotationCanvas(props: AnnotationCanvasProps) {
 
   const dprRef = { current: 1 };
   const latestFrameRef = { current: null as PreparedFrame | null };
+  const cachedMaskRef = {
+    current: null as {
+      width: number;
+      height: number;
+      labelsKey: string;
+      mask: Uint8Array;
+      canvas: HTMLCanvasElement;
+    } | null,
+  };
   const renderRafRef = { current: null as number | null };
   const resizeRafRef = { current: null as number | null };
   const [lassoPoints, setLassoPoints] = createSignal<FramePoint[]>([]);
   const lassoRef = { current: null as { pointerId: number; points: FramePoint[] } | null };
   const frameView = createFrameViewController();
+
+  const cancelActiveStroke = () => {
+    if (!lassoRef.current && lassoPoints().length === 0) return;
+    const pointerId = lassoRef.current?.pointerId;
+    lassoRef.current = null;
+    setLassoPoints([]);
+    if (pointerId != null && canvasEl?.hasPointerCapture(pointerId)) {
+      canvasEl.releasePointerCapture(pointerId);
+    }
+  };
+
+  const getMaskCanvas = (
+    width: number,
+    height: number,
+    labels: AnnotationLabel[],
+    mask: Uint8Array,
+  ) => {
+    const labelsKey = labels.map((label) => `${label.id}:${label.color}`).join("|");
+    const cached = cachedMaskRef.current;
+    if (
+      cached &&
+      cached.width === width &&
+      cached.height === height &&
+      cached.labelsKey === labelsKey &&
+      cached.mask === mask
+    ) {
+      return cached.canvas;
+    }
+    const canvas = prepareMaskCanvas(width, height, labels, mask);
+    cachedMaskRef.current = { width, height, labelsKey, mask, canvas };
+    return canvas;
+  };
 
   const drawRectFor = (width: number, height: number, frame: FrameResult) => {
     const layout = frameView.layout(width, height, frame);
@@ -154,7 +188,7 @@ export function AnnotationCanvas(props: AnnotationCanvasProps) {
       const rect = drawRectFor(width, height, cached.frame);
       ctx.imageSmoothingEnabled = false;
       ctx.drawImage(cached.prepared, rect.x, rect.y, rect.width, rect.height);
-      const maskCanvas = prepareMaskCanvas(
+      const maskCanvas = getMaskCanvas(
         cached.frame.width,
         cached.frame.height,
         props.labels,
@@ -210,6 +244,7 @@ export function AnnotationCanvas(props: AnnotationCanvasProps) {
 
   createEffect(() => {
     const frame = props.frame;
+    cancelActiveStroke();
     frameView.syncFrame(frame);
     if (frame) {
       latestFrameRef.current = {
@@ -220,6 +255,12 @@ export function AnnotationCanvas(props: AnnotationCanvasProps) {
       latestFrameRef.current = null;
     }
     scheduleRender();
+  });
+
+  createEffect(() => {
+    if (props.disabled) {
+      cancelActiveStroke();
+    }
   });
 
   createEffect(() => {

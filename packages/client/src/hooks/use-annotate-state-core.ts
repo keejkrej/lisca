@@ -46,6 +46,7 @@ export {
   annotationOutputPaths,
   annotationSessionErrorMessage,
   annotationValuesEqual,
+  clearRoiFrameCache,
   cloneAnnotationValue,
   createRoiFrameLoader,
   decodeMaskBase64Png,
@@ -144,7 +145,15 @@ export function useAnnotateStateCore<State extends AnnotatorUiState>(
   const resetAnnotation = (value: { classificationLabelId: string | null; mask: Uint8Array }) =>
     annotation.reset(value);
   let selectionChanging = false;
-  const loadCanvasResources = deps.useCanvasResourceTransaction();
+  const loadSelectionResources = deps.useCanvasResourceTransaction();
+  const loadContrastResources = deps.useCanvasResourceTransaction();
+  let abortContrastLoad: (() => void) | null = null;
+  let pendingSelectionContrastKey: string | null = null;
+  let contrastRevision = 0;
+  let contrastInFlight = false;
+
+  const contrastWindowKey = (window: { min: number; max: number } | null): string =>
+    window == null ? "auto" : `${window.min}:${window.max}`;
 
   const visibleStatus = deps.useCanvasTransientStatus(() => session.state().status);
 
@@ -179,7 +188,11 @@ export function useAnnotateStateCore<State extends AnnotatorUiState>(
     const shellPath = shellWorkspacePath();
     const workspacePath = untrack(() => session.state().workspacePath);
     const request = untrack(() => requestContext().request);
+    abortContrastLoad?.();
+    abortContrastLoad = null;
+    contrastInFlight = false;
     if (!workspacePath || workspacePath !== shellPath || !request) {
+      pendingSelectionContrastKey = null;
       deps.annotatorUiActions.setFrame(setUi, null);
       resetAnnotation(emptyAnnotationValue(null));
       deps.annotatorUiActions.setFrameLoading(setUi, false);
@@ -191,7 +204,9 @@ export function useAnnotateStateCore<State extends AnnotatorUiState>(
       const current = session.state();
       return contrastForFrameChange(current.contrast, current.contrastLocked, current.frame);
     });
-    const cleanup = loadCanvasResources<{
+    const selectionContrastRevision = contrastRevision;
+    pendingSelectionContrastKey = frameContrast ? contrastWindowKey(frameContrast) : null;
+    const cleanup = loadSelectionResources<{
       frame: FrameResult;
       annotation: {
         classificationLabelId: string | null;
@@ -220,12 +235,16 @@ export function useAnnotateStateCore<State extends AnnotatorUiState>(
         ),
       commit: ({ frame: nextFrame, annotation: nextAnnotation }) => {
         resetAnnotation(nextAnnotation);
-        deps.annotatorUiActions.setFrame(setUi, nextFrame);
-        deps.annotatorUiActions.setContrastState(setUi, nextFrame);
+        if (contrastRevision === selectionContrastRevision) {
+          deps.annotatorUiActions.setFrame(setUi, nextFrame);
+          deps.annotatorUiActions.setContrastState(setUi, nextFrame);
+        }
         deps.annotatorUiActions.setStatus(setUi, `Loaded Pos${request.pos} Roi${request.roi}`);
       },
       reject: (cause) => {
-        deps.annotatorUiActions.setFrame(setUi, null);
+        if (contrastRevision === selectionContrastRevision) {
+          deps.annotatorUiActions.setFrame(setUi, null);
+        }
         resetAnnotation(emptyAnnotationValue(null));
         deps.annotatorUiActions.setFrameError(
           setUi,
@@ -233,7 +252,7 @@ export function useAnnotateStateCore<State extends AnnotatorUiState>(
         );
       },
       settle: () => {
-        deps.annotatorUiActions.setFrameLoading(setUi, false);
+        deps.annotatorUiActions.setFrameLoading(setUi, contrastInFlight);
         deps.annotatorUiActions.setAnnotationLoading(setUi, false);
       },
     });
@@ -243,8 +262,15 @@ export function useAnnotateStateCore<State extends AnnotatorUiState>(
   createEffect(() => {
     const contrast = activeContrast();
     if (contrast == null) {
+      pendingSelectionContrastKey = null;
       return;
     }
+    const key = contrastWindowKey(contrast);
+    if (pendingSelectionContrastKey === key) {
+      pendingSelectionContrastKey = null;
+      return;
+    }
+    pendingSelectionContrastKey = null;
     const currentUi = untrack(() => session.state());
     const workspacePath = currentUi.workspacePath;
     const shellPath = shellWorkspacePath();
@@ -252,7 +278,9 @@ export function useAnnotateStateCore<State extends AnnotatorUiState>(
     if (!workspacePath || workspacePath !== shellPath || !request) {
       return;
     }
-    const cleanup = loadCanvasResources({
+    contrastRevision += 1;
+    contrastInFlight = true;
+    const cleanup = loadContrastResources({
       start: () => {
         deps.annotatorUiActions.setFrameLoading(setUi, true);
         deps.annotatorUiActions.setFrameError(setUi, null);
@@ -274,9 +302,19 @@ export function useAnnotateStateCore<State extends AnnotatorUiState>(
           annotationSessionErrorMessage(cause, "ROI frame contrast update failed"),
         );
       },
-      settle: () => deps.annotatorUiActions.setFrameLoading(setUi, false),
+      settle: () => {
+        contrastInFlight = false;
+        deps.annotatorUiActions.setFrameLoading(setUi, session.state().annotationLoading);
+      },
     });
-    onCleanup(cleanup);
+    abortContrastLoad = cleanup;
+    onCleanup(() => {
+      if (abortContrastLoad === cleanup) {
+        abortContrastLoad = null;
+        contrastInFlight = false;
+      }
+      cleanup();
+    });
   });
 
   const handleSave = async () => {
@@ -346,17 +384,28 @@ export function useAnnotateStateCore<State extends AnnotatorUiState>(
     setFilePickerOpen(false);
   };
 
-  const changeSelection = (fn: () => void) => {
-    void (async () => {
-      const allowed = await Promise.resolve(
-        deps.guardDirtySelection(annotation.dirty, selectionChanging),
-      );
-      if (!allowed) return;
-      selectionChanging = true;
+  const applySelectionChange = (fn: () => void) => {
+    selectionChanging = true;
+    try {
       fn();
+    } finally {
       globalThis.setTimeout(() => {
         selectionChanging = false;
       }, 0);
+    }
+  };
+
+  const changeSelection = (fn: () => void) => {
+    const guard = deps.guardDirtySelection(annotation.dirty, selectionChanging);
+    if (typeof guard === "boolean") {
+      if (!guard) return;
+      applySelectionChange(fn);
+      return;
+    }
+    void (async () => {
+      const allowed = await guard;
+      if (!allowed) return;
+      applySelectionChange(fn);
     })();
   };
 

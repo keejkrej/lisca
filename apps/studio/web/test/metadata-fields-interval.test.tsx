@@ -44,41 +44,13 @@ describe("MetadataFields misc", () => {
     expect(screen.getByText(/workspace for this run/)).toBeTruthy();
   });
 
-  it("shows segmentation settings for transfection and killing, and keeps smart segmentation unavailable", async () => {
+  it("shows skip segmentation for transfection and killing without a smart segmentation radio group", async () => {
     renderWizard();
     expect(screen.getByText("Misc")).toBeTruthy();
     expect(screen.getByText("Max onset time t0")).toBeTruthy();
     expect(screen.getByRole("checkbox", { name: "Skip segmentation" })).toBeTruthy();
-    expect(screen.getByText("Segmentation method")).toBeTruthy();
-    const logstd = screen.getByRole("radio", { name: "Log-std segmentation" });
-    const smart = screen.getByRole("radio", { name: /Smart segmentation/ });
-    const method = screen.getByRole("radiogroup", { name: "Segmentation method" });
-    expect(method.parentElement?.className).toContain("ps-[calc(1rem+0.625rem)]");
-    expect((logstd as HTMLInputElement).checked).toBe(true);
-    expect(logstd.hasAttribute("disabled") || logstd.getAttribute("aria-disabled") === "true").toBe(
-      false,
-    );
-    expect(smart.hasAttribute("disabled") || smart.getAttribute("aria-disabled") === "true").toBe(
-      true,
-    );
-    expect(screen.queryByText("Version 1.0")).toBeNull();
-    const smartTrigger = smart.closest("[data-slot='tooltip-trigger']");
-    expect(smartTrigger).toBeTruthy();
-    (smartTrigger as HTMLElement).focus();
-    await waitFor(() => {
-      expect(screen.getByRole("tooltip").textContent).toBe("Coming soon in version 1.0.");
-    });
-    fireEvent.click(smart);
-    expect((logstd as HTMLInputElement).checked).toBe(true);
-    expect((smart as HTMLInputElement).checked).toBe(false);
-    fireEvent.click(screen.getByRole("checkbox", { name: "Skip segmentation" }));
-    await waitFor(() => {
-      for (const mode of [logstd, smart]) {
-        expect(mode.hasAttribute("disabled") || mode.getAttribute("aria-disabled") === "true").toBe(
-          true,
-        );
-      }
-    });
+    expect(screen.queryByText("Segmentation method")).toBeNull();
+    expect(screen.queryByRole("radio", { name: /Smart segmentation/ })).toBeNull();
     expect(screen.queryByText("Use the full ROI (skip mask)")).toBeNull();
 
     fireEvent.click(screen.getByRole("button", { name: /Killing \(death reporter\)/ }));

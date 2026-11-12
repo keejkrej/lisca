@@ -63,7 +63,6 @@ export function analysisConfigForAssay(
   const segment = assayUsesSkipSegment(assayId)
     ? {
         skipSegment: analysis?.skipSegment ?? false,
-        segmentationMode: analysis?.segmentationMode ?? "logstd",
       }
     : {};
   const binding = assayUsesBindingDetect(assayId)

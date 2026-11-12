@@ -74,6 +74,8 @@ export type StudioAlignTimeOptions = {
   rememberedTime?: number;
   /** Channel the user already chose for this position. Absent means the position is new. */
   rememberedChannel?: number;
+  /** Z plane the user already chose for this position in Expert mode. Absent defaults to plane 0. */
+  rememberedZ?: number;
 };
 
 /** A new position starts on channel 0. If the scan has no channel 0, use its first channel. */
@@ -95,9 +97,20 @@ function lockedChannel(
   return defaultStudioAlignChannel(channels);
 }
 
+function lockedZ(zSlices: readonly number[] | undefined, rememberedZ: number | undefined): number {
+  if (
+    rememberedZ != null &&
+    (zSlices == null || zSlices.length === 0 || zSlices.includes(rememberedZ))
+  ) {
+    return rememberedZ;
+  }
+  if (zSlices == null || zSlices.length === 0 || zSlices.includes(0)) return 0;
+  return firstOrZero(zSlices);
+}
+
 /**
- * Z stays on plane 0. Channel and time are remembered per position.
- * A position with no memory starts on channel 0 and the assay's default frame.
+ * Channel, time, and Expert Z plane are remembered per position.
+ * A position with no memory starts on channel 0, plane 0, and the assay's default frame.
  * Those defaults apply together, and only until the user chooses a value there.
  */
 export function lockedStudioSelection(
@@ -119,12 +132,13 @@ export function lockedStudioSelection(
     pos: position,
     channel: lockedChannel(scan.channels, timeOptions?.rememberedChannel),
     time,
-    z: 0,
+    z: lockedZ(scan.zSlices, timeOptions?.rememberedZ),
   };
 }
 
 const alignFrameMemory = new Map<string, Map<number, number>>();
 const alignChannelMemory = new Map<string, Map<number, number>>();
+const alignZMemory = new Map<string, Map<number, number>>();
 
 export function studioAlignFrameMemoryKey(input: {
   workspacePath: string | null;
@@ -160,9 +174,23 @@ export function rememberStudioAlignChannel(key: string, position: number, channe
   channels.set(position, channel);
 }
 
+export function recallStudioAlignZ(key: string, position: number): number | undefined {
+  return alignZMemory.get(key)?.get(position);
+}
+
+export function rememberStudioAlignZ(key: string, position: number, z: number): void {
+  let planes = alignZMemory.get(key);
+  if (!planes) {
+    planes = new Map();
+    alignZMemory.set(key, planes);
+  }
+  planes.set(position, z);
+}
+
 export function clearStudioAlignFrameMemory(): void {
   alignFrameMemory.clear();
   alignChannelMemory.clear();
+  alignZMemory.clear();
 }
 
 /** Back is off on the first assay position. Next is off on the last. A position outside the list disables both. */

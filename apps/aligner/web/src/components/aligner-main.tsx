@@ -64,7 +64,8 @@ export function AlignerMain() {
   const positionLabel = createMemo(() => {
     const index = nav.scan?.positions.indexOf(nav.selection.pos) ?? -1;
     const explicit = index >= 0 ? nav.scan?.positionLabels?.[index] : undefined;
-    return explicit?.trim() || String(nav.selection.pos).padStart(2, "0");
+    const displayIndex = index >= 0 ? index + 1 : nav.selection.pos + 1;
+    return explicit?.trim() || String(displayIndex).padStart(2, "0");
   });
   return (
     <>

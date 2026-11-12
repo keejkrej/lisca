@@ -38,7 +38,6 @@ describe("studio assay.json samples", () => {
     ]);
     expect(json.analysis).toEqual({
       skipSegment: false,
-      segmentationMode: "logstd",
       channels: { segmentation: 0, signal: [1] },
       sampleChannels: [{ sample: "CAR-T", segmentation: 2, signal: [1, 3] }],
     });
@@ -51,7 +50,6 @@ describe("studio assay.json samples", () => {
     });
     expect(json.analysis).toEqual({
       skipSegment: false,
-      segmentationMode: "logstd",
       channels: { segmentation: 0, signal: [1] },
     });
   });
@@ -105,7 +103,6 @@ describe("studio assay.json samples", () => {
     const killing = build([row("a", "Control", "0", "1")]);
     expect(killing.analysis).toEqual({
       skipSegment: false,
-      segmentationMode: "logstd",
       channels: { segmentation: 0, signal: [1] },
     });
   });

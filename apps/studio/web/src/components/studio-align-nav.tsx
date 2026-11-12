@@ -134,6 +134,12 @@ export function StudioAlignNav(props: { standard?: boolean }) {
             const idx = clamp(timeIndex(), 0, max);
             return baseDisabled || idx >= max;
           },
+          onChange: (nextValue) => {
+            const max = Math.max(0, (nav.scan?.times?.length ?? 1) - 1);
+            nav.setSelection({
+              time: nav.scan?.times?.[clamp(Math.round(nextValue), 0, max)] ?? 0,
+            });
+          },
           onCommit: (nextValue) => {
             const max = Math.max(0, (nav.scan?.times?.length ?? 1) - 1);
             nav.setSelection({
@@ -200,6 +206,12 @@ export function StudioAlignNav(props: { standard?: boolean }) {
                   const max = Math.max(0, (nav.scan?.zSlices?.length ?? 1) - 1);
                   const idx = clamp(zIndex(), 0, max);
                   return baseDisabled || idx >= max;
+                },
+                onChange: (nextValue) => {
+                  const max = Math.max(0, (nav.scan?.zSlices?.length ?? 1) - 1);
+                  nav.setSelection({
+                    z: nav.scan?.zSlices?.[clamp(Math.round(nextValue), 0, max)] ?? 0,
+                  });
                 },
                 onCommit: (nextValue) => {
                   const max = Math.max(0, (nav.scan?.zSlices?.length ?? 1) - 1);

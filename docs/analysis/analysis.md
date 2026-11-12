@@ -56,37 +56,33 @@ mature assays. ROI stacks under `roi/` come from **Studio crop**, CLI (`lisca-cr
 or the notebooks zip (`lisca.services.crop` in `python/`) — not from the light Aligner shell. The running workflow
 depends on `assay.json` → root `type`:
 
-| Assay                    | Goal source (not implementation reference)                                                                                    | Pipeline                                                                                       |
-| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| `transfection`           | [`lisca-transfection-assay`](https://github.com/keejkrej/lisca-transfection-assay) — Python + Rust crate imported via git URL | segment → traces → AUC → fit (+ plots) in `lisca-transfection`; Studio ONNX segment stays here |
-| `killing-death-reporter` | Death reporter. Signal-channel fluorescence in each ROI crop. No classifier and no fit.                                       | traces → plot-traces                                                                           |
+| Assay                    | Goal source (not implementation reference)                                                                                    | Pipeline                                                                                 |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `transfection`           | [`lisca-transfection-assay`](https://github.com/keejkrej/lisca-transfection-assay) — Python + Rust crate imported via git URL | segment → traces → AUC → fit (+ plots) in `lisca-transfection`                           |
+| `killing-death-reporter` | [`lisca-killing-assay`](https://github.com/keejkrej/lisca-killing-assay) — Rust crate imported via git URL                    | traces → plot-traces → viability (+ survival/kill/death-time figures) in `lisca-killing` |
+| `killing-engagement`     | [`lisca-killing-assay`](https://github.com/keejkrej/lisca-killing-assay) — Rust crate imported via git URL                    | count → plot-traces → summary workbooks in `lisca-killing`                               |
+| `lnp-binding`            | [`lisca-binding-assay`](https://github.com/keejkrej/lisca-binding-assay) — Rust crate imported via git URL                    | detect → plot-traces → summary workbooks in `lisca-binding`                              |
 
-Numeric stages and PNG plots for transfection run in the imported
-[`lisca-transfection`](https://github.com/keejkrej/lisca-transfection-assay) crate
-via [**mplot-rs**](https://github.com/keejkrej/mplot-rs). Death-reporter killing and fluorescent engagement do not load a model. Desktop packaging does not download or bundle ONNX weights.
+Numeric stages, XLSX workbooks, and PNG plots run in the imported sidecar crates
+([`lisca-transfection`](https://github.com/keejkrej/lisca-transfection-assay),
+[`lisca-killing`](https://github.com/keejkrej/lisca-killing-assay), and
+[`lisca-binding`](https://github.com/keejkrej/lisca-binding-assay)) via
+[**mplot-rs**](https://github.com/keejkrej/mplot-rs). Death-reporter killing and fluorescent engagement do not load a model. Desktop packaging does not download or bundle ONNX weights.
 
 **Python-first → imported crate process, tolerances, and assay map:** [`parity.md`](./parity.md). Transfection Python+Rust parity lives in the sidecar (`docs/parity.md` there). Agent workflow: `/lisca-parity`.
 
 ## Design stance
 
-Sibling **goal sources** (`lisca-*-assay` packages, mupattern) describe **what** to compute and **which files** to read/write. Mature transfection analysis is **imported** from `lisca-transfection-assay` (git crate + Python package). Death-reporter fluorescence, fluorescent engagement, and the killing classifier (predict, clean, kill curve) are imported from [`lisca-killing-assay`](https://github.com/keejkrej/lisca-killing-assay) the same way. Studio keeps scheduling, progress, and the figures.
+Sibling **goal sources** (`lisca-*-assay` packages) own **what** to compute, **which files** to read/write, and their `mplot-rs` figures. Transfection analysis is imported from `lisca-transfection-assay` (git crate + Python package), killing analysis from [`lisca-killing-assay`](https://github.com/keejkrej/lisca-killing-assay), and LNP binding from [`lisca-binding-assay`](https://github.com/keejkrej/lisca-binding-assay). Studio keeps scheduling, progress, and manifest discovery ([ADR-0027](../adr/0027-thin-sidecar-assay-callers.md)).
 
-Rust in this crate should stay idiomatic:
+Rust in this crate stays a thin caller:
 
-- Shared ROI I/O in `roi_stack.rs` / `csv_io.rs`; crop in `lisca-crop`.
-- Transfection stages: call `lisca-transfection` (Otsu, traces, AUC, fit, plots). Do not keep a second full pipeline under `assays/transfection/`.
-- Product Smart exclude / Smart segment models stay in `models/`. Transfection
-  ONNX segment may stay as a Studio adapter (`segment_onnx.rs` + `ort`) until
-  the sidecar un-stubs it; resolve `keejkrej/single-cell-pattern-unet` via
-  `LISCA_PATTERN_SEG_MODEL`, not as a lisca-owned assay brain.
-- Killing measurements: call `lisca-killing` (death-reporter fluorescence,
-  engagement counts, and the classifier: predict, monotonicity clean, death
-  times, and the kill curve). Do not keep a second copy of those kernels under
-  `assays/killing/`. Figures stay here, including the kill-curve and death-time
-  grids. Analyze does not load the ResNet. Desktop packaging does not download
-  or bundle ONNX weights. Predict loads `model.onnx` through the crate's
-  `onnx` feature.
-- Parity for transfection is judged in the sidecar; this repo’s wrapper tests check the dispatch still writes the workspace contract.
+- Crop in `lisca-crop`; sample-position mapping in `sample.rs`; manifest listing in `output.rs`.
+- Transfection stages: call `lisca-transfection` (Otsu, traces, AUC, fit, workbooks, plots) from `assays/transfection/mod.rs`.
+- Product Smart segment (`Xenova/slimsam-77-uniform`) stays in `models/` (downloaded on demand into `<config_dir>/models/`, [ADR-0026](../adr/0026-on-demand-smart-model-cache.md)).
+- Killing stages: call `lisca-killing` (death-reporter fluorescence, PI-step viability, survival/kill/death-time figures, engagement counts, and the classifier) from `assays/killing/{death_reporter.rs,engagement.rs}`.
+- Binding stages: call `lisca-binding` (`lnp_binding` Picasso spot detection, tables, workbooks, and trace plots) from `assays/binding/mod.rs`.
+- Parity for each assay is judged in its sidecar; this repo’s wrapper tests check that dispatch still writes the workspace contract.
 
 ## Transfection pipeline
 
@@ -169,13 +165,14 @@ CSV under `results/`.
 ## Binding pipeline
 
 LNP binding (`assayId` `lnp-binding`) localizes fluorescent particles in each
-ROI crop with [picasso-rs](https://github.com/keejkrej/picasso-rs) (`detect_spots_u16_slice`,
-net-gradient identify + 2D Gaussian fit). Spots are assigned to the Pattern ROI
-they were measured in. The Signal channel is the first `analysis.channels.signal`
-index. Detection knobs are `analysis.minGradient` (default **50**) and
-`analysis.boxSize` (odd, default **7**). There is no sibling `lisca-binding-assay`
-crate yet; kernels live in `analysis/assays/binding.rs`. See
-[ADR-0015](../adr/0015-in-tree-lnp-binding.md).
+ROI crop with [lisca-binding-assay](https://github.com/keejkrej/lisca-binding-assay)
+(crate `lisca-binding`, backed by [picasso-rs](https://github.com/keejkrej/picasso-rs)
+`detect_spots_u16_slice`, net-gradient identify + 2D Gaussian fit). Spots are
+assigned to the Pattern ROI they were measured in. The Signal channel is the
+first `analysis.channels.signal` index. Detection knobs are `analysis.minGradient`
+(default **50**) and `analysis.boxSize` (odd, default **7**). `analysis/assays/binding/mod.rs`
+is a thin caller into `lisca-binding`. See [ADR-0027](../adr/0027-thin-sidecar-assay-callers.md)
+(superseding [ADR-0015](../adr/0015-in-tree-lnp-binding.md)).
 
 ```
 assay.json → analysis/Pos{n}/spots.csv + binding.csv → results/<sample>/binding.xlsx + binding_traces*.png
@@ -239,33 +236,34 @@ analysis.rs            # crate module root (no mod.rs)
 analysis/
   array.rs             # Frame2D, masked ROI stats, trapz AUC, kinetic basis, ndarray-stats quantiles
   sample.rs            # SampleAnalysis / SampleMapping, build_sample_mapping (shared)
-  roi_stack.rs         # ROI TIFF stacks (shared)
-  csv_io.rs, output.rs, export.rs
-  plot.rs + plot/      # shared mplot-rs helpers
-  assays.rs            # match assay type → pipeline
+  position_index.rs    # Position index resolution and pre-0.5.1 encoding checks
+  output.rs            # Studio results gallery discovery and output inspection
   assays/
-    transfection.rs + transfection/   # thin dispatch + local ONNX segment
-      mapping.rs       # lisca SampleMapping → lisca-transfection mapping
-      segment.rs       # Otsu → git crate; ONNX adapter stays here (HF weights)
-      segment_onnx.rs  # Studio ONNX adapter (`LISCA_PATTERN_SEG_MODEL` / HF)
-    killing.rs + killing/
-    killing_engagement.rs
-    binding.rs            # Picasso spot detect + LISCA tables/plots
+    mod.rs             # match assay type → symmetric sidecar caller
+    binding/
+      mod.rs           # thin caller into `lisca-binding`
+    killing/
+      mod.rs           # shared mapping helpers for `lisca-killing`
+      death_reporter.rs # thin caller into `lisca-killing` death-reporter pipeline + plots
+      engagement.rs    # thin caller into `lisca-killing` engagement pipeline + plots
+    transfection/
+      mod.rs           # thin caller into `lisca-transfection`
 ```
 
-| Module                                | Goal                                                                       |
-| ------------------------------------- | -------------------------------------------------------------------------- |
-| `assays/transfection/`                | Dispatch into `lisca-transfection`; Studio ONNX adapter                    |
-| `assays/transfection/segment_onnx.rs` | Studio ONNX adapter; weights via `LISCA_PATTERN_SEG_MODEL` / HF            |
-| `lisca-transfection` (git)            | Otsu, traces, AUC, kinetic fit, PNG plots, sample XLSX publishers          |
-| `assays/killing/`                     | Dispatch into `lisca-killing`; kill-curve and death-time figures stay here |
-| `assays/binding.rs`                   | Picasso detect + LISCA assignment, CSVs, XLSX, spot-count figures          |
+| Module                       | Goal                                                                       |
+| ---------------------------- | -------------------------------------------------------------------------- |
+| `assays/transfection/mod.rs` | Thin caller into `lisca-transfection`                                      |
+| `lisca-transfection` (git)   | Otsu, traces, AUC, kinetic fit, PNG plots, sample XLSX publishers          |
+| `assays/killing/`            | Thin callers into `lisca-killing` (`death_reporter.rs`, `engagement.rs`)   |
+| `lisca-killing` (git)        | Death-reporter fluorescence, engagement, PNG plots, sample XLSX publishers |
+| `assays/binding/mod.rs`      | Thin caller into `lisca-binding`                                           |
+| `lisca-binding` (git)        | Picasso spot detect, binding CSVs, PNG plots, sample XLSX publishers       |
 
-Adding a new assay type: create `assays/<name>.rs` plus `assays/<name>/`, implement `run` (async) and optionally `run_sync`, then register in `assays.rs`.
+Adding a new assay type: implement kernels, workbooks, and `mplot-rs` figures in its sibling `lisca-*-assay` repository, create `assays/<name>/mod.rs` as a thin caller, and register it in `assays/mod.rs` ([ADR-0027](../adr/0027-thin-sidecar-assay-callers.md)).
 
 ## Plot runtime
 
-Plots render natively in Rust (no Python sidecar). Figure layout constants match transfection (`12×8` in, log-scale AUC boxplot, fluor trace colors, etc.). Transfection `run_plot_*` writes PNG only; `publish_sample_*_xlsx` (Studio/`lisca-analyze` plot commands and pipeline) writes `results/<sample>/{traces,auc,fit}.xlsx`. Per-sample kinetic scatters are log-log joint plots (`expression_rate_vs_onset_time.png`, `expression_rate_vs_mrna_lifetime.png`).
+Plots render natively in Rust inside each sibling assay crate (`mplot-rs`, no Python sidecar). Figure layout constants match transfection (`12×8` in, log-scale AUC boxplot, fluor trace colors, etc.). Transfection `run_plot_*` writes PNG only; `publish_sample_*_xlsx` (Studio/`lisca-analyze` plot commands and pipeline) writes `results/<sample>/{traces,auc,fit}.xlsx`. Per-sample kinetic scatters are log-log joint plots (`expression_rate_vs_onset_time.png`, `expression_rate_vs_mrna_lifetime.png`).
 
 ## Parity expectations (outputs, not code)
 
@@ -275,21 +273,7 @@ Summary — full process, tolerances table, and lifecycle in [`parity.md`](./par
 - **Scientific parity**: same definitions (e.g. corrected = intensity − area × background; trapezoidal AUC; kill monotonicity clean).
 - **Not required**: matching Python module names, NumPy vs loop structure, or bitwise float identity.
 - Position ranges in `assay.json` use **inclusive** Studio semantics (`1:12` → positions 1…12).
-- Segmentation defaults: Otsu backend with `variation_radius=2`, `gaussian_sigma=1.0`.
-- Optional ONNX fg/bg backend for higher-quality masks. The student U-Net is a
-  **transfection-assay** model ([keejkrej/single-cell-pattern-unet](https://huggingface.co/keejkrej/single-cell-pattern-unet)),
-  resolved via `LISCA_PATTERN_SEG_MODEL` / `--model-dir`. Studio keeps a local
-  ONNX adapter until the sidecar un-stubs ONNX; do not add new assay weights
-  under `models/` (see [`models/README.md`](../../models/README.md)):
-
-  ```sh
-  huggingface-cli download keejkrej/single-cell-pattern-unet \
-    --local-dir /tmp/single-cell-pattern-unet
-  export LISCA_PATTERN_SEG_MODEL=/tmp/single-cell-pattern-unet/onnx
-  ./target/release/lisca-analyze segment ~/data/TF84 --backend onnx --force
-  ```
-
-  Default Studio/`pipeline` segment remains **Otsu** until you opt into `--backend onnx`.
+- Segmentation defaults: Otsu backend in `lisca-transfection` with `variation_radius=2`, `gaussian_sigma=1.0`.
 
 - Fit uses the two-pass pooled-protein strategy on the **basic translation–degradation model** (onset time t0, expression rate m0 k_TL, mRNA/protein lifetimes τ = ln(2)/rate; **no maturation**). Optional `analysis.maxOnsetMinutes` in `assay.json` is **transfection-only** (default **`120`** when omitted for that assay; set `0` to fix onset time t0 at 0). Other assays ignore it. Public CSV/UI names: `onset_time`, `expression_rate`, `mrna_lifetime`, `protein_lifetime`, `baseline_intensity` (no alternate aliases). `mrna_degradation_rate` (δ), `protein_degradation_rate` (β), and `expression_amplitude` are internal solver fields, not CSV. Stored times are minutes; plots may show hours. See [`CONTEXT.md`](../../CONTEXT.md).
 - Comparing two finished Workspaces is not an analysis stage. The offline script is [`batch-harmonization.md`](./batch-harmonization.md).
@@ -312,7 +296,7 @@ Summary — full process, tolerances table, and lifecycle in [`parity.md`](./par
 
 ## Parity CLI (`lisca-analyze`)
 
-Transfection stages are shaped like sibling [`lisca-transfection-assay`](https://github.com/keejkrej/lisca-transfection-assay) so the same workspace can be driven from either side. Those stages call the git crate (plus local ONNX segment). `killing-death-reporter` and `killing-engagement` take a workspace path only. `killing-death-reporter` requires `assay.json` type `killing-death-reporter`. Process and side-by-side recipe: [`parity.md`](./parity.md).
+Transfection stages are shaped like sibling [`lisca-transfection-assay`](https://github.com/keejkrej/lisca-transfection-assay) so the same workspace can be driven from either side. Those stages call `lisca-transfection`. `killing-death-reporter`, `killing-engagement`, and `lnp-binding` take a workspace path only and dispatch to `lisca-killing` and `lisca-binding`. `killing-death-reporter` requires `assay.json` type `killing-death-reporter`. Process and side-by-side recipe: [`parity.md`](./parity.md).
 
 ```sh
 cargo build -p lisca --release --bin lisca-analyze

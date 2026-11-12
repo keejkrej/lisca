@@ -246,6 +246,10 @@ class FrameCache {
       this.frames.delete(oldest);
     }
   }
+
+  clear(): void {
+    this.frames.clear();
+  }
 }
 
 function frameCacheKey(
@@ -314,8 +318,13 @@ export function createRoiFrameLoader(maxCacheEntries = 8) {
     contrast: ContrastWindow | null,
   ) {
     return Effect.gen(function* () {
-      const frame = yield* loadFrame(port, workspacePath, request, contrast);
-      const loadedAnnotation = yield* port.loadRoiFrameAnnotation(workspacePath, request);
+      const [frame, loadedAnnotation] = yield* Effect.all(
+        [
+          loadFrame(port, workspacePath, request, contrast),
+          port.loadRoiFrameAnnotation(workspacePath, request),
+        ],
+        { concurrency: 2 },
+      );
       const annotation = yield* Effect.tryPromise({
         try: () => loadedAnnotationToValue(loadedAnnotation, frame),
         catch: (cause) =>
@@ -331,13 +340,18 @@ export function createRoiFrameLoader(maxCacheEntries = 8) {
     }).pipe(Effect.withSpan("annotation-session.load-roi-frame-with-annotation"));
   }
 
-  return { loadFrame, loadFrameWithAnnotation };
+  function clearCache(): void {
+    cache.clear();
+  }
+
+  return { loadFrame, loadFrameWithAnnotation, clearCache };
 }
 
 const roiFrameLoader = createRoiFrameLoader();
 
 export const loadRoiFrameEffect = roiFrameLoader.loadFrame;
 export const loadRoiFrameWithAnnotationEffect = roiFrameLoader.loadFrameWithAnnotation;
+export const clearRoiFrameCache = roiFrameLoader.clearCache;
 
 export function annotationSessionErrorMessage(cause: unknown, fallback: string): string {
   if (cause instanceof ClientError && cause.message.trim()) return cause.message;

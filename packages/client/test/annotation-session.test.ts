@@ -116,6 +116,10 @@ describe("ROI frame loader", () => {
     await Effect.runPromise(loader.loadFrame(port, "/workspace", nextRequest, null));
     await Effect.runPromise(loader.loadFrame(port, "/workspace", request, null));
     expect(loadCount).toBe(3);
+
+    loader.clearCache();
+    await Effect.runPromise(loader.loadFrame(port, "/workspace", request, null));
+    expect(loadCount).toBe(4);
   });
 
   it("loads an empty mask without invoking the browser codec", async () => {

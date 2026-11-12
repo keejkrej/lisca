@@ -47,4 +47,19 @@ describe("useSliderStepperField", () => {
 
     expect(result().displayLabel()).toBe("12 (2/3)");
   });
+
+  it("snaps draftValue back to value when commit is cancelled or clamped", async () => {
+    const [value] = createSignal(0);
+    const result = mountSliderStepperField(() => ({
+      value: value(),
+      axisValues: [0, 12, 24],
+    }));
+
+    result().commitDraftValue(2, () => {
+      // Simulate rejected dirty-guard prompt: value stays 0.
+    });
+    expect(result().draftValue()).toBe(2);
+    await Promise.resolve();
+    expect(result().draftValue()).toBe(0);
+  });
 });

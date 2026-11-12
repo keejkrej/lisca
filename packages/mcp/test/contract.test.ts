@@ -170,6 +170,27 @@ describe("contract tools against a mocked product server", () => {
     expect(result.isError).toBe(true);
     expect((result.content[0] as { text: string }).text).toMatch(/server_start/);
   });
+
+  it("routes label-free operations to both annotator and studio, but rejects aligner", async () => {
+    const { server, url, seen } = await mockApi(() => []);
+    cleanup.push(() => server.close());
+    process.env.LISCA_MCP_ANNOTATOR_URL = url;
+    cleanup.push(() => {
+      delete process.env.LISCA_MCP_ANNOTATOR_URL;
+    });
+
+    const ok = await byName
+      .get("studio_list_label_free_references")!
+      .handler({ product: "annotator", workspacePath: "/w" });
+    expect(resultJson(ok)).toEqual([]);
+    expect(seen[0].url).toBe("/studio/label-free/references?workspacePath=%2Fw");
+
+    const rejected = await byName
+      .get("studio_list_label_free_references")!
+      .handler({ product: "aligner", workspacePath: "/w" });
+    expect(rejected.isError).toBe(true);
+    expect((rejected.content[0] as { text: string }).text).toMatch(/annotator or studio/i);
+  });
 });
 
 function listen(server: Server): Promise<string> {

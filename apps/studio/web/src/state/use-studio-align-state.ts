@@ -35,8 +35,10 @@ import {
   lockedStudioSelection,
   recallStudioAlignChannel,
   recallStudioAlignFrame,
+  recallStudioAlignZ,
   rememberStudioAlignChannel,
   rememberStudioAlignFrame,
+  rememberStudioAlignZ,
   studioAlignFrameDefault,
   studioAlignFrameMemoryKey,
   studioAlignPositionNav,
@@ -132,7 +134,6 @@ export type StudioAlignState = {
   cancelVariationExclude: () => void;
   dismissVariationExcludePreview: () => void;
   applyVariationExclude: () => void;
-  applySmartExclusion: (modelPatterns: AlignGridPatternCoord[]) => void;
   showVariationExcludePreview: (preview: VariationExcludePreviewResponse) => void;
   reportStatus: (message: string | null) => void;
   reportError: (message: string | null) => void;
@@ -233,6 +234,7 @@ export function useStudioAlignState(): StudioAlignState {
           frameDefault: studioAlignFrameDefault(assayId()),
           rememberedTime: recallStudioAlignFrame(frameMemoryKey(), position),
           rememberedChannel: recallStudioAlignChannel(frameMemoryKey(), position),
+          rememberedZ: recallStudioAlignZ(frameMemoryKey(), position),
         });
       },
       canLoadFrame: (state) => alignPositionsForScan(state.scan).length > 0,
@@ -278,11 +280,13 @@ export function useStudioAlignState(): StudioAlignState {
     if (typeof patch.time === "number") {
       rememberStudioAlignFrame(frameMemoryKey(), position, patch.time);
     }
+    if (typeof patch.z === "number") {
+      rememberStudioAlignZ(frameMemoryKey(), position, patch.z);
+    }
     setStoredSelection(patch);
   };
   const setError = session.actions.reportError;
   const setStatus = session.actions.reportStatus;
-  const applySmartExclusion = session.applySmartExclusion;
   const positionIndex = () => alignPositions().indexOf(lockedSelection().pos);
   const currentSnapshot = () =>
     alignSnapshotKey(ui().grid, session.derived().currentExcludedPatterns, ui().drift);
@@ -583,7 +587,6 @@ export function useStudioAlignState(): StudioAlignState {
     cancelVariationExclude: session.variation.cancel,
     dismissVariationExcludePreview: session.variation.dismiss,
     applyVariationExclude: session.variation.apply,
-    applySmartExclusion,
     showVariationExcludePreview: session.variation.showPreview,
     reportStatus: setStatus,
     reportError: setError,

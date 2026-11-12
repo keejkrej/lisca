@@ -22,9 +22,13 @@ export const {
   saveRoiFrameAnnotationAtom,
 } = studioQueryAtoms;
 
-/** Drop the cached ROI scan so Annotate reloads after a crop. */
+/** Drop cached ROI scan, labels, and analysis results so Studio reloads after crops or agent writes. */
 export const invalidateRoiWorkspaceAtom = studioRuntime.fn((workspacePath: string) =>
-  invalidateAfter(Effect.void, [ReactivityKeys.roiWorkspace(workspacePath)]),
+  invalidateAfter(Effect.void, [
+    ReactivityKeys.roiWorkspace(workspacePath),
+    ReactivityKeys.annotationLabels(workspacePath),
+    ReactivityKeys.analysisResults(workspacePath),
+  ]),
 );
 
 export const scanIdleAtom = Atom.make(Result.initial<WorkspaceScan>());

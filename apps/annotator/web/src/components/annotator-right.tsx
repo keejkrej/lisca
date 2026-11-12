@@ -1,7 +1,8 @@
-import { AnnotationControlRail } from "@lisca/instrument";
-import { RailSidebar } from "@lisca/ui/patterns";
+import { AnnotationControlRail, LabelFreeReferencesPanel } from "@lisca/instrument";
+import { PanelSection, RailSidebar } from "@lisca/ui/patterns";
 
 import { useAnnotateLabels } from "../state/annotate-page-selectors";
+import { annotatorLabelFreeClient } from "./annotator-header";
 import { AnnotatorSaveSection } from "./annotator-save-section";
 
 export function AnnotatorRight() {
@@ -9,6 +10,11 @@ export function AnnotatorRight() {
 
   return (
     <RailSidebar>
+      <PanelSection appearance="rail" title="Instruction">
+        <p class="text-xs leading-relaxed text-muted-foreground">
+          Paint cell masks or assign classification labels, then save each ROI.
+        </p>
+      </PanelSection>
       <AnnotationControlRail
         activeLabelId={labels.activeLabelId}
         annotation={labels.annotation}
@@ -28,6 +34,10 @@ export function AnnotatorRight() {
         setBrushSize={labels.setBrushSize}
         setMode={labels.setMode}
         setOverlayOpacity={labels.setOverlayOpacity}
+        workspacePath={labels.workspacePath}
+      />
+      <LabelFreeReferencesPanel
+        client={annotatorLabelFreeClient}
         workspacePath={labels.workspacePath}
       />
       <AnnotatorSaveSection />

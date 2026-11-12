@@ -1,7 +1,10 @@
 import type { AlignerSource, MemoryKind } from "@lisca/contracts";
+import type { HostFilePickerMode } from "@lisca/utils";
 
 import {
   forgetRecentAssay,
+  forgetRecentSource,
+  forgetRecentWorkspace,
   readRecentMemory,
   touchRecentMemory,
   type RecentMemoryTouch,
@@ -15,6 +18,14 @@ export function touchStudioWizardMemory(touch: StudioWizardMemoryTouch): void {
 
 export function forgetStudioAssay(path: string): void {
   forgetRecentAssay("studio", path);
+}
+
+export function forgetStudioWorkspace(path: string): void {
+  forgetRecentWorkspace("studio", path);
+}
+
+export function forgetStudioSource(mode: HostFilePickerMode, path: string): void {
+  forgetRecentSource("studio", mode, path);
 }
 
 export function readStudioWizardMemoryRecent(kind: MemoryKind): {

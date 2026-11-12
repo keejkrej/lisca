@@ -2,7 +2,11 @@ import { cleanup, fireEvent, render, screen } from "@solidjs/testing-library";
 import { createSignal } from "solid-js";
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
-import { SelectStepperField, SliderStepperField } from "../src/navigation/frame-navigation";
+import {
+  FrameNavigation,
+  SelectStepperField,
+  SliderStepperField,
+} from "../src/navigation/frame-navigation";
 
 vi.mock("phosphor-icons-solid/IconCaretLeftRegular", () => ({
   default: (props: { class?: string }) => (
@@ -100,5 +104,41 @@ describe("SelectStepperField controlled value", () => {
     await Promise.resolve();
 
     expect(onChange).not.toHaveBeenCalled();
+  });
+});
+
+describe("FrameNavigation bracket shortcuts", () => {
+  it("steps Frame with [ and ] outside inputs and dialogs", () => {
+    const onPrevious = vi.fn();
+    const onNext = vi.fn();
+
+    render(() => (
+      <div>
+        <FrameNavigation
+          frame={{
+            value: 1,
+            min: 0,
+            max: 3,
+            step: 1,
+            previousDisabled: false,
+            nextDisabled: false,
+            onPrevious,
+            onNext,
+          }}
+        />
+        <input aria-label="Search" />
+      </div>
+    ));
+
+    fireEvent.keyDown(window, { key: "[" });
+    expect(onPrevious).toHaveBeenCalledOnce();
+    fireEvent.keyDown(window, { key: "]" });
+    expect(onNext).toHaveBeenCalledOnce();
+
+    const input = screen.getByRole("textbox", { name: "Search" });
+    fireEvent.keyDown(input, { key: "[" });
+    fireEvent.keyDown(input, { key: "]" });
+    expect(onPrevious).toHaveBeenCalledOnce();
+    expect(onNext).toHaveBeenCalledOnce();
   });
 });

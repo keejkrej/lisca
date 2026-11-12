@@ -256,10 +256,15 @@ pub fn plane_to_png_base64(width: u32, height: u32, pixels: &[u16]) -> Result<St
     let high = percentile_linear(&ordered, 99.0);
     let span = high - low;
     let bytes: Vec<u8> = if span.abs() < 1e-9 {
-        pixels
-            .iter()
-            .map(|pixel| (*pixel >> 8).min(255) as u8)
-            .collect()
+        let max_pixel = pixels.iter().copied().max().unwrap_or(0);
+        if max_pixel <= 255 {
+            pixels.iter().map(|pixel| *pixel as u8).collect()
+        } else {
+            pixels
+                .iter()
+                .map(|pixel| (*pixel >> 8).min(255) as u8)
+                .collect()
+        }
     } else {
         samples
             .iter()

@@ -5,7 +5,6 @@ import {
   assayUsesSkipSegment,
   BINDING_DEFAULT_BOX_SIZE,
   BINDING_DEFAULT_MIN_GRADIENT,
-  type AssaySegmentationMode,
   type StudioDataSourceKind,
 } from "@lisca/contracts/assay";
 import type { HostFilePickerMode } from "@lisca/instrument";
@@ -21,9 +20,6 @@ import {
   Select,
   SelectContent,
   SelectItem,
-  ComingSoonTooltip,
-  RadioGroup,
-  RadioGroupItem,
   SelectTrigger,
   SelectValue,
 } from "@lisca/ui/primitives";
@@ -36,8 +32,9 @@ import {
 import type { HostFilePickerOperations } from "@lisca/instrument";
 import { defaultMaxOnsetMinutesForAssay } from "@lisca/client/studio-assay-json";
 import { recentSourceByPath, recentSourcePickerItems } from "@lisca/client/session/recent-memory";
+import { forgetStudioSource, forgetStudioWorkspace } from "@lisca/client/studio/wizard-memory";
 import { useAtomSet, useAtomValue } from "@effect/atom-solid";
-import { createMemo, createSignal, For, Show } from "solid-js";
+import { createMemo, createSignal, Show } from "solid-js";
 
 import { useStudioMemoryRecent } from "../hooks/use-studio-memory-recent";
 import { type TimelapseUnit, studioWizardActions, studioWizardAtom } from "../state/studio-store";
@@ -47,11 +44,6 @@ const TIMELAPSE_UNITS: { value: TimelapseUnit; label: string }[] = [
   { value: "second", label: "Second" },
   { value: "minute", label: "Minute" },
   { value: "hour", label: "Hour" },
-];
-
-const SEGMENTATION_MODES: { value: AssaySegmentationMode; label: string }[] = [
-  { value: "logstd", label: "Log-std segmentation" },
-  { value: "smart", label: "Smart segmentation" },
 ];
 
 type StudioPathPickerState = null | { kind: "save" } | { kind: "source"; mode: HostFilePickerMode };
@@ -89,13 +81,16 @@ export function MetadataFields(props: { hostPort: HostFilePickerOperations }) {
     studioWizardActions.setDataSourceKind(setWizard, kind);
   const [pathPicker, setPathPicker] = createSignal<StudioPathPickerState>(null);
   const [folderSourcePath, setFolderSourcePath] = createSignal<string | null>(null);
+  const [recentVersion, setRecentVersion] = createSignal(0);
 
-  const sourceRecent = createMemo(() =>
-    useStudioMemoryRecent("source", pathPicker()?.kind === "source"),
-  );
-  const workspaceRecent = createMemo(() =>
-    useStudioMemoryRecent("workspace", pathPicker()?.kind === "save"),
-  );
+  const sourceRecent = createMemo(() => {
+    recentVersion();
+    return useStudioMemoryRecent("source", pathPicker()?.kind === "source");
+  });
+  const workspaceRecent = createMemo(() => {
+    recentVersion();
+    return useStudioMemoryRecent("workspace", pathPicker()?.kind === "save");
+  });
   const pickerRecentItems = () => {
     const picker = pathPicker();
     if (picker?.kind === "save") return workspaceRecent().workspaces;
@@ -349,52 +344,6 @@ export function MetadataFields(props: { hostPort: HostFilePickerOperations }) {
               cell mask. The transfection notebooks follow this switch. Contrast on Align and
               Annotate is display-only and does not change these numbers.
             </p>
-            <div class="flex flex-col gap-2 ps-[calc(1rem+0.625rem)]">
-              <span
-                class="text-[13px] leading-[18px]"
-                classList={{ "text-muted-foreground": wizard().analysis?.skipSegment ?? false }}
-                id="studio-segmentation-method-label"
-              >
-                Segmentation method
-              </span>
-              <RadioGroup
-                aria-labelledby="studio-segmentation-method-label"
-                class="w-fit gap-2"
-                disabled={wizard().analysis?.skipSegment ?? false}
-                name="segmentation-method"
-                value={wizard().analysis?.segmentationMode ?? "logstd"}
-                onChange={(mode) => {
-                  if (mode === "logstd") {
-                    setAnalysis({ segmentationMode: mode });
-                  }
-                }}
-              >
-                <For each={SEGMENTATION_MODES}>
-                  {(mode) => {
-                    const skipped = () => wizard().analysis?.skipSegment ?? false;
-                    const deferred = () => mode.value === "smart";
-                    const unavailable = () => skipped() || deferred();
-                    const option = (
-                      <label
-                        class="flex w-fit items-center gap-2.5 text-[13px] leading-[18px]"
-                        classList={{
-                          "cursor-pointer": !unavailable(),
-                          "cursor-not-allowed text-muted-foreground": unavailable(),
-                        }}
-                      >
-                        <RadioGroupItem disabled={unavailable()} value={mode.value} />
-                        <span>{mode.label}</span>
-                      </label>
-                    );
-                    return (
-                      <Show when={deferred()} fallback={option}>
-                        <ComingSoonTooltip>{option}</ComingSoonTooltip>
-                      </Show>
-                    );
-                  }}
-                </For>
-              </RadioGroup>
-            </div>
           </Field>
         </Show>
       </div>
@@ -423,6 +372,18 @@ export function MetadataFields(props: { hostPort: HostFilePickerOperations }) {
           const picker = pathPicker();
           if (picker?.kind === "source") applySourcePath(path, picker.mode);
           setPathPicker(null);
+        }}
+        onRemoveRecent={(path) => {
+          const picker = pathPicker();
+          if (picker?.kind === "save") {
+            forgetStudioWorkspace(path);
+          } else if (
+            picker?.kind === "source" &&
+            (picker.mode === "folder" || picker.mode === "nd2_file" || picker.mode === "czi_file")
+          ) {
+            forgetStudioSource(picker.mode, path);
+          }
+          setRecentVersion((version) => version + 1);
         }}
         onPickRecent={(path) => {
           const picker = pathPicker();

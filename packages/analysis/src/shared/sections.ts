@@ -2,6 +2,7 @@
 export const RESULT_PLOT_SECTIONS = [
   "traces",
   "traces-summary",
+  "viability",
   "area",
   "traces-fit",
   "auc",

@@ -8,7 +8,6 @@ import type {
   AssayJsonFile,
   AssaySampleChannels,
   AssaySampleRow,
-  AssaySegmentationMode,
   AssayWorkspace,
 } from "./assay.schema";
 
@@ -20,7 +19,6 @@ export type {
   AssayData,
   AssayInterval,
   AssaySampleChannels,
-  AssaySegmentationMode,
   AssayWorkspace,
 };
 

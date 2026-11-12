@@ -103,7 +103,6 @@ describe("instrument rail state toggles", () => {
       onCancelVariationExclude: () => undefined,
       onExcludedPatternsChange: () => undefined,
       onManualExclusionEnabledChange: () => undefined,
-      onSmartExclude: () => undefined,
       onVariationExclude: () => undefined,
       onVariationExcludeThresholdChange: () => undefined,
     };

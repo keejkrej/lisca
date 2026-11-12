@@ -154,7 +154,6 @@ fn build_transfection_task(
     // `analysis.skipSegment` measures every pixel of the ROI. That area is the
     // crop size, so it stays constant across time. The masked path segments first.
     let full_frame = transfection::skip_segment(&assay);
-    let backend = transfection::segment_backend(&assay);
     let mut steps = Vec::new();
 
     // Prepare validates the sample mapping only (no side files).
@@ -176,7 +175,6 @@ fn build_transfection_task(
         } else {
             let segment_workspace = workspace.clone();
             let segment_shard = shard.clone();
-            let segment_backend = backend;
             let segment = analysis_step(
                 format!("analysis/transfection/segment/Pos{position}"),
                 vec![prepare_id.clone()],
@@ -186,7 +184,6 @@ fn build_transfection_task(
                         &segment_shard,
                         &transfection::SegmentOptions {
                             jobs: 1,
-                            backend: segment_backend,
                             ..transfection::SegmentOptions::default()
                         },
                     )
@@ -313,7 +310,7 @@ fn build_killing_task(
     _request_id: &str,
 ) -> Result<lisca::protocol::TaskDetail, lisca_server::SchedulerError> {
     use lisca::analysis::{
-        assays::killing,
+        assays::killing::death_reporter as killing,
         sample::{build_sample_mapping, parse_interval_minutes},
     };
 
@@ -361,10 +358,10 @@ fn build_killing_task(
     }
 
     let plot_traces_workspace = workspace.clone();
-    let plot_traces_mapping = mapping;
+    let plot_traces_mapping = Arc::clone(&mapping);
     let plot_traces = analysis_step(
         "analysis/killing/plot-traces",
-        trace_ids,
+        trace_ids.clone(),
         Arc::new(move || {
             killing::run_plot_traces_stage(&plot_traces_workspace, &plot_traces_mapping, interval)
         }),
@@ -372,10 +369,25 @@ fn build_killing_task(
     let plot_traces_id = plot_traces.step_id().to_string();
     steps.push(plot_traces);
 
+    let viability_workspace = workspace.clone();
+    let viability_mapping = mapping;
+    let viability = analysis_step(
+        "analysis/killing/viability",
+        trace_ids,
+        Arc::new(move || {
+            killing::run_viability_stage(&viability_workspace, &viability_mapping, interval)?;
+            killing::run_plot_survival_stage(&viability_workspace, &viability_mapping, interval)?;
+            killing::run_plot_kill_stage(&viability_workspace, &viability_mapping, interval)?;
+            killing::run_plot_death_times_stage(&viability_workspace, &viability_mapping, interval)
+        }),
+    );
+    let viability_id = viability.step_id().to_string();
+    steps.push(viability);
+
     let finalize_workspace = workspace.clone();
     steps.push(analysis_step(
         "analysis/killing/finalize",
-        vec![plot_traces_id],
+        vec![plot_traces_id, viability_id],
         Arc::new(move || analysis::workspace_analysis_manifest(&finalize_workspace).map(|_| ())),
     ));
 
@@ -394,7 +406,7 @@ fn build_engagement_task(
     _request_id: &str,
 ) -> Result<lisca::protocol::TaskDetail, lisca_server::SchedulerError> {
     use lisca::analysis::{
-        assays::killing_engagement,
+        assays::killing::engagement as killing_engagement,
         sample::{build_sample_mapping, parse_interval_minutes},
     };
 
@@ -863,22 +875,20 @@ mod tests {
     async fn binding_prepare_fails_when_the_interval_is_invalid() {
         let state = TestState::new();
         let workspace = graph_workspace(AssayType::LnpBinding);
-        let assay = format!(
-            r#"{{
+        let assay = r#"{
                 "type": "lnp-binding",
                 "name": "Graph fixture",
-                "workspace": {{ "path": "" }},
-                "data": {{ "type": "folder", "path": "", "template": {{ "subfolder": "", "filename": "" }} }},
-                "interval": {{ "value": 0, "unit": "minute" }},
-                "samples": [{{
+                "workspace": { "path": "" },
+                "data": { "type": "folder", "path": "", "template": { "subfolder": "", "filename": "" } },
+                "interval": { "value": 0, "unit": "minute" },
+                "samples": [{
                     "name": "sample",
                     "positions": "0,1"
-                }}],
-                "analysis": {{
-                    "channels": {{ "segmentation": 0, "signal": [1] }}
-                }}
-            }}"#
-        );
+                }],
+                "analysis": {
+                    "channels": { "segmentation": 0, "signal": [1] }
+                }
+            }"#;
         fs::write(workspace.join("assay.json"), assay).unwrap();
         let request_id = "binding-invalid-interval".to_string();
         let request = AnalysisStartRequest {

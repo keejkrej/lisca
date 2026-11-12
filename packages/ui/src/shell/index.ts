@@ -6,7 +6,15 @@ export {
   type ShellNavbarCompound,
   type ShellNavbarProps,
 } from "./chrome/navbar";
+export {
+  ShellAgentActivity,
+  type ShellWorkspaceControlMode,
+  type ShellWorkspaceControlOperation,
+  type ShellWorkspaceControlSession,
+} from "./chrome/agent-activity";
 export { ConnectionStatus, type ConnectionState } from "./chrome/connection-status";
+export { QUICK_GUIDE_TOPICS, ShellHelpDialog, type QuickGuideTopicId } from "./chrome/help-dialog";
+export { ShellSettingsDialog, type ShellSettingsDialogProps } from "./chrome/settings-dialog";
 export { DesktopUpdateSettings, StartupUpdateCheck } from "./chrome/update-settings";
 export {
   ShellThemeProvider,

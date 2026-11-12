@@ -1,12 +1,10 @@
 import type { Component } from "solid-js";
 import { createEffect, createSignal, For, onCleanup, Show } from "solid-js";
 import { Button } from "@lisca/ui/button";
-import { ComingSoonTooltip } from "@lisca/ui/coming-soon-tooltip";
 import {
   ANNOTATION_TOOL_DEFINITIONS,
   ANNOTATION_TOOL_GRID_ROWS,
   annotationToolFamily,
-  isSmartAnnotationTool,
   type AnnotationTool,
   type AnnotationToolFamily,
 } from "@lisca/utils";
@@ -33,22 +31,17 @@ export function buildAnnotationToolActions(
   disabled: boolean,
   options?: { disableTool?: (tool: AnnotationTool) => boolean; viewable?: boolean },
 ): DockToolAction[] {
-  return ANNOTATION_TOOL_DEFINITIONS.map(({ id, label }) => {
-    const deferred = isSmartAnnotationTool(id);
-    return {
-      id,
-      label,
-      disabled:
-        deferred ||
-        (id === "magnifier" ? options?.viewable === false : disabled) ||
-        (options?.disableTool?.(id) ?? false),
-      active: tool === id,
-      onSelect: () => {
-        if (deferred) return;
-        onToolChange(id);
-      },
-    };
-  });
+  return ANNOTATION_TOOL_DEFINITIONS.map(({ id, label }) => ({
+    id,
+    label,
+    disabled:
+      (id === "magnifier" ? options?.viewable === false : disabled) ||
+      (options?.disableTool?.(id) ?? false),
+    active: tool === id,
+    onSelect: () => {
+      onToolChange(id);
+    },
+  }));
 }
 
 function isEditableTarget(target: EventTarget | null): boolean {
@@ -87,16 +80,14 @@ function useKeyboardShortcuts(
 function AnnotationToolButton(props: { action: DockToolAction; label: string }) {
   const family = annotationToolFamily(props.action.id as AnnotationTool);
   const Icon = annotationToolIcons[family];
-  const deferred = () => isSmartAnnotationTool(props.action.id as AnnotationTool);
 
-  const button = (
+  return (
     <Button
       aria-label={props.label}
       class="w-full min-w-0 justify-center gap-1.5 px-1.5"
-      classList={{ "pointer-events-none": deferred() }}
       disabled={props.action.disabled}
       size="sm"
-      title={deferred() ? undefined : props.label}
+      title={props.label}
       type="button"
       variant={props.action.active ? "default" : "outline"}
       onClick={props.action.onSelect}
@@ -104,11 +95,6 @@ function AnnotationToolButton(props: { action: DockToolAction; label: string }) 
       <Icon class="size-4 shrink-0" />
       <span class="min-w-0 truncate">{props.label}</span>
     </Button>
-  );
-  return (
-    <Show when={deferred()} fallback={button}>
-      <ComingSoonTooltip class="flex w-full">{button}</ComingSoonTooltip>
-    </Show>
   );
 }
 
@@ -127,10 +113,6 @@ export function AnnotationToolGrid(props: {
   createEffect(() => {
     const activeTool = (props.toolActions.find((action) => action.active)?.id ??
       "brush") as AnnotationTool;
-    if (isSmartAnnotationTool(activeTool)) {
-      props.toolActions.find((action) => action.id === "brush")?.onSelect();
-      return;
-    }
     const family = annotationToolFamily(activeTool);
     if (family !== "magnifier") setLastEditFamily(family);
   });
@@ -211,15 +193,13 @@ export function AnnotationToolGrid(props: {
           {(action, index) => {
             const label = () =>
               showShortcutLabels() ? dockToolLabel(action.label, index()) : action.label;
-            const deferred = isSmartAnnotationTool(action.id as AnnotationTool);
-            const button = (
+            return (
               <Button
                 aria-label={label()}
                 class="h-8 w-full min-w-0 justify-start gap-2 px-3 text-xs"
-                classList={{ "pointer-events-none": deferred }}
                 disabled={action.disabled}
                 size="sm"
-                title={deferred ? undefined : label()}
+                title={label()}
                 type="button"
                 variant={action.active ? "default" : "outline"}
                 onClick={action.onSelect}
@@ -231,11 +211,6 @@ export function AnnotationToolGrid(props: {
                 ) : null}
                 <span class="min-w-0 flex-1 truncate">{action.label}</span>
               </Button>
-            );
-            return (
-              <Show when={deferred} fallback={button}>
-                <ComingSoonTooltip class="flex w-full">{button}</ComingSoonTooltip>
-              </Show>
             );
           }}
         </For>

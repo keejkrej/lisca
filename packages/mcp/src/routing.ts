@@ -16,6 +16,14 @@ const CROP_OPERATIONS = new Set([
   "align.getLatestCropProgress",
 ]);
 
+const LABEL_FREE_OPERATIONS = new Set([
+  "studio.labelFreeHealth",
+  "studio.saveLabelFreeKey",
+  "studio.listLabelFreeReferences",
+  "studio.buildLabelFreeReferences",
+  "studio.classifyLabelFree",
+]);
+
 export function productsForOperation(operationId: string): ProductId[] {
   const group = operationId.split(".")[0];
   switch (group) {
@@ -27,9 +35,10 @@ export function productsForOperation(operationId: string): ProductId[] {
       return ["annotator", "studio"];
     case "tasks":
       return ["annotator", "studio"];
+    case "studio":
+      return LABEL_FREE_OPERATIONS.has(operationId) ? ["annotator", "studio"] : ["studio"];
     case "profile":
     case "memory":
-    case "studio":
       return ["studio"];
     default:
       return ["studio"];
