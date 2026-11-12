@@ -34,6 +34,10 @@ const BINDING_MARKERS = new Set([
   "binding_traces_shared_y.png",
   "binding_traces_summary.png",
   "binding_traces_summary_shared_y.png",
+  "binding_intensity_traces.png",
+  "binding_intensity_traces_shared_y.png",
+  "binding_intensity_traces_summary.png",
+  "binding_intensity_traces_summary_shared_y.png",
   "binding.csv",
   "binding_summary.csv",
   "spots.csv",
@@ -49,6 +53,7 @@ const ENGAGEMENT_MARKERS = new Set([
 ]);
 
 const KILLING_MARKERS = new Set([
+  "survival_curve.png",
   "kill_curve.csv",
   "kill_curve.png",
   "death_times.csv",
@@ -87,6 +92,7 @@ export function catalogForAssay(assay: ResultAssayKind): readonly ResultPlotSpec
 const SECTION_LABEL: Record<ResultPlotSection, string> = {
   traces: "Traces",
   "traces-summary": "Traces summary",
+  viability: "Viability",
   area: "Mask area",
   "traces-fit": "Traces fit",
   auc: "AUC",
@@ -104,7 +110,7 @@ export function resultSectionInstruction(
 ): string {
   if (section === "traces") {
     if (assay === "lnp-binding") {
-      return "Spot count for each cell. Shared y uses one scale across samples.";
+      return "Spot count and spot intensity for each cell. Shared y uses one scale across samples.";
     }
     if (assay === "killing-engagement") {
       return "Engager count for each cell. Shared y uses one scale across samples.";
@@ -115,7 +121,7 @@ export function resultSectionInstruction(
   }
   if (section === "traces-summary") {
     if (assay === "lnp-binding") {
-      return "Mean, median, and interquartile range of spot counts for each sample.";
+      return "Mean, median, and interquartile range of spot counts and spot intensity for each sample.";
     }
     if (assay === "killing-engagement") {
       return "Mean, median, and interquartile range of engager counts for each sample.";
@@ -123,6 +129,9 @@ export function resultSectionInstruction(
     return assay === "killing-death-reporter"
       ? "Mean, median, and interquartile range of fluorescence for each sample."
       : "Mean, median, and interquartile range of intensity for each sample.";
+  }
+  if (section === "viability") {
+    return "Survival curve (% viable), viable cell counts, and single-cell death time distribution across samples.";
   }
   if (section === "area") {
     return "Mask area for each cell. Shared y uses one scale across samples.";
@@ -140,6 +149,9 @@ export function resultSectionInstruction(
 function guessPlotSection(fileName: string): ResultPlotSection {
   const stem = fileName.replace(/\.png$/i, "");
   if (stem === "auc") return "auc";
+  if (stem === "survival_curve" || stem === "kill_curve" || stem === "death_times") {
+    return "viability";
+  }
   if (stem.includes("_vs_")) return "parameters-comparison";
   if (stem.includes("summary")) return "traces-summary";
   if (stem.startsWith("area")) return "area";
@@ -147,7 +159,8 @@ function guessPlotSection(fileName: string): ResultPlotSection {
   if (
     stem.startsWith("traces") ||
     stem.startsWith("engagement_traces") ||
-    stem.startsWith("binding_traces")
+    stem.startsWith("binding_traces") ||
+    stem.startsWith("binding_intensity_traces")
   ) {
     return "traces";
   }

@@ -1,4 +1,7 @@
-//! Convert this crate's sample mapping into the killing-assay crate's mapping.
+//! Thin callers into [`lisca_killing`] for death-reporter viability and engagement.
+
+pub mod death_reporter;
+pub mod engagement;
 
 use crate::analysis::sample::SampleMapping;
 

@@ -3,10 +3,12 @@ import { createEffect, useContext } from "solid-js";
 
 import { useStudioNavigate } from "../navigation/use-studio-navigate";
 import type { StudioRouteTo } from "../navigation/use-studio-navigate";
+import { refreshStudioRoi } from "../state/studio-crop-watch";
 import { StudioSessionContext } from "../state/studio-session-context";
 
 const openedWorkspaces = new Set<string>();
 const workspaceRoutes = new Map<string, StudioRouteTo>();
+const workspaceRevisions = new Map<string, number>();
 let lastOperationKey: string | null = null;
 
 /**
@@ -20,7 +22,15 @@ export function StudioAgentNavigation(props: { sessions: LiscaWorkspaceControl[]
 
   createEffect(() => {
     const current = props.sessions[0];
-    if (!session || !current || current.mode !== "agent-running") return;
+    if (!session || !current) return;
+    const prevRevision = workspaceRevisions.get(current.workspacePath);
+    if (prevRevision !== current.revision) {
+      workspaceRevisions.set(current.workspacePath, current.revision);
+      if (openedWorkspaces.has(current.workspacePath)) {
+        refreshStudioRoi(current.workspacePath);
+      }
+    }
+    if (current.mode !== "agent-running") return;
     const operation = current.operation;
     if (!operation && openedWorkspaces.has(current.workspacePath)) return;
     const operationKey = `${current.workspacePath}:${operation?.requestId ?? "session"}`;

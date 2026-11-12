@@ -1,12 +1,15 @@
-//! Shared ONNX mechanics for the ResNet18 image classifiers.
+//! Shared ONNX mechanics and on-demand weight caching for Smart tools.
 
+use std::fs::{self, File};
+use std::io;
 use std::path::{Path, PathBuf};
+use std::sync::Mutex;
 
-use image::{imageops::FilterType, GrayImage, ImageBuffer, Luma};
-use ndarray::ArrayView;
 use ort::session::Session;
 
-pub(crate) const IMAGE_SIZE: u32 = 224;
+const DEFAULT_HF_BASE_URL: &str = "https://huggingface.co";
+static DOWNLOAD_LOCK: Mutex<()> = Mutex::new(());
+
 pub(crate) const IMAGENET_MEAN: [f32; 3] = [0.485, 0.456, 0.406];
 pub(crate) const IMAGENET_STD: [f32; 3] = [0.229, 0.224, 0.225];
 
@@ -14,12 +17,136 @@ pub(crate) fn workspace_models_dir() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../../models")
 }
 
+pub(crate) fn user_models_cache_dir() -> PathBuf {
+    if let Ok(custom) = std::env::var("LISCA_MODELS_CACHE_DIR") {
+        let trimmed = custom.trim();
+        if !trimmed.is_empty() {
+            return PathBuf::from(trimmed);
+        }
+    }
+    crate::config::config_dir().join("models")
+}
+
+fn hf_base_url() -> String {
+    if let Ok(custom) = std::env::var("LISCA_HF_BASE_URL") {
+        let trimmed = custom.trim().trim_end_matches('/');
+        if !trimmed.is_empty() {
+            return trimmed.to_string();
+        }
+    }
+    DEFAULT_HF_BASE_URL.to_string()
+}
+
+pub(crate) fn auto_download_enabled() -> bool {
+    !std::env::var("LISCA_NO_MODEL_DOWNLOAD")
+        .ok()
+        .is_some_and(|v| matches!(v.trim().to_ascii_lowercase().as_str(), "1" | "true" | "yes"))
+}
+
+/// Download missing ONNX files from Hugging Face into `<user_models_cache_dir>/<cache_subdir>`
+/// using atomic `.part` writes so interrupted downloads never leave corrupt weights.
+pub(crate) fn ensure_cached_hf_files(
+    cache_subdir: &str,
+    repo_id: &str,
+    files: &[(&str, &str)],
+) -> Result<PathBuf, String> {
+    let base = hf_base_url();
+    ensure_cached_hf_files_in(
+        &user_models_cache_dir(),
+        &base,
+        cache_subdir,
+        repo_id,
+        files,
+    )
+}
+
+fn ensure_cached_hf_files_in(
+    cache_root: &Path,
+    base_url: &str,
+    cache_subdir: &str,
+    repo_id: &str,
+    files: &[(&str, &str)],
+) -> Result<PathBuf, String> {
+    let target_dir = cache_root.join(cache_subdir);
+    if files
+        .iter()
+        .all(|(_, local_name)| target_dir.join(local_name).is_file())
+    {
+        return Ok(target_dir);
+    }
+
+    let _guard = DOWNLOAD_LOCK
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
+    if files
+        .iter()
+        .all(|(_, local_name)| target_dir.join(local_name).is_file())
+    {
+        return Ok(target_dir);
+    }
+
+    fs::create_dir_all(&target_dir).map_err(|error| {
+        format!(
+            "failed to create model cache directory {}: {error}",
+            target_dir.display()
+        )
+    })?;
+
+    let base = base_url.trim_end_matches('/');
+    for &(remote_path, local_name) in files {
+        let dest = target_dir.join(local_name);
+        if dest.is_file() {
+            continue;
+        }
+        let url = format!("{base}/{repo_id}/resolve/main/{remote_path}");
+        tracing::info!(
+            "downloading Smart ONNX weight from {url} -> {}",
+            dest.display()
+        );
+        let part = target_dir.join(format!("{local_name}.{}.part", std::process::id()));
+        let download_result = (|| -> Result<(), String> {
+            let response = ureq::get(&url)
+                .config()
+                .http_status_as_error(false)
+                .build()
+                .call()
+                .map_err(|error| format!("download failed from {url}: {error}"))?;
+            let status = response.status().as_u16();
+            if !(200..300).contains(&status) {
+                return Err(format!("download failed from {url}: HTTP {status}"));
+            }
+            let mut reader = response.into_body().into_reader();
+            let mut out = File::create(&part)
+                .map_err(|error| format!("failed to create {}: {error}", part.display()))?;
+            let written = io::copy(&mut reader, &mut out)
+                .map_err(|error| format!("failed while downloading {url}: {error}"))?;
+            if written == 0 {
+                return Err(format!("downloaded empty weight file from {url}"));
+            }
+            out.sync_all()
+                .map_err(|error| format!("failed to flush {}: {error}", part.display()))?;
+            drop(out);
+            fs::rename(&part, &dest).map_err(|error| {
+                format!(
+                    "failed to finalize downloaded model {} -> {}: {error}",
+                    part.display(),
+                    dest.display()
+                )
+            })
+        })();
+        if let Err(error) = download_result {
+            let _ = fs::remove_file(&part);
+            return Err(error);
+        }
+    }
+
+    Ok(target_dir)
+}
+
 /// Model roots next to a packaged server binary.
 ///
 /// Desktop installers place the server at `<resource_dir>/server/<bin>`.
-/// They do not ship ONNX weights. A killing model dropped beside the binary
-/// at `<resource_dir>/models/killing-assay-resnet18` is still accepted.
-#[cfg(any(feature = "studio", test))]
+/// Models dropped beside the binary or under `<config_dir>/models` are also accepted.
 pub(crate) fn models_dirs_near_executable(exe: &Path) -> Vec<PathBuf> {
     let mut dirs = Vec::new();
     if let Some(exe_dir) = exe.parent() {
@@ -32,11 +159,12 @@ pub(crate) fn models_dirs_near_executable(exe: &Path) -> Vec<PathBuf> {
     dirs
 }
 
-#[cfg(feature = "studio")]
 pub(crate) fn bundled_models_dirs() -> Vec<PathBuf> {
-    std::env::current_exe()
+    let mut dirs = std::env::current_exe()
         .map(|exe| models_dirs_near_executable(&exe))
-        .unwrap_or_default()
+        .unwrap_or_default();
+    dirs.push(user_models_cache_dir());
+    dirs
 }
 
 pub(crate) fn commit_onnx_file(path: &Path) -> Result<Session, String> {
@@ -84,62 +212,8 @@ pub(crate) fn resolve_model_path(
     ))
 }
 
-pub(crate) fn binary_logits(logits: &ArrayView<f32, ndarray::IxDyn>) -> Result<(f32, f32), String> {
-    match logits.ndim() {
-        1 if logits.len() >= 2 => Ok((logits[[0]], logits[[1]])),
-        2 if logits.shape()[1] >= 2 => Ok((logits[[0, 0]], logits[[0, 1]])),
-        4 => Ok((logits[[0, 0, 0, 0]], logits[[0, 1, 0, 0]])),
-        _ => Err(format!(
-            "unsupported binary classifier logits shape: {:?}",
-            logits.shape()
-        )),
-    }
-}
-
-pub(crate) fn first_class_probability(first_logit: f32, second_logit: f32) -> f64 {
-    let max = first_logit.max(second_logit);
-    let first_exp = (first_logit - max).exp();
-    let second_exp = (second_logit - max).exp();
-    f64::from(first_exp / (first_exp + second_exp))
-}
-
-pub(crate) fn resize_to_224(data: &[u8], width: u32, height: u32) -> Result<GrayImage, String> {
-    let expected_len = (width as usize)
-        .checked_mul(height as usize)
-        .ok_or_else(|| format!("image dimensions overflow: {width}x{height}"))?;
-    if data.len() != expected_len {
-        return Err(format!(
-            "image buffer length mismatch for {width}x{height}: expected {expected_len}, got {}",
-            data.len()
-        ));
-    }
-    let image = ImageBuffer::<Luma<u8>, Vec<u8>>::from_raw(width, height, data.to_vec())
-        .ok_or_else(|| format!("failed to construct image buffer for {width}x{height}"))?;
-    Ok(image::imageops::resize(
-        &image,
-        IMAGE_SIZE,
-        IMAGE_SIZE,
-        FilterType::Triangle,
-    ))
-}
-
-pub(crate) fn to_nchw_normalized(gray: &GrayImage) -> Vec<f32> {
-    let plane_len = (IMAGE_SIZE * IMAGE_SIZE) as usize;
-    let mut output = vec![0.0f32; 3 * plane_len];
-    for channel in 0..3 {
-        let offset = channel * plane_len;
-        for (index, value) in gray.as_raw().iter().enumerate() {
-            let normalized = *value as f32 / 255.0;
-            output[offset + index] = (normalized - IMAGENET_MEAN[channel]) / IMAGENET_STD[channel];
-        }
-    }
-    output
-}
-
 #[cfg(test)]
 mod tests {
-    use ndarray::array;
-
     use super::*;
 
     #[test]
@@ -166,28 +240,39 @@ mod tests {
     }
 
     #[test]
-    fn resize_to_224_rejects_mismatched_buffer_lengths() {
-        let error = resize_to_224(&[0; 3], 2, 2).unwrap_err();
-        assert!(error.contains("expected 4, got 3"));
-    }
+    fn ensure_cached_hf_files_downloads_and_caches_missing_weights() {
+        use std::io::{Read, Write};
+        use std::net::TcpListener;
 
-    #[test]
-    fn binary_logits_supports_common_export_shapes() {
-        let flat_array = array![1.0, 2.0];
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let addr = listener.local_addr().unwrap();
+        let server = std::thread::spawn(move || {
+            let (mut stream, _) = listener.accept().unwrap();
+            let mut buf = [0u8; 512];
+            let _ = stream.read(&mut buf);
+            let body = b"fake-onnx-bytes";
+            let header = format!(
+                "HTTP/1.1 200 OK\r\nContent-Length: {}\r\nContent-Type: application/octet-stream\r\nConnection: close\r\n\r\n",
+                body.len()
+            );
+            stream.write_all(header.as_bytes()).unwrap();
+            stream.write_all(body).unwrap();
+        });
+
+        let temp = tempfile::tempdir().unwrap();
+        let dir = ensure_cached_hf_files_in(
+            temp.path(),
+            &format!("http://{addr}"),
+            "smart-segment-slimsam/onnx",
+            "Xenova/slimsam-77-uniform",
+            &[("onnx/model.onnx", "model.onnx")],
+        )
+        .unwrap();
+        server.join().unwrap();
+
         assert_eq!(
-            binary_logits(&flat_array.view().into_dyn()).unwrap(),
-            (1.0, 2.0)
+            std::fs::read(dir.join("model.onnx")).unwrap(),
+            b"fake-onnx-bytes"
         );
-
-        let batched_array = array![[0.5, 1.5]];
-        assert_eq!(
-            binary_logits(&batched_array.view().into_dyn()).unwrap(),
-            (0.5, 1.5)
-        );
-
-        let spatial_array = ndarray::Array::from_shape_vec((1, 2, 1, 1), vec![3.0, 4.0])
-            .unwrap()
-            .into_dyn();
-        assert_eq!(binary_logits(&spatial_array.view()).unwrap(), (3.0, 4.0));
     }
 }

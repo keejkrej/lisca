@@ -1,11 +1,13 @@
 import IconFolderRegular from "phosphor-icons-solid/IconFolderRegular";
 import IconHardDriveRegular from "phosphor-icons-solid/IconHardDriveRegular";
 import type { JSX } from "solid-js";
-import { Show } from "solid-js";
+import { createSignal, Show } from "solid-js";
 
 import { ShellThemeToggle } from "../theme/shell-theme";
+import { ShellAgentActivity, type ShellWorkspaceControlSession } from "./agent-activity";
 import { ConnectionStatus } from "./connection-status";
-import { DesktopUpdateSettings } from "./update-settings";
+import { ShellHelpDialog, type QuickGuideTopicId } from "./help-dialog";
+import { ShellSettingsDialog } from "./settings-dialog";
 import { PathButton } from "../../patterns/chrome/path-button";
 import { useShellServer } from "../server/shell-server";
 import { useShellWorkspace } from "../workspace/workspace";
@@ -29,6 +31,12 @@ export type ShellNavbarProps = {
   onPickSource?: () => void;
   /** Insert before the theme toggle (e.g. aligner Tools menu). */
   endLeading?: JSX.Element;
+  /** Optional quick-guide topic shown via an info button in the header. */
+  helpTopic?: QuickGuideTopicId;
+  /** Optional Inference tab content in Settings (for Studio and Annotator). */
+  inferenceSlot?: JSX.Element;
+  /** Called whenever active MCP workspace control sessions change. */
+  onAgentSessionsChange?: (sessions: ShellWorkspaceControlSession[]) => void;
 };
 
 /**
@@ -38,6 +46,7 @@ export type ShellNavbarProps = {
 function ShellNavbarRoot(props: ShellNavbarProps) {
   const server = useShellServer();
   const workspace = useShellWorkspace();
+  const [agentActive, setAgentActive] = createSignal(false);
 
   const handleSource = () => (props.onPickSource ?? workspace.pickSource)();
   const handleWorkspace = () => (props.onPickWorkspace ?? workspace.pickWorkspace)();
@@ -47,56 +56,65 @@ function ShellNavbarRoot(props: ShellNavbarProps) {
   return (
     <header class={cn("relative h-full", props.appearance !== "stage" && "px-6")}>
       <Show when={props.title}>{(title) => <h1 class="sr-only">{title()}</h1>}</Show>
-      <div
-        class={cn(
-          "h-full items-center gap-4",
-          props.appearance === "stage" ? "flex justify-between" : "grid grid-cols-[1fr_auto_1fr]",
-        )}
-      >
-        <div class="flex min-w-0 max-w-[56rem] flex-wrap items-center justify-start gap-3">
-          <PathButton
-            appearance={props.appearance}
-            label="Workspace"
-            value={workspace.workspacePath}
-            icon={<IconFolderRegular class="size-4 shrink-0 opacity-80" />}
-            onClick={handleWorkspace}
-          />
-          {props.workspaceTrailing}
-          <Show when={props.showSourceButton !== false}>
+      <Show when={!agentActive()}>
+        <div
+          class={cn(
+            "h-full items-center gap-4",
+            props.appearance === "stage" ? "flex justify-between" : "grid grid-cols-[1fr_auto_1fr]",
+          )}
+        >
+          <div class="flex min-w-0 max-w-[56rem] flex-wrap items-center justify-start gap-3">
             <PathButton
               appearance={props.appearance}
-              label="Source"
-              value={workspace.sourcePath}
-              icon={<IconHardDriveRegular class="size-4 shrink-0 opacity-80" />}
-              preserveExtension={props.appearance === "stage"}
-              disabled={!workspace.workspacePath}
-              onClick={workspace.workspacePath ? handleSource : undefined}
+              label="Workspace"
+              value={workspace.workspacePath}
+              icon={<IconFolderRegular class="size-4 shrink-0 opacity-80" />}
+              onClick={handleWorkspace}
             />
+            {props.workspaceTrailing}
+            <Show when={props.showSourceButton !== false}>
+              <PathButton
+                appearance={props.appearance}
+                label="Source"
+                value={workspace.sourcePath}
+                icon={<IconHardDriveRegular class="size-4 shrink-0 opacity-80" />}
+                preserveExtension={props.appearance === "stage"}
+                disabled={!workspace.workspacePath}
+                onClick={workspace.workspacePath ? handleSource : undefined}
+              />
+            </Show>
+          </div>
+
+          <Show when={props.appearance !== "stage"}>
+            <div />
           </Show>
+
+          <div class="flex min-w-0 items-center justify-end justify-self-end gap-1 sm:gap-2">
+            <ConnectionStatus state={server.state} onRetry={server.retry} />
+            <Show when={props.showToolsMenu !== false}>{props.endLeading}</Show>
+            <Show when={props.helpTopic}>{(topic) => <ShellHelpDialog topic={topic()} />}</Show>
+            <ShellSettingsDialog inferenceSlot={props.inferenceSlot} productName={props.title} />
+            <ShellThemeToggle />
+          </div>
         </div>
 
-        <Show when={props.appearance !== "stage"}>
-          <div />
+        <Show when={label()}>
+          {(text) => (
+            <span
+              aria-hidden="true"
+              class="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-xs font-semibold uppercase tracking-[0.2em] text-foreground"
+            >
+              {text()}
+            </span>
+          )}
         </Show>
-
-        <div class="flex min-w-0 items-center justify-end justify-self-end gap-1 sm:gap-2">
-          <ConnectionStatus state={server.state} onRetry={server.retry} />
-          <Show when={props.showToolsMenu !== false}>{props.endLeading}</Show>
-          <DesktopUpdateSettings />
-          <ShellThemeToggle />
-        </div>
-      </div>
-
-      <Show when={label()}>
-        {(text) => (
-          <span
-            aria-hidden="true"
-            class="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-xs font-semibold uppercase tracking-[0.2em] text-foreground"
-          >
-            {text()}
-          </span>
-        )}
       </Show>
+      <ShellAgentActivity
+        onSessionsChange={(sessions) => {
+          setAgentActive(sessions.length > 0);
+          props.onAgentSessionsChange?.(sessions);
+        }}
+      />
     </header>
   );
 }
@@ -104,6 +122,8 @@ function ShellNavbarRoot(props: ShellNavbarProps) {
 export type ShellNavbarAnnotatorProps = {
   appearance?: "default" | "stage";
   endLeading?: JSX.Element;
+  inferenceSlot?: JSX.Element;
+  onAgentSessionsChange?: (sessions: ShellWorkspaceControlSession[]) => void;
   onPickWorkspace?: () => void;
 };
 
@@ -112,8 +132,11 @@ function ShellNavbarAnnotator(props: ShellNavbarAnnotatorProps) {
     <ShellNavbarRoot
       appearance={props.appearance}
       endLeading={props.endLeading}
+      helpTopic="annotator"
+      inferenceSlot={props.inferenceSlot}
       showSourceButton={false}
       title="Annotator"
+      onAgentSessionsChange={props.onAgentSessionsChange}
       onPickWorkspace={props.onPickWorkspace}
     />
   );
@@ -122,6 +145,7 @@ function ShellNavbarAnnotator(props: ShellNavbarAnnotatorProps) {
 export type ShellNavbarAlignerProps = {
   appearance?: "default" | "stage";
   endLeading?: JSX.Element;
+  onAgentSessionsChange?: (sessions: ShellWorkspaceControlSession[]) => void;
   onPickSource?: () => void;
   onPickWorkspace?: () => void;
 };
@@ -131,8 +155,10 @@ function ShellNavbarAligner(props: ShellNavbarAlignerProps) {
     <ShellNavbarRoot
       appearance={props.appearance}
       endLeading={props.endLeading}
+      helpTopic="aligner"
       showToolsMenu={props.endLeading !== undefined}
       title="Aligner"
+      onAgentSessionsChange={props.onAgentSessionsChange}
       onPickSource={props.onPickSource}
       onPickWorkspace={props.onPickWorkspace}
     />

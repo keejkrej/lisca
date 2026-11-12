@@ -1,18 +1,19 @@
 # Models in this monorepo
 
-`models/` holds **product / any-assay** tools that Studio and Aligner share.
+`models/` holds **product / any-assay** tools that Studio and Annotator share.
 Assay-specific analysis brains live in assay sidecars and on Hugging Face.
-Do not add new assay-specific weights here.
+Do not add assay-specific weights here.
 
-| Directory                                                          | Role                                 | Ownership                                                                                                                                                                                             |
-| ------------------------------------------------------------------ | ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`smart-exclusion-resnet18`](./smart-exclusion-resnet18/README.md) | Smart exclude (ROI include/exclude)  | **This repo** (product)                                                                                                                                                                               |
-| [`smart-segment-slimsam`](./smart-segment-slimsam/README.md)       | Smart segment (click-prompted masks) | **This repo** (product)                                                                                                                                                                               |
-| [`mupattern-resnet18`](./mupattern-resnet18/README.md)             | Former killing classifier            | **This repo**, legacy reference only                                                                                                                                                                  |
-| [`single-cell-pattern-unet`](./single-cell-pattern-unet/README.md) | Gene-expression ROI masks            | **Not lisca-owned.** Transfection assay / HF [`keejkrej/single-cell-pattern-unet`](https://huggingface.co/keejkrej/single-cell-pattern-unet). Resolve via `LISCA_PATTERN_SEG_MODEL`.                  |
-| [`killing-assay-resnet18`](./killing-assay-resnet18/README.md)     | Killing presence classifier          | **Not lisca-owned.** Killing assay / HF [`keejkrej/killing-assay-resnet18`](https://huggingface.co/keejkrej/killing-assay-resnet18). Local cache or `LISCA_KILL_MODEL`. Not shipped in the installer. |
+| Directory                                                      | Role                                 | Ownership                                                                                                                                                                                             |
+| -------------------------------------------------------------- | ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`smart-segment-slimsam`](./smart-segment-slimsam/README.md)   | Smart segment (click-prompted masks) | **This repo** (product)                                                                                                                                                                               |
+| [`mupattern-resnet18`](./mupattern-resnet18/README.md)         | Former killing classifier            | **This repo**, legacy reference only                                                                                                                                                                  |
+| [`killing-assay-resnet18`](./killing-assay-resnet18/README.md) | Killing presence classifier          | **Not lisca-owned.** Killing assay / HF [`keejkrej/killing-assay-resnet18`](https://huggingface.co/keejkrej/killing-assay-resnet18). Local cache or `LISCA_KILL_MODEL`. Not shipped in the installer. |
 
-ONNX weights (`model.onnx`) are gitignored and are not copied into desktop
-installers. Crop (`lisca-crop`) stays in this repo and does not live under
-`models/`. Smart exclude and Smart segment stay in the product for a hosted
-service in version 1.0; their weights are not packaged for on-device use.
+ONNX weights (`*_quantized.onnx` / `model.onnx`) are gitignored and stay out of
+desktop installers (`scripts/package-tauri.ts`). On first use of Smart segment
+when no local checkout or `LISCA_SMART_SEGMENT_MODEL` override is present, the
+Rust server downloads and caches the public quantized SlimSAM ONNX weights under
+`<config_dir>/models/` (`Xenova/slimsam-77-uniform`; see
+[ADR-0026](../docs/adr/0026-on-demand-smart-model-cache.md)). Crop (`lisca-crop`)
+stays in this repo and does not live under `models/`.

@@ -165,3 +165,32 @@ export function forgetRecentAssay(appId: LiscaAppId, path: string): void {
   memory.assays = assays;
   writeStorageJson(liscaLocalStorage(), recentMemoryKey(appId), memory);
 }
+
+/** Drop one workspace folder from the recent list. Does not delete files on disk. */
+export function forgetRecentWorkspace(appId: LiscaAppId, path: string): void {
+  const trimmed = path.trim();
+  if (!trimmed) return;
+  const memory = readRecentMemory(appId);
+  const workspaces = memory.workspaces.filter((entry) => entry.path !== trimmed);
+  if (workspaces.length === memory.workspaces.length) return;
+  memory.workspaces = workspaces;
+  writeStorageJson(liscaLocalStorage(), recentMemoryKey(appId), memory);
+}
+
+/** Drop one source entry matching `(mode, path)` from the recent list. */
+export function forgetRecentSource(
+  appId: LiscaAppId,
+  mode: HostFilePickerMode,
+  path: string,
+): void {
+  const trimmed = path.trim();
+  const kind = sourceKindForPickerMode(mode);
+  if (!trimmed || !kind) return;
+  const memory = readRecentMemory(appId);
+  const sources = memory.sources.filter(
+    (entry) => !(entry.source.kind === kind && entry.source.path === trimmed),
+  );
+  if (sources.length === memory.sources.length) return;
+  memory.sources = sources;
+  writeStorageJson(liscaLocalStorage(), recentMemoryKey(appId), memory);
+}

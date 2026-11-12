@@ -1,5 +1,5 @@
 import { AlignDriftRail, AlignGridRail } from "@lisca/instrument";
-import { RailSidebar } from "@lisca/ui/patterns";
+import { PanelSection, RailSidebar } from "@lisca/ui/patterns";
 import { isAlignDriftTranslationEditable } from "@lisca/utils";
 
 import { useAlignCanvas } from "../state/align-page-selectors";
@@ -11,6 +11,11 @@ export function AlignerRight() {
 
   return (
     <RailSidebar>
+      <PanelSection appearance="rail" title="Instruction">
+        <p class="text-xs leading-relaxed text-muted-foreground">
+          Align the grid to micropatterns, exclude damaged wells, and save each position.
+        </p>
+      </PanelSection>
       <AlignGridRail
         detectLowConfidence={canvas.detectLowConfidence}
         detectReport={canvas.detectReport}

@@ -20,6 +20,21 @@ export const KILLING_PLOTS: readonly KillingPlotSpec[] = [
     title: "Mean fluorescence (shared y)",
     section: "traces-summary",
   },
+  {
+    fileName: "survival_curve.png",
+    title: "Survival curve (% viable)",
+    section: "viability",
+  },
+  {
+    fileName: "kill_curve.png",
+    title: "Viable cell count",
+    section: "viability",
+  },
+  {
+    fileName: "death_times.png",
+    title: "Death time distribution",
+    section: "viability",
+  },
 ] as const;
 
 /** PNG artifacts for fluorescent engagement. Names stay off the death-reporter `traces.png`. */

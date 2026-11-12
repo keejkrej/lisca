@@ -28,6 +28,7 @@ import {
   contrastForFrameChange,
   effectiveAlignGrid,
   enumerateVisibleAlignGridPatterns,
+  isAlignDriftTranslationEditable,
   mergeExcludedAlignGridPatterns,
   rebaseAlignDriftReference,
   setAlignDriftDelta,
@@ -70,7 +71,10 @@ import {
   type AlignUiState,
 } from "../atoms/align-ui";
 import { resultData, resultFailureMessage, resultLoading } from "../atoms/result-utils";
-import type { CanvasResourceTransactionOptions } from "../canvas-resource-transaction";
+import {
+  createCanvasResourceTransaction,
+  type CanvasResourceTransactionOptions,
+} from "../canvas-resource-transaction";
 import { toClientError, type ClientError } from "../infra/client-error";
 import { runClientEffect } from "../infra/runtime";
 import type { AlignerDataPort } from "../ports/types";
@@ -129,6 +133,7 @@ export type AlignSessionBackend = {
 
 export type AlignSessionResources = {
   transact: <T>(options: CanvasResourceTransactionOptions<T>) => () => void;
+  transactContrast?: <T>(options: CanvasResourceTransactionOptions<T>) => () => void;
 };
 
 export type AlignSessionPolicy = {
@@ -195,6 +200,15 @@ export function useAlignSessionCore(options: UseAlignSessionCoreOptions) {
   const navWorkspacePath = createMemo(() => ui().workspacePath);
   const navContrast = createMemo(() => ui().contrast);
   const canLoadFrame = createMemo(() => policy.canLoadFrame?.(ui()) ?? true);
+  const transactContrast = resources.transactContrast ?? createCanvasResourceTransaction();
+  let abortContrastLoad: (() => void) | null = null;
+  let pendingSelectionContrastKey: string | null = null;
+  let contrastRevision = 0;
+  let contrastInFlight = false;
+  let selectionInFlight = false;
+
+  const contrastWindowKey = (window: ContrastWindow | null): string =>
+    window == null ? "auto" : `${window.min}:${window.max}`;
 
   const sessionActions: AlignSessionActions = {
     setWorkspacePath: (path) => actions.setWorkspacePath(setUi, path),
@@ -280,7 +294,12 @@ export function useAlignSessionCore(options: UseAlignSessionCoreOptions) {
     const sourceScan = navScan();
     const selection = navSelection();
     const workspacePath = navWorkspacePath();
+    abortContrastLoad?.();
+    abortContrastLoad = null;
+    contrastInFlight = false;
     if (!source || !sourceScan || !canLoadFrame()) {
+      pendingSelectionContrastKey = null;
+      selectionInFlight = false;
       actions.setFrameLoading(setUi, false);
       return;
     }
@@ -291,6 +310,9 @@ export function useAlignSessionCore(options: UseAlignSessionCoreOptions) {
       const current = ui();
       return contrastForFrameChange(current.contrast, current.contrastLocked, current.frame);
     });
+    const selectionContrastRevision = contrastRevision;
+    pendingSelectionContrastKey = frameContrast ? contrastWindowKey(frameContrast) : null;
+    selectionInFlight = true;
     const cleanup = resources.transact({
       start: () => {
         actions.setContrast(setUi, frameContrast);
@@ -309,28 +331,47 @@ export function useAlignSessionCore(options: UseAlignSessionCoreOptions) {
           { signal },
         ),
       commit: ([frame, saved]) => {
+        const effectiveFrame =
+          contrastRevision === selectionContrastRevision ? frame : (ui().frame ?? frame);
         actions.applyLoadedFrame(
           setUi,
           selection,
-          frame,
+          effectiveFrame,
           stateKey ? { stateKey, pos: selection.pos, saved } : null,
         );
       },
       reject: (cause) => {
-        actions.setFrame(setUi, null);
+        if (contrastRevision === selectionContrastRevision) {
+          actions.setFrame(setUi, null);
+        }
         actions.setError(
           setUi,
           frameLoadError(backend, cause, "Frame or saved align state load failed"),
         );
       },
-      settle: () => actions.setFrameLoading(setUi, false),
+      settle: () => {
+        selectionInFlight = false;
+        actions.setFrameLoading(setUi, contrastInFlight);
+      },
     });
-    onCleanup(cleanup);
+    onCleanup(() => {
+      selectionInFlight = false;
+      cleanup();
+    });
   });
 
   createEffect(() => {
     const contrast = navContrast();
-    if (contrast == null) return;
+    if (contrast == null) {
+      pendingSelectionContrastKey = null;
+      return;
+    }
+    const key = contrastWindowKey(contrast);
+    if (pendingSelectionContrastKey === key) {
+      pendingSelectionContrastKey = null;
+      return;
+    }
+    pendingSelectionContrastKey = null;
     const { source, sourceScan, selection, loadAllowed } = untrack(() => ({
       source: navSource(),
       sourceScan: navScan(),
@@ -338,7 +379,9 @@ export function useAlignSessionCore(options: UseAlignSessionCoreOptions) {
       loadAllowed: canLoadFrame(),
     }));
     if (!source || !sourceScan || !loadAllowed) return;
-    const cleanup = resources.transact({
+    contrastRevision += 1;
+    contrastInFlight = true;
+    const cleanup = transactContrast({
       start: () => {
         actions.setFrameLoading(setUi, true);
         actions.setError(setUi, null);
@@ -358,9 +401,19 @@ export function useAlignSessionCore(options: UseAlignSessionCoreOptions) {
         if (!policy.preserveFrameOnContrastFailure) actions.setFrame(setUi, null);
         actions.setError(setUi, frameLoadError(backend, cause, "Frame contrast update failed"));
       },
-      settle: () => actions.setFrameLoading(setUi, false),
+      settle: () => {
+        contrastInFlight = false;
+        actions.setFrameLoading(setUi, selectionInFlight);
+      },
     });
-    onCleanup(cleanup);
+    abortContrastLoad = cleanup;
+    onCleanup(() => {
+      if (abortContrastLoad === cleanup) {
+        abortContrastLoad = null;
+        contrastInFlight = false;
+      }
+      cleanup();
+    });
   });
 
   const derived = createMemo(() => {
@@ -435,35 +488,6 @@ export function useAlignSessionCore(options: UseAlignSessionCoreOptions) {
     } finally {
       actions.setSaving(setUi, false);
     }
-  };
-
-  const smartExcludedPatterns = (modelPatterns: AlignGridPatternCoord[]) => {
-    const currentUi = ui();
-    if (!currentUi.frame) return null;
-    const current = deriveCurrentExcludedPatterns(
-      currentUi.excludedPatternsByPosition,
-      navSelection().pos,
-    );
-    return mergeExcludedAlignGridPatterns(current, [
-      ...collectAlignGridEdgePatterns(
-        currentUi.frame,
-        effectiveAlignGrid(currentUi.grid, currentUi.drift, navSelection().time),
-      ),
-      ...modelPatterns,
-    ]);
-  };
-
-  const applySmartExclusion = (modelPatterns: AlignGridPatternCoord[]) => {
-    const current = derived().currentExcludedPatterns;
-    const patterns = smartExcludedPatterns(modelPatterns);
-    if (!patterns) return;
-    sessionActions.setExcludedPatternsForCurrentPosition(patterns);
-    actions.setStatus(setUi, `Smart excluded ${patterns.length - current.length} patterns`);
-  };
-
-  const saveWithSmartExclusion = async (modelPatterns: AlignGridPatternCoord[]) => {
-    const patterns = smartExcludedPatterns(modelPatterns);
-    return patterns ? saveCurrent(patterns) : false;
   };
 
   const previewVariationExclude = async () => {
@@ -796,15 +820,25 @@ export function useAlignSessionCore(options: UseAlignSessionCoreOptions) {
     startGrid: AlignGridState,
   ) => {
     const current = ui();
+    const time = navSelection().time;
     const next = applyDisplayedAlignGridCommit(
       current.grid,
       current.drift,
-      navSelection().time,
+      time,
       preview,
       intent,
       startGrid,
     );
-    if (next.grid === current.grid && next.drift === current.drift) return;
+    if (next.grid === current.grid && next.drift === current.drift) {
+      if (
+        intent === "offset" &&
+        (preview.tx !== startGrid.tx || preview.ty !== startGrid.ty) &&
+        !isAlignDriftTranslationEditable(current.drift, time)
+      ) {
+        actions.setStatus(setUi, "Pin a keyframe in Drift to pan this frame");
+      }
+      return;
+    }
     writeLattice(next);
   };
 
@@ -821,8 +855,6 @@ export function useAlignSessionCore(options: UseAlignSessionCoreOptions) {
     detecting,
     detectReport,
     detectLowConfidence,
-    saveWithSmartExclusion,
-    applySmartExclusion,
     adjustTranslation,
     setDriftDelta,
     replaceDrift,

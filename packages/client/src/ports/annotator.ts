@@ -51,5 +51,24 @@ export function createAnnotatorPort(
     smartSegment(request) {
       return toClientEffect(client.annotate.smartSegment({ payload: request }));
     },
+    labelFreeHealth() {
+      return toClientEffect(client.studio.labelFreeHealth());
+    },
+    saveLabelFreeKey(apiKey, provider) {
+      return toClientEffect(client.studio.saveLabelFreeKey({ payload: { apiKey, provider } }));
+    },
+    listLabelFreeReferences(workspacePath) {
+      return toClientEffect(client.studio.listLabelFreeReferences({ query: { workspacePath } }));
+    },
+    buildLabelFreeReferences(workspacePath, name) {
+      return toClientEffect(
+        client.studio.buildLabelFreeReferences({ payload: { workspacePath, name } }),
+      );
+    },
+    classifyLabelFree(workspacePath, name, limit = 4096) {
+      return toClientEffect(
+        client.studio.classifyLabelFree({ payload: { workspacePath, name, limit } }),
+      );
+    },
   };
 }

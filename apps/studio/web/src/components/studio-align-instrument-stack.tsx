@@ -33,14 +33,8 @@ const RAIL_CLASS =
  * Action follows the rail vocabulary: Save → Back → Next → Crop (primary, last).
  */
 export function StudioAlignInstrumentStack(props: { expert?: boolean }) {
-  const {
-    state,
-    smartExclude,
-    varExclude,
-    requestVarExclude,
-    applyExcludePreview,
-    cancelExcludePreview,
-  } = useStudioAlignPage();
+  const { state, varExclude, requestVarExclude, applyExcludePreview, cancelExcludePreview } =
+    useStudioAlignPage();
   const disabled = () => !state.frame;
   const busy = createMemo(() => state.saving || state.preparingCrop || state.cropping);
   const frameReady = createMemo(() => Boolean(state.frame));
@@ -128,7 +122,6 @@ export function StudioAlignInstrumentStack(props: { expert?: boolean }) {
         grid={state.effectiveGrid}
         manualExclusionEnabled={state.manualExclusionEnabled}
         sectionAppearance="rail"
-        smartExcludeLoading={smartExclude.active()}
         visibleCounts={state.visibleCounts}
         variationExcludeLoading={varExclude.active()}
         variationExcludePreview={state.variationExcludePreview}
@@ -138,7 +131,6 @@ export function StudioAlignInstrumentStack(props: { expert?: boolean }) {
           state.setExcludedPatternsForCurrentPosition(patterns)
         }
         onManualExclusionEnabledChange={(enabled) => state.setManualExclusionEnabled(enabled)}
-        onSmartExclude={() => void smartExclude.request()}
         onVariationExclude={() => void requestVarExclude()}
         onVariationExcludeThresholdChange={(threshold) =>
           state.setVariationExcludeThreshold(threshold)

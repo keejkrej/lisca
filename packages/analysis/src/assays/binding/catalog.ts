@@ -15,6 +15,16 @@ export const BINDING_PLOTS: readonly BindingPlotSpec[] = [
     section: "traces",
   },
   {
+    fileName: "binding_intensity_traces.png",
+    title: "Spot-intensity traces",
+    section: "traces",
+  },
+  {
+    fileName: "binding_intensity_traces_shared_y.png",
+    title: "Spot-intensity traces (shared y)",
+    section: "traces",
+  },
+  {
     fileName: "binding_traces_summary.png",
     title: "Mean spot count",
     section: "traces-summary",
@@ -22,6 +32,16 @@ export const BINDING_PLOTS: readonly BindingPlotSpec[] = [
   {
     fileName: "binding_traces_summary_shared_y.png",
     title: "Mean spot count (shared y)",
+    section: "traces-summary",
+  },
+  {
+    fileName: "binding_intensity_traces_summary.png",
+    title: "Mean spot intensity",
+    section: "traces-summary",
+  },
+  {
+    fileName: "binding_intensity_traces_summary_shared_y.png",
+    title: "Mean spot intensity (shared y)",
     section: "traces-summary",
   },
 ] as const;

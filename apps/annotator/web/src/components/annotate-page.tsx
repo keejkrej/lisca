@@ -1,6 +1,11 @@
-import { readRecentMemory, touchRecentMemory } from "@lisca/client/session/recent-memory";
+import {
+  forgetRecentWorkspace,
+  readRecentMemory,
+  touchRecentMemory,
+} from "@lisca/client/session/recent-memory";
 import { HostFilePickerDialog, LabelCreationDialog } from "@lisca/instrument";
 import { AppShell } from "@lisca/ui/shell";
+import { createSignal } from "solid-js";
 
 import { annotatorHostOperations } from "../api/annotator-port";
 import { useAnnotateShell } from "../state/annotate-page-selectors";
@@ -11,9 +16,11 @@ import { AnnotatorRight } from "./annotator-right";
 
 export function AnnotatePage() {
   const shell = useAnnotateShell();
+  const [recentVersion, setRecentVersion] = createSignal(0);
   const pickWorkspace = (path: string) => {
     shell.pickWorkspace(path);
     touchRecentMemory("annotator", { kind: "workspace", path });
+    setRecentVersion((version) => version + 1);
   };
 
   return (
@@ -42,7 +49,18 @@ export function AnnotatePage() {
         onOpenChange={shell.setFilePickerOpen}
         onPickDirectory={pickWorkspace}
         onPickFile={() => undefined}
-        recentItems={shell.filePickerOpen ? readRecentMemory("annotator").workspaces : undefined}
+        recentItems={
+          shell.filePickerOpen
+            ? (() => {
+                recentVersion();
+                return readRecentMemory("annotator").workspaces;
+              })()
+            : undefined
+        }
+        onRemoveRecent={(path) => {
+          forgetRecentWorkspace("annotator", path);
+          setRecentVersion((version) => version + 1);
+        }}
         onPickRecent={(path) => {
           shell.setFilePickerOpen(false);
           pickWorkspace(path);

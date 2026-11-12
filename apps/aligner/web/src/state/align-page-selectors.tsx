@@ -121,6 +121,18 @@ export function useAlignNav() {
     get scan() {
       return state().scan;
     },
+    get positionSaveState() {
+      return state().positionSaveState;
+    },
+    get canGoBack() {
+      return state().canGoBack;
+    },
+    get canGoNext() {
+      return state().canGoNext;
+    },
+    changePosition: (pos: number) => state().changePosition(pos),
+    goBack: () => state().goBack(),
+    goNext: () => state().goNext(),
     setSelection: (patch: Partial<AlignState["selection"]>) => state().setSelection(patch),
     saveCurrent: () => state().saveCurrent(),
     cropCurrent: () => state().cropCurrent(),
@@ -155,5 +167,6 @@ export function useAlignSource() {
     setSource: actions.setSource,
     setSelection: actions.setSelection,
     setContrast: actions.setContrast,
+    refreshAgentWorkspace: (workspacePath: string) => state().refreshAgentWorkspace(workspacePath),
   };
 }

@@ -221,6 +221,7 @@ describe("result sections", () => {
   it("labels each view", () => {
     expect(resultSectionLabel("traces")).toBe("Traces");
     expect(resultSectionLabel("traces-summary")).toBe("Traces summary");
+    expect(resultSectionLabel("viability")).toBe("Viability");
     expect(resultSectionLabel("traces-fit")).toBe("Traces fit");
     expect(resultSectionLabel("auc")).toBe("AUC");
     expect(resultSectionLabel("parameters")).toBe("Parameters");
@@ -240,12 +241,15 @@ describe("result sections", () => {
     expect(visibleResultPlotSections(plots)).toEqual(["traces", "auc"]);
   });
 
-  it("keeps killing on traces and traces summary", () => {
+  it("groups killing into traces, traces summary, and viability", () => {
     const plots = collectResultPlots(
       KILLING_PLOTS.map((plot) => ({
         kind: "plot" as const,
         fileName: plot.fileName,
-        path: `/results/Control/${plot.fileName}`,
+        path:
+          plot.section === "viability"
+            ? `/results/${plot.fileName}`
+            : `/results/Control/${plot.fileName}`,
       })),
       "killing-death-reporter",
     );
@@ -254,11 +258,14 @@ describe("result sections", () => {
       ["traces_shared_y.png", "traces"],
       ["traces_summary.png", "traces-summary"],
       ["traces_summary_shared_y.png", "traces-summary"],
+      ["survival_curve.png", "viability"],
+      ["kill_curve.png", "viability"],
+      ["death_times.png", "viability"],
     ]);
-    expect(visibleResultPlotSections(plots)).toEqual(["traces", "traces-summary"]);
+    expect(visibleResultPlotSections(plots)).toEqual(["traces", "traces-summary", "viability"]);
   });
 
-  it("keeps binding on traces and traces summary", () => {
+  it("includes spot count and spot intensity in binding traces and traces summary", () => {
     const plots = collectResultPlots(
       BINDING_PLOTS.map((plot) => ({
         kind: "plot" as const,
@@ -271,6 +278,16 @@ describe("result sections", () => {
     expect(filterResultPlotsBySection(plots, "traces").map((plot) => plot.fileName)).toEqual([
       "binding_traces.png",
       "binding_traces_shared_y.png",
+      "binding_intensity_traces.png",
+      "binding_intensity_traces_shared_y.png",
+    ]);
+    expect(
+      filterResultPlotsBySection(plots, "traces-summary").map((plot) => plot.fileName),
+    ).toEqual([
+      "binding_traces_summary.png",
+      "binding_traces_summary_shared_y.png",
+      "binding_intensity_traces_summary.png",
+      "binding_intensity_traces_summary_shared_y.png",
     ]);
   });
 

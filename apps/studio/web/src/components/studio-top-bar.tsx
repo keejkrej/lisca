@@ -1,5 +1,12 @@
-import { ConnectionStatus, ShellThemeToggle, useShellServer } from "@lisca/ui/shell";
+import {
+  ConnectionStatus,
+  ShellHelpDialog,
+  ShellThemeToggle,
+  useShellServer,
+  type QuickGuideTopicId,
+} from "@lisca/ui/shell";
 import { useAtomSet, useAtomValue } from "@effect/atom-solid";
+import { useRouterState } from "@tanstack/solid-router";
 import { Show, createSignal } from "solid-js";
 import type { LiscaWorkspaceControl } from "@lisca/client/desktop";
 
@@ -11,10 +18,19 @@ import { StudioAgentNavigation } from "./studio-agent-navigation";
 import { StudioPageTaskCenter } from "./studio-task-center";
 import { StudioSettings } from "./studio-settings";
 
+function studioGuideTopicForPath(pathname: string): QuickGuideTopicId {
+  if (pathname.startsWith("/metadata")) return "metadata";
+  if (pathname.startsWith("/align")) return "align";
+  if (pathname.startsWith("/annotate")) return "annotate";
+  if (pathname.startsWith("/analysis")) return "analysis";
+  return "assay";
+}
+
 export function StudioTopBar(props: { showExpert?: boolean }) {
   const [agentActive, setAgentActive] = createSignal(false);
   const [agentSessions, setAgentSessions] = createSignal<LiscaWorkspaceControl[]>([]);
   const server = useShellServer();
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
   const expertMode = useAtomValue(() => studioExpertModeAtom);
   const setExpertMode = useAtomSet(() => studioExpertModeAtom);
   useStudioCommandShortcut(
@@ -49,6 +65,7 @@ export function StudioTopBar(props: { showExpert?: boolean }) {
         </span>
         <div class="flex items-center justify-end gap-2">
           <ConnectionStatus state={server.state} onRetry={server.retry} />
+          <ShellHelpDialog topic={studioGuideTopicForPath(pathname())} />
           <StudioSettings />
           <ShellThemeToggle class="size-7" />
         </div>

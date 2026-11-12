@@ -2,6 +2,8 @@ import { configureLiscaStorage, type LiscaStorageAdapter } from "@lisca/utils";
 import { beforeEach, describe, expect, it } from "vite-plus/test";
 
 import {
+  forgetRecentSource,
+  forgetRecentWorkspace,
   readRecentMemory,
   recentSourceByPath,
   recentSourcePickerItems,
@@ -103,5 +105,22 @@ describe("recent memory", () => {
       "/ws/new",
       "/ws/old",
     ]);
+  });
+
+  it("forgets recent workspaces and sources per app and mode", () => {
+    touchRecentMemory("aligner", { kind: "workspace", path: "/ws/a" });
+    touchRecentMemory("aligner", { kind: "workspace", path: "/ws/b" });
+    touchRecentMemory("aligner", { kind: "source", source: nd2 });
+    touchRecentMemory("aligner", { kind: "source", source: czi });
+
+    forgetRecentWorkspace("aligner", "/ws/a");
+    expect(readRecentMemory("aligner").workspaces.map((entry) => entry.path)).toEqual(["/ws/b"]);
+
+    // Wrong mode leaves the ND2 entry intact.
+    forgetRecentSource("aligner", "czi_file", "/data/run.nd2");
+    expect(readRecentMemory("aligner").sources.map((entry) => entry.source)).toEqual([czi, nd2]);
+
+    forgetRecentSource("aligner", "nd2_file", "/data/run.nd2");
+    expect(readRecentMemory("aligner").sources.map((entry) => entry.source)).toEqual([czi]);
   });
 });

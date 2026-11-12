@@ -26,8 +26,6 @@ import type {
   SaveAssayJsonResponse,
   SaveBboxResponse,
   SavedAlignState,
-  SmartExcludeRequest,
-  SmartExcludeResponse,
   SmartSegmentRequest,
   SmartSegmentResponse,
   StepDetail,
@@ -80,6 +78,21 @@ export type AnnotatorDataPort = HostPort &
       annotation: RoiFrameAnnotationPayload,
     ): ClientEffect<RoiFrameAnnotation>;
     smartSegment(request: SmartSegmentRequest): ClientEffect<SmartSegmentResponse>;
+    labelFreeHealth(): ClientEffect<LabelFreeHealth>;
+    saveLabelFreeKey(
+      apiKey?: string,
+      provider?: "openrouter" | "ollama",
+    ): ClientEffect<LabelFreeHealth>;
+    listLabelFreeReferences(workspacePath: string): ClientEffect<LabelFreeReferenceSet[]>;
+    buildLabelFreeReferences(
+      workspacePath: string,
+      name: string,
+    ): ClientEffect<LabelFreeReferenceSet>;
+    classifyLabelFree(
+      workspacePath: string,
+      name: string,
+      limit?: number,
+    ): ClientEffect<LabelFreeClassification[]>;
   };
 
 export type AnalysisDataPort = {
@@ -117,7 +130,6 @@ export type AlignerDataPort = HostPort &
       onProgress: (progress: CropRoiProgress) => void,
     ): () => void;
     roiPosExists(workspacePath: string, pos: number): ClientEffect<boolean>;
-    smartExclude(request: SmartExcludeRequest): ClientEffect<SmartExcludeResponse>;
   };
 
 export type StudioDataPort = AlignerDataPort &
@@ -126,19 +138,4 @@ export type StudioDataPort = AlignerDataPort &
   StudioHostPort & {
     getAnalysisResults(workspacePath: string): ClientEffect<AnalysisProgress | null>;
     getLatestAnalysisProgress(workspacePath: string): ClientEffect<AnalysisProgress | null>;
-    labelFreeHealth(): ClientEffect<LabelFreeHealth>;
-    saveLabelFreeKey(
-      apiKey?: string,
-      provider?: "openrouter" | "ollama",
-    ): ClientEffect<LabelFreeHealth>;
-    listLabelFreeReferences(workspacePath: string): ClientEffect<LabelFreeReferenceSet[]>;
-    buildLabelFreeReferences(
-      workspacePath: string,
-      name: string,
-    ): ClientEffect<LabelFreeReferenceSet>;
-    classifyLabelFree(
-      workspacePath: string,
-      name: string,
-      limit?: number,
-    ): ClientEffect<LabelFreeClassification[]>;
   };

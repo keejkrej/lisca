@@ -56,6 +56,7 @@ function clearActiveLabel(mask: Uint8Array, labelValue: number): Uint8Array {
 
 type SmartSegmentSessionRefs = {
   frame: FrameResult | null;
+  frameKey: string | null;
   pendingPrompts: SmartSegmentPoint[] | null;
   pendingLabel: number;
 };
@@ -69,6 +70,7 @@ function resetSmartSegmentSession(
   setPromptsByLabel({});
   provider.dispose();
   refs.frame = null;
+  refs.frameKey = null;
   refs.pendingPrompts = null;
   refs.pendingLabel = 0;
   setDownloadState?.({ open: false, requiresDownload: false, progress: 0, message: "" });
@@ -78,6 +80,8 @@ export function useSmartSegment(options: {
   provider: SmartSegmentProvider;
   model?: SmartModelGate;
   frame: Accessor<FrameResult | null>;
+  /** Optional logical plane key (e.g. `pos:roi:channel:time:z`). When unchanged across contrast edits, active point prompts are preserved. */
+  frameKey?: Accessor<string | null>;
   tool: Accessor<string>;
   activeLabelValue: Accessor<number>;
   mask: Accessor<Uint8Array>;
@@ -97,6 +101,7 @@ export function useSmartSegment(options: {
 
   const sessionRefs: SmartSegmentSessionRefs = {
     frame: null,
+    frameKey: null,
     pendingPrompts: null,
     pendingLabel: 0,
   };
@@ -142,9 +147,24 @@ export function useSmartSegment(options: {
 
   createEffect(() => {
     const frame = options.frame();
-    if (sessionRefs.frame === frame) return;
+    const nextKey = options.frameKey ? options.frameKey() : null;
+    if (sessionRefs.frame === frame && sessionRefs.frameKey === nextKey) return;
     segmentGeneration += 1;
     setBusy(false);
+    const sameLogicalPlane =
+      Boolean(options.frameKey) &&
+      frame !== null &&
+      sessionRefs.frame !== null &&
+      nextKey !== null &&
+      sessionRefs.frameKey === nextKey &&
+      sessionRefs.frame.width === frame.width &&
+      sessionRefs.frame.height === frame.height;
+    if (sameLogicalPlane) {
+      options.provider.dispose();
+      sessionRefs.frame = frame;
+      sessionRefs.frameKey = nextKey;
+      return;
+    }
     resetSmartSegmentSession(
       setPromptsByLabel,
       setDownloadStateForModel,
@@ -152,6 +172,7 @@ export function useSmartSegment(options: {
       options.provider,
     );
     sessionRefs.frame = frame;
+    sessionRefs.frameKey = nextKey;
   });
 
   onCleanup(() => {

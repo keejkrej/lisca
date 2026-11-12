@@ -47,6 +47,10 @@ export function StudioAnnotateMain() {
   const smartSegment = useSmartSegment({
     provider: smartSegmentProvider,
     frame: () => canvas.frame,
+    frameKey: () =>
+      state.request && state.workspacePath
+        ? `${state.workspacePath}:${state.request.pos}:${state.request.roi}:${state.request.channel}:${state.request.time}:${state.request.z}`
+        : null,
     tool: () => canvas.tool,
     activeLabelValue,
     mask: () => canvas.annotation.current.mask,

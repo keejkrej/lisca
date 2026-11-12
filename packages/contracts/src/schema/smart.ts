@@ -1,21 +1,8 @@
 import * as Schema from "effect/Schema";
 
 import { RoiFrameRequestSchema } from "./annotate";
-import { AlignGridPatternCoordSchema, AlignGridPatternBoxSchema } from "./align";
-import { F64, NumArray } from "./primitives";
-import { AlignerSourceSchema, ContrastWindowSchema, FrameRequestSchema } from "./shared";
-
-export const SmartExcludeRequestSchema = Schema.Struct({
-  source: AlignerSourceSchema,
-  request: FrameRequestSchema,
-  contrast: Schema.NullOr(ContrastWindowSchema),
-  patterns: Schema.mutable(Schema.Array(AlignGridPatternBoxSchema)),
-  threshold: Schema.optional(F64),
-}).annotate({ identifier: "SmartExcludeRequest" });
-
-export const SmartExcludeResponseSchema = Schema.Struct({
-  excludedPatterns: Schema.mutable(Schema.Array(AlignGridPatternCoordSchema)),
-}).annotate({ identifier: "SmartExcludeResponse" });
+import { NumArray } from "./primitives";
+import { ContrastWindowSchema } from "./shared";
 
 export const SmartSegmentPointSchema = Schema.Struct({
   x: Schema.Finite,
@@ -34,8 +21,6 @@ export const SmartSegmentResponseSchema = Schema.Struct({
   mask: NumArray,
 }).annotate({ identifier: "SmartSegmentResponse" });
 
-export type SmartExcludeRequest = typeof SmartExcludeRequestSchema.Type;
-export type SmartExcludeResponse = typeof SmartExcludeResponseSchema.Type;
 export type SmartSegmentPoint = typeof SmartSegmentPointSchema.Type;
 export type SmartSegmentRequest = typeof SmartSegmentRequestSchema.Type;
 export type SmartSegmentResponse = typeof SmartSegmentResponseSchema.Type;

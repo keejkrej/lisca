@@ -12,11 +12,15 @@ export const STUDIO_ALIGN_SESSION_KEY = "lisca-studio-align-session";
 
 const studioPersist = createStudioPersist(STUDIO_ALIGN_SESSION_KEY);
 
-/** Restores the log-std threshold from the same session record as position, frame, and channel. */
+/** Restores the log-std threshold and zoom lock preferences from the Studio align session record. */
 export function createInitialStudioAlignUiState(): AlignUiState {
+  const initial = createInitialAlignUiState();
   const session = studioPersist.read();
   return {
-    ...createInitialAlignUiState(),
+    ...initial,
+    selection: session?.selection ?? initial.selection,
+    spacingZoomLocked: session?.spacingZoomLocked ?? initial.spacingZoomLocked,
+    patternZoomLocked: session?.patternZoomLocked ?? initial.patternZoomLocked,
     variationExcludeThreshold: session?.variationExcludeThreshold ?? null,
   };
 }

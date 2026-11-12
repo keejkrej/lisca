@@ -155,7 +155,7 @@ describe("stage rail tool compatibility", () => {
     ).toBeTruthy();
   });
 
-  it("keeps Smart and Smart Erase visible and refuses to select them", async () => {
+  it("keeps Smart and Smart Erase enabled and selectable via click and shortcut keys", () => {
     const onToolChange = vi.fn();
     const actions = buildAnnotationToolActions("brush", onToolChange, false);
     const rail = render(() => (
@@ -163,27 +163,26 @@ describe("stage rail tool compatibility", () => {
     ));
 
     const smart = screen.getByRole("button", { name: "Smart (3)" }) as HTMLButtonElement;
-    expect(smart.disabled).toBe(true);
+    expect(smart.disabled).toBe(false);
     expect(smart.textContent).not.toContain("Version 1.0");
-    expect(smart.title).toBe("");
-    const smartTrigger = smart.closest("[data-slot='tooltip-trigger']");
-    expect(smartTrigger).toBeTruthy();
-    (smartTrigger as HTMLElement).focus();
-    await waitFor(() => {
-      expect(screen.getByRole("tooltip").textContent).toBe("Coming soon in version 1.0.");
-    });
+    expect(smart.closest("[data-slot='tooltip-trigger']")).toBeNull();
     fireEvent.click(smart);
+    expect(onToolChange).toHaveBeenCalledWith("smart");
+    onToolChange.mockClear();
     fireEvent.keyDown(window, { key: "3" });
-    expect(onToolChange).not.toHaveBeenCalled();
+    expect(onToolChange).toHaveBeenCalledWith("smart");
     rail.unmount();
 
+    onToolChange.mockClear();
     render(() => <AnnotationToolGrid canEditTools shortcutsEnabled toolActions={actions} />);
     const smartErase = screen.getByRole("button", { name: "Smart Erase (6)" }) as HTMLButtonElement;
-    expect(smartErase.disabled).toBe(true);
+    expect(smartErase.disabled).toBe(false);
     expect(smartErase.textContent).not.toContain("Version 1.0");
     fireEvent.click(smartErase);
+    expect(onToolChange).toHaveBeenCalledWith("smart-erase");
+    onToolChange.mockClear();
     fireEvent.keyDown(window, { key: "6" });
-    expect(onToolChange).not.toHaveBeenCalled();
+    expect(onToolChange).toHaveBeenCalledWith("smart-erase");
   });
 
   it("keeps tool numbers visible while shortcut keys are disabled", () => {

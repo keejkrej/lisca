@@ -1,11 +1,7 @@
-import type { AlignGridPatternCoord, AlignGridState } from "@lisca/contracts";
-import { createDefaultAlignGrid, type FrameResult } from "@lisca/utils";
+import type { FrameResult } from "@lisca/utils";
 import { createRoot, createSignal } from "solid-js";
 import { describe, expect, it, vi } from "vite-plus/test";
 
-import { useSmartExclude } from "./exclude/use-smart-exclude";
-import type { SmartExcludeProvider } from "./exclude/provider";
-import type { SmartModelGate } from "./shared/model-gate";
 import { useSmartSegment } from "./segment/use-smart-segment";
 import type { SmartSegmentProvider } from "./segment/provider";
 
@@ -25,48 +21,7 @@ const frame = (pixels: number[]): FrameResult => ({
   pixels: new Uint8Array(pixels),
 });
 
-const visibleGrid = (): AlignGridState => ({
-  ...createDefaultAlignGrid(),
-  enabled: true,
-  spacingA: 1,
-  spacingB: 1,
-  patternWidth: 1,
-  patternHeight: 1,
-});
-
 describe("Solid smart-hook lifecycle", () => {
-  it("keeps Smart Exclude inputs live after the owner is created", async () => {
-    const [currentFrame, setCurrentFrame] = createSignal<FrameResult | null>(null);
-    const [excluded, setExcluded] = createSignal<AlignGridPatternCoord[]>([]);
-    const classify = vi.fn<SmartExcludeProvider["classify"]>(async ({ patterns }) =>
-      patterns.slice(0, 1),
-    );
-    const onComplete = vi.fn();
-
-    let request!: () => Promise<void>;
-    const dispose = createRoot((ownerDispose) => {
-      const smart = useSmartExclude({
-        provider: { classify },
-        frame: currentFrame,
-        grid: createSignal(visibleGrid())[0],
-        currentExcludedPatterns: excluded,
-        enabled: () => currentFrame() !== null,
-        onComplete,
-      });
-      request = smart.request;
-      return ownerDispose;
-    });
-
-    setCurrentFrame(frame([1, 2, 3, 4]));
-    setExcluded([{ i: 99, j: 99 }]);
-    await request();
-
-    expect(classify).toHaveBeenCalledOnce();
-    expect(classify.mock.calls[0]?.[0].frame).toBe(currentFrame());
-    expect(onComplete).toHaveBeenCalledOnce();
-    dispose();
-  });
-
   it("invalidates an in-flight segment when the frame changes", async () => {
     const prepared = deferred<void>();
     const firstFrame = frame([1, 2]);
@@ -109,35 +64,46 @@ describe("Solid smart-hook lifecycle", () => {
     dispose();
   });
 
-  it("settles pending Smart Exclude consent when its owner is disposed", async () => {
-    const model: SmartModelGate = {
-      isLoaded: () => false,
-      isCached: async () => false,
+  it("preserves Smart Segment prompts across contrast updates on the same frameKey", async () => {
+    const firstFrame = frame([10, 20]);
+    const contrastAdjustedFrame = frame([30, 200]);
+    const nextPlaneFrame = frame([5, 6]);
+    const [currentFrame, setCurrentFrame] = createSignal<FrameResult | null>(firstFrame);
+    const [planeKey, setPlaneKey] = createSignal<string | null>("0:0:0:0:0");
+    const provider: SmartSegmentProvider = {
+      prepareFrame: vi.fn(async () => undefined),
+      segment: vi.fn(async () => new Uint8Array([1, 0])),
+      dispose: vi.fn(),
     };
-    const onComplete = vi.fn();
 
-    let ensureAndClassify!: () => Promise<AlignGridPatternCoord[]>;
-    let downloadState!: ReturnType<typeof useSmartExclude>["downloadState"];
+    let smart!: ReturnType<typeof useSmartSegment>;
     const dispose = createRoot((ownerDispose) => {
-      const smart = useSmartExclude({
-        provider: { classify: vi.fn(async () => []) },
-        model,
-        frame: () => frame([1, 2, 3, 4]),
-        grid: visibleGrid,
-        currentExcludedPatterns: () => [],
+      smart = useSmartSegment({
+        provider,
+        frame: currentFrame,
+        frameKey: planeKey,
+        tool: () => "smart",
+        activeLabelValue: () => 1,
+        mask: () => new Uint8Array([0, 0]),
         enabled: () => true,
-        onComplete,
+        onCommit: vi.fn(),
       });
-      ensureAndClassify = smart.ensureAndClassify;
-      downloadState = smart.downloadState;
       return ownerDispose;
     });
 
-    const pending = ensureAndClassify();
-    await vi.waitFor(() => expect(downloadState().requiresDownload).toBe(true));
-    dispose();
+    await smart.handleClick({ x: 1, y: 0, negative: false });
+    expect(smart.prompts()).toHaveLength(1);
 
-    await expect(pending).resolves.toEqual([]);
-    expect(onComplete).not.toHaveBeenCalled();
+    // Display-only contrast change keeps the same planeKey -> prompts stay intact.
+    setCurrentFrame(contrastAdjustedFrame);
+    await Promise.resolve();
+    expect(smart.prompts()).toHaveLength(1);
+
+    // Stepping to another ROI plane clears prompts.
+    setPlaneKey("0:0:0:1:0");
+    setCurrentFrame(nextPlaneFrame);
+    await Promise.resolve();
+    expect(smart.prompts()).toHaveLength(0);
+    dispose();
   });
 });

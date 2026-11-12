@@ -61,8 +61,6 @@ import {
   SaveRoiFrameAnnotationRequestSchema,
   ScanRoiWorkspaceRequestSchema,
   ScanSourceRequestSchema,
-  SmartExcludeRequestSchema,
-  SmartExcludeResponseSchema,
   SmartSegmentRequestSchema,
   SmartSegmentResponseSchema,
   StepDetailQuerySchema,
@@ -231,13 +229,6 @@ const alignGroup = HttpApiGroup.make("align")
     HttpApiEndpoint.get("getLatestCropProgress", "/align/crop-latest", {
       query: LatestCropQuerySchema,
       success: NullableCropRoiProgressSchema,
-      error: [RequestError, Unauthorized],
-    }),
-  )
-  .add(
-    HttpApiEndpoint.post("smartExclude", "/align/smart-exclude", {
-      payload: SmartExcludeRequestSchema,
-      success: SmartExcludeResponseSchema,
       error: [RequestError, Unauthorized],
     }),
   );

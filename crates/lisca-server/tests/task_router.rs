@@ -127,6 +127,7 @@ async fn lifecycle_routes_return_canonical_projections_and_typed_transition_erro
         .contains("cancellation-requested"));
 
     let missing = app
+        .clone()
         .oneshot(
             Request::builder()
                 .method("POST")

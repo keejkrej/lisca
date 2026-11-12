@@ -36,8 +36,6 @@ export const OPERATION_DESCRIPTIONS: Record<string, string> = {
     "Poll one ROI crop task by requestId: status (queued/running/completed/cancelled/error), positions and ROIs done, message.",
   "align.getLatestCropProgress":
     "Get the latest crop progress for a workspace (or null when none ran).",
-  "align.smartExclude":
-    "Smart exclude: run the exclusion model over a frame's pattern grid and return the pattern coordinates (i, j) it suggests excluding from the grid before ROI crop.",
 
   "annotate.scanRoiWorkspace":
     "Scan a workspace's roi/ image stacks and report, per Position, the Channels, Frames (times), Z planes, and ROI count available for annotation. First call of an annotation session.",

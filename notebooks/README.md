@@ -109,11 +109,11 @@ Death reporter, engagement, and LNP binding stay on Studio Analyze. The manual p
 
 Set these in the first code cell of each notebook. Paths are the mounted or local Workspace, not this zip.
 
-| Notebook        | Config                                                                                                          |
-| --------------- | --------------------------------------------------------------------------------------------------------------- |
-| `crop.ipynb`    | `WORKSPACE`. Source and positions come from `assay.json` and `bbox/`.                                      |
-| `analyze.ipynb` | `WORKSPACE`. Interval, channels, Skip segmentation, and max onset come from `assay.json`.                   |
-| `results.ipynb` | `WORKSPACE`. Samples and the interval come from `assay.json`. No sample list in the notebook.              |
+| Notebook        | Config                                                                                        |
+| --------------- | --------------------------------------------------------------------------------------------- |
+| `crop.ipynb`    | `WORKSPACE`. Source and positions come from `assay.json` and `bbox/`.                         |
+| `analyze.ipynb` | `WORKSPACE`. Interval, channels, Skip segmentation, and max onset come from `assay.json`.     |
+| `results.ipynb` | `WORKSPACE`. Samples and the interval come from `assay.json`. No sample list in the notebook. |
 
 `analyze.ipynb` writes `analysis/` CSVs only. `results.ipynb` writes `samples[]` into `assay.json`, then Tables (`traces.xlsx` / `auc.xlsx` / `fit.xlsx`) and Plots (per-sample PNGs and root boxplots) as separate cells. Re-run Plots without re-running Tables or analyze.
 

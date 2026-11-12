@@ -1024,9 +1024,6 @@ impl ::std::convert::TryFrom<::std::string::String> for AppId {
 #[doc = "        \"$ref\": \"#/definitions/AssaySampleChannels\""]
 #[doc = "      }"]
 #[doc = "    },"]
-#[doc = "    \"segmentationMode\": {"]
-#[doc = "      \"$ref\": \"#/definitions/AssaySegmentationMode\""]
-#[doc = "    },"]
 #[doc = "    \"skipSegment\": {"]
 #[doc = "      \"type\": \"boolean\""]
 #[doc = "    },"]
@@ -1060,12 +1057,6 @@ pub struct AssayAnalysisConfig {
     )]
     pub sample_channels: ::std::vec::Vec<AssaySampleChannels>,
     #[serde(
-        rename = "segmentationMode",
-        default,
-        skip_serializing_if = "::std::option::Option::is_none"
-    )]
-    pub segmentation_mode: ::std::option::Option<AssaySegmentationMode>,
-    #[serde(
         rename = "skipSegment",
         default,
         skip_serializing_if = "::std::option::Option::is_none"
@@ -1090,7 +1081,6 @@ impl ::std::default::Default for AssayAnalysisConfig {
             channels: Default::default(),
             max_onset_minutes: Default::default(),
             sample_channels: Default::default(),
-            segmentation_mode: Default::default(),
             skip_segment: Default::default(),
             min_gradient: Default::default(),
             box_size: Default::default(),
@@ -1846,78 +1836,6 @@ impl ::std::convert::From<AssaySamples> for ::std::vec::Vec<AssaySampleRow> {
 impl ::std::convert::From<::std::vec::Vec<AssaySampleRow>> for AssaySamples {
     fn from(value: ::std::vec::Vec<AssaySampleRow>) -> Self {
         Self(value)
-    }
-}
-#[doc = "`AssaySegmentationMode`"]
-#[doc = r""]
-#[doc = r" <details><summary>JSON schema</summary>"]
-#[doc = r""]
-#[doc = r" ```json"]
-#[doc = "{"]
-#[doc = "  \"type\": \"string\","]
-#[doc = "  \"enum\": ["]
-#[doc = "    \"logstd\","]
-#[doc = "    \"smart\""]
-#[doc = "  ]"]
-#[doc = "}"]
-#[doc = r" ```"]
-#[doc = r" </details>"]
-#[derive(
-    :: serde :: Deserialize,
-    :: serde :: Serialize,
-    Clone,
-    Copy,
-    Debug,
-    Eq,
-    Hash,
-    Ord,
-    PartialEq,
-    PartialOrd,
-)]
-pub enum AssaySegmentationMode {
-    #[serde(rename = "logstd")]
-    Logstd,
-    #[serde(rename = "smart")]
-    Smart,
-}
-impl ::std::fmt::Display for AssaySegmentationMode {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        match *self {
-            Self::Logstd => f.write_str("logstd"),
-            Self::Smart => f.write_str("smart"),
-        }
-    }
-}
-impl ::std::str::FromStr for AssaySegmentationMode {
-    type Err = self::error::ConversionError;
-    fn from_str(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        match value {
-            "logstd" => Ok(Self::Logstd),
-            "smart" => Ok(Self::Smart),
-            _ => Err("invalid value".into()),
-        }
-    }
-}
-impl ::std::convert::TryFrom<&str> for AssaySegmentationMode {
-    type Error = self::error::ConversionError;
-    fn try_from(value: &str) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<&::std::string::String> for AssaySegmentationMode {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: &::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
-    }
-}
-impl ::std::convert::TryFrom<::std::string::String> for AssaySegmentationMode {
-    type Error = self::error::ConversionError;
-    fn try_from(
-        value: ::std::string::String,
-    ) -> ::std::result::Result<Self, self::error::ConversionError> {
-        value.parse()
     }
 }
 #[doc = "`AssaySignalChannels`"]
@@ -5486,95 +5404,6 @@ impl ScanSourceRequest {
         Default::default()
     }
 }
-#[doc = "`SmartExcludeRequest`"]
-#[doc = r""]
-#[doc = r" <details><summary>JSON schema</summary>"]
-#[doc = r""]
-#[doc = r" ```json"]
-#[doc = "{"]
-#[doc = "  \"type\": \"object\","]
-#[doc = "  \"required\": ["]
-#[doc = "    \"contrast\","]
-#[doc = "    \"patterns\","]
-#[doc = "    \"request\","]
-#[doc = "    \"source\""]
-#[doc = "  ],"]
-#[doc = "  \"properties\": {"]
-#[doc = "    \"contrast\": {"]
-#[doc = "      \"anyOf\": ["]
-#[doc = "        {"]
-#[doc = "          \"$ref\": \"#/definitions/ContrastWindow\""]
-#[doc = "        },"]
-#[doc = "        {"]
-#[doc = "          \"type\": \"null\""]
-#[doc = "        }"]
-#[doc = "      ]"]
-#[doc = "    },"]
-#[doc = "    \"patterns\": {"]
-#[doc = "      \"type\": \"array\","]
-#[doc = "      \"items\": {"]
-#[doc = "        \"$ref\": \"#/definitions/AlignGridPatternBox\""]
-#[doc = "      }"]
-#[doc = "    },"]
-#[doc = "    \"request\": {"]
-#[doc = "      \"$ref\": \"#/definitions/FrameRequest\""]
-#[doc = "    },"]
-#[doc = "    \"source\": {"]
-#[doc = "      \"$ref\": \"#/definitions/AlignerSource\""]
-#[doc = "    },"]
-#[doc = "    \"threshold\": {"]
-#[doc = "      \"type\": \"number\","]
-#[doc = "      \"format\": \"double\""]
-#[doc = "    }"]
-#[doc = "  }"]
-#[doc = "}"]
-#[doc = r" ```"]
-#[doc = r" </details>"]
-#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
-pub struct SmartExcludeRequest {
-    pub contrast: ::std::option::Option<ContrastWindow>,
-    pub patterns: ::std::vec::Vec<AlignGridPatternBox>,
-    pub request: FrameRequest,
-    pub source: AlignerSource,
-    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
-    pub threshold: ::std::option::Option<f64>,
-}
-impl SmartExcludeRequest {
-    pub fn builder() -> builder::SmartExcludeRequest {
-        Default::default()
-    }
-}
-#[doc = "`SmartExcludeResponse`"]
-#[doc = r""]
-#[doc = r" <details><summary>JSON schema</summary>"]
-#[doc = r""]
-#[doc = r" ```json"]
-#[doc = "{"]
-#[doc = "  \"type\": \"object\","]
-#[doc = "  \"required\": ["]
-#[doc = "    \"excludedPatterns\""]
-#[doc = "  ],"]
-#[doc = "  \"properties\": {"]
-#[doc = "    \"excludedPatterns\": {"]
-#[doc = "      \"type\": \"array\","]
-#[doc = "      \"items\": {"]
-#[doc = "        \"$ref\": \"#/definitions/AlignGridPatternCoord\""]
-#[doc = "      }"]
-#[doc = "    }"]
-#[doc = "  }"]
-#[doc = "}"]
-#[doc = r" ```"]
-#[doc = r" </details>"]
-#[derive(:: serde :: Deserialize, :: serde :: Serialize, Clone, Debug)]
-pub struct SmartExcludeResponse {
-    #[serde(rename = "excludedPatterns")]
-    pub excluded_patterns: ::std::vec::Vec<AlignGridPatternCoord>,
-}
-impl SmartExcludeResponse {
-    pub fn builder() -> builder::SmartExcludeResponse {
-        Default::default()
-    }
-}
 #[doc = "`SmartSegmentPoint`"]
 #[doc = r""]
 #[doc = r" <details><summary>JSON schema</summary>"]
@@ -8119,10 +7948,6 @@ pub mod builder {
             ::std::vec::Vec<super::AssaySampleChannels>,
             ::std::string::String,
         >,
-        segmentation_mode: ::std::result::Result<
-            ::std::option::Option<super::AssaySegmentationMode>,
-            ::std::string::String,
-        >,
         skip_segment: ::std::result::Result<::std::option::Option<bool>, ::std::string::String>,
         min_gradient: ::std::result::Result<::std::option::Option<f64>, ::std::string::String>,
         box_size: ::std::result::Result<::std::option::Option<u32>, ::std::string::String>,
@@ -8133,7 +7958,6 @@ pub mod builder {
                 channels: Ok(Default::default()),
                 max_onset_minutes: Ok(Default::default()),
                 sample_channels: Ok(Default::default()),
-                segmentation_mode: Ok(Default::default()),
                 skip_segment: Ok(Default::default()),
                 min_gradient: Ok(Default::default()),
                 box_size: Ok(Default::default()),
@@ -8169,16 +7993,6 @@ pub mod builder {
             self.sample_channels = value
                 .try_into()
                 .map_err(|e| format!("error converting supplied value for sample_channels: {e}"));
-            self
-        }
-        pub fn segmentation_mode<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<::std::option::Option<super::AssaySegmentationMode>>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.segmentation_mode = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for segmentation_mode: {e}"));
             self
         }
         pub fn skip_segment<T>(mut self, value: T) -> Self
@@ -8221,7 +8035,6 @@ pub mod builder {
                 channels: value.channels?,
                 max_onset_minutes: value.max_onset_minutes?,
                 sample_channels: value.sample_channels?,
-                segmentation_mode: value.segmentation_mode?,
                 skip_segment: value.skip_segment?,
                 min_gradient: value.min_gradient?,
                 box_size: value.box_size?,
@@ -8234,7 +8047,6 @@ pub mod builder {
                 channels: Ok(value.channels),
                 max_onset_minutes: Ok(value.max_onset_minutes),
                 sample_channels: Ok(value.sample_channels),
-                segmentation_mode: Ok(value.segmentation_mode),
                 skip_segment: Ok(value.skip_segment),
                 min_gradient: Ok(value.min_gradient),
                 box_size: Ok(value.box_size),
@@ -12952,151 +12764,6 @@ pub mod builder {
         fn from(value: super::ScanSourceRequest) -> Self {
             Self {
                 source: Ok(value.source),
-            }
-        }
-    }
-    #[derive(Clone, Debug)]
-    pub struct SmartExcludeRequest {
-        contrast: ::std::result::Result<
-            ::std::option::Option<super::ContrastWindow>,
-            ::std::string::String,
-        >,
-        patterns: ::std::result::Result<
-            ::std::vec::Vec<super::AlignGridPatternBox>,
-            ::std::string::String,
-        >,
-        request: ::std::result::Result<super::FrameRequest, ::std::string::String>,
-        source: ::std::result::Result<super::AlignerSource, ::std::string::String>,
-        threshold: ::std::result::Result<::std::option::Option<f64>, ::std::string::String>,
-    }
-    impl ::std::default::Default for SmartExcludeRequest {
-        fn default() -> Self {
-            Self {
-                contrast: Err("no value supplied for contrast".to_string()),
-                patterns: Err("no value supplied for patterns".to_string()),
-                request: Err("no value supplied for request".to_string()),
-                source: Err("no value supplied for source".to_string()),
-                threshold: Ok(Default::default()),
-            }
-        }
-    }
-    impl SmartExcludeRequest {
-        pub fn contrast<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<::std::option::Option<super::ContrastWindow>>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.contrast = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for contrast: {e}"));
-            self
-        }
-        pub fn patterns<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<::std::vec::Vec<super::AlignGridPatternBox>>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.patterns = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for patterns: {e}"));
-            self
-        }
-        pub fn request<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<super::FrameRequest>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.request = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for request: {e}"));
-            self
-        }
-        pub fn source<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<super::AlignerSource>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.source = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for source: {e}"));
-            self
-        }
-        pub fn threshold<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<::std::option::Option<f64>>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.threshold = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for threshold: {e}"));
-            self
-        }
-    }
-    impl ::std::convert::TryFrom<SmartExcludeRequest> for super::SmartExcludeRequest {
-        type Error = super::error::ConversionError;
-        fn try_from(
-            value: SmartExcludeRequest,
-        ) -> ::std::result::Result<Self, super::error::ConversionError> {
-            Ok(Self {
-                contrast: value.contrast?,
-                patterns: value.patterns?,
-                request: value.request?,
-                source: value.source?,
-                threshold: value.threshold?,
-            })
-        }
-    }
-    impl ::std::convert::From<super::SmartExcludeRequest> for SmartExcludeRequest {
-        fn from(value: super::SmartExcludeRequest) -> Self {
-            Self {
-                contrast: Ok(value.contrast),
-                patterns: Ok(value.patterns),
-                request: Ok(value.request),
-                source: Ok(value.source),
-                threshold: Ok(value.threshold),
-            }
-        }
-    }
-    #[derive(Clone, Debug)]
-    pub struct SmartExcludeResponse {
-        excluded_patterns: ::std::result::Result<
-            ::std::vec::Vec<super::AlignGridPatternCoord>,
-            ::std::string::String,
-        >,
-    }
-    impl ::std::default::Default for SmartExcludeResponse {
-        fn default() -> Self {
-            Self {
-                excluded_patterns: Err("no value supplied for excluded_patterns".to_string()),
-            }
-        }
-    }
-    impl SmartExcludeResponse {
-        pub fn excluded_patterns<T>(mut self, value: T) -> Self
-        where
-            T: ::std::convert::TryInto<::std::vec::Vec<super::AlignGridPatternCoord>>,
-            T::Error: ::std::fmt::Display,
-        {
-            self.excluded_patterns = value
-                .try_into()
-                .map_err(|e| format!("error converting supplied value for excluded_patterns: {e}"));
-            self
-        }
-    }
-    impl ::std::convert::TryFrom<SmartExcludeResponse> for super::SmartExcludeResponse {
-        type Error = super::error::ConversionError;
-        fn try_from(
-            value: SmartExcludeResponse,
-        ) -> ::std::result::Result<Self, super::error::ConversionError> {
-            Ok(Self {
-                excluded_patterns: value.excluded_patterns?,
-            })
-        }
-    }
-    impl ::std::convert::From<super::SmartExcludeResponse> for SmartExcludeResponse {
-        fn from(value: super::SmartExcludeResponse) -> Self {
-            Self {
-                excluded_patterns: Ok(value.excluded_patterns),
             }
         }
     }

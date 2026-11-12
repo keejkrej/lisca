@@ -9,9 +9,7 @@ import {
 import { Show } from "solid-js";
 
 import { Button } from "@lisca/ui/button";
-import { ComingSoonTooltip } from "@lisca/ui/coming-soon-tooltip";
-import { PanelSection } from "@lisca/ui/patterns";
-import { RailActionPair } from "@lisca/ui/patterns";
+import { PanelSection, RailActionPair } from "@lisca/ui/patterns";
 
 import { AlignEditToggle } from "./align-edit-toggle";
 import { AlignSelectionCounts } from "./align-selection-counts";
@@ -35,8 +33,6 @@ export type AlignSelectionRailProps = {
   variationExcludePreview: VariationExcludePreviewState;
   variationExcludeLoading?: boolean;
   onVariationExclude: () => void | Promise<void>;
-  onSmartExclude: () => void | Promise<void>;
-  smartExcludeLoading?: boolean;
   onApplyVariationExclude: () => void;
   onCancelVariationExclude: () => void;
   onVariationExcludeThresholdChange: (threshold: number) => void;
@@ -50,7 +46,6 @@ export type AlignSelectionRailProps = {
 export function AlignSelectionRail(props: AlignSelectionRailProps) {
   const disabled = () => props.disabled ?? false;
   const variationExcludeLoading = () => props.variationExcludeLoading ?? false;
-  const smartExcludeLoading = () => props.smartExcludeLoading ?? false;
   const showVariationExcludeDialog = () => props.showVariationExcludeDialog ?? true;
 
   const visiblePatterns = () =>
@@ -126,20 +121,6 @@ export function AlignSelectionRail(props: AlignSelectionRailProps) {
       Log-std exclude
     </Button>
   );
-  const SmartExcludeControl = () => (
-    <ComingSoonTooltip class="flex w-full">
-      <Button
-        class="pointer-events-none h-auto w-full justify-center text-xs"
-        data-unavailable=""
-        disabled
-        size="sm"
-        type="button"
-        variant="outline"
-      >
-        Smart exclude
-      </Button>
-    </ComingSoonTooltip>
-  );
 
   return (
     <>
@@ -167,10 +148,7 @@ export function AlignSelectionRail(props: AlignSelectionRailProps) {
                 <ExcludeAllControl />
                 <EdgeExcludeControl />
               </div>
-              <div class="grid grid-cols-2 gap-2">
-                <VariationExcludeControl />
-                <SmartExcludeControl />
-              </div>
+              <VariationExcludeControl />
             </>
           }
         >
@@ -183,10 +161,7 @@ export function AlignSelectionRail(props: AlignSelectionRailProps) {
               <ExcludeAllControl />
               <EdgeExcludeControl />
             </RailActionPair>
-            <RailActionPair label="Assisted exclusion">
-              <VariationExcludeControl />
-              <SmartExcludeControl />
-            </RailActionPair>
+            <VariationExcludeControl />
           </div>
         </Show>
       </PanelSection>

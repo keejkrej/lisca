@@ -86,6 +86,12 @@ export function useAnnotateDock() {
     get saving() {
       return state.saving;
     },
+    get canGoBack() {
+      return state.canGoBack;
+    },
+    get canGoNext() {
+      return state.canGoNext;
+    },
     get shortcutsEnabled() {
       return (
         state.mode === "segmentation" &&
@@ -96,6 +102,8 @@ export function useAnnotateDock() {
     },
     setTool: bindLive(() => state.setTool),
     handleSave: bindLive(() => state.handleSave),
+    goBack: bindLive(() => state.goBack),
+    goNext: bindLive(() => state.goNext),
   };
 }
 
@@ -186,6 +194,7 @@ export function useAnnotateShell() {
     setLabelDialogOpen: bindLive(() => state.setLabelDialogOpen),
     pickWorkspace: bindLive(() => state.pickWorkspace),
     handleSaveLabels: bindLive(() => state.handleSaveLabels),
+    refreshAgentWorkspace: bindLive(() => state.refreshAgentWorkspace),
     openLabelDialog: () => {
       state.setLabelError(null);
       state.setLabelDialogOpen(true);

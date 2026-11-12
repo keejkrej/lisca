@@ -9,7 +9,7 @@ import {
 import { useSliderStepperField } from "@lisca/ui-headless/slider-stepper-field";
 import IconCaretLeftRegular from "phosphor-icons-solid/IconCaretLeftRegular";
 import IconCaretRightRegular from "phosphor-icons-solid/IconCaretRightRegular";
-import { Show } from "solid-js";
+import { onCleanup, onMount, Show } from "solid-js";
 
 import { Button } from "@lisca/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@lisca/ui/select";
@@ -149,6 +149,7 @@ export function SliderStepperField(props: SliderNavigationFieldProps) {
     axisLabels: props.axisLabels,
     valueLabel: props.valueLabel,
   }));
+  const changeValue = () => props.onChange ?? props.onCommit;
   const commitValue = () => props.onCommit ?? props.onChange;
 
   return (
@@ -175,10 +176,14 @@ export function SliderStepperField(props: SliderNavigationFieldProps) {
           min={props.min}
           step={props.step}
           value={field.draftValue()}
-          onValueChange={field.setDraftValue}
-          onValueCommitted={(value) => {
+          onValueChange={(value) => {
             field.setDraftValue(value);
-            commitValue()?.(value);
+            if (value !== props.value) {
+              changeValue()?.(value);
+            }
+          }}
+          onValueCommitted={(value) => {
+            field.commitDraftValue(value, commitValue());
           }}
         />
         <NavigationStepButton
@@ -206,8 +211,59 @@ export type FrameNavigationProps<T extends NavigationValue> = {
   sectionAppearance?: "framed" | "rail";
 };
 
+const FRAME_SHORTCUT_IGNORE_SELECTOR = [
+  "input",
+  "textarea",
+  "select",
+  "[contenteditable='true']",
+  "[role='dialog']",
+  "[role='slider']",
+  "[role='listbox']",
+  "[role='combobox']",
+  "[role='menuitem']",
+  "[role='tab']",
+  "[role='radiogroup']",
+].join(", ");
+
 /** Shared stack in a {@link Section} card: optional position, channel, frame (slider), Z (slider), ROI — render only props you pass. */
 export function FrameNavigation<T extends NavigationValue>(props: FrameNavigationProps<T>) {
+  onMount(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (
+        event.defaultPrevented ||
+        event.metaKey ||
+        event.ctrlKey ||
+        event.altKey ||
+        event.shiftKey
+      ) {
+        return;
+      }
+      const isPrevious = event.key === "ArrowLeft" || event.key === "[" || event.key === ",";
+      const isNext = event.key === "ArrowRight" || event.key === "]" || event.key === ".";
+      if (!isPrevious && !isNext) return;
+      if (
+        event.target instanceof HTMLElement &&
+        Boolean(event.target.closest(FRAME_SHORTCUT_IGNORE_SELECTOR))
+      ) {
+        return;
+      }
+      if (typeof document !== "undefined" && document.querySelector("[role='dialog']")) return;
+      const frame = props.frame;
+      if (!frame || frame.disabled) return;
+      if (isPrevious) {
+        if (frame.previousDisabled) return;
+        event.preventDefault();
+        frame.onPrevious();
+      } else {
+        if (frame.nextDisabled) return;
+        event.preventDefault();
+        frame.onNext();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    onCleanup(() => window.removeEventListener("keydown", onKeyDown));
+  });
+
   return (
     <Section
       appearance={props.sectionAppearance}

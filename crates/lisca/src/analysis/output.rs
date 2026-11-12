@@ -90,7 +90,7 @@ fn collect_position_csvs(
                 format!("failed to read an entry in {}: {error}", pos_dir.display())
             })?;
             let path = child.path();
-            if !path.extension().is_some_and(|ext| ext == "csv") {
+            if path.extension().is_none_or(|ext| ext != "csv") {
                 continue;
             }
             let Some(stem) = path.file_stem().and_then(|name| name.to_str()) else {
@@ -196,7 +196,7 @@ fn collect_plot_dir_at(
             }
             continue;
         }
-        if !path.extension().is_some_and(|ext| ext == "png") {
+        if path.extension().is_none_or(|ext| ext != "png") {
             continue;
         }
 

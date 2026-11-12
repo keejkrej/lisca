@@ -6,8 +6,10 @@ import {
   lockedStudioSelection,
   recallStudioAlignChannel,
   recallStudioAlignFrame,
+  recallStudioAlignZ,
   rememberStudioAlignChannel,
   rememberStudioAlignFrame,
+  rememberStudioAlignZ,
   studioAlignFrameDefault,
   studioAlignFrameMemoryKey,
   studioAlignPositionNav,
@@ -112,6 +114,21 @@ describe("studio align frame", () => {
     expect(recallStudioAlignChannel(killing, 61)).toBe(1);
     expect(recallStudioAlignChannel(killing, 62)).toBeUndefined();
     expect(recallStudioAlignChannel(transfection, 61)).toBeUndefined();
+    rememberStudioAlignZ(killing, 61, 1);
+    expect(recallStudioAlignZ(killing, 61)).toBe(1);
+    expect(recallStudioAlignZ(killing, 62)).toBeUndefined();
+    expect(
+      lockedStudioSelection(scan, current, scan.positions, {
+        frameDefault: "first",
+        rememberedZ: recallStudioAlignZ(killing, 61),
+      }).z,
+    ).toBe(1);
+    expect(
+      lockedStudioSelection(scan, { ...current, pos: 62 }, scan.positions, {
+        frameDefault: "first",
+        rememberedZ: recallStudioAlignZ(killing, 62),
+      }).z,
+    ).toBe(0);
   });
 
   it("enables Next on the first position and Back on the last", () => {

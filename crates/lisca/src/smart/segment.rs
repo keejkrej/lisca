@@ -1,6 +1,6 @@
 use std::ops::Deref;
 use std::path::{Path, PathBuf};
-use std::sync::{Mutex, OnceLock};
+use std::sync::Mutex;
 
 use image::{imageops::FilterType, ImageBuffer, Rgb};
 use ndarray::{Array, Ix4};
@@ -8,20 +8,34 @@ use ort::session::Session;
 use ort::value::Tensor;
 
 use crate::image_source;
-use crate::onnx::{workspace_models_dir, IMAGENET_MEAN, IMAGENET_STD};
+use crate::onnx::{
+    auto_download_enabled, bundled_models_dirs, ensure_cached_hf_files, workspace_models_dir,
+    IMAGENET_MEAN, IMAGENET_STD,
+};
 use crate::protocol::{FramePayload, SmartSegmentPoint, SmartSegmentRequest, SmartSegmentResponse};
 use crate::roi;
 
 use super::frame::{decode_frame_pixels, pixels_to_rgb_u8};
 
 const SAM_SIZE: u32 = 1024;
+const HF_SLIMSAM_REPO: &str = "Xenova/slimsam-77-uniform";
+const HF_SLIMSAM_FILES: &[(&str, &str)] = &[
+    (
+        "onnx/vision_encoder_quantized.onnx",
+        "vision_encoder_quantized.onnx",
+    ),
+    (
+        "onnx/prompt_encoder_mask_decoder_quantized.onnx",
+        "prompt_encoder_mask_decoder_quantized.onnx",
+    ),
+];
 
 struct SegmentSessions {
     encoder: Session,
     decoder: Session,
 }
 
-static SEGMENT_SESSIONS: OnceLock<Result<Mutex<SegmentSessions>, String>> = OnceLock::new();
+static SEGMENT_SESSIONS: Mutex<Option<SegmentSessions>> = Mutex::new(None);
 
 pub fn segment_mask(request: SmartSegmentRequest) -> Result<SmartSegmentResponse, String> {
     let raw = roi::load_roi_frame(&request.workspace_path, request.request)?;
@@ -49,7 +63,10 @@ fn segment_mask_on_frame(
     let rgb = pixels_to_rgb_u8(&pixels, width, height, &frame.pixel_type)?;
     let prepared = prepare_sam_image(&rgb, width, height)?;
 
-    let mut sessions = segment_sessions()?;
+    let mut guard = segment_sessions()?;
+    let sessions = guard
+        .as_mut()
+        .ok_or_else(|| "smart segment session failed to initialize".to_string())?;
     let embeddings = run_encoder(&mut sessions.encoder, &prepared.pixel_values)?;
     let (pred_masks, pred_mask_shape, iou_scores) = run_decoder(
         &mut sessions.decoder,
@@ -71,14 +88,15 @@ fn segment_mask_on_frame(
     Ok(SmartSegmentResponse { mask })
 }
 
-fn segment_sessions() -> Result<std::sync::MutexGuard<'static, SegmentSessions>, String> {
-    let sessions = SEGMENT_SESSIONS
-        .get_or_init(|| build_segment_sessions(resolve_model_path()).map(Mutex::new))
-        .as_ref()
-        .map_err(|error| error.clone())?;
-    sessions
+fn segment_sessions() -> Result<std::sync::MutexGuard<'static, Option<SegmentSessions>>, String> {
+    let mut guard = SEGMENT_SESSIONS
         .lock()
-        .map_err(|error| format!("smart segment model lock poisoned: {error}"))
+        .map_err(|error| format!("smart segment model lock poisoned: {error}"))?;
+    if guard.is_none() {
+        let built = build_segment_sessions(resolve_model_path())?;
+        *guard = Some(built);
+    }
+    Ok(guard)
 }
 
 fn build_segment_sessions(model_dir: Result<PathBuf, String>) -> Result<SegmentSessions, String> {
@@ -104,14 +122,28 @@ pub fn resolve_model_path() -> Result<PathBuf, String> {
         ));
     }
 
-    let candidates = [
+    let mut candidates = vec![
         workspace_models_dir().join("smart-segment-slimsam/onnx"),
+        workspace_models_dir().join("smart-segment-slimsam"),
         PathBuf::from("models/smart-segment-slimsam/onnx"),
+        PathBuf::from("models/smart-segment-slimsam"),
     ];
+    for dir in bundled_models_dirs() {
+        candidates.push(dir.join("smart-segment-slimsam/onnx"));
+        candidates.push(dir.join("smart-segment-slimsam"));
+    }
     for candidate in candidates {
         if has_segment_models(&candidate) {
             return Ok(candidate);
         }
+    }
+
+    if auto_download_enabled() {
+        return ensure_cached_hf_files(
+            "smart-segment-slimsam/onnx",
+            HF_SLIMSAM_REPO,
+            HF_SLIMSAM_FILES,
+        );
     }
 
     Err(

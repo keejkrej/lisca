@@ -10,27 +10,31 @@ Why a shipped choice looks the way it does. Agents write these during the change
 
 ## Index
 
-| ID                                                 | Status     | Title                                                                        |
-| -------------------------------------------------- | ---------- | ---------------------------------------------------------------------------- |
-| [0001](0001-app-shapes.md)                         | accepted   | Aligner and Annotator are single-page apps; only Studio routes               |
-| [0002](0002-hosted-http-desktop-ipc.md)            | accepted   | Hosted builds use HTTP; desktop builds use in-process Tauri IPC              |
-| [0003](0003-same-origin-web-no-remote-server.md)   | accepted   | Web builds are same-origin only; there is no remote-server mode              |
-| [0004](0004-killing-predict-memory.md)             | accepted   | Killing predict runs one position at a time and keeps one batch of frames    |
-| [0005](0005-transfection-control-bridge.md)        | accepted   | Transfection batch comparison is an offline script                           |
-| [0007](0007-remote-embedding-service.md)           | superseded | Studio calls label-free viability on the killing-assay service               |
-| [0008](0008-inference-host-loads-assay-models.md)  | accepted   | The inference host loads assay models, starting with EmbeddingGemma          |
-| [0009](0009-shared-killing-workspace.md)           | accepted   | One workspace holds every killing kind                                       |
-| [0010](0010-studio-browser-mock.md)                | accepted   | Studio browser mock opens the real web app on a fixture workspace            |
-| [0011](0011-standard-rail-contrast.md)             | accepted   | Studio Contrast stays on the standard Align and Annotate rails               |
-| [0012](0012-two-studio-builds.md)                  | superseded | Two Studio builds share one inference protocol                               |
-| [0013](0013-openrouter-label-free-single-build.md) | accepted   | Single Studio build with OpenRouter Gemini Embedding 2 for label-free assays |
-| [0014](0014-locked-contrast-across-frames.md)      | accepted   | Auto contrast follows each frame unless the viewer locks the window          |
-| [0015](0015-in-tree-lnp-binding.md)                | accepted   | LNP binding uses Picasso in this repo until a sidecar exists                 |
-| [0016](0016-position-index-version.md)             | accepted   | Position ranges are versioned 0-based indices                                |
-| [0017](0017-user-manual-github-pages.md)           | accepted   | User manual lives beside developer docs and ships as GitHub Pages            |
-| [0018](0018-local-ollama-embedding-provider.md)    | accepted   | Local Ollama embeddings are a second label-free provider                     |
-| [0019](0019-desktop-owned-mcp.md)                  | accepted   | Desktop apps own their local MCP server                                      |
-| [0020](0020-workspace-control-and-takeover.md)     | accepted   | One workspace writer with explicit human takeover                            |
-| [0021](0021-auto-detect-grid-preview.md)           | accepted   | Auto-detect grid is a preview; persist stays Save bbox                       |
-| [0022](0022-two-transfection-paths.md)             | superseded | Studio and the notebooks keep separate transfection traces                   |
-| [0023](0023-notebooks-follow-studio-assay.md)      | accepted   | Notebooks follow the Studio assay and alignment                             |
+| ID                                                    | Status     | Title                                                                           |
+| ----------------------------------------------------- | ---------- | ------------------------------------------------------------------------------- |
+| [0001](0001-app-shapes.md)                            | accepted   | Aligner and Annotator are single-page apps; only Studio routes                  |
+| [0002](0002-hosted-http-desktop-ipc.md)               | accepted   | Hosted builds use HTTP; desktop builds use in-process Tauri IPC                 |
+| [0003](0003-same-origin-web-no-remote-server.md)      | accepted   | Web builds are same-origin only; there is no remote-server mode                 |
+| [0004](0004-killing-predict-memory.md)                | accepted   | Killing predict runs one position at a time and keeps one batch of frames       |
+| [0005](0005-transfection-control-bridge.md)           | accepted   | Transfection batch comparison is an offline script                              |
+| [0007](0007-remote-embedding-service.md)              | superseded | Studio calls label-free viability on the killing-assay service                  |
+| [0008](0008-inference-host-loads-assay-models.md)     | accepted   | The inference host loads assay models, starting with EmbeddingGemma             |
+| [0009](0009-shared-killing-workspace.md)              | accepted   | One workspace holds every killing kind                                          |
+| [0010](0010-studio-browser-mock.md)                   | accepted   | Studio browser mock opens the real web app on a fixture workspace               |
+| [0011](0011-standard-rail-contrast.md)                | accepted   | Studio Contrast stays on the standard Align and Annotate rails                  |
+| [0012](0012-two-studio-builds.md)                     | superseded | Two Studio builds share one inference protocol                                  |
+| [0013](0013-openrouter-label-free-single-build.md)    | accepted   | Single Studio build with OpenRouter Gemini Embedding 2 for label-free assays    |
+| [0014](0014-locked-contrast-across-frames.md)         | accepted   | Auto contrast follows each frame unless the viewer locks the window             |
+| [0015](0015-in-tree-lnp-binding.md)                   | superseded | LNP binding uses Picasso in this repo until a sidecar exists                    |
+| [0016](0016-position-index-version.md)                | accepted   | Position ranges are versioned 0-based indices                                   |
+| [0017](0017-user-manual-github-pages.md)              | accepted   | User manual lives beside developer docs and ships as GitHub Pages               |
+| [0018](0018-local-ollama-embedding-provider.md)       | accepted   | Local Ollama embeddings are a second label-free provider                        |
+| [0019](0019-desktop-owned-mcp.md)                     | accepted   | Desktop apps own their local MCP server                                         |
+| [0020](0020-workspace-control-and-takeover.md)        | accepted   | One workspace writer with explicit human takeover                               |
+| [0021](0021-auto-detect-grid-preview.md)              | accepted   | Auto-detect grid is a preview; persist stays Save bbox                          |
+| [0022](0022-two-transfection-paths.md)                | superseded | Studio and the notebooks keep separate transfection traces                      |
+| [0023](0023-notebooks-follow-studio-assay.md)         | accepted   | Notebooks follow the Studio assay and alignment                                 |
+| [0024](0024-pi-step-viability-without-classifier.md)  | accepted   | Death-reporter viability calls PI steps without the brightfield classifier      |
+| [0025](0025-cross-app-agent-and-label-free-parity.md) | accepted   | Standalone Aligner and Annotator share agent control and stage-scoped MCP tools |
+| [0026](0026-on-demand-smart-model-cache.md)           | accepted   | On-demand Hugging Face cache for Smart segment ONNX weights                     |
+| [0027](0027-thin-sidecar-assay-callers.md)            | accepted   | Thin assay callers into lisca-transfection, lisca-killing, and lisca-binding    |

@@ -92,17 +92,10 @@ export const AssaySampleChannelsSchema = Schema.Struct({
   signal: AssaySignalChannelsSchema,
 }).annotate({ identifier: "AssaySampleChannels" });
 
-/** Transfection mask method. Ignored when `skipSegment` is true. */
-export const AssaySegmentationModeSchema = Schema.Literals(["logstd", "smart"]).annotate({
-  identifier: "AssaySegmentationMode",
-});
-
 /**
  * Assay-dependent analysis options on assay.json.
  * `maxOnsetMinutes` (onset time t0 search cap) is transfection-only.
- * `skipSegment` / `segmentationMode` apply to assays that segment a channel
- * (transfection and killing). `smart` segmentation is reserved for a hosted
- * service in version 1.0.
+ * `skipSegment` applies to assays that segment a channel (transfection and killing).
  * `minGradient` / `boxSize` are LNP-binding Picasso detection knobs; other
  * assays ignore them. The Signal channel is `channels.signal` (first index).
  * `channels` / `sampleChannels` resolve segmentation and signal (intensity) channel indices.
@@ -112,8 +105,6 @@ export const AssayAnalysisConfigSchema = Schema.Struct({
   maxOnsetMinutes: Schema.optional(F64),
   /** When true, skip segmentation and use full-ROI (10th-percentile bg) traces. */
   skipSegment: Schema.optional(Schema.Boolean),
-  /** Mask method when segmentation runs. `logstd` is the default; `smart` uses the model. */
-  segmentationMode: Schema.optional(AssaySegmentationModeSchema),
   channels: Schema.optional(AssayChannelsSchema),
   sampleChannels: Schema.optional(Schema.mutable(Schema.Array(AssaySampleChannelsSchema))),
   /**
@@ -165,6 +156,5 @@ export type AssaySamples = typeof AssaySamplesSchema.Type;
 export type AssaySignalChannels = typeof AssaySignalChannelsSchema.Type;
 export type AssayChannels = typeof AssayChannelsSchema.Type;
 export type AssaySampleChannels = typeof AssaySampleChannelsSchema.Type;
-export type AssaySegmentationMode = typeof AssaySegmentationModeSchema.Type;
 export type AssayAnalysisConfig = typeof AssayAnalysisConfigSchema.Type;
 export type AssayJsonFile = typeof AssayJsonFileSchema.Type;

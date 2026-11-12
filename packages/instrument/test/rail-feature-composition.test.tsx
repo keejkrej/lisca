@@ -31,7 +31,6 @@ const selectionProps = {
   onCancelVariationExclude: () => undefined,
   onExcludedPatternsChange: () => undefined,
   onManualExclusionEnabledChange: () => undefined,
-  onSmartExclude: () => undefined,
   onVariationExclude: () => undefined,
   onVariationExcludeThresholdChange: () => undefined,
 };
@@ -63,7 +62,7 @@ const annotationProps = {
 };
 
 describe("stage rail feature composition", () => {
-  it("packs the Selection task cluster into three compact control pairs", () => {
+  it("packs the Selection task cluster into compact control pairs plus Log-std exclude", () => {
     render(() => <AlignSelectionRail {...selectionProps} sectionAppearance="rail" />);
 
     const section = sectionFor("Selection");
@@ -71,7 +70,6 @@ describe("stage rail feature composition", () => {
     expect(pairs.map((pair) => pair.getAttribute("aria-label"))).toEqual([
       "Selection editing",
       "Bulk exclusion",
-      "Assisted exclusion",
     ]);
     expect(
       pairs.map((pair) =>
@@ -82,11 +80,33 @@ describe("stage rail feature composition", () => {
     ).toEqual([
       ["Edit", "Reset"],
       ["Exclude all", "Edge exclude"],
-      ["Log-std exclude", "Smart exclude"],
     ]);
-    const smartExclude = within(section).getByRole("button", { name: "Smart exclude" });
-    expect(smartExclude.hasAttribute("disabled")).toBe(true);
-    expect(smartExclude.hasAttribute("data-unavailable")).toBe(true);
+    const varExclude = within(section).getByRole("button", { name: "Log-std exclude" });
+    expect(varExclude.hasAttribute("disabled")).toBe(true);
+    expect(within(section).queryByRole("button", { name: "Smart exclude" })).toBeNull();
+  });
+
+  it("enables Log-std exclude and Smart segment tools when a frame is active", () => {
+    let varExcludeCalls = 0;
+    render(() => (
+      <AlignSelectionRail
+        {...selectionProps}
+        frame={{ width: 256, height: 256 }}
+        sectionAppearance="rail"
+        onVariationExclude={() => {
+          varExcludeCalls += 1;
+        }}
+      />
+    ));
+
+    const varExclude = screen.getByRole("button", { name: "Log-std exclude" });
+    expect(varExclude.hasAttribute("disabled")).toBe(false);
+    fireEvent.click(varExclude);
+    expect(varExcludeCalls).toBe(1);
+
+    const actions = buildAnnotationToolActions("smart", () => undefined, false);
+    expect(actions.find((action) => action.id === "smart")?.disabled).toBe(false);
+    expect(actions.find((action) => action.id === "smart-erase")?.disabled).toBe(false);
   });
 
   it("stacks user-authored Labels while packing fixed Edit peers", () => {

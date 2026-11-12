@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@solidjs/testing-library";
+import { cleanup, fireEvent, render, screen } from "@solidjs/testing-library";
 import { createDefaultAlignGrid } from "@lisca/utils";
 import { createSignal, type Accessor, type JSX } from "solid-js";
 import { afterEach, describe, expect, it } from "vite-plus/test";
@@ -12,13 +12,17 @@ import type { StudioAlignState } from "../src/state/use-studio-align-state";
 
 const positions = [61, 62, 63, 64];
 
-function pageValue(pos: Accessor<number>): StudioAlignPageContextValue {
+function pageValue(
+  pos: Accessor<number>,
+  time: Accessor<number> = () => 20,
+  onSelectTime?: (nextTime: number) => void,
+): StudioAlignPageContextValue {
   const state = {
     get alignPositions() {
       return positions;
     },
     get selection() {
-      return { pos: pos(), channel: 0, time: 20, z: 0 };
+      return { pos: pos(), channel: 0, time: time(), z: 0 };
     },
     get frame() {
       return { width: 8, height: 8 };
@@ -70,7 +74,9 @@ function pageValue(pos: Accessor<number>): StudioAlignPageContextValue {
     get cropping() {
       return false;
     },
-    setSelection: () => {},
+    setSelection: (patch: { time?: number }) => {
+      if (typeof patch.time === "number") onSelectTime?.(patch.time);
+    },
     changePosition: () => {},
     setContrast: () => {},
     setGrid: () => {},
@@ -92,7 +98,6 @@ function pageValue(pos: Accessor<number>): StudioAlignPageContextValue {
 
   return {
     state,
-    smartExclude: { active: () => false, request: async () => {} },
     varExclude: { active: () => false },
     excludeActive: () => false,
     requestVarExclude: async () => {},
@@ -154,5 +159,43 @@ describe("Studio Align position buttons", () => {
     expect(screen.getByRole("spinbutton", { name: "dx" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Back" }).hasAttribute("disabled")).toBe(false);
     expect(screen.getByRole("button", { name: "Next" }).hasAttribute("disabled")).toBe(false);
+  });
+
+  it("steps Frame globally via ArrowLeft/ArrowRight, [/], and ,/. outside inputs", () => {
+    const [pos] = createSignal(61);
+    const [time, setTime] = createSignal(10);
+    const value = pageValue(pos, time, setTime);
+    const view = (props: { children: JSX.Element }) => (
+      <StudioAlignPageContext.Provider value={value}>
+        {props.children}
+      </StudioAlignPageContext.Provider>
+    );
+    render(() => <StudioAlignInstrumentStack />, { wrapper: view });
+
+    expect(screen.getByText("10 (2/3)")).toBeTruthy();
+
+    fireEvent.keyDown(window, { key: "ArrowRight" });
+    expect(time()).toBe(20);
+
+    fireEvent.keyDown(window, { key: "ArrowLeft" });
+    expect(time()).toBe(10);
+
+    fireEvent.keyDown(window, { key: "[" });
+    expect(time()).toBe(0);
+
+    fireEvent.keyDown(window, { key: "]" });
+    expect(time()).toBe(10);
+
+    fireEvent.keyDown(window, { key: "." });
+    expect(time()).toBe(20);
+
+    fireEvent.keyDown(window, { key: "," });
+    expect(time()).toBe(10);
+
+    const input = document.createElement("input");
+    document.body.appendChild(input);
+    fireEvent.keyDown(input, { key: "ArrowRight" });
+    expect(time()).toBe(10);
+    input.remove();
   });
 });

@@ -487,7 +487,9 @@ fn catalog(product: &str) -> Result<Vec<Tool>, String> {
     }
     tools.push(native_status_tool());
     tools.push(native_control_status_tool());
-    tools.push(native_align_tool());
+    if matches!(product, "aligner" | "studio") {
+        tools.push(native_align_tool());
+    }
     tools.sort_by(|left, right| left.name.cmp(&right.name));
     let mut names = std::collections::BTreeSet::new();
     for tool in &tools {
@@ -668,6 +670,18 @@ fn products_for_operation(operation_id: &str) -> Vec<&'static str> {
             }
         }
         "annotate" | "tasks" => vec!["annotator", "studio"],
+        "studio"
+            if matches!(
+                operation_id,
+                "studio.labelFreeHealth"
+                    | "studio.saveLabelFreeKey"
+                    | "studio.listLabelFreeReferences"
+                    | "studio.buildLabelFreeReferences"
+                    | "studio.classifyLabelFree"
+            ) =>
+        {
+            vec!["annotator", "studio"]
+        }
         _ => vec!["studio"],
     }
 }
@@ -1119,6 +1133,22 @@ mod tests {
             .iter()
             .any(|tool| tool.name == "studio_start_analysis"));
         assert!(!tools.iter().any(|tool| tool.name == "annotate_save_labels"));
+    }
+
+    #[test]
+    fn annotator_catalog_offers_annotate_and_label_free_without_align_tools() {
+        let tools = catalog("annotator").expect("catalog");
+        assert!(tools
+            .iter()
+            .any(|tool| tool.name == "annotate_load_roi_frame"));
+        assert!(tools
+            .iter()
+            .any(|tool| tool.name == "studio_classify_label_free"));
+        assert!(!tools.iter().any(|tool| tool.name == "cli_align"));
+        assert!(!tools.iter().any(|tool| tool.name == "align_load_frame"));
+        assert!(!tools
+            .iter()
+            .any(|tool| tool.name == "studio_start_analysis"));
     }
 
     #[test]

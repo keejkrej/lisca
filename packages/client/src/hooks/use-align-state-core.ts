@@ -95,7 +95,6 @@ export type AlignState = {
   cancelVariationExclude: () => void;
   applyVariationExclude: () => void;
   excludeEdgeAndVariation: () => Promise<void>;
-  applySmartExclusion: (modelPatterns: AlignGridPatternCoord[]) => void;
   reportError: (message: string | null) => void;
   detecting: boolean;
   detectReport: string | null;
@@ -138,6 +137,7 @@ export function useAlignStateCore(deps: UseAlignStateCoreDeps): Accessor<AlignSt
     },
     policy: {
       enableCrop: deps.enableCrop,
+      preserveFrameOnContrastFailure: true,
     },
     assayDefaultTime: deps.assayDefaultTime,
   });
@@ -221,7 +221,6 @@ export function useAlignStateCore(deps: UseAlignStateCoreDeps): Accessor<AlignSt
       cancelVariationExclude: variation.cancel,
       applyVariationExclude: variation.apply,
       excludeEdgeAndVariation: variation.excludeEdgeAndVariation,
-      applySmartExclusion: session.applySmartExclusion,
       reportError: session.actions.reportError,
       detecting: session.detecting(),
       detectReport: session.detectReport(),

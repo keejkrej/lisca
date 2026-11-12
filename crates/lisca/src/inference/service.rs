@@ -15,7 +15,7 @@ use crate::roi::{self, ClassifiedFrame};
 
 use super::embed::{self, embed_planes, PlaneInput, DIMENSIONS, REVISION};
 
-const QUERY_CAP: usize = 64;
+const QUERY_CAP: usize = 4_096;
 const COARSE_STRIDE: usize = 16;
 pub(crate) const CACHE_CAP: usize = 4_096;
 
@@ -266,7 +266,34 @@ pub fn classify(
     }
 
     write_disk(workspace, &disk)?;
+    write_classifications_csv(workspace, &rows)?;
     Ok(rows)
+}
+
+fn write_classifications_csv(
+    workspace: &str,
+    rows: &[ClassificationRow],
+) -> Result<(), InferenceFailure> {
+    let dir = Path::new(workspace).join("results");
+    fs::create_dir_all(&dir).map_err(|error| {
+        InferenceFailure::Io(format!("failed to create {}: {error}", dir.display()))
+    })?;
+    let mut csv_text = String::from("pos,roi,channel,time,z,label_id,support\n");
+    for row in rows {
+        let escaped_label = if row.label_id.contains([',', '"', '\n', '\r']) {
+            format!("\"{}\"", row.label_id.replace('"', "\"\""))
+        } else {
+            row.label_id.clone()
+        };
+        csv_text.push_str(&format!(
+            "{},{},{},{},{},{},{}\n",
+            row.pos, row.roi, row.channel, row.time, row.z, escaped_label, row.support
+        ));
+    }
+    let path = dir.join("label_free_classifications.csv");
+    fs::write(&path, csv_text).map_err(|error| {
+        InferenceFailure::Io(format!("failed to write {}: {error}", path.display()))
+    })
 }
 
 /// Coarse-to-fine + binary-search trajectory classifier for a single ROI:
@@ -786,6 +813,10 @@ mod tests {
         assert_eq!(rows[1].label_id, "high");
         assert_eq!(rows[1].time, 11);
         assert!(rows[1].support > 0.0);
+        assert!(workspace
+            .join("results")
+            .join("label_free_classifications.csv")
+            .is_file());
 
         // Total frames across Roi2 (33) + Roi3 (33) = 66 frames, but coarse + binary search
         // embeds far fewer than 66 frames!
@@ -896,7 +927,7 @@ mod tests {
         let mut encoder = TiffEncoder::new(file).expect("encoder");
         for &value in values {
             let image = encoder.new_image::<colortype::Gray8>(2, 2).expect("image");
-            image.write_data(&vec![value; 4]).expect("pixels");
+            image.write_data(&[value; 4]).expect("pixels");
         }
     }
 }
