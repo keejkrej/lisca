@@ -1,59 +1,53 @@
 {
-  "version": 1,
+  "version": 2,
   "skills": {
-    "agent-browser": {
-      "source": "vercel-labs/agent-browser",
-      "sourceType": "github",
-      "skillPath": "skills/agent-browser/SKILL.md",
-      "computedHash": "80161e6836b3b40f4e83730a290deb40ac14d877d38c97ad5f6d71be37ce74c3"
-    },
     "decision-record": {
       "source": "keejkrej/skills",
       "sourceType": "github",
       "skillPath": "skills/decision-record/SKILL.md",
-      "computedHash": "8d35c9d09f702048744f488de6cd3ddb8b6174a89e1112f76f5d6d2616b557c5"
+      "computedHash": "d019ebd1e4778a172cacd65c6d8196ec9168661bdb5af03f31e95a961d7050a1"
     },
     "effect-ts": {
       "source": "effect-ts/skills",
       "sourceType": "github",
       "skillPath": "skills/effect-ts/SKILL.md",
-      "computedHash": "6bdb9b95aa83071eca2f67ae947b7d398a22e9e6e08f6cfa35de9516b03efa6e"
+      "computedHash": "0e5d926566561f7fe206f5f60c1c53e21d1519fd6de8408a7e3c9934d55ad04f"
     },
     "effect-v3-to-v4": {
       "source": "effect-ts/skills",
       "sourceType": "github",
       "skillPath": "skills/effect-v3-to-v4/SKILL.md",
-      "computedHash": "6b16daab60925a09aa1c4d678cd4a74724410d0ca11d2019ed17d20843a870da"
+      "computedHash": "df1435662eee2663a39a051d6933fa854eb206ffa6ce24500325e3c7ee183386"
     },
     "rust-best-practices": {
       "source": "apollographql/skills",
       "sourceType": "github",
       "skillPath": "skills/rust-best-practices/SKILL.md",
-      "computedHash": "0ac6606adb27e64a31bdc8c1ed34e446ae0c14bff1c7648867c46e106adc048f"
+      "computedHash": "7e12e68aa50152eb7ba9ea1f88ca5380c846ea0175f8ab6788bb79b7faf12ca0"
     },
     "shadcn": {
       "source": "shadcn/ui",
       "sourceType": "github",
       "skillPath": "skills/shadcn/SKILL.md",
-      "computedHash": "c1a68ee06a668aced9ab2b5fbdea5f989864123794eb2e056b339a072dbb7f10"
+      "computedHash": "388962d16c7a4f13aaeee0d8f128e50a87df8553d42ef7988c39c0e1c74a40e8"
     },
     "solidjs": {
       "source": "keejkrej/solid-docs",
       "sourceType": "github",
       "skillPath": "skills/solidjs/SKILL.md",
-      "computedHash": "088a3474d2dd106d94dec00b2f1a35a3747515b6ffac81c0c8c8573992083036"
+      "computedHash": "860a04c7fb895fcadd63b7eb3d9954c2dc39bc6ff8c39b9e4f12ca629ef9b779"
     },
     "web-design-guidelines": {
       "source": "vercel-labs/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/web-design-guidelines/SKILL.md",
-      "computedHash": "f3bc47f890f42a44db1007ab390709ec368e4b8c089baee6b0007182236ac474"
+      "computedHash": "4f68ae07187fb0d1fb78c88b503d089da4cf5a9d9625d1f2e425b1590bf96d92"
     },
     "writing-guidelines": {
       "source": "vercel-labs/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/writing-guidelines/SKILL.md",
-      "computedHash": "25aa3a33a97bddbcb1847ce4a6169106ec25e5b19b15b99c66e75ab383866ef2"
+      "computedHash": "fe1390adbe2f7ba68d5fb85d3b14a1d55e71ce04cff5c175245c550d1c3a6f7e"
     }
   }
 }

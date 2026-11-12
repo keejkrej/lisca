@@ -12,16 +12,15 @@ Models state at compile time, preventing bugs by making illegal states unreprese
 
 ## 7.2 Why use it?
 
-- Avoids runtime checks for state validity. If you reach certain states, you can make certain assumptions of the data you have.
-- Models state transitions as type transitions. This is similar to a state machine, but in compile time.
-- Prevents data misuse, e.g. using uninitialized objects.
-- Improves API safety and correctness.
-- The phantom data field is removed after compilation so no extra memory is allocated.
+* Avoids runtime checks for state validity. If you reach certain states, you can make certain assumptions of the data you have.
+* Models state transitions as type transitions. This is similar to a state machine, but in compile time.
+* Prevents data misuse, e.g. using uninitialized objects.
+* Improves API safety and correctness.
+* The phantom data field is removed after compilation so no extra memory is allocated.
 
 ## 7.3 Simple Example: File State
 
 [Github Example](https://github.com/apollographql/rust-best-practices/tree/main/examples/simple-type-state)
-
 ```rust
 use std::{io, path::{Path, PathBuf}};
 
@@ -63,7 +62,7 @@ impl File<FileOpened> {
         use io::Read;
 
         let mut content = String::new();
-        let Some(handle)= self.handle.as_mut() else {
+        let Some(handle)=  self.handle.as_mut() else {
             unreachable!("Safe to unwrap as state can only be reached when file is open");
         };
         handle.read_to_string(&mut content)?;
@@ -90,10 +89,8 @@ A type-state pattern can have more than one associated states:
 ```rust
 use std::marker::PhantomData;
 
-struct MissingName;
-struct NameSet;
-struct MissingAge;
-struct AgeSet;
+struct Unset;
+struct Set;
 
 #[derive(Debug)]
 struct Person {
@@ -102,48 +99,41 @@ struct Person {
     email: Option<String>,
 }
 
-struct Builder<NameState, AgeState> {
+struct Builder<NameState = Unset, AgeState = Unset> {
     name: Option<String>,
     age: u8,
     email: Option<String>,
-    _name_marker: PhantomData<NameState>,
-    _age_marker: PhantomData<AgeState>,
+    _maker_state: PhantomData<(NameState, AgeState)>,
 }
 
-impl Builder<MissingName, MissingAge> {
-    fn new() -> Self {
-        Builder { name: None, age: 0, _name_marker: PhantomData, _age_marker: PhantomData, email: None }
-    }
-
-    fn name(self, name: String) -> Builder<NameSet, MissingAge> {
-        Builder { name: Some(name), _name_marker: PhantomData::<NameSet>, age: self.age, _age_marker: PhantomData, email: None }
-    }
-
-    fn age(self, age: u8) -> Builder<MissingName, AgeSet> {
-        Builder { age, _age_marker: PhantomData::<AgeSet>, name: None, _name_marker: PhantomData, email: None }
+impl Builder<Unset, Unset> {
+    const fn new() -> Self {
+        Self { name: None, age: 0, email: None, _maker_state: PhantomData }
     }
 }
 
-impl Builder<NameSet, MissingAge> {
-    fn age(self, age: u8) -> Builder<NameSet, AgeSet> {
-        Builder { age, _age_marker: PhantomData::<AgeSet>, name: self.name, _name_marker: PhantomData::<NameSet>, email: None }
+impl<NameState> Builder<NameState, Unset> {
+    fn age(self, age: u8) -> Builder<NameState, Set> {
+        Builder { age, name: self.name, email: self.email, _maker_state: PhantomData }
     }
 }
 
-impl Builder<MissingName, AgeSet> {
+impl<AgeState> Builder<Unset, AgeState> {
+    fn name(self, name: String) -> Builder<Set, AgeState> {
+        Builder { name: Some(name), age: self.age, email: self.email, _maker_state: PhantomData }
+    }
+}
+
+impl<NameState, AgeState> Builder<NameState, AgeState> {
     fn email(self, email: String) -> Self {
-        Self { name: self.name , age: self.age , email: Some(email) , _name_marker: self._name_marker , _age_marker: self._age_marker }
-    }
-
-    fn name(self, name: String) -> Builder<NameSet, AgeSet> {
-        Builder { name: Some(name), _name_marker: PhantomData::<NameSet>, age: self.age, _age_marker: PhantomData::<AgeSet>, email: self.email }
+        Self { name: self.name, age: self.age, email: Some(email), _maker_state: PhantomData }
     }
 }
 
-impl Builder<NameSet, AgeSet> {
+impl Builder<Set, Set> {
     fn build(self) -> Person {
         Person {
-            name: self.name.unwrap_or_else(|| unreachable!("Name is guarantee to be set")),
+            name: self.name.unwrap_or_else(|| unreachable!("Name is guaranteed to be set")),
             age: self.age,
             email: self.email,
         }
@@ -154,7 +144,6 @@ impl Builder<NameSet, AgeSet> {
 Although a bit more verbose than a usual builder, this guarantees that all necessary fields are present (note that e-mail is optional field only present in the final builder).
 
 #### Usage:
-
 ```rust
 // ✅ Valid cases
 let person: Person = Builder::new().name("name".to_string()).age(30).build();
@@ -163,10 +152,15 @@ let person: Person = Builder::new().age(30).name("name".to_string()).email("myse
 
 // ❌ Invalid cases
 let person: Person = Builder::new().name("name".to_string()).build(); // ❌ Compile error: Age required to `build`
-let person: Person = Builder::new().age(30).build(); // ❌ Compile error: Name required to `build`
-let person: Person = Builder::new().age(30).email("myself@email.com".to_string()).build(); // ❌ Compile error: Name required to `build`
-let person: Person = Builder::new().build();// ❌ Compile error: Name and Age required to `build`
+let person: Person = Builder::new().age(30).build(); // ❌ Compile error:  Name required to `build`
+let person: Person = Builder::new().age(30).email("myself@email.com".to_string()).build(); // ❌ Compile error:  Name required to `build`
+let person: Person = Builder::new().age(10).age(15); // ❌ Compile error:  Age was already set
+let person: Person = Builder::new().build();// ❌ Compile error:  Name and Age required to `build`
 ```
+
+### Crates implementing Builder pattern
+
+Some libraries are already implementing the builder pattern, like [bon-rs](https://docs.rs/bon/latest/bon/)
 
 ### Network Protocol State Machine
 
@@ -196,7 +190,7 @@ impl Client<Connected> {
     fn send(&mut self, msg: &str) {
         use std::io::Write;
         let Some(stream) = self.stream.as_mut() else {
-            unreachable!("Stream is guarantee to be set");
+            unreachable!("Stream is guaranteed to be set");
         };
         stream.write_all(msg.as_bytes())
     }
@@ -206,26 +200,23 @@ impl Client<Connected> {
 ## 7.5 Pros and Cons
 
 ### ✅ Use Type-State Pattern When:
-
-- Your want **compile-time state safety**.
-- You need to enforce **API constraints**.
-- You are writing a library/crate that is heavy dependent on variants.
-- Your want to replace runtime booleans or enums with **type-safe code paths**.
-- You need compile time correctness.
+* You want **compile-time state safety**.
+* You need to enforce **API constraints**.
+* You are writing a library/crate that is heavily dependent on variants.
+* You want to replace runtime booleans or enums with **type-safe code paths**.
+* You need compile time correctness.
 
 ### ❌ Avoid it when:
-
-- Writing trivial states like enums.
-- Don't need type-safety.
-- When it leads to overcomplicated generics.
-- When runtime flexibility is required.
+* Writing trivial states like enums.
+* Don't need type-safety.
+* When it leads to overcomplicated generics.
+* When runtime flexibility is required.
 
 ### 🚨 Downsides and Cautions
-
-- Can lead to more **verbose solutions**.
-- Can lead to **complex type signatures**.
-- May require **unsafe** to return **variant outputs** based on different states.
-- May required a bunch of duplication (e.g. same struct field reused).
-- PhantomData is not intuitive for beginners and can feel a bit hacky.
+* Can lead to more **verbose solutions**.
+* Can lead to **complex type signatures**.
+* May require **unsafe** to return **variant outputs** based on different states.
+* May require a bunch of duplication (e.g. same struct field reused).
+* PhantomData is not intuitive for beginners and can feel a bit hacky.
 
 > Use this pattern when it **saves bugs, increases safety or simplifies logic**, not just for cleverness.
