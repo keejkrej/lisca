@@ -2,6 +2,8 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vite-plus/test";
 
 const workflowShells = [
+  ["/onboarding", "../src/routes/onboarding.tsx"],
+  ["/help-us", "../src/routes/help-us.tsx"],
   ["/assay", "../src/routes/assay.tsx"],
   ["/metadata", "../src/routes/metadata.tsx"],
   ["/align", "../src/routes/align.tsx"],
