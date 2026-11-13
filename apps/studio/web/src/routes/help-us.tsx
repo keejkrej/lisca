@@ -20,7 +20,7 @@ export const Route = createFileRoute("/help-us")({
   component: HelpUsPage,
 });
 
-export function HelpUsPage() {
+function HelpUsPage() {
   const navigate = useNavigate();
   const initialDraft = readStudioFeedbackDraft();
   const [studyFocus, setStudyFocus] = createSignal(initialDraft.studyFocus);
@@ -113,7 +113,7 @@ export function HelpUsPage() {
           </AppShell.Main>
         </AppShell.MainColumn>
         <AppShell.Right widthClass="w-rail">
-          <StudioRightPanel instruction="Optional research feedback. Describe what you study, what you need to measure, and what is missing; then save locally, copy a Markdown summary, or open a pre-filled GitHub issue.">
+          <StudioRightPanel>
             <PanelSection appearance="rail" title="Action">
               <RailControlStack>
                 <Button

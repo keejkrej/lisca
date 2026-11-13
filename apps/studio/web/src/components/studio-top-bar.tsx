@@ -49,7 +49,7 @@ export function StudioTopBar(props: { showExpert?: boolean }) {
       class="grid h-full w-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3"
       role="region"
     >
-      <h1 class="sr-only">LiSCA Studio</h1>
+      <h1 class="sr-only">LiSCA</h1>
       <Show when={!agentActive()}>
         <div class="flex min-w-0 items-center gap-2">
           <StudioPageTaskCenter />
@@ -59,9 +59,9 @@ export function StudioTopBar(props: { showExpert?: boolean }) {
         </div>
         <span
           aria-hidden="true"
-          class="pointer-events-none text-xs font-semibold uppercase tracking-[0.2em] text-foreground"
+          class="pointer-events-none text-xs font-semibold tracking-[0.2em] text-foreground"
         >
-          Studio
+          LiSCA
         </span>
         <div class="flex items-center justify-end gap-2">
           <ConnectionStatus state={server.state} onRetry={server.retry} />

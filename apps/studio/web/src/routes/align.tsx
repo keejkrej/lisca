@@ -6,7 +6,6 @@ import { StudioAlignMain } from "../components/studio-align-main";
 import { StudioLeft } from "../components/studio-left";
 import { StudioRightPanel } from "../components/studio-right-panel";
 import { StudioTopBar } from "../components/studio-top-bar";
-import { instructionForStep } from "../state/studio-routes";
 import { StudioAlignPageProvider } from "../state/studio-align-page-provider";
 
 export const Route = createFileRoute("/align")({
@@ -37,10 +36,7 @@ function AlignPageContent() {
           </AppShell.Main>
         </AppShell.MainColumn>
         <AppShell.Right widthClass="w-rail">
-          <StudioRightPanel
-            expert={() => <StudioAlignInstrumentStack expert />}
-            instruction={() => instructionForStep("alignPattern")}
-          >
+          <StudioRightPanel expert={() => <StudioAlignInstrumentStack expert />}>
             <StudioAlignInstrumentStack />
           </StudioRightPanel>
         </AppShell.Right>

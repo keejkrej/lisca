@@ -39,8 +39,8 @@ export function StudioHelpUsView(props: {
         </h1>
         <p class="text-sm leading-5 text-muted-foreground">
           Tell us what you study, what single-cell measurements your experiments require, and what
-          is missing today. These notes stay separate from the research interests that personalize
-          Studio.
+          is missing today. You can save these optional notes locally or share them when you are
+          ready.
         </p>
       </div>
 

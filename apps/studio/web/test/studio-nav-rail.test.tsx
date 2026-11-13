@@ -200,7 +200,7 @@ describe("StudioNavRail Task Center", () => {
     expect(screen.getByRole("button", { name: "Stop" })).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Settings" })).toBeNull();
     expect(screen.queryByRole("button", { name: /Expert mode$/ })).toBeNull();
-    expect(screen.queryByText("Studio")).toBeNull();
+    expect(screen.queryByText("LiSCA", { selector: "span" })).toBeNull();
   });
 
   it("hides tasks on Align and on pages that do not wait on a run", async () => {
@@ -276,7 +276,9 @@ describe("StudioNavRail Task Center", () => {
     expect(nav.contains(trigger)).toBe(false);
     expect(statusBar.contains(trigger)).toBe(true);
     expect(statusBar.classList.contains("grid")).toBe(true);
-    expect(screen.getByText("Studio").classList.contains("absolute")).toBe(false);
+    expect(screen.getByText("LiSCA", { selector: "span" }).classList.contains("absolute")).toBe(
+      false,
+    );
     expect(trigger.parentElement?.contains(expert)).toBe(true);
     expect(trigger.compareDocumentPosition(expert) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
 

@@ -1,6 +1,7 @@
 # ADR-0028: Research-area onboarding, two-level assay discovery, and local feedback
 
-- **Status:** accepted
+- **Status:** superseded
+- **Superseded by:** [ADR-0029](0029-optional-research-guide-without-personalization.md)
 - **Date:** 2026-11-12
 
 ## Decision

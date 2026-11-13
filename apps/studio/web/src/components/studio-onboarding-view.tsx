@@ -1,5 +1,4 @@
 import { ASSAY_CHOICE_LABEL } from "@lisca/client/atoms/studio-ui";
-import { StateToggleIndicator } from "@lisca/ui/patterns";
 import {
   Alert,
   AlertDescription,
@@ -19,23 +18,12 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-  Toggle,
 } from "@lisca/ui/primitives";
-import { createSignal, For, Show } from "solid-js";
+import { For, Show } from "solid-js";
 
-import {
-  guideAreasForInterests,
-  RESEARCH_AREAS,
-  RESEARCH_INTEREST_OPTIONS,
-  specificResearchAreasFromInterests,
-  type AssayAreaFilter,
-  type ResearchAreaId,
-  type ResearchInterestId,
-} from "../state/studio-onboarding";
+import { RESEARCH_AREAS } from "../state/studio-onboarding";
 import type { AssayId } from "../state/studio-store";
 import { StudioResearchFigures } from "./studio-research-figures";
-
-export type OnboardingStep = "interests" | "guide";
 
 const STUDIO_WORKFLOW_PILLARS: readonly { step: string; title: string; detail: string }[] = [
   {
@@ -64,99 +52,18 @@ const STUDIO_WORKFLOW_PILLARS: readonly { step: string; title: string; detail: s
   },
 ];
 
-export function StudioOnboardingInterestsStep(props: {
-  selectedInterests: readonly ResearchInterestId[];
-  onToggleInterest: (id: ResearchInterestId) => void;
-  onContinue: () => void;
-  onSkip: () => void;
-  onOpenFeedback: () => void;
-}) {
-  return (
-    <div class="flex w-full max-w-[44rem] min-w-0 flex-col gap-8">
-      <div class="flex flex-col items-start gap-2.5">
-        <span class="text-[11px] font-medium uppercase leading-4 tracking-[0.12em] text-muted-foreground">
-          Step 01 of 02 · Personalize Studio
-        </span>
-        <h1 class="text-3xl font-semibold leading-9 tracking-[-0.025em] text-foreground">
-          What do you study?
-        </h1>
-        <p class="text-sm leading-5 text-muted-foreground">
-          Select one or more areas to see how LiSCA connects to your research questions, preview
-          sample readouts and figures, and filter the Assay page to matching workflows.
-        </p>
-      </div>
-
-      <div aria-label="Research interests" class="flex w-full flex-col gap-2.5" role="group">
-        <For each={RESEARCH_INTEREST_OPTIONS}>
-          {(option) => {
-            const selected = () => props.selectedInterests.includes(option.id);
-            return (
-              <Button
-                aria-pressed={selected()}
-                class="h-auto w-full items-start justify-start gap-3.5 px-5 py-4 text-left whitespace-normal"
-                data-instrument-state-toggle=""
-                type="button"
-                variant="secondary"
-                onClick={() => props.onToggleInterest(option.id)}
-              >
-                <span class="mt-0.5 flex shrink-0 items-center">
-                  <StateToggleIndicator pressed={selected()} />
-                </span>
-                <span class="flex min-w-0 flex-1 flex-col items-start gap-1">
-                  <span class="text-base font-medium leading-5">{option.title}</span>
-                  <span
-                    class={
-                      selected()
-                        ? "text-sm font-normal leading-5 text-primary-foreground/80"
-                        : "text-sm font-normal leading-5 text-muted-foreground"
-                    }
-                  >
-                    {option.description}
-                  </span>
-                </span>
-              </Button>
-            );
-          }}
-        </For>
-      </div>
-
-      <div class="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-5">
-        <Button size="default" type="button" variant="ghost" onClick={props.onOpenFeedback}>
-          Help us improve LiSCA
-        </Button>
-        <div class="flex items-center gap-2.5">
-          <Button size="default" type="button" variant="outline" onClick={props.onSkip}>
-            Skip to assays
-          </Button>
-          <Button size="default" type="button" onClick={props.onContinue}>
-            Continue
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export function StudioOnboardingGuideStep(props: {
-  selectedInterests: readonly ResearchInterestId[];
-  onBackToInterests: () => void;
-  onFinishToAssays: (preferredArea?: AssayAreaFilter) => void;
-  onPickAssay: (assayId: AssayId, areaId: ResearchAreaId) => void;
+  onFinishToAssays: () => void;
+  onPickAssay: (assayId: AssayId) => void;
   onOpenFeedback: () => void;
 }) {
-  const [showAllAreas, setShowAllAreas] = createSignal(false);
-  const specificChosen = () => specificResearchAreasFromInterests(props.selectedInterests);
-  const tailoredAreas = () => guideAreasForInterests(props.selectedInterests);
-  const visibleAreas = () => (showAllAreas() ? RESEARCH_AREAS : tailoredAreas());
-  const canExpandAll = () => tailoredAreas().length < RESEARCH_AREAS.length;
-
   return (
     <div class="flex w-full max-w-[56rem] min-w-0 flex-col gap-10">
       <div class="flex flex-col gap-4">
         <div class="flex flex-wrap items-start justify-between gap-4">
           <div class="flex max-w-[40rem] flex-col gap-2">
             <span class="text-[11px] font-medium uppercase leading-4 tracking-[0.12em] text-muted-foreground">
-              Step 02 of 02 · Research Guide
+              Research guide
             </span>
             <h1 class="text-3xl font-semibold leading-9 tracking-[-0.025em] text-foreground">
               How LiSCA can help your research
@@ -166,42 +73,11 @@ export function StudioOnboardingGuideStep(props: {
               figures and output tables, and the underlying method literature.
             </p>
           </div>
-          <div class="flex flex-wrap items-center gap-2">
-            <Show when={canExpandAll()}>
-              <Toggle
-                aria-pressed={showAllAreas()}
-                class="h-8 gap-2 px-3 text-xs"
-                data-instrument-state-toggle=""
-                pressed={showAllAreas()}
-                size="sm"
-                variant="outline"
-                onChange={setShowAllAreas}
-              >
-                <StateToggleIndicator pressed={showAllAreas()} />
-                <span>Show all areas</span>
-              </Toggle>
-            </Show>
-            <Button size="sm" type="button" variant="outline" onClick={props.onBackToInterests}>
-              Change research interests
-            </Button>
-          </div>
         </div>
-
-        <Show when={specificChosen().length > 0}>
-          <div class="flex flex-wrap items-center gap-2">
-            <span class="text-xs text-muted-foreground">Selected focus:</span>
-            <For each={specificChosen()}>
-              {(id) => {
-                const area = RESEARCH_AREAS.find((entry) => entry.id === id);
-                return <Badge variant="secondary">{area?.title ?? id}</Badge>;
-              }}
-            </For>
-          </div>
-        </Show>
       </div>
 
       <div class="flex flex-col gap-8">
-        <For each={visibleAreas()}>
+        <For each={RESEARCH_AREAS}>
           {(area) => (
             <Card class="border border-border bg-background">
               <CardHeader class="gap-2 border-b border-border pb-4">
@@ -317,8 +193,8 @@ export function StudioOnboardingGuideStep(props: {
 
               <CardFooter class="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
                 <span class="text-xs text-muted-foreground">
-                  Open this area on the Assay page to configure a new Workspace or resume a saved
-                  run.
+                  Choose an assay to configure a new Workspace, or open a saved run on the Assay
+                  page.
                 </span>
                 <div class="flex flex-wrap items-center gap-2">
                   <For each={area.assayIds}>
@@ -327,7 +203,7 @@ export function StudioOnboardingGuideStep(props: {
                         size="sm"
                         type="button"
                         variant="outline"
-                        onClick={() => props.onPickAssay(assayId, area.id)}
+                        onClick={() => props.onPickAssay(assayId)}
                       >
                         Use {ASSAY_CHOICE_LABEL[assayId]}
                       </Button>

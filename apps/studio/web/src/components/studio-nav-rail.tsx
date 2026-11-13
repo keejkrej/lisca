@@ -1,4 +1,3 @@
-import { cn } from "@lisca/ui/primitives";
 import { Link, useNavigate, useRouterState } from "@tanstack/solid-router";
 import { createEffect, For, onCleanup, Show, type JSX } from "solid-js";
 
@@ -23,6 +22,8 @@ function isEditableTarget(target: EventTarget | null): boolean {
 }
 
 const STEP_ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"] as const;
+// Each route mounts its own shell; carry the last position into the next rail.
+let previousStepIndex: number | undefined;
 
 function stepLabel(index: number): string {
   return STEP_ROMAN[index - 1] ?? String(index);
@@ -60,13 +61,8 @@ function NavButton(props: {
     <Link
       aria-current={props.active ? "page" : undefined}
       aria-keyshortcuts={`${modifier}+${props.index}`}
-      class={cn(
-        "group flex h-9 w-full min-w-0 shrink-0 items-center gap-3 pr-3 pl-8 text-left outline-none transition-colors",
-        "focus-visible:ring-2 focus-visible:ring-ring",
-        props.active
-          ? "bg-primary text-primary-foreground"
-          : "bg-transparent text-foreground hover:bg-secondary",
-      )}
+      class="group flex h-9 w-full min-w-0 shrink-0 items-center gap-3 bg-transparent pr-3 pl-8 text-left text-foreground outline-none transition-colors focus-visible:-outline-offset-2 focus-visible:outline-2 focus-visible:outline-ring"
+      classList={{ "hover:bg-secondary": !props.active }}
       to={props.to}
       onClick={(event) => {
         props.onClick?.();
@@ -105,7 +101,34 @@ export function StudioNavRail() {
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const routeId = () => pathname().slice(1) || "assay";
+  const activeStepIndex = () =>
+    Math.max(
+      0,
+      STUDIO_PAGES.findIndex((page) => page.to.slice(1) === routeId()),
+    );
   const shortcutPlatform = studioPageShortcutPlatform();
+  let track: HTMLDivElement | undefined;
+
+  createEffect(() => {
+    const next = activeStepIndex();
+    const previous = previousStepIndex;
+    previousStepIndex = next;
+    if (
+      previous === undefined ||
+      previous === next ||
+      !track?.animate ||
+      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
+    )
+      return;
+    const animation = track.animate(
+      [
+        { transform: `translateY(${-previous * 2.5}rem)` },
+        { transform: `translateY(${-next * 2.5}rem)` },
+      ],
+      { duration: 300, easing: "ease-in-out" },
+    );
+    onCleanup(() => animation.cancel());
+  });
 
   const goTo = (to: StudioRouteTo) => {
     const current = routeId();
@@ -160,22 +183,39 @@ export function StudioNavRail() {
 
   return (
     <nav aria-label="Primary" class="flex h-full min-h-0 flex-col justify-center py-2.5">
-      <div class="ml-rail-inset flex w-rail-content min-w-0 shrink-0 flex-col gap-1">
-        {endHint("up")}
-        <For each={STUDIO_PAGES}>
-          {(page) => (
-            <NavButton
-              active={routeId() === page.to.slice(1)}
-              index={page.index}
-              leaveAnnotateGuard={routeId() === "annotate"}
-              shortcutPlatform={shortcutPlatform}
-              to={page.to}
-            >
-              {page.label}
-            </NavButton>
-          )}
-        </For>
-        {endHint("down")}
+      <div class="ml-rail-inset flex max-h-full w-rail-content min-h-0 min-w-0 flex-col gap-1">
+        <div class="h-3 shrink-0">{endHint("up")}</div>
+        <div class="relative h-[22.25rem] min-h-9 shrink overflow-hidden">
+          <div
+            aria-hidden="true"
+            data-slot="studio-step-window"
+            class="pointer-events-none absolute inset-x-0 top-1/2 z-10 h-9 -translate-y-1/2 border border-primary"
+          />
+          {/* The date-wheel track moves under the stationary current-step window. */}
+          <div
+            data-slot="studio-step-track"
+            ref={(element) => {
+              track = element;
+            }}
+            class="absolute inset-x-0 top-1/2 -mt-4.5 flex flex-col gap-1 transition-transform duration-300 ease-in-out motion-reduce:transition-none"
+            style={{ transform: `translateY(${-activeStepIndex() * 2.5}rem)` }}
+          >
+            <For each={STUDIO_PAGES}>
+              {(page) => (
+                <NavButton
+                  active={routeId() === page.to.slice(1)}
+                  index={page.index}
+                  leaveAnnotateGuard={routeId() === "annotate"}
+                  shortcutPlatform={shortcutPlatform}
+                  to={page.to}
+                >
+                  {page.label}
+                </NavButton>
+              )}
+            </For>
+          </div>
+        </div>
+        <div class="h-3 shrink-0">{endHint("down")}</div>
       </div>
     </nav>
   );

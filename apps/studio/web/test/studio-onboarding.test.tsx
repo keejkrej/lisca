@@ -29,15 +29,11 @@ vi.mock("@lisca/client/session/task-center", () => ({
   },
 }));
 
-import { ChooseAssay } from "../src/components/choose-assay";
 import { routeTree } from "../src/routeTree.gen";
 import {
   buildStudioFeedbackIssueUrl,
   formatStudioFeedbackMarkdown,
   readStudioFeedbackDraft,
-  readStudioOnboarding,
-  studioOnboardingAtom,
-  type StudioOnboardingState,
 } from "../src/state/studio-onboarding";
 import {
   createInitialStudioWizardState,
@@ -58,14 +54,13 @@ function createMemoryStorage(): LiscaStorageAdapter {
   };
 }
 
+let testStorage: LiscaStorageAdapter;
 Object.defineProperty(window, "scrollTo", { value: vi.fn(), writable: true });
 
 beforeEach(() => {
   mockFlag.assayPath = null;
-  configureLiscaStorage({
-    local: createMemoryStorage(),
-    session: createMemoryStorage(),
-  });
+  testStorage = createMemoryStorage();
+  configureLiscaStorage({ local: testStorage, session: createMemoryStorage() });
   vi.stubGlobal(
     "matchMedia",
     vi.fn((query: string) => ({
@@ -83,37 +78,19 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-function renderStudioRouter(
-  initialEntry = "/",
-  onboardingState: StudioOnboardingState = {
-    completed: false,
-    interests: [],
-    activeArea: "all",
-  },
-) {
+function renderStudioRouter(initialEntry = "/", initialWizard = createInitialStudioWizardState()) {
   const router = createRouter({
     routeTree,
     history: createMemoryHistory({ initialEntries: [initialEntry] }),
   });
-
-  let currentAssayId: () => AssayId | null = () => null;
-  let currentOnboarding: () => StudioOnboardingState = () => onboardingState;
-
+  let currentAssayId: () => AssayId | null = () => initialWizard.assayId;
   function StateProbe() {
     const wizard = useAtomValue(() => studioWizardAtom);
-    const onboarding = useAtomValue(() => studioOnboardingAtom);
     currentAssayId = () => wizard().assayId;
-    currentOnboarding = () => onboarding();
     return null;
   }
-
   render(() => (
-    <RegistryProvider
-      initialValues={[
-        [studioWizardAtom, createInitialStudioWizardState()] as const,
-        [studioOnboardingAtom, onboardingState] as const,
-      ]}
-    >
+    <RegistryProvider initialValues={[[studioWizardAtom, initialWizard] as const]}>
       <ShellThemeProvider appId="studio">
         <ShellServerProvider probe={() => Promise.resolve("ok")}>
           <ShellWorkspaceProvider>
@@ -124,179 +101,167 @@ function renderStudioRouter(
       </ShellThemeProvider>
     </RegistryProvider>
   ));
-
-  return { router, currentAssayId, currentOnboarding };
+  return { router, currentAssayId };
 }
 
-describe("Studio research onboarding and tailored guide", () => {
-  it("redirects first-time visitors at / to /onboarding, tailors sample figures and references, and lands on filtered assays", async () => {
-    const { router, currentAssayId, currentOnboarding } = renderStudioRouter("/");
+async function expectLnpAssays() {
+  const group = await screen.findByRole("group", { name: "Assay type" });
+  expect(within(group).getByRole("button", { name: /LNP binding/ })).toBeTruthy();
+  expect(within(group).getByRole("button", { name: /LNP transfection/ })).toBeTruthy();
+  expect(
+    within(group)
+      .getAllByRole("button")
+      .slice(0, 2)
+      .map((button) => button.textContent),
+  ).toEqual([expect.stringContaining("LNP transfection"), expect.stringContaining("LNP binding")]);
+  expect(within(group).queryByRole("button", { name: /Killing/ })).toBeNull();
+}
 
-    expect(await screen.findByRole("heading", { name: "What do you study?" })).toBeTruthy();
-    expect(router.state.location.pathname).toBe("/onboarding");
-
-    const interestsGroup = screen.getByRole("group", { name: "Research interests" });
-    const lnpOption = within(interestsGroup).getByRole("button", {
-      name: /RNA delivery and LNPs/,
+describe("Studio optional research guide", () => {
+  it("filters workflows by field without saving interests or changing an edited assay, and resets on return", async () => {
+    const { router, currentAssayId } = renderStudioRouter("/assay", {
+      ...createInitialStudioWizardState(),
+      assayId: "transfection",
+      name: "Already edited transfection",
     });
-    expect(lnpOption.getAttribute("aria-pressed")).toBe("false");
-    fireEvent.click(lnpOption);
-    expect(lnpOption.getAttribute("aria-pressed")).toBe("true");
+    await expectLnpAssays();
+    const fields = screen.getByRole("group", { name: "Research field" });
+    expect(within(fields).getAllByRole("button")).toHaveLength(2);
+    expect(within(fields).queryByRole("button", { name: "All assays" })).toBeNull();
+    fireEvent.click(within(fields).getByRole("button", { name: "LNP delivery" }));
+    const assays = screen.getByRole("group", { name: "Assay type" });
+    expect(within(assays).getByRole("button", { name: /LNP binding/ })).toBeTruthy();
+    expect(within(assays).getByRole("button", { name: /LNP transfection/ })).toBeTruthy();
+    expect(
+      within(assays)
+        .getAllByRole("button")
+        .map((button) => button.textContent),
+    ).toEqual([
+      expect.stringContaining("LNP transfection"),
+      expect.stringContaining("LNP binding"),
+    ]);
+    expect(within(assays).queryByRole("button", { name: /Killing/ })).toBeNull();
 
-    // Advance to Step 2: How LiSCA can help your research
-    const continueButtons = screen.getAllByRole("button", { name: "Continue" });
-    fireEvent.click(continueButtons[0]!);
+    fireEvent.click(within(fields).getByRole("button", { name: "Cell killing" }));
+    expect(within(assays).getByRole("button", { name: /Killing \(death reporter\)/ })).toBeTruthy();
+    expect(within(assays).getByRole("button", { name: /Killing \(label-free\)/ })).toBeTruthy();
+    expect(within(assays).queryByRole("button", { name: /LNP binding/ })).toBeNull();
+    expect(within(assays).getByRole("button", { name: /Killing \(engagement\)/ })).toBeTruthy();
+    expect(currentAssayId()).toBe("transfection");
+    expect(testStorage.getItem("lisca-studio-onboarding")).toBeNull();
 
+    const guide = screen.getByRole("button", { name: "Research guide" });
+    expect(
+      guide.parentElement?.contains(screen.getByRole("button", { name: "Help us improve LiSCA" })),
+    ).toBe(true);
+    expect(screen.queryByText("Research", { exact: true })).toBeNull();
+    fireEvent.click(guide);
     expect(
       await screen.findByRole("heading", { name: "How LiSCA can help your research" }),
     ).toBeTruthy();
+    fireEvent.click(screen.getAllByRole("button", { name: "Continue to Assay" })[0]!);
+    await waitFor(() => expect(router.state.location.pathname).toBe("/assay"));
+    await expectLnpAssays();
+    expect(currentAssayId()).toBe("transfection");
+    expect(testStorage.getItem("lisca-studio-onboarding")).toBeNull();
+  });
 
-    // Explicit scientific distinction between binding and expression
+  it("starts on LNP delivery and ignores research interests saved by older versions", async () => {
+    const legacyProfile = JSON.stringify({
+      completed: false,
+      interests: ["pharmacology"],
+      activeArea: "pharmacology",
+    });
+    testStorage.setItem("lisca-studio-onboarding", legacyProfile);
+    const { router } = renderStudioRouter("/");
+    await expectLnpAssays();
+    expect(router.state.location.pathname).toBe("/assay");
+    expect(screen.queryByRole("group", { name: "Research area" })).toBeNull();
+    expect(screen.queryByRole("button", { name: /Research interests/i })).toBeNull();
+    expect(screen.queryByRole("button", { name: /Change research interests/ })).toBeNull();
+    expect(testStorage.getItem("lisca-studio-onboarding")).toBe(legacyProfile);
+    fireEvent.click(screen.getByRole("button", { name: "Research guide" }));
+    expect(
+      await screen.findByRole("heading", { name: "How LiSCA can help your research" }),
+    ).toBeTruthy();
+  });
+
+  it("opens the field of an existing killing assay without storing a field preference", async () => {
+    renderStudioRouter("/assay", {
+      ...createInitialStudioWizardState(),
+      assayId: "killing-engagement",
+      name: "Existing killing assay",
+    });
+    const fields = await screen.findByRole("group", { name: "Research field" });
+    expect(
+      within(fields).getByRole("button", { name: "Cell killing" }).getAttribute("aria-pressed"),
+    ).toBe("true");
+    const assays = screen.getByRole("group", { name: "Assay type" });
+    expect(
+      within(assays)
+        .getByRole("button", { name: /Killing \(engagement\)/ })
+        .getAttribute("aria-pressed"),
+    ).toBe("true");
+    expect(within(assays).queryByRole("button", { name: /LNP/ })).toBeNull();
+    expect(testStorage.getItem("lisca-studio-onboarding")).toBeNull();
+  });
+
+  it("browses every research area without saving interests or changing the selected assay", async () => {
+    const { router, currentAssayId } = renderStudioRouter("/onboarding");
+    expect(
+      await screen.findByRole("heading", { name: "How LiSCA can help your research" }),
+    ).toBeTruthy();
+    const originalAssay = currentAssayId();
+    expect(screen.queryByRole("group", { name: "Research interests" })).toBeNull();
     expect(
       screen.getByText(/Neither measurement alone establishes uptake or endosomal escape/),
     ).toBeTruthy();
-
-    // Sample figures and sample output table are shown for RNA delivery and LNPs
     expect(
-      screen.getByRole("img", {
-        name: /Sample LNP binding plot showing cumulative spots per ROI/,
-      }),
+      screen.getByRole("img", { name: /Sample LNP binding plot showing cumulative spots per ROI/ }),
     ).toBeTruthy();
     expect(
       screen.getByRole("img", {
         name: /Sample transfection plot showing background-corrected GFP fluorescence traces/,
       }),
     ).toBeTruthy();
+    expect(screen.getByRole("img", { name: /Sample pharmacology survival curve/ })).toBeTruthy();
     expect(screen.getAllByText("Targeted LNP").length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText(/Schnitzbauer et al\./).length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText(/Müller et al\. \(2024\)/).length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText(/One Workspace from microscope acquisition to figures/)).toBeTruthy();
-
-    // Unselected research areas stay hidden unless expanded
-    expect(screen.queryByRole("img", { name: /Sample pharmacology survival curve/ })).toBeNull();
-
-    const showAllToggle = screen.getByRole("button", { name: /Show all areas/ });
-    fireEvent.click(showAllToggle);
-    expect(
-      await screen.findByRole("img", { name: /Sample pharmacology survival curve/ }),
-    ).toBeTruthy();
-    fireEvent.click(showAllToggle);
-
-    // Choose LNP binding directly from the guide card
-    fireEvent.click(screen.getByRole("button", { name: "Use LNP binding" }));
-
+    fireEvent.click(screen.getAllByRole("button", { name: "Continue to Assay" })[0]!);
     await waitFor(() => expect(router.state.location.pathname).toBe("/assay"));
-    expect(currentOnboarding().completed).toBe(true);
-    expect(currentOnboarding().activeArea).toBe("lnp-delivery");
-    expect(readStudioOnboarding().completed).toBe(true);
+    await expectLnpAssays();
+    expect(currentAssayId()).toBe(originalAssay);
+    expect(testStorage.getItem("lisca-studio-onboarding")).toBeNull();
+  });
+
+  it("selects an explicitly requested assay in its field without saving a profile", async () => {
+    const { router, currentAssayId } = renderStudioRouter("/onboarding");
+    fireEvent.click(await screen.findByRole("button", { name: "Use LNP binding" }));
+    await waitFor(() => expect(router.state.location.pathname).toBe("/assay"));
+    await expectLnpAssays();
     expect(currentAssayId()).toBe("lnp-binding");
-
-    // On the Assay page, an LNP researcher sees only LNP binding and Transfection — no killing assays
-    const assayGroup = await screen.findByRole("group", { name: "Assay type" });
-    expect(within(assayGroup).getByRole("button", { name: /LNP binding/ })).toBeTruthy();
-    expect(within(assayGroup).getByRole("button", { name: /Transfection/ })).toBeTruthy();
-    expect(within(assayGroup).queryByRole("button", { name: /Killing/ })).toBeNull();
-
-    // Browse all assays restores full discovery immediately
-    fireEvent.click(screen.getByRole("button", { name: "Browse all assays" }));
-    expect(
-      await within(assayGroup).findByRole("button", { name: /Killing \(death reporter\)/ }),
-    ).toBeTruthy();
+    expect(testStorage.getItem("lisca-studio-onboarding")).toBeNull();
   });
 
-  it("skips /onboarding on / when mock mode is active or onboarding is already completed", async () => {
-    mockFlag.assayPath = "/mock/assay.json";
-    const mockRun = renderStudioRouter("/");
-    await waitFor(() => expect(mockRun.router.state.location.pathname).toBe("/assay"));
-    cleanup();
-
-    mockFlag.assayPath = null;
-    configureLiscaStorage({
-      local: (() => {
-        const storage = createMemoryStorage();
-        storage.setItem(
-          "lisca-studio-onboarding",
-          JSON.stringify({
-            completed: true,
-            interests: ["cancer-immunology"],
-            activeArea: "cancer-immunology",
-          }),
-        );
-        return storage;
-      })(),
-      session: createMemoryStorage(),
-    });
-
-    const returningRun = renderStudioRouter("/", {
-      completed: true,
-      interests: ["cancer-immunology"],
-      activeArea: "cancer-immunology",
-    });
-    await waitFor(() => expect(returningRun.router.state.location.pathname).toBe("/assay"));
-  });
-});
-
-describe("Two-level Assay selection", () => {
-  it("filters assays by research area and preserves open/dirty wizard assay selection", async () => {
-    const dirtyWizard = {
+  it("preserves an edited assay when browsing the guide and choosing another workflow", async () => {
+    const { router, currentAssayId } = renderStudioRouter("/onboarding", {
       ...createInitialStudioWizardState(),
-      assayId: "transfection" as const,
+      assayId: "transfection",
       name: "Already edited transfection",
-    };
-
-    render(() => (
-      <RegistryProvider
-        initialValues={[
-          [studioWizardAtom, dirtyWizard] as const,
-          [
-            studioOnboardingAtom,
-            {
-              completed: true,
-              interests: ["lnp-delivery", "expression-kinetics"],
-              activeArea: "selected",
-            },
-          ] as const,
-        ]}
-      >
-        <ChooseAssay />
-      </RegistryProvider>
-    ));
-
-    const areaGroup = screen.getByRole("group", { name: "Research area" });
-    const assayGroup = screen.getByRole("group", { name: "Assay type" });
-
-    // Multi-interest union hides killing assays
-    expect(within(areaGroup).getByRole("button", { name: "My research areas" })).toBeTruthy();
-    expect(within(assayGroup).getByRole("button", { name: /LNP binding/ })).toBeTruthy();
-    expect(within(assayGroup).getByRole("button", { name: /Transfection/ })).toBeTruthy();
-    expect(within(assayGroup).queryByRole("button", { name: /Killing/ })).toBeNull();
-
-    // Switching to Cancer immunology shows engagement + death reporter + label-free, without clobbering dirty wizard
-    fireEvent.click(within(areaGroup).getByRole("button", { name: "Cancer immunology" }));
-    expect(
-      await within(assayGroup).findByRole("button", { name: /Killing \(engagement\)/ }),
-    ).toBeTruthy();
-    expect(
-      within(assayGroup).getByRole("button", { name: /Killing \(death reporter\)/ }),
-    ).toBeTruthy();
-    expect(within(assayGroup).getByRole("button", { name: /Killing \(label-free\)/ })).toBeTruthy();
-    expect(within(assayGroup).queryByRole("button", { name: /LNP binding/ })).toBeNull();
-    expect(
-      within(assayGroup)
-        .getByRole("button", { name: /Killing \(engagement\)/ })
-        .getAttribute("aria-pressed"),
-    ).toBe("false");
+    });
+    fireEvent.click(await screen.findByRole("button", { name: "Use LNP binding" }));
+    await waitFor(() => expect(router.state.location.pathname).toBe("/assay"));
+    expect(currentAssayId()).toBe("transfection");
+    await expectLnpAssays();
+    expect(testStorage.getItem("lisca-studio-onboarding")).toBeNull();
   });
 });
 
 describe("Help us improve LiSCA page", () => {
-  it("stores research feedback separately from onboarding personalization and formats GitHub issues", async () => {
-    const initialOnboarding: StudioOnboardingState = {
-      completed: true,
-      interests: ["pharmacology"],
-      activeArea: "pharmacology",
-    };
-    const { currentOnboarding } = renderStudioRouter("/help-us", initialOnboarding);
+  it("saves optional feedback drafts without creating a research profile and formats GitHub issues", async () => {
+    renderStudioRouter("/help-us");
 
     expect(await screen.findByRole("heading", { name: "Help us improve LiSCA" })).toBeTruthy();
 
@@ -323,8 +288,7 @@ describe("Help us improve LiSCA page", () => {
     expect(saved.contact).toBe("@spheroid-lab");
     expect(saved.updatedAt).not.toBeNull();
 
-    // Onboarding personalization remains untouched
-    expect(currentOnboarding()).toEqual(initialOnboarding);
+    expect(testStorage.getItem("lisca-studio-onboarding")).toBeNull();
 
     const markdown = formatStudioFeedbackMarkdown(saved);
     expect(markdown).toContain("### What we study\n3D tumor spheroids in microwells");

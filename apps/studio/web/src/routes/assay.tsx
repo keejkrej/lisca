@@ -14,7 +14,6 @@ import { StudioRightPanel } from "../components/studio-right-panel";
 import { StudioTopBar } from "../components/studio-top-bar";
 import { useStudioMemoryRecent } from "../hooks/use-studio-memory-recent";
 import { useStudioNavigate } from "../navigation/use-studio-navigate";
-import { instructionForStep } from "../state/studio-routes";
 import { useStudioSession } from "../state/studio-session-context";
 import { studioWizardActions, studioWizardAtom } from "../state/studio-store";
 import { recordStudioAssayMemory } from "../utils/studio-memory";
@@ -44,10 +43,7 @@ function AssayPage() {
     });
 
   const openGuide = () => {
-    void navigate({ to: "/onboarding", search: { step: "guide" } });
-  };
-  const openInterests = () => {
-    void navigate({ to: "/onboarding", search: { step: "interests" } });
+    void navigate({ to: "/onboarding" });
   };
   const openFeedback = () => {
     void navigate({ to: "/help-us" });
@@ -89,24 +85,17 @@ function AssayPage() {
               }
             />
             <AppShell.MainScroll contentClass="max-w-[52rem] items-center justify-center px-4 py-6 md:px-12 md:py-10">
-              <ChooseAssay
-                onChangeInterests={openInterests}
-                onOpenFeedback={openFeedback}
-                onOpenGuide={openGuide}
-              />
+              <ChooseAssay onOpenFeedback={openFeedback} onOpenGuide={openGuide} />
             </AppShell.MainScroll>
           </AppShell.Main>
         </AppShell.MainColumn>
         <AppShell.Right widthClass="w-rail">
-          <StudioRightPanel instruction={() => instructionForStep("chooseAssay")}>
+          <StudioRightPanel>
             <StudioAssayActions
               assayPickerOpen={assayPickerOpen()}
               openingAssay={openingAssay()}
-              onChangeInterests={openInterests}
               onNewAssay={newAssay}
               onOpenAssay={() => setAssayPickerOpen(true)}
-              onOpenFeedback={openFeedback}
-              onOpenGuide={openGuide}
             />
           </StudioRightPanel>
         </AppShell.Right>

@@ -26,7 +26,7 @@ import * as Result from "effect/Result";
 import { analysisChannelsFromSamples, assayChannelDefaultsFromAnalysis } from "./sample-positions";
 
 export const ASSAY_CHOICE_LABEL: Record<StudioAssayType, string> = {
-  [ASSAY_TYPE.TRANSFECTION]: "Transfection",
+  [ASSAY_TYPE.TRANSFECTION]: "LNP transfection",
   [ASSAY_TYPE.KILLING_DEATH_REPORTER]: "Killing (death reporter)",
   [ASSAY_TYPE.KILLING_ENGAGEMENT]: "Killing (engagement)",
   [ASSAY_TYPE.LNP_BINDING]: "LNP binding",

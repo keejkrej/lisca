@@ -4,7 +4,6 @@ import { createFileRoute } from "@tanstack/solid-router";
 
 import { StudioAnnotateMain } from "../components/studio-annotate-main";
 import { StudioAnnotateInstrumentStack } from "../components/studio-annotate-instrument-stack";
-import { instructionForAnnotate } from "../state/studio-routes";
 import { StudioLeft } from "../components/studio-left";
 import { StudioRightPanel } from "../components/studio-right-panel";
 import { StudioTopBar } from "../components/studio-top-bar";
@@ -39,7 +38,7 @@ function AnnotatePageContent() {
           </AppShell.Main>
         </AppShell.MainColumn>
         <AppShell.Right widthClass="w-rail">
-          <StudioRightPanel instruction={instructionForAnnotate}>
+          <StudioRightPanel>
             <StudioAnnotateInstrumentStack />
           </StudioRightPanel>
         </AppShell.Right>

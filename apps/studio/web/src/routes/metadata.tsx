@@ -8,7 +8,6 @@ import { StudioMetadataActions } from "../components/studio-metadata-actions";
 import { StudioLeft } from "../components/studio-left";
 import { StudioRightPanel } from "../components/studio-right-panel";
 import { StudioTopBar } from "../components/studio-top-bar";
-import { instructionForStep } from "../state/studio-routes";
 
 export const Route = createFileRoute("/metadata")({
   component: MetadataPage,
@@ -33,7 +32,7 @@ function MetadataPage() {
           </AppShell.Main>
         </AppShell.MainColumn>
         <AppShell.Right widthClass="w-rail">
-          <StudioRightPanel instruction={() => instructionForStep("metadata")}>
+          <StudioRightPanel>
             <StudioMetadataActions />
           </StudioRightPanel>
         </AppShell.Right>
