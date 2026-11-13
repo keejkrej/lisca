@@ -58,11 +58,11 @@ Stage shells keep both 256px rails inline at 1024px and wider. Below 1024px—or
 
 - **Aligner:** left — Navigation, Contrast, Tool; right — Grid, Geometry, Selection, Action.
 - **Annotator:** left — Navigation, Contrast, segmentation Tool; right — Mode, Labels, Edit, optional Brush, Action.
-- **Studio:** left — workflow navigation; center — active task; right — Instruction plus basic/expert instrument stacks. Embedded Align/Annotate stages reuse the standalone component rules, names, and order.
+- **Studio:** left — workflow navigation; center — active task; right — basic/expert instrument stacks. Embedded Align/Annotate stages reuse the standalone component rules, names, and order.
 
-### Studio Instruction + Expert
+### Studio help and Expert
 
-Studio’s right rail always shows an Instruction section when the route provides copy, then either the default instrument stack or the expert stack. Expert mode is a workspace-level setting: render its compact checkmark toggle (Show/Edit family: persistent indicator, `aria-pressed`, brand fill when on) in the Studio top bar only on routes with an expert body. Place it immediately after Tasks in the left cluster; the right cluster is the server alert (only when unreachable) + theme. Never put Expert at the bottom of a scrolling rail.
+Studio’s top-bar information button opens the page's quick guide. The right rail contains controls rather than a duplicate Instruction section. Expert mode is a workspace-level setting: render its compact checkmark toggle (Show/Edit family: persistent indicator, `aria-pressed`, brand fill when on) in the Studio top bar only on routes with an expert body. Place it immediately after Tasks in the left cluster; the right cluster contains the server alert (only when unreachable), information button, settings, and theme. Never put Expert at the bottom of a scrolling rail.
 
 Studio Align basic rail shows Navigation (Channel and Frame), Contrast, Grid, Tool, Selection, and
 Action. Expert adds Position, Z, Geometry, and Drift. Studio Annotate basic rail shows Navigation
@@ -139,7 +139,7 @@ Frame styling lives inside `panel.tsx` (`panelFrameClass`); not exported from th
 2. **Section variant** — `PanelSection` or `DockSection`
 3. **Body layout** — inline `flex` / `grid`
 
-App-owned instrument composition lives in the stage rails (`AlignerLeft` / `AlignerRight`, `AnnotatorLeft` / `AnnotatorRight`, Studio nav + `StudioRightPanel` with Instruction and instrument stacks). Do not revive bottom `*-dock` wrappers as product chrome.
+App-owned instrument composition lives in the stage rails (`AlignerLeft` / `AlignerRight`, `AnnotatorLeft` / `AnnotatorRight`, Studio nav + `StudioRightPanel` with instrument stacks). Do not revive bottom `*-dock` wrappers as product chrome.
 
 ### DockSection fit
 
@@ -153,15 +153,17 @@ App-owned instrument composition lives in the stage rails (`AlignerLeft` / `Alig
 <DockSection title="Action">…</DockSection>
 ```
 
-Prefer Studio’s rail Instruction section for stage shells; use `fit="panel"` only when composing a classic horizontal dock.
+Use Studio’s information button for stage guidance; use `fit="panel"` only when composing a classic horizontal dock.
 
 ### PanelSection
 
 Rail and right-sidebar sections use `PanelSection`: full width (`w-full`), height hugs content. Inverse of `DockSection`, which stretches height in the dock row and uses variable width (`w-max`).
 
 ```tsx
-<PanelSection appearance="rail" title="Instruction">
-  <p className="text-sm leading-snug text-muted-foreground">{instruction}</p>
+<PanelSection appearance="rail" title="Action">
+  <Button class="w-full" onClick={save}>
+    Save
+  </Button>
 </PanelSection>
 ```
 

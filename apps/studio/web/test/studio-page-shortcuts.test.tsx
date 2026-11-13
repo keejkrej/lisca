@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor } from "@solidjs/testing-library";
+import { cleanup, fireEvent, render, screen, waitFor } from "@solidjs/testing-library";
 import {
   RouterProvider,
   createMemoryHistory,
@@ -143,6 +143,63 @@ describe("StudioNavRail page shortcuts", () => {
     setStudioAnnotateDirty(false);
     vi.restoreAllMocks();
     window.dispatchEvent(new KeyboardEvent("keyup", { key: "Meta", bubbles: true }));
+  });
+
+  it("animates from the previous step when navigation mounts a new sidebar", async () => {
+    const originalAnimate = HTMLElement.prototype.animate;
+    const animate = vi.fn().mockReturnValue({ cancel: vi.fn() });
+    HTMLElement.prototype.animate = animate;
+    try {
+      renderNav("/assay");
+      const firstRail = await screen.findByRole("navigation", { name: "Primary" });
+      animate.mockClear();
+      fireEvent.click(screen.getByRole("link", { name: "Align" }));
+      await waitFor(() => {
+        expect(screen.getByRole("link", { name: "Align" }).getAttribute("aria-current")).toBe(
+          "page",
+        );
+        expect(screen.getByRole("navigation", { name: "Primary" })).not.toBe(firstRail);
+      });
+      expect(animate).toHaveBeenLastCalledWith(
+        [{ transform: "translateY(0rem)" }, { transform: "translateY(-5rem)" }],
+        { duration: 300, easing: "ease-in-out" },
+      );
+    } finally {
+      if (originalAnimate) HTMLElement.prototype.animate = originalAnimate;
+      else Reflect.deleteProperty(HTMLElement.prototype, "animate");
+    }
+  });
+
+  it("moves the step labels through one fixed window when navigating in either direction", async () => {
+    const rootRoute = createRootRoute({ component: StudioNavRail });
+    const router = createRouter({
+      routeTree: rootRoute.addChildren(
+        pages.map((path) => createRoute({ getParentRoute: () => rootRoute, path })),
+      ),
+      history: createMemoryHistory({ initialEntries: ["/assay"] }),
+    });
+    render(() => <RouterProvider router={router} />);
+    const rail = await screen.findByRole("navigation", { name: "Primary" });
+    const window = rail.querySelector('[data-slot="studio-step-window"]')!;
+    const track = rail.querySelector<HTMLElement>('[data-slot="studio-step-track"]')!;
+    const windowStyle = window.getAttribute("class");
+    expect(screen.getAllByRole("link")).toHaveLength(5);
+    expect(track.style.transform).toBe("translateY(0rem)");
+    expect(screen.getByRole("link", { name: "Assay" }).getAttribute("aria-current")).toBe("page");
+
+    const selectStep = async (label: string, offset: string) => {
+      fireEvent.click(screen.getByRole("link", { name: label }));
+      await waitFor(() => {
+        expect(screen.getByRole("link", { name: label }).getAttribute("aria-current")).toBe("page");
+        expect(track.style.transform).toBe(`translateY(${offset})`);
+      });
+      expect(rail.querySelector('[data-slot="studio-step-window"]')).toBe(window);
+      expect(window.getAttribute("class")).toBe(windowStyle);
+      expect(rail.querySelector('[data-slot="studio-step-track"]')).toBe(track);
+      expect(rail.querySelectorAll('[aria-current="page"]')).toHaveLength(1);
+    };
+    await selectStep("Analysis", "-10rem");
+    await selectStep("Metadata", "-2.5rem");
   });
 
   it("switches pages with the platform chord and ignores the other modifier, repeats, and a cancelled annotate leave", async () => {

@@ -124,7 +124,7 @@ const MOCK_OPEN_RETRY_MS = 1_000;
 const MOCK_OPEN_COLD_ATTEMPTS = 180;
 const MOCK_OPEN_READY_ATTEMPTS = 5;
 
-/** Vite opens `/`, which redirects to Onboarding or Assay. Leave a later page alone on refresh. */
+/** Vite opens `/`, which redirects to Assay. Leave a later page alone on refresh. */
 function studioMockStartsOnAssay(): boolean {
   const hash = window.location.hash;
   return (

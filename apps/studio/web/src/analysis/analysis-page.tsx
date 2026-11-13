@@ -27,7 +27,6 @@ import {
   groupResultPlots,
   inferResultAssayKind,
   resultGridColumns,
-  resultSectionInstruction,
   resultSectionLabel,
   visibleResultPlotSections,
   withPlotSrc,
@@ -161,7 +160,6 @@ export default function AnalysisPage() {
       sectionPlotCount: sectionPlots().length,
     });
   });
-  const defaultInstruction = () => resultSectionInstruction(activeSection(), assayKind());
   const sectionToolActions = createMemo(() =>
     visibleSections().map((section) => ({
       id: section,
@@ -228,7 +226,6 @@ export default function AnalysisPage() {
                 />
               </>
             )}
-            instruction={defaultInstruction}
           >
             <LabelFreeReferences workspacePath={analysisPage.workspacePath} />
             <StudioAnalysisControls

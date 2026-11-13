@@ -17,9 +17,7 @@ afterEach(cleanup);
 
 describe("StudioRightPanel", () => {
   it("pins the rail measure to the leading margin and keeps short content vertically centered", () => {
-    const view = render(() => (
-      <StudioRightPanel expert={() => <div>Expert controls</div>} instruction="Instruction" />
-    ));
+    const view = render(() => <StudioRightPanel expert={() => <div>Expert controls</div>} />);
 
     const scroll = view.container.querySelector('[data-slot="rail-sidebar-scroll"]');
     const stack = view.container.querySelector('[data-slot="rail-section-stack"]');
@@ -35,7 +33,7 @@ describe("StudioRightPanel", () => {
     expect(stack?.classList.contains("ml-rail-inset")).toBe(true);
     expect(stack?.classList.contains("w-rail-content")).toBe(true);
     expect(stack?.classList.contains("gap-4")).toBe(true);
-    expect(screen.getAllByText("Instruction")).toHaveLength(2);
+    expect(screen.queryByText("Instruction")).toBeNull();
     expect(screen.getByText("Expert controls")).toBeTruthy();
   });
 
@@ -47,6 +45,7 @@ describe("StudioRightPanel", () => {
     ));
 
     expect(screen.getByText("Default controls")).toBeTruthy();
+    expect(screen.queryByText("Instruction")).toBeNull();
     expect(screen.queryByRole("button", { name: "Expert mode" })).toBeNull();
   });
 

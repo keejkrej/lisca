@@ -59,9 +59,9 @@ export type KillingDeathReporterAssayType = typeof ASSAY_TYPE.KILLING_DEATH_REPO
 /** Assay types selectable in the wizard today. */
 export const ENABLED_STUDIO_ASSAY_IDS = [
   ASSAY_TYPE.TRANSFECTION,
+  ASSAY_TYPE.LNP_BINDING,
   ASSAY_TYPE.KILLING_DEATH_REPORTER,
   ASSAY_TYPE.KILLING_ENGAGEMENT,
-  ASSAY_TYPE.LNP_BINDING,
 ] as const;
 
 export type EnabledStudioAssayId = (typeof ENABLED_STUDIO_ASSAY_IDS)[number];

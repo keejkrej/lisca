@@ -102,7 +102,7 @@ function ShellNavbarRoot(props: ShellNavbarProps) {
           {(text) => (
             <span
               aria-hidden="true"
-              class="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-xs font-semibold uppercase tracking-[0.2em] text-foreground"
+              class="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-xs font-semibold tracking-[0.2em] text-foreground"
             >
               {text()}
             </span>
@@ -135,7 +135,7 @@ function ShellNavbarAnnotator(props: ShellNavbarAnnotatorProps) {
       helpTopic="annotator"
       inferenceSlot={props.inferenceSlot}
       showSourceButton={false}
-      title="Annotator"
+      title="LiSCA"
       onAgentSessionsChange={props.onAgentSessionsChange}
       onPickWorkspace={props.onPickWorkspace}
     />
@@ -157,7 +157,7 @@ function ShellNavbarAligner(props: ShellNavbarAlignerProps) {
       endLeading={props.endLeading}
       helpTopic="aligner"
       showToolsMenu={props.endLeading !== undefined}
-      title="Aligner"
+      title="LiSCA"
       onAgentSessionsChange={props.onAgentSessionsChange}
       onPickSource={props.onPickSource}
       onPickWorkspace={props.onPickWorkspace}

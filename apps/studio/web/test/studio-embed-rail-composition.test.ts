@@ -141,14 +141,12 @@ describe("Studio Annotate instrument stack composition", () => {
 });
 
 describe("Studio right-rail flattened section contract", () => {
-  it("documents Align order Instruction → Nav → Contrast → Geometry → Drift → Grid → Tool → Selection → Action", () => {
+  it("documents Align order Nav → Contrast → Geometry → Drift → Grid → Tool → Selection → Action", () => {
     const rightPanel = readSource("../src/components/studio-right-panel.tsx");
-    const instruction = readSource("../src/components/studio-instruction-section.tsx");
     const stack = readSource("../src/components/studio-align-instrument-stack.tsx");
     const nav = readSource("../src/components/studio-align-nav.tsx");
 
-    expect(rightPanel).toMatch(/StudioInstructionSection/);
-    expect(instruction).toMatch(/title="Instruction"/);
+    expect(rightPanel).not.toMatch(/StudioInstructionSection/);
     expect(nav).toMatch(/FrameNavigation/);
     expect(nav).toMatch(/ContrastControl/);
     expect(stack).toMatch(/AlignToolSection/);
@@ -161,7 +159,7 @@ describe("Studio right-rail flattened section contract", () => {
     );
   });
 
-  it("documents Annotate order Instruction → Nav → Contrast → Mode → Tool → Labels → Edit → Brush → Action", () => {
+  it("documents Annotate order Nav → Contrast → Mode → Tool → Labels → Edit → Brush → Action", () => {
     const stack = readSource("../src/components/studio-annotate-instrument-stack.tsx");
     const controlRail = readSource(
       "../../../../packages/instrument/src/annotate/annotation-control-rail.tsx",
