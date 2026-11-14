@@ -40,3 +40,4 @@ Why a shipped choice looks the way it does. Agents write these during the change
 | [0027](0027-thin-sidecar-assay-callers.md)                      | accepted   | Thin assay callers into lisca-transfection, lisca-killing, and lisca-binding    |
 | [0028](0028-research-area-onboarding-and-assay-discovery.md)    | superseded | Research-area onboarding, two-level assay discovery, and local feedback         |
 | [0029](0029-optional-research-guide-without-personalization.md) | accepted   | The research guide is optional browsing without personalization                 |
+| [0030](0030-webmcp-contract-adapter.md)                         | accepted   | WebMCP shares the product contract and transport                                |

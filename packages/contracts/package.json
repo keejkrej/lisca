@@ -21,7 +21,9 @@
       "types": "./src/assay.ts",
       "import": "./src/assay.ts"
     },
-    "./openapi.json": "./openapi.json"
+    "./openapi.json": "./openapi.json",
+    "./agent-tools": "./src/agent-tools.ts",
+    "./agent-routing": "./src/agent-routing.ts"
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",

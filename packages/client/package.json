@@ -186,7 +186,8 @@
     "./studio/wizard-memory": {
       "types": "./src/studio/wizard-memory.ts",
       "import": "./src/studio/wizard-memory.ts"
-    }
+    },
+    "./webmcp": "./src/webmcp.ts"
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",

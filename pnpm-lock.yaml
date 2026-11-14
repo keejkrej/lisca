@@ -591,6 +591,9 @@ importers:
 
   packages/mcp:
     dependencies:
+      '@lisca/contracts':
+        specifier: workspace:*
+        version: link:../contracts
       '@modelcontextprotocol/sdk':
         specifier: ^1.32.1
         version: 1.32.1(zod@4.4.3)
