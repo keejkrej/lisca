@@ -179,3 +179,26 @@ pnpm --filter @lisca/mcp test
   CLI wrappers (including a real `pnpm run fixture:workspace` run), server
   lifecycle guards, and both transports (stdio over an in-memory link, remote
   mode over real HTTP).
+
+## Browser agents (WebMCP)
+
+Hosted Aligner, Annotator, and Studio automatically register their product's API
+operations when the browser supports `document.modelContext.registerTool`.
+No Node MCP process or extra server port is needed. Use a browser agent with
+WebMCP support while the app is open; browsers without that API work normally.
+The integration follows the [WebMCP draft](https://webmachinelearning.github.io/webmcp/).
+
+Tools use the same operation names and input schemas as contract MCP tools, with
+no `product` selector: calls always target the open app's backend. Paths refer
+to the server's filesystem, not the browser user's computer. Results are JSON,
+including base64 pixels/masks for image operations. Poll the existing task and
+progress tools for long operations; aborting a browser request does not cancel
+a backend task (use its cancellation operation).
+
+Desktop webviews use the same adapter if their browser engine supports WebMCP,
+routing through IPC and desktop workspace ownership controls. The existing
+Settings → Agents MCP endpoint remains available to external desktop clients.
+Hosted servers retain their existing HTTP access controls; desktop's agent
+ownership banner and takeover lifecycle are not provided by the hosted server.
+Tools change backend state and saved files; reload a view to inspect changes
+when it does not subscribe to them. Unsaved canvas edits remain in the UI.

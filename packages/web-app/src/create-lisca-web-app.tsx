@@ -1,3 +1,4 @@
+import { installWebMcp } from "@lisca/client/webmcp";
 import { installClientLog } from "@lisca/client/client-log";
 import { ShellServerProvider, ShellThemeProvider, ShellWorkspaceProvider } from "@lisca/ui/shell";
 import { type JSX, type Component } from "solid-js";
@@ -65,6 +66,9 @@ export function createLiscaWebApp(config: LiscaWebAppConfig): void {
 
   installOverlayScrollbarState();
   installClientLog(appId);
+
+  const disposeWebMcp = installWebMcp(appId);
+  import.meta.hot?.dispose(disposeWebMcp);
 
   render(
     () => (
