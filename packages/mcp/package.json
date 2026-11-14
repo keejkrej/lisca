@@ -18,8 +18,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.32.1",
-    "@lisca/contracts": "workspace:*"
+    "@lisca/contracts": "workspace:*",
+    "@modelcontextprotocol/sdk": "^1.32.1"
   },
   "devDependencies": {
     "@lisca/fixtures": "workspace:*",

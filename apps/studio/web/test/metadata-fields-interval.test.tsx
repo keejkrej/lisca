@@ -53,6 +53,7 @@ describe("MetadataFields misc", () => {
     expect(screen.queryByRole("radio", { name: /Smart segmentation/ })).toBeNull();
     expect(screen.queryByText("Use the full ROI (skip mask)")).toBeNull();
 
+    fireEvent.click(screen.getByRole("button", { name: "Cell killing" }));
     fireEvent.click(screen.getByRole("button", { name: /Killing \(death reporter\)/ }));
 
     await waitFor(() => {
@@ -73,6 +74,7 @@ describe("MetadataFields interval field across assay switches", () => {
 
   it("replaces the transfection default with 5 minutes when selecting killing", async () => {
     const { container } = renderWizard();
+    fireEvent.click(screen.getByRole("button", { name: "Cell killing" }));
     fireEvent.click(screen.getByRole("button", { name: /Killing \(death reporter\)/ }));
 
     await waitFor(() => {

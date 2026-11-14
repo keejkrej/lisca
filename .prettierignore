@@ -4,3 +4,6 @@ packages/contracts/contract.schema.json
 
 # Science-reviewed user manual; keep page text as written.
 docs/manual/
+
+# Agent skill sources are maintained independently of product formatting.
+.agents/skills/
