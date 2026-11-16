@@ -171,10 +171,25 @@ afterEach(() => {
 
 Object.defineProperty(window, "scrollTo", { value: vi.fn(), writable: true });
 
+// Complete pointer activation, including the release that commits outside dismissal.
+// JSDOM lacks PointerEvent, so MouseEvent supplies its button and coordinates.
+function click(element: Element): void {
+  fireEvent(element, new MouseEvent("pointerdown", { bubbles: true, button: 0 }));
+  fireEvent(element, new MouseEvent("pointerup", { bubbles: true, button: 0 }));
+  fireEvent.click(element);
+}
+
+function isInert(element: HTMLElement): boolean {
+  for (let current: HTMLElement | null = element; current; current = current.parentElement) {
+    if (current.inert) return true;
+  }
+  return false;
+}
+
 describe("Task Center dialog", () => {
   it("uses shared task-center copy unless the caller supplies page copy", async () => {
     const generic = renderTaskCenter();
-    fireEvent.click(generic.getByRole("button", { name: "Tasks, 0 active" }));
+    click(generic.getByRole("button", { name: "Tasks, 0 active" }));
     expect(await screen.findByRole("dialog", { name: "Task Center" })).toBeTruthy();
     expect(
       screen.getByText(
@@ -193,7 +208,7 @@ describe("Task Center dialog", () => {
       emptyTitle: "No crop tasks yet",
       emptyMessage: "Long-running crop computations will appear here.",
     });
-    fireEvent.click(scoped.getByRole("button", { name: "Cropping, 0 active" }));
+    click(scoped.getByRole("button", { name: "Cropping, 0 active" }));
     expect(await screen.findByRole("dialog", { name: "Cropping" })).toBeTruthy();
     expect(screen.getByText("Background crop computations")).toBeTruthy();
     expect(screen.getByText("No crop tasks yet")).toBeTruthy();
@@ -231,27 +246,28 @@ describe("Task Center dialog", () => {
     fireEvent.input(currentEdit, { target: { value: "position 7 annotation" } });
 
     trigger.focus();
-    fireEvent.click(trigger);
+    click(trigger);
     await screen.findByRole("dialog", { name: "Task Center" });
     expect(document.activeElement).toBe(screen.getByRole("button", { name: "Close Task Center" }));
-    expect(underlyingWorkflow.closest("[aria-hidden=true]")).not.toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "Close Task Center" }));
-    await waitFor(() => expect(trigger.getAttribute("aria-expanded")).toBe("false"));
+    await waitFor(() => expect(isInert(underlyingWorkflow)).toBe(true));
+    click(screen.getByRole("button", { name: "Close Task Center" }));
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Task Center" })).toBeNull());
     await waitFor(() => expect(document.activeElement).toBe(trigger));
-    expect(underlyingWorkflow.closest("[aria-hidden=true]")).toBeNull();
+    await waitFor(() => expect(isInert(underlyingWorkflow)).toBe(false));
     expect((currentEdit as HTMLInputElement).value).toBe("position 7 annotation");
 
-    fireEvent.click(trigger);
+    click(trigger);
     await screen.findByRole("dialog", { name: "Task Center" });
     fireEvent.keyDown(document, { key: "Escape" });
-    await waitFor(() => expect(trigger.getAttribute("aria-expanded")).toBe("false"));
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Task Center" })).toBeNull());
     await waitFor(() => expect(document.activeElement).toBe(trigger));
     expect((currentEdit as HTMLInputElement).value).toBe("position 7 annotation");
 
-    fireEvent.click(trigger);
+    click(trigger);
     await screen.findByRole("dialog", { name: "Task Center" });
-    fireEvent.pointerDown(screen.getByTestId("task-center-overlay"));
-    await waitFor(() => expect(trigger.getAttribute("aria-expanded")).toBe("false"));
+    const backdrop = screen.getByTestId("task-center-overlay");
+    click(backdrop);
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Task Center" })).toBeNull());
     await waitFor(() => expect(document.activeElement).toBe(trigger));
     expect((currentEdit as HTMLInputElement).value).toBe("position 7 annotation");
     expect(location.href).toBe(originalUrl);
@@ -266,8 +282,8 @@ describe("Task Center dialog", () => {
     const view = renderTaskCenter({ getTask });
     view.snapshot([summary("running", 1)]);
 
-    fireEvent.click(view.getByRole("button", { name: "Tasks, 1 active" }));
-    fireEvent.click(screen.getByRole("button", { name: /Expand Crop ROI/ }));
+    click(view.getByRole("button", { name: "Tasks, 1 active" }));
+    click(screen.getByRole("button", { name: /Expand Crop ROI/ }));
     view.snapshot([summary("completed", 2)]);
     second.resolve(detail("completed", 2));
     await screen.findByText("Pos4");
@@ -275,8 +291,8 @@ describe("Task Center dialog", () => {
     await Promise.resolve();
     expect(screen.getByRole("button", { name: /Collapse Crop ROI, Completed/ })).toBeTruthy();
 
-    fireEvent.click(screen.getByRole("button", { name: /Collapse Crop ROI/ }));
-    fireEvent.click(screen.getByRole("button", { name: /Expand Crop ROI/ }));
+    click(screen.getByRole("button", { name: /Collapse Crop ROI/ }));
+    click(screen.getByRole("button", { name: /Expand Crop ROI/ }));
     third.resolve(detail("failed", 3));
     expect(
       await screen.findByRole("button", {
@@ -329,9 +345,9 @@ describe("Task Center dialog", () => {
     };
     const view = renderTaskCenter({ getTask: async () => killing });
     view.snapshot([killing.task]);
-    fireEvent.click(view.getByRole("button", { name: "Tasks, 1 active" }));
+    click(view.getByRole("button", { name: "Tasks, 1 active" }));
     expect(screen.getByText("1/3 Steps")).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: /Expand Analysis\/killing/ }));
+    click(screen.getByRole("button", { name: /Expand Analysis\/killing/ }));
     expect(await screen.findByText("Prepare")).toBeTruthy();
     expect(screen.getByText("Pos26")).toBeTruthy();
     expect(screen.getByText("Merge Predictions")).toBeTruthy();
@@ -359,12 +375,12 @@ describe("Task Center dialog", () => {
     const view = renderTaskCenter({ getTask });
     view.snapshot([summary("running", 1)]);
 
-    fireEvent.click(view.getByRole("button", { name: "Tasks, 1 active" }));
+    click(view.getByRole("button", { name: "Tasks, 1 active" }));
     expect(screen.queryByRole("progressbar", { name: "Pos4 roiframe progress" })).toBeNull();
     expect(screen.getByRole("progressbar", { name: /steps completed/ })).toBeTruthy();
     expect(screen.getByRole("button", { name: /Expand Crop ROI, Running/ })).toBeTruthy();
 
-    fireEvent.click(screen.getByRole("button", { name: /Expand Crop ROI/ }));
+    click(screen.getByRole("button", { name: /Expand Crop ROI/ }));
     first.resolve(detail("running", 1, [attempt("running")]));
     await screen.findByRole("progressbar", { name: "Pos4 roiframe progress" });
     expect(
@@ -394,8 +410,8 @@ describe("Task Center dialog", () => {
     });
     view.snapshot([summary("failed", 2)]);
 
-    fireEvent.click(view.getByRole("button", { name: "Tasks, 1 need attention" }));
-    fireEvent.click(screen.getByRole("button", { name: "Dismiss" }));
+    click(view.getByRole("button", { name: "Tasks, 1 need attention" }));
+    click(screen.getByRole("button", { name: "Dismiss" }));
     await waitFor(() =>
       expect(dismissTask).toHaveBeenCalledWith("task-1", expect.any(AbortSignal)),
     );

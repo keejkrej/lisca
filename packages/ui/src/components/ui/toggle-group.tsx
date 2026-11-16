@@ -1,9 +1,4 @@
-import type { PolymorphicProps } from "@kobalte/core/polymorphic";
-import {
-  type ToggleGroupItemProps,
-  ToggleGroup as ToggleGroupPrimitive,
-  type ToggleGroupRootProps,
-} from "@kobalte/core/toggle-group";
+import { toggleGroup } from "@ui-sdk/core/toggle";
 import type { VariantProps } from "class-variance-authority";
 import {
   type ComponentProps,
@@ -12,117 +7,107 @@ import {
   mergeProps,
   splitProps,
   useContext,
-  type ValidComponent,
 } from "solid-js";
 import { cn } from "../../lib/utils";
-import { toggleVariants } from "./toggle";
+import { usePart, usePrimitive } from "../../lib/ui-sdk";
+import { Toggle, ToggleBehaviorContext, toggleVariants, type ToggleProps } from "./toggle";
 
-type ToggleGroupContextValue = VariantProps<typeof toggleVariants> & {
-  spacing?: number;
-  orientation?: "horizontal" | "vertical";
-};
+type ToggleGroupStyle = VariantProps<typeof toggleVariants> & { spacing?: number };
+const ToggleGroupStyleContext = createContext<ToggleGroupStyle>({});
 
-const ToggleGroupContext = createContext<ToggleGroupContextValue>({
-  size: "default",
-  variant: "default",
-  spacing: 0,
-  orientation: "horizontal",
-});
-
-type ToggleGroupProps<T extends ValidComponent = "div"> = PolymorphicProps<
-  T,
-  ToggleGroupRootProps<T>
-> &
-  Pick<ComponentProps<T>, "class" | "children"> &
-  VariantProps<typeof toggleVariants> & {
-    spacing?: number;
+type ToggleGroupProps = Omit<ComponentProps<"div">, "onChange"> &
+  ToggleGroupStyle & {
+    value?: string | string[];
+    defaultValue?: string | string[];
+    onChange?: (value: string | string[]) => void;
+    multiple?: boolean;
+    disabled?: boolean;
     orientation?: "horizontal" | "vertical";
+    loop?: boolean;
   };
 
-const ToggleGroup = <T extends ValidComponent = "div">(rawProps: ToggleGroupProps<T>) => {
-  const props = mergeProps(
-    {
-      spacing: 0,
-      orientation: "horizontal",
-    } as const,
-    rawProps,
-  );
-  const [local, others] = splitProps(props as ToggleGroupProps, [
-    "class",
-    "children",
+const values = (value: string | string[] | undefined) =>
+  value === undefined ? undefined : Array.isArray(value) ? value : value ? [value] : [];
+
+function ToggleGroup(props: ToggleGroupProps) {
+  const [local, rest] = splitProps(props, [
+    "value",
+    "defaultValue",
+    "onChange",
+    "multiple",
+    "disabled",
+    "orientation",
+    "loop",
     "variant",
     "size",
     "spacing",
-    "orientation",
-  ]);
-
-  return (
-    <ToggleGroupPrimitive
-      data-slot="toggle-group"
-      data-variant={local.variant}
-      data-size={local.size}
-      data-spacing={local.spacing}
-      data-orientation={local.orientation}
-      style={{ "--gap": local.spacing } as JSX.CSSProperties}
-      class={cn(
-        "group/toggle-group z-toggle-group flex w-fit flex-row items-center gap-[--spacing(var(--gap))] data-[orientation=vertical]:flex-col data-[orientation=vertical]:items-stretch",
-        local.class,
-      )}
-      {...others}
-    >
-      <ToggleGroupContext.Provider
-        value={{
-          variant: local.variant,
-          size: local.size,
-          spacing: local.spacing,
-          orientation: local.orientation,
-        }}
-      >
-        {local.children}
-      </ToggleGroupContext.Provider>
-    </ToggleGroupPrimitive>
-  );
-};
-
-type ToggleGroupItemComponentProps<T extends ValidComponent = "button"> = PolymorphicProps<
-  T,
-  ToggleGroupItemProps<T>
-> &
-  VariantProps<typeof toggleVariants> &
-  Pick<ComponentProps<T>, "class" | "children">;
-
-const ToggleGroupItem = <T extends ValidComponent = "button">(
-  rawProps: ToggleGroupItemComponentProps<T>,
-) => {
-  const props = mergeProps({ variant: "default" as const, size: "default" as const }, rawProps);
-  const [local, others] = splitProps(props as ToggleGroupItemComponentProps, [
     "class",
     "children",
-    "variant",
-    "size",
   ]);
-  const context = useContext(ToggleGroupContext);
-
+  const handle = usePrimitive(toggleGroup, () => ({
+    value: values(local.value),
+    defaultValue: values(local.defaultValue),
+    multiple: local.multiple,
+    disabled: local.disabled,
+    orientation: local.orientation,
+    loop: local.loop,
+    onValueChange: (next) => local.onChange?.(local.multiple ? next : (next[0] ?? "")),
+  }));
   return (
-    <ToggleGroupPrimitive.Item
-      data-slot="toggle-group-item"
-      data-variant={context.variant || local.variant}
-      data-size={context.size || local.size}
-      data-spacing={context.spacing}
+    <ToggleBehaviorContext.Provider value={handle.api}>
+      <ToggleGroupStyleContext.Provider value={local}>
+        {usePart(
+          handle,
+          "group",
+          undefined,
+          mergeProps(rest, {
+            get "data-variant"() {
+              return local.variant;
+            },
+            get "data-size"() {
+              return local.size;
+            },
+            get "data-spacing"() {
+              return local.spacing ?? 0;
+            },
+            get style() {
+              return { "--gap": local.spacing ?? 0 } as JSX.CSSProperties;
+            },
+            get class() {
+              return cn(
+                "group/toggle-group z-toggle-group flex w-fit flex-row items-center gap-[--spacing(var(--gap))] data-[orientation=vertical]:flex-col data-[orientation=vertical]:items-stretch",
+                local.class,
+              );
+            },
+            get children() {
+              return local.children;
+            },
+          }),
+          "div",
+        )}
+      </ToggleGroupStyleContext.Provider>
+    </ToggleBehaviorContext.Provider>
+  );
+}
+
+function ToggleGroupItem(props: ToggleProps & { value: string }) {
+  const context = useContext(ToggleGroupStyleContext);
+  const [local, rest] = splitProps(props, ["class", "variant", "size"]);
+  return (
+    <Toggle
+      {...rest}
+      variant={context.variant ?? local.variant}
+      size={context.size ?? local.size}
+      data-lisca-slot="toggle-group-item"
+      data-variant={context.variant ?? local.variant}
+      data-size={context.size ?? local.size}
+      data-spacing={context.spacing ?? 0}
       class={cn(
-        toggleVariants({
-          variant: context.variant || local.variant,
-          size: context.size || local.size,
-          class:
-            "z-toggle-group-item shrink-0 focus:z-10 focus-visible:z-10 group-data-[orientation=vertical]/toggle-group:data-[spacing=0]:data-[variant=outline]:border-t-0 group-data-[orientation=horizontal]/toggle-group:data-[spacing=0]:data-[variant=outline]:border-l-0 group-data-[orientation=vertical]/toggle-group:data-[spacing=0]:data-[variant=outline]:first:border-t group-data-[orientation=horizontal]/toggle-group:data-[spacing=0]:data-[variant=outline]:first:border-l",
-        }),
+        "z-toggle-group-item shrink-0 focus:z-10 focus-visible:z-10 group-data-[orientation=vertical]/toggle-group:data-[spacing=0]:data-[variant=outline]:border-t-0 group-data-[orientation=horizontal]/toggle-group:data-[spacing=0]:data-[variant=outline]:border-l-0 group-data-[orientation=vertical]/toggle-group:data-[spacing=0]:data-[variant=outline]:first:border-t group-data-[orientation=horizontal]/toggle-group:data-[spacing=0]:data-[variant=outline]:first:border-l",
         local.class,
       )}
-      {...others}
-    >
-      {local.children}
-    </ToggleGroupPrimitive.Item>
+    />
   );
-};
+}
 
 export { ToggleGroup, ToggleGroupItem, type ToggleGroupProps };

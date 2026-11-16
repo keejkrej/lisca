@@ -203,6 +203,12 @@ export function createLiscaViteConfig(options: {
     resolve: {
       dedupe: ["solid-js"],
     },
+    // UI SDK's primitive and renderer entrypoints must share one core instance.
+    optimizeDeps: { exclude: ["@ui-sdk/core"] },
+    build: {
+      // Shared UI SDK chunks can otherwise run app modules before Solid initializes.
+      rolldownOptions: { output: { strictExecutionOrder: true } },
+    },
     plugins: [
       ...extraPlugins,
       liscaSolidPlugin(),

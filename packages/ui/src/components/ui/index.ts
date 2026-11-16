@@ -1,86 +1,27 @@
 export { cn } from "../../lib/utils";
-export { Button, type ButtonProps } from "./button";
-export { Input, type InputProps } from "./input";
-export { NativeSelect, NativeSelectOption, NativeSelectOptGroup } from "./native-select";
-export {
-  Field,
-  FieldContent,
-  FieldDescription,
-  FieldError,
-  FieldGroup,
-  FieldLabel,
-  FieldLegend,
-  FieldSeparator,
-  FieldSet,
-  FieldTitle,
-} from "./field";
-export { Label } from "./label";
-export { Separator, type SeparatorProps } from "./separator";
-export { Spinner } from "./spinner";
-export { Switch } from "./switch";
-export { Toggle, type ToggleProps } from "./toggle";
-export { ToggleGroup, ToggleGroupItem, type ToggleGroupProps } from "./toggle-group";
-export {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectSeparator,
-  SelectTrigger,
-  SelectValue,
-} from "./select";
-export { Slider, SliderValue } from "./slider";
 
-// Official Zaidan Lyra component catalog. Keep these registry components
-// available through the package's public components entrypoint so products do
-// not need to deep-import generated files.
-export * from "./accordion";
+// LiSCA-owned controls: native semantics and UI SDK behaviors.
 export * from "./alert";
-export * from "./alert-dialog";
-export * from "./aspect-ratio";
-export * from "./attachment";
-export * from "./avatar";
 export * from "./badge";
-export * from "./breadcrumb";
-export * from "./bubble";
-export * from "./button-group";
-export * from "./calendar";
+export * from "./button";
 export * from "./card";
-export * from "./carousel";
-export * from "./chart";
-export * from "./checkbox";
-export * from "./collapsible";
-export * from "./combobox";
-export * from "./command";
-export * from "./context-menu";
+export * from "./coming-soon-tooltip";
 export * from "./dialog";
-export * from "./drawer";
 export * from "./dropdown-menu";
-export * from "./empty";
-export * from "./hover-card";
-export * from "./icon-stack";
+export * from "./field";
+export * from "./input";
 export * from "./input-group";
-export * from "./input-otp";
-export * from "./item";
-export * from "./kbd";
-export * from "./marker";
-export * from "./menubar";
-export * from "./message";
-export * from "./native-select";
-export * from "./navigation-menu";
-export * from "./pagination";
+export * from "./label";
 export * from "./popover";
-export * from "./progress";
-export * from "./radio-group";
-export * from "./resizable";
 export * from "./scroll-area";
-export * from "./sheet";
+export * from "./select";
+export * from "./separator";
 export * from "./sidebar";
 export * from "./skeleton";
+export * from "./slider";
+export * from "./spinner";
 export * from "./table";
-export * from "./tabs";
 export * from "./textarea";
-export * from "./toast";
-export * from "./coming-soon-tooltip";
+export * from "./toggle";
+export * from "./toggle-group";
 export * from "./tooltip";

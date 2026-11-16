@@ -2,7 +2,7 @@
 
 LiSCA keeps one visual language and three product apps. This is the ownership map for that split. The visual rules are in [language.md](./language.md) and [`DESIGN.md`](../../DESIGN.md).
 
-The required foundation is shadcn, through the Solid port [Zaidan](https://zaidan.carere.dev/docs) (Kobalte and Corvu). Do not add a second component kit. There is no React Native, Vue, or Svelte app in this repo, so there is no `ui-native`, `ui-vue`, or `ui-svelte` package. There is no runtime generative UI catalog.
+LiSCA owns its components and uses [UI SDK](https://github.com/vercel-labs/ui) for interaction behavior. Use native HTML for simple presentation and `@ui-sdk/core` primitives for focus, selection, popups, and keyboard interaction. Components are maintained directly in this repository; there is no component registry to refresh. See [ADR-0031](../adr/0031-ui-sdk-owned-controls.md). There is no React Native, Vue, or Svelte app in this repo, so there is no `ui-native`, `ui-vue`, or `ui-svelte` package. There is no runtime generative UI catalog.
 
 ## Layers
 
@@ -10,12 +10,12 @@ The required foundation is shadcn, through the Solid port [Zaidan](https://zaida
 | ---------- | ------------------------------------ | ---------------------------------------------------------------------------- | -------------------------------- |
 | Tokens     | `@lisca/design-tokens`               | Reference colors, semantic roles, app brands, radius, type, stage geometry   | Components, product workflows    |
 | Behavior   | `@lisca/ui-headless`, `@lisca/utils` | Solid interaction state, and framework-free models                           | DOM, brand styling               |
-| Primitives | `@lisca/ui` `src/components/ui`      | Vendored Zaidan controls                                                     | Fetching, routing, assay rules   |
+| Primitives | `@lisca/ui` `src/components/ui`      | LiSCA-owned controls and UI SDK behaviors                                    | Fetching, routing, assay rules   |
 | Patterns   | `@lisca/ui/patterns`                 | Recurring presentation: rails, sections, dialogs, path fields, state toggles | Workspace data                   |
 | Shell      | `@lisca/ui/shell`                    | `AppShell`, stage frame, navbar, theme, server and workspace providers       | Align or annotate workflows      |
 | Feature UI | `@lisca/instrument`                  | Align, annotate, contrast, navigation, host pickers, task center             | A second button or spacing scale |
 
-Zaidan still installs primitives at `packages/ui/src/components/ui` because `packages/ui/components.json` points the registry there. That directory is the primitives layer. Refresh it through the registry. Do not edit generated control implementations ad hoc.
+The primitives live in `packages/ui/src/components/ui`. Maintain them directly and test the behavior their public interfaces promise. `src/lib/ui-sdk.tsx` connects UI SDK core to Solid 1. The published `@ui-sdk/solid` adapter requires Solid 2, so it is not used. Keep core pinned: the binding uses its renderer interface and must be tested against any upgrade.
 
 ## Public imports
 
@@ -49,7 +49,7 @@ Stage geometry utilities are `w-rail`, `h-topbar`, `w-rail-content`, and `ml-rai
 1. Reuse a primitive, pattern, or instrument component.
 2. Compose approved controls in the app.
 3. Add a shared pattern only when the same presentation rule already appears in more than one product surface.
-4. Extend a primitive only through the Zaidan registry, with a short note in `docs/design/language.md` when the variant is new.
+4. Extend the owned primitive or compose UI SDK behaviors, with a short note in `docs/design/language.md` when the variant is new. Verify keyboard, focus, dismissal, and visual states in the browser.
 
 ## Checks
 

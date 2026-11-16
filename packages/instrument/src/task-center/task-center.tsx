@@ -1,5 +1,13 @@
 import type { TaskDetail, TaskSummary, StepDetail } from "@lisca/contracts";
-import * as Dialog from "@kobalte/core/dialog";
+import {
+  Dialog,
+  DialogTrigger,
+  DialogOverlay,
+  DialogContent,
+  DialogTitle,
+  DialogDescription,
+  DialogClose,
+} from "@lisca/ui/dialog";
 import {
   canCancelTask,
   canDismissTask,
@@ -233,7 +241,6 @@ export function TaskCenter(props: TaskCenterProps) {
   const taskRequests = new Map<string, { generation: number; controller: AbortController }>();
   let nextRequestGeneration = 0;
   let closeButton: HTMLButtonElement | undefined;
-  let triggerButton: HTMLButtonElement | undefined;
 
   const beginTaskRequest = (taskId: string) => {
     taskRequests.get(taskId)?.controller.abort();
@@ -251,7 +258,6 @@ export function TaskCenter(props: TaskCenterProps) {
   const setDialogOpen = (nextOpen: boolean) => {
     if (props.open === undefined) setUncontrolledOpen(nextOpen);
     props.onOpenChange?.(nextOpen);
-    if (!nextOpen) queueMicrotask(() => triggerButton?.focus());
   };
 
   const refreshTaskDetail = async (taskId: string, showLoading: boolean) => {
@@ -362,21 +368,21 @@ export function TaskCenter(props: TaskCenterProps) {
   const title = () => props.title ?? "Task Center";
 
   return (
-    <Dialog.Root modal open={open()} onOpenChange={setDialogOpen}>
-      <Dialog.Trigger
-        as={Button}
-        ref={(element) => (triggerButton = element)}
+    <Dialog modal open={open()} onOpenChange={setDialogOpen}>
+      <DialogTrigger
         aria-keyshortcuts={props.shortcutKeys}
         aria-label={
           indicator().tone === "attention"
             ? `${label()}, ${indicator().attentionCount} need attention`
             : `${label()}, ${indicator().activeCount} active`
         }
-        class={cn("relative", statusLink() && "h-7 gap-2 px-2.5 text-xs text-foreground")}
+        class={cn(
+          buttonVariants({ size: "sm", variant: statusLink() ? "outline" : "ghost" }),
+          "relative",
+          statusLink() && "h-7 gap-2 px-2.5 text-xs text-foreground",
+        )}
         data-task-center-appearance={props.appearance ?? "button"}
-        size="sm"
         type="button"
-        variant={statusLink() ? "outline" : "ghost"}
       >
         <Show when={!statusLink()}>
           <IconQueueRegular class="size-4" />
@@ -403,245 +409,231 @@ export function TaskCenter(props: TaskCenterProps) {
                 : indicator().activeCount}
           </span>
         </Show>
-      </Dialog.Trigger>
+      </DialogTrigger>
 
-      <Dialog.Portal>
-        <Dialog.Overlay
-          class={cn("fixed inset-0 z-50", statusLink() ? "bg-foreground/40" : "bg-black/50")}
-          data-testid="task-center-overlay"
-          onPointerDown={(event) => {
-            if (event.target === event.currentTarget) setDialogOpen(false);
-          }}
-        />
-        <Dialog.Content
-          class={cn(
-            "fixed left-1/2 top-1/2 z-50 flex max-h-[calc(100%-2.5rem)] w-[calc(100%-3rem)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden border border-border bg-background text-foreground sm:max-h-[calc(100%-4rem)]",
-            statusLink()
-              ? "max-w-[32.5rem] rounded-none shadow-none"
-              : "max-w-2xl rounded-none shadow-2xl",
-          )}
-          onOpenAutoFocus={(event) => {
-            event.preventDefault();
-            closeButton?.focus();
-          }}
-        >
-          <div class="flex items-start justify-between gap-4 border-b border-border px-5 py-4">
-            <div class="space-y-1">
-              <Dialog.Title class="font-semibold text-foreground text-lg">{title()}</Dialog.Title>
-              <Dialog.Description class="text-muted-foreground text-sm">
-                {props.description ??
-                  "Background computations and recent results. Click a task to expand its steps."}
-              </Dialog.Description>
-            </div>
-            <Dialog.CloseButton
-              as={Button}
-              ref={(element) => (closeButton = element)}
-              aria-label={`Close ${title()}`}
-              class=""
-              size="icon-sm"
-              type="button"
-              variant="ghost"
-            >
-              <IconXRegular />
-            </Dialog.CloseButton>
+      <DialogOverlay
+        class={cn("fixed inset-0 z-50", statusLink() ? "bg-foreground/40" : "bg-black/50")}
+        data-testid="task-center-overlay"
+      />
+      <DialogContent
+        class={cn(
+          "fixed left-1/2 top-1/2 z-50 flex max-h-[calc(100%-2.5rem)] w-[calc(100%-3rem)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden border border-border bg-background text-foreground sm:max-h-[calc(100%-4rem)]",
+          statusLink()
+            ? "max-w-[32.5rem] rounded-none shadow-none"
+            : "max-w-2xl rounded-none shadow-2xl",
+        )}
+        initialFocus={() => closeButton}
+      >
+        <div class="flex items-start justify-between gap-4 border-b border-border px-5 py-4">
+          <div class="space-y-1">
+            <DialogTitle class="font-semibold text-foreground text-lg">{title()}</DialogTitle>
+            <DialogDescription class="text-muted-foreground text-sm">
+              {props.description ??
+                "Background computations and recent results. Click a task to expand its steps."}
+            </DialogDescription>
           </div>
+          <DialogClose
+            ref={(element) => (closeButton = element)}
+            aria-label={`Close ${title()}`}
+            class={buttonVariants({ size: "icon-sm", variant: "ghost" })}
+            type="button"
+          >
+            <IconXRegular />
+          </DialogClose>
+        </div>
 
-          <Show when={refreshError()}>
-            <div class="flex items-start gap-2 border-b border-destructive/30 bg-destructive/5 px-5 py-2.5 text-destructive text-sm">
-              <IconWarningCircleRegular class="mt-0.5 size-4 shrink-0" />
-              <span>Task updates are temporarily unavailable. Showing the last known state.</span>
-            </div>
-          </Show>
-          <Show when={actionError()}>
-            {(message) => (
-              <div
-                aria-live="assertive"
-                class="flex items-start gap-2 border-b border-destructive/30 bg-destructive/5 px-5 py-2.5 text-destructive text-sm"
-              >
-                <IconWarningCircleRegular class="mt-0.5 size-4 shrink-0" />
-                <span>{message()}</span>
-              </div>
-            )}
-          </Show>
-
-          <ScrollArea class="min-h-52 flex-1" viewportClass="overscroll-contain">
-            <Show
-              when={state().tasks.length > 0}
-              fallback={
-                <div class="flex min-h-52 flex-col items-center justify-center gap-2 px-6 py-12 text-center">
-                  <IconQueueRegular class="size-7 text-muted-foreground" />
-                  <p class="font-medium text-foreground text-sm">
-                    {props.emptyTitle ?? "No tasks yet"}
-                  </p>
-                  <p class="max-w-sm text-muted-foreground text-sm">
-                    {props.emptyMessage ?? "Long-running computations will appear here."}
-                  </p>
-                </div>
-              }
+        <Show when={refreshError()}>
+          <div class="flex items-start gap-2 border-b border-destructive/30 bg-destructive/5 px-5 py-2.5 text-destructive text-sm">
+            <IconWarningCircleRegular class="mt-0.5 size-4 shrink-0" />
+            <span>Task updates are temporarily unavailable. Showing the last known state.</span>
+          </div>
+        </Show>
+        <Show when={actionError()}>
+          {(message) => (
+            <div
+              aria-live="assertive"
+              class="flex items-start gap-2 border-b border-destructive/30 bg-destructive/5 px-5 py-2.5 text-destructive text-sm"
             >
-              <ul class="space-y-1 px-3 py-3">
-                <For each={state().tasks}>
-                  {(task) => {
-                    const expanded = () => expandedTaskId() === task.taskId;
-                    const detail = () => state().details[task.taskId];
-                    const taskBusy = () => busyAction() === `task:${task.taskId}`;
-                    return (
-                      <li>
-                        <div
+              <IconWarningCircleRegular class="mt-0.5 size-4 shrink-0" />
+              <span>{message()}</span>
+            </div>
+          )}
+        </Show>
+
+        <ScrollArea class="min-h-52 flex-1" viewportClass="overscroll-contain">
+          <Show
+            when={state().tasks.length > 0}
+            fallback={
+              <div class="flex min-h-52 flex-col items-center justify-center gap-2 px-6 py-12 text-center">
+                <IconQueueRegular class="size-7 text-muted-foreground" />
+                <p class="font-medium text-foreground text-sm">
+                  {props.emptyTitle ?? "No tasks yet"}
+                </p>
+                <p class="max-w-sm text-muted-foreground text-sm">
+                  {props.emptyMessage ?? "Long-running computations will appear here."}
+                </p>
+              </div>
+            }
+          >
+            <ul class="space-y-1 px-3 py-3">
+              <For each={state().tasks}>
+                {(task) => {
+                  const expanded = () => expandedTaskId() === task.taskId;
+                  const detail = () => state().details[task.taskId];
+                  const taskBusy = () => busyAction() === `task:${task.taskId}`;
+                  return (
+                    <li>
+                      <div
+                        class={cn("flex items-start gap-2 rounded-lg", expanded() && "bg-muted/50")}
+                      >
+                        <button
+                          aria-expanded={expanded()}
+                          aria-label={
+                            expanded()
+                              ? `Collapse ${taskKindLabel(task.kind)}, ${taskStatusLabel(task.status)}`
+                              : `Expand ${taskKindLabel(task.kind)}, ${taskStatusLabel(task.status)}`
+                          }
                           class={cn(
-                            "flex items-start gap-2 rounded-lg",
-                            expanded() && "bg-muted/50",
+                            buttonVariants({ variant: "ghost" }),
+                            "h-auto min-w-0 flex-1 items-start justify-start gap-2 rounded-lg px-3 py-2.5 text-left font-normal",
+                            expanded() && "bg-transparent hover:bg-transparent",
                           )}
+                          type="button"
+                          onClick={() => void toggleTask(task.taskId)}
                         >
-                          <button
-                            aria-expanded={expanded()}
-                            aria-label={
-                              expanded()
-                                ? `Collapse ${taskKindLabel(task.kind)}, ${taskStatusLabel(task.status)}`
-                                : `Expand ${taskKindLabel(task.kind)}, ${taskStatusLabel(task.status)}`
-                            }
-                            class={cn(
-                              buttonVariants({ variant: "ghost" }),
-                              "h-auto min-w-0 flex-1 items-start justify-start gap-2 rounded-lg px-3 py-2.5 text-left font-normal",
-                              expanded() && "bg-transparent hover:bg-transparent",
-                            )}
-                            type="button"
-                            onClick={() => void toggleTask(task.taskId)}
-                          >
-                            <span class="min-w-0 flex-1 space-y-2">
-                              <span class="flex items-center justify-between gap-3">
-                                <span class="flex min-w-0 items-center gap-1.5">
-                                  <Show
-                                    when={expanded()}
-                                    fallback={
-                                      <IconCaretDownRegular
-                                        aria-hidden="true"
-                                        class="size-3.5 shrink-0 text-muted-foreground"
-                                      />
-                                    }
-                                  >
-                                    <IconCaretUpRegular
+                          <span class="min-w-0 flex-1 space-y-2">
+                            <span class="flex items-center justify-between gap-3">
+                              <span class="flex min-w-0 items-center gap-1.5">
+                                <Show
+                                  when={expanded()}
+                                  fallback={
+                                    <IconCaretDownRegular
                                       aria-hidden="true"
                                       class="size-3.5 shrink-0 text-muted-foreground"
                                     />
-                                  </Show>
-                                  <span class="min-w-0 truncate font-medium text-foreground text-sm">
-                                    {taskKindLabel(task.kind)}
-                                  </span>
-                                </span>
-                                <span
-                                  aria-hidden="true"
-                                  class={cn("size-2 shrink-0 rounded-full", taskDotClass(task))}
-                                />
-                              </span>
-                              <span class="flex items-center justify-between gap-3 text-muted-foreground text-xs">
-                                <span class="min-w-0 truncate" title={task.workspacePath}>
-                                  {workspaceName(task.workspacePath)} · updated{" "}
-                                  {formatTime(task.updatedAtMs)}
-                                </span>
-                                <span class="flex shrink-0 items-center gap-2 tabular-nums">
-                                  <Show when={task.progress.failed > 0}>
-                                    <span class="text-destructive">
-                                      {task.progress.failed} failed
-                                    </span>
-                                  </Show>
-                                  <span>
-                                    {task.progress.completed}/{task.progress.total}{" "}
-                                    {taskProgressNoun(task.kind)}
-                                  </span>
+                                  }
+                                >
+                                  <IconCaretUpRegular
+                                    aria-hidden="true"
+                                    class="size-3.5 shrink-0 text-muted-foreground"
+                                  />
+                                </Show>
+                                <span class="min-w-0 truncate font-medium text-foreground text-sm">
+                                  {taskKindLabel(task.kind)}
                                 </span>
                               </span>
-                              <TaskProgressRail task={task} />
+                              <span
+                                aria-hidden="true"
+                                class={cn("size-2 shrink-0 rounded-full", taskDotClass(task))}
+                              />
                             </span>
-                          </button>
-                          <Show when={canCancelTask(task)}>
-                            <Button
-                              class="mt-2.5 mr-2"
-                              disabled={taskBusy()}
-                              size="xs"
-                              type="button"
-                              variant="ghost"
-                              onClick={() =>
-                                void runAction(`task:${task.taskId}`, task.taskId, (signal) =>
-                                  props.gateway.cancelTask(task.taskId, signal),
-                                )
+                            <span class="flex items-center justify-between gap-3 text-muted-foreground text-xs">
+                              <span class="min-w-0 truncate" title={task.workspacePath}>
+                                {workspaceName(task.workspacePath)} · updated{" "}
+                                {formatTime(task.updatedAtMs)}
+                              </span>
+                              <span class="flex shrink-0 items-center gap-2 tabular-nums">
+                                <Show when={task.progress.failed > 0}>
+                                  <span class="text-destructive">
+                                    {task.progress.failed} failed
+                                  </span>
+                                </Show>
+                                <span>
+                                  {task.progress.completed}/{task.progress.total}{" "}
+                                  {taskProgressNoun(task.kind)}
+                                </span>
+                              </span>
+                            </span>
+                            <TaskProgressRail task={task} />
+                          </span>
+                        </button>
+                        <Show when={canCancelTask(task)}>
+                          <Button
+                            class="mt-2.5 mr-2"
+                            disabled={taskBusy()}
+                            size="xs"
+                            type="button"
+                            variant="ghost"
+                            onClick={() =>
+                              void runAction(`task:${task.taskId}`, task.taskId, (signal) =>
+                                props.gateway.cancelTask(task.taskId, signal),
+                              )
+                            }
+                          >
+                            <Show when={taskBusy()}>
+                              <Spinner />
+                            </Show>
+                            Stop
+                          </Button>
+                        </Show>
+                        <Show when={canDismissTask(task)}>
+                          <Button
+                            class="mt-2.5 mr-2"
+                            disabled={taskBusy()}
+                            size="xs"
+                            type="button"
+                            variant="ghost"
+                            onClick={() => void dismissTask(task.taskId)}
+                          >
+                            <Show when={taskBusy()}>
+                              <Spinner />
+                            </Show>
+                            Dismiss
+                          </Button>
+                        </Show>
+                      </div>
+
+                      <Show when={expanded()}>
+                        <div class="mt-1 space-y-0.5 px-3">
+                          <Show
+                            when={loadingDetail() !== task.taskId}
+                            fallback={
+                              <div class="flex items-center gap-2 px-3 py-2.5 text-muted-foreground text-sm">
+                                <Spinner /> Loading task details…
+                              </div>
+                            }
+                          >
+                            <Show
+                              when={detail()}
+                              fallback={
+                                <p class="px-3 py-2.5 text-muted-foreground text-sm">
+                                  Details could not be loaded. Close and reopen this task to try
+                                  again.
+                                </p>
                               }
                             >
-                              <Show when={taskBusy()}>
-                                <Spinner />
-                              </Show>
-                              Stop
-                            </Button>
-                          </Show>
-                          <Show when={canDismissTask(task)}>
-                            <Button
-                              class="mt-2.5 mr-2"
-                              disabled={taskBusy()}
-                              size="xs"
-                              type="button"
-                              variant="ghost"
-                              onClick={() => void dismissTask(task.taskId)}
-                            >
-                              <Show when={taskBusy()}>
-                                <Spinner />
-                              </Show>
-                              Dismiss
-                            </Button>
+                              {(taskDetail) => (
+                                <ul class="space-y-0.5">
+                                  <For each={taskDetail().steps}>
+                                    {(step) => (
+                                      <StepRow
+                                        busy={busyAction() === `step:${step.stepId}`}
+                                        step={step}
+                                        onRetry={() =>
+                                          void runAction(
+                                            `step:${step.stepId}`,
+                                            task.taskId,
+                                            (signal) =>
+                                              props.gateway.retryStep(step.stepId, signal),
+                                          )
+                                        }
+                                      />
+                                    )}
+                                  </For>
+                                </ul>
+                              )}
+                            </Show>
                           </Show>
                         </div>
-
-                        <Show when={expanded()}>
-                          <div class="mt-1 space-y-0.5 px-3">
-                            <Show
-                              when={loadingDetail() !== task.taskId}
-                              fallback={
-                                <div class="flex items-center gap-2 px-3 py-2.5 text-muted-foreground text-sm">
-                                  <Spinner /> Loading task details…
-                                </div>
-                              }
-                            >
-                              <Show
-                                when={detail()}
-                                fallback={
-                                  <p class="px-3 py-2.5 text-muted-foreground text-sm">
-                                    Details could not be loaded. Close and reopen this task to try
-                                    again.
-                                  </p>
-                                }
-                              >
-                                {(taskDetail) => (
-                                  <ul class="space-y-0.5">
-                                    <For each={taskDetail().steps}>
-                                      {(step) => (
-                                        <StepRow
-                                          busy={busyAction() === `step:${step.stepId}`}
-                                          step={step}
-                                          onRetry={() =>
-                                            void runAction(
-                                              `step:${step.stepId}`,
-                                              task.taskId,
-                                              (signal) =>
-                                                props.gateway.retryStep(step.stepId, signal),
-                                            )
-                                          }
-                                        />
-                                      )}
-                                    </For>
-                                  </ul>
-                                )}
-                              </Show>
-                            </Show>
-                          </div>
-                        </Show>
-                      </li>
-                    );
-                  }}
-                </For>
-              </ul>
-            </Show>
-          </ScrollArea>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+                      </Show>
+                    </li>
+                  );
+                }}
+              </For>
+            </ul>
+          </Show>
+        </ScrollArea>
+      </DialogContent>
+    </Dialog>
   );
 }

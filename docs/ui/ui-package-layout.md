@@ -9,7 +9,7 @@ Source layout for the SolidJS web UI. Ownership and public imports are in [desig
 | `@lisca/design-tokens` | Canonical colors, type, radius, and stage geometry. Edit `src/tokens.ts`, then run `pnpm --filter @lisca/design-tokens generate`.                     |
 | `@lisca/utils`         | Framework-free logic: navigation and grid math, storage, annotation tools, shortcuts, task-center reconciliation, host and work-session picker models |
 | `@lisca/ui-headless`   | SolidJS signals and interaction logic, plus the structural types and policies those modules use                                                       |
-| `@lisca/ui`            | Zaidan primitives, shared patterns, and the app shell                                                                                                 |
+| `@lisca/ui`            | LiSCA-owned UI SDK controls, shared patterns, and the app shell                                                                                       |
 | `@lisca/instrument`    | Align, annotate, canvas, contrast, host, navigation, and task-center UI                                                                               |
 
 Pattern: headless hooks expose derived state and handlers for web components to render. A support module may remain beside those hooks when it defines their structural types or interaction policy. Reusable modules with no SolidJS coupling belong in `@lisca/utils`.
@@ -18,7 +18,7 @@ Pattern: headless hooks expose derived state and handlers for web components to 
 
 | Path                 | Role                                                                                                            |
 | -------------------- | --------------------------------------------------------------------------------------------------------------- |
-| `src/components/ui/` | Vendor Zaidan primitives. Refresh through `packages/ui/components.json`. Do not edit generated implementations. |
+| `src/components/ui/` | LiSCA-owned controls. Edit directly; use UI SDK core for interaction behavior and native HTML for presentation. |
 | `src/lib/`           | `cn`                                                                                                            |
 | `src/patterns/`      | Rails, sections, dialogs, path fields, and the state toggle                                                     |
 | `src/shell/`         | App shell, stage frame, navbar, theme, server and workspace providers                                           |
@@ -92,7 +92,7 @@ Do not import feature files by deep path (for example `@lisca/instrument/src/ali
 
 ## Testing
 
-Extract logic before testing. Never mount zaidan components for behavioral coverage.
+Test domain logic independently, and mount shared controls to verify keyboard interaction, focus, dismissal, and controlled state. Validate layout and native browser behavior with agent-browser.
 
 | Logic kind                                     | Package              | Test with                     |
 | ---------------------------------------------- | -------------------- | ----------------------------- |

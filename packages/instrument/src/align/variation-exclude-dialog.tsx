@@ -43,11 +43,7 @@ export function VariationExcludeDialog(props: {
         const metrics = () => derivedState().metrics;
 
         return (
-          <ModalScrim
-            onMouseDown={(event) => {
-              if (event.target === event.currentTarget) props.onCancel();
-            }}
-          >
+          <ModalScrim onDismiss={props.onCancel}>
             <DialogSurface aria-labelledby="var-exclude-title" maxWidth="lg">
               <div class="border-b border-border px-5 py-3">
                 <h2 class="font-semibold text-foreground text-base" id="var-exclude-title">

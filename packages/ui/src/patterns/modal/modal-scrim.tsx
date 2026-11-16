@@ -1,23 +1,38 @@
 import { splitProps, type JSX } from "solid-js";
 
-const modalScrimClass =
-  "fixed inset-0 flex items-center justify-center overscroll-contain bg-black/50 px-6";
+import { Dialog, DialogOverlay } from "../../components/ui/dialog";
 import { cn } from "../../lib/utils";
 
+/** A mounted modal owns focus until it closes. Omit onDismiss for a required decision. */
 export function ModalScrim(
   props: JSX.HTMLAttributes<HTMLDivElement> & {
     children?: JSX.Element;
     zIndex?: "z-40" | "z-50";
+    onDismiss?: () => void;
+    dismissible?: boolean;
   },
 ) {
-  const [local, rest] = splitProps(props, ["children", "class", "zIndex"]);
+  const [local, rest] = splitProps(props, [
+    "children",
+    "class",
+    "zIndex",
+    "onDismiss",
+    "dismissible",
+  ]);
   return (
-    <div
-      class={cn(modalScrimClass, local.zIndex ?? "z-50", local.class)}
-      data-slot="modal-scrim"
-      {...rest}
+    <Dialog
+      defaultOpen
+      dismissible={local.dismissible ?? !!local.onDismiss}
+      onOpenChangeComplete={(open) => {
+        if (!open) local.onDismiss?.();
+      }}
     >
+      <DialogOverlay
+        class={cn("overscroll-contain", local.zIndex ?? "z-50", local.class)}
+        data-lisca-slot="modal-scrim"
+        {...rest}
+      />
       {local.children}
-    </div>
+    </Dialog>
   );
 }

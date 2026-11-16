@@ -1,7 +1,7 @@
 import IconArrowSquareOutRegular from "phosphor-icons-solid/IconArrowSquareOutRegular";
 import IconInfoRegular from "phosphor-icons-solid/IconInfoRegular";
 import IconXRegular from "phosphor-icons-solid/IconXRegular";
-import { createSignal, For, onCleanup, Show } from "solid-js";
+import { createSignal, For, Show } from "solid-js";
 
 import { Button } from "../../components/ui/button";
 import { cn } from "../../lib/utils";
@@ -252,25 +252,8 @@ export function ShellHelpDialog(props: { topic: QuickGuideTopicId; class?: strin
   const topic = () => QUICK_GUIDE_TOPICS[props.topic];
   const manualUrl = () => `${MANUAL_BASE_URL}${topic().manualPath}`;
 
-  const openDialog = () => {
-    setOpen(true);
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        closeDialog();
-      }
-    };
-    window.addEventListener("keydown", onKeyDown);
-    cleanupKeyListener = () => window.removeEventListener("keydown", onKeyDown);
-  };
-
-  let cleanupKeyListener: (() => void) | null = null;
-  const closeDialog = () => {
-    cleanupKeyListener?.();
-    cleanupKeyListener = null;
-    setOpen(false);
-  };
-  onCleanup(() => cleanupKeyListener?.());
+  const openDialog = () => setOpen(true);
+  const closeDialog = () => setOpen(false);
 
   return (
     <>
@@ -286,12 +269,11 @@ export function ShellHelpDialog(props: { topic: QuickGuideTopicId; class?: strin
         <IconInfoRegular class="size-4" />
       </Button>
       <Show when={open()}>
-        <ModalScrim onClick={closeDialog}>
+        <ModalScrim onDismiss={closeDialog}>
           <DialogSurface
             aria-labelledby="lisca-quick-guide-title"
             class="gap-0 overflow-hidden p-0"
             maxWidth="lg"
-            onClick={(event: MouseEvent) => event.stopPropagation()}
           >
             <div class="flex items-start justify-between gap-4 border-b border-border px-5 py-4">
               <div class="space-y-1">

@@ -270,4 +270,4 @@ instrument stage:
 
 ## Out of scope
 
-Do not modify implementation code in `packages/ui/src/components/ui/`; add or refresh zaidan/shadcn primitives through `packages/ui/components.json`. A verified zero-consumer primitive may be removed together with its barrel and `theme.css` references. Shell, patterns, and `@lisca/instrument` may import the remaining primitives normally.
+Maintain controls directly in `packages/ui/src/components/ui/`, composing UI SDK core behaviors where interaction needs them. Keep public imports stable where practical. Remove unused controls and dependencies instead of retaining a full upstream catalog. Shell, patterns, and `@lisca/instrument` consume these shared controls.

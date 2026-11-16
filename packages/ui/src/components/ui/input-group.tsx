@@ -11,7 +11,7 @@ type InputGroupProps = ComponentProps<"div">;
 const InputGroup = (props: InputGroupProps) => {
   const [local, others] = splitProps(props, ["class"]);
   return (
-    // biome-ignore lint/a11y/useSemanticElements: role="group" matches the pinned shadcn contract
+    // biome-ignore lint/a11y/useSemanticElements: role="group" groups related controls
     <div
       data-slot="input-group"
       role="group"
@@ -48,7 +48,7 @@ const InputGroupAddon = (rawProps: InputGroupAddonProps) => {
   const [local, others] = splitProps(props, ["class", "align"]);
 
   return (
-    // biome-ignore lint/a11y/useSemanticElements: role="group" matches the pinned shadcn contract
+    // biome-ignore lint/a11y/useSemanticElements: role="group" groups related controls
     // biome-ignore lint/a11y/useKeyWithClickEvents: pointer activation delegates focus to the input
     <div
       role="group"

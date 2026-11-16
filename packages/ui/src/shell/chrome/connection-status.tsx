@@ -49,7 +49,7 @@ export function ConnectionStatus(props: {
         <PopoverTrigger
           aria-label="Server unreachable"
           class="z-destructive-surface flex h-7 cursor-pointer items-center gap-1.5 border px-2 text-xs font-medium"
-          data-slot="connection-status"
+          data-lisca-slot="connection-status"
           data-state={props.state}
           title={serverHost()}
         >

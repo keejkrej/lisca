@@ -83,12 +83,15 @@ describe("HostFilePickerDialog Windows drives and native opener", () => {
     const { hostPort } = renderPicker();
     expect(await screen.findByText("experiments")).not.toBeNull();
 
-    const drive = screen.getByRole("button", { name: "Drive C:" });
+    const drive = screen.getByRole("combobox", { name: "Drive" });
     expect(drive.textContent).toContain("C:");
     expect(screen.queryByText("Local Disk")).toBeNull();
 
+    drive.focus();
     fireEvent.keyDown(drive, { key: "ArrowDown" });
     const option = await screen.findByRole("option", { name: "D:" });
+    fireEvent.keyDown(screen.getByRole("option", { name: "C:" }), { key: "ArrowDown" });
+    expect(document.activeElement).toBe(option);
     fireEvent.keyDown(option, { key: "Enter" });
 
     expect(await screen.findByText("imaging")).not.toBeNull();
@@ -100,7 +103,7 @@ describe("HostFilePickerDialog Windows drives and native opener", () => {
       windowsDrives: vi.fn(async () => ({ windows: false, drives: [] })),
     });
     expect(await screen.findByText("experiments")).not.toBeNull();
-    expect(screen.queryByRole("button", { name: /^Drive/ })).toBeNull();
+    expect(screen.queryByRole("combobox", { name: "Drive" })).toBeNull();
   });
 
   it("opens Explorer on the desktop and selects the chosen folder", async () => {
@@ -163,7 +166,7 @@ describe("HostFilePickerDialog Windows drives and native opener", () => {
     expect(screen.queryByRole("button", { name: "Open in Explorer" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Open in Finder" })).toBeNull();
     expect(screen.queryByText("Open in Explorer")).toBeNull();
-    expectFollows("Create new folder", "Drive C:");
+    expectFollows("Create new folder", "Drive", "combobox");
   });
 
   it("keeps up, home, and new folder ahead of the native icon and drive menu", async () => {
@@ -177,12 +180,16 @@ describe("HostFilePickerDialog Windows drives and native opener", () => {
     expectFollows("Go up one directory", "Go to home directory");
     expectFollows("Go to home directory", "Create new folder");
     expectFollows("Create new folder", "Open in Explorer");
-    expectFollows("Open in Explorer", "Drive C:");
+    expectFollows("Open in Explorer", "Drive", "combobox");
   });
 });
 
-function expectFollows(earlierName: string, laterName: string) {
+function expectFollows(
+  earlierName: string,
+  laterName: string,
+  laterRole: "button" | "combobox" = "button",
+) {
   const earlier = screen.getByRole("button", { name: earlierName });
-  const later = screen.getByRole("button", { name: laterName });
+  const later = screen.getByRole(laterRole, { name: laterName });
   expect(earlier.compareDocumentPosition(later) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
 }

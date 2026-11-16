@@ -24,11 +24,7 @@ export function SourcePickerModal(props: SourcePickerModalProps) {
 
   return (
     <Show when={props.open}>
-      <ModalScrim
-        onMouseDown={(event) => {
-          if (event.target === event.currentTarget) props.onClose();
-        }}
-      >
+      <ModalScrim onDismiss={props.onClose}>
         <DialogSurface aria-labelledby="open-source-title" maxWidth="lg">
           <div class="px-5 pb-3 pt-5">
             <div class="flex items-start justify-between gap-4">

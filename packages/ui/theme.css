@@ -4,12 +4,12 @@
 @import "@lisca/design-tokens/variables.css";
 
 /**
- * Zaidan component classes and instrument-shell rules for `@lisca/ui`.
+ * LiSCA component classes and instrument-shell rules for `@lisca/ui`.
  * Color, type, radius, and stage geometry tokens are generated from
  * `@lisca/design-tokens`.
  */
 
-/* Lisca-owned utilities (not shipped by zaidan style-lyra) */
+/* LiSCA presentation utilities. */
 .z-destructive-surface {
   @apply border-destructive/35 bg-destructive/10 text-destructive dark:border-destructive/40 dark:bg-destructive/20 dark:text-red-300;
 }
@@ -45,7 +45,6 @@
     [data-slot="field-label"],
     [data-slot="button"],
     [data-slot="toggle"],
-    [data-slot="toggle-group-item"],
     [data-slot="select-trigger"],
     [data-slot="input"]
   ) {
@@ -90,19 +89,19 @@
   );
 }
 
-.lisca-instrument-shell [data-slot="modal-scrim"] {
+.lisca-instrument-shell [data-lisca-slot="modal-scrim"] {
   background-color: color-mix(in oklab, var(--foreground) 40%, transparent);
 }
 
-.lisca-instrument-shell [data-slot="dialog-surface"] {
+.lisca-instrument-shell [data-lisca-slot="dialog-surface"] {
   box-shadow: none;
 }
 
-.lisca-instrument-shell [data-slot="dialog-surface"][data-max-width="sm"] {
+.lisca-instrument-shell [data-lisca-slot="dialog-surface"][data-max-width="sm"] {
   max-width: 420px;
 }
 
-.lisca-instrument-shell [data-slot="dialog-surface"]:not([data-max-width="sm"]) {
+.lisca-instrument-shell [data-lisca-slot="dialog-surface"]:not([data-max-width="sm"]) {
   max-width: 520px;
 }
 

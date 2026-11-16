@@ -3,7 +3,7 @@ import { useLabelCreationForm, normalizeLabelId } from "@lisca/ui-headless/label
 import IconPlusRegular from "phosphor-icons-solid/IconPlusRegular";
 import IconTrashRegular from "phosphor-icons-solid/IconTrashRegular";
 import IconXRegular from "phosphor-icons-solid/IconXRegular";
-import { Index, onCleanup, onMount, Show } from "solid-js";
+import { Index, Show } from "solid-js";
 
 import { Button } from "@lisca/ui/button";
 import { Input } from "@lisca/ui/input";
@@ -31,14 +31,6 @@ export function LabelCreationDialog(props: LabelCreationDialogProps) {
     error: props.error,
   }));
 
-  onMount(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && props.open) props.onOpenChange(false);
-    };
-    window.addEventListener("keydown", onKeyDown);
-    onCleanup(() => window.removeEventListener("keydown", onKeyDown));
-  });
-
   const resolvedSubtitle = () =>
     props.subtitle ??
     (props.workspacePath != null ? props.workspacePath : "Select a workspace first");
@@ -51,11 +43,7 @@ export function LabelCreationDialog(props: LabelCreationDialogProps) {
 
   return (
     <Show when={props.open}>
-      <ModalScrim
-        onMouseDown={(event) => {
-          if (event.target === event.currentTarget) props.onOpenChange(false);
-        }}
-      >
+      <ModalScrim onDismiss={() => props.onOpenChange(false)}>
         <DialogSurface
           aria-busy={props.saving}
           aria-labelledby="label-dialog-title"

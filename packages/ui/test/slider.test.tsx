@@ -14,8 +14,10 @@ describe("Slider", () => {
     expect(thumb?.classList.contains("size-4")).toBe(true);
     expect(thumb?.classList.contains("size-5")).toBe(false);
     expect(thumb?.classList.contains("sm:size-4")).toBe(false);
-    expect(thumb?.classList.contains("data-[orientation=horizontal]:-mt-2")).toBe(true);
-    expect(thumb?.classList.contains("data-[orientation=vertical]:-ml-2")).toBe(true);
+    // UI SDK centers the thumb with an inline translation, without a second margin offset.
+    expect((thumb as HTMLElement).style.translate).toBe("0 -50%");
+    expect(thumb?.classList.contains("data-[orientation=horizontal]:-mt-2")).toBe(false);
+    expect(thumb?.classList.contains("data-[orientation=vertical]:-ml-2")).toBe(false);
     expect(view.getByRole("slider", { name: "Opacity" })).toBeTruthy();
   });
 });
