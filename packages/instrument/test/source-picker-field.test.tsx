@@ -26,7 +26,9 @@ function renderField(overrides: Partial<Parameters<typeof SourcePickerField>[0]>
 
 function openMenu() {
   const trigger = screen.getByRole("button", { name: "Source: Click to choose source…. Browse" });
-  fireEvent.keyDown(trigger, { key: "Enter" });
+  // Native buttons synthesize clicks for Enter in browsers; JSDOM does not.
+  // ArrowDown exercises the menu's explicit keyboard-open behavior.
+  fireEvent.keyDown(trigger, { key: "ArrowDown" });
 }
 
 describe("SourcePickerField", () => {
@@ -34,7 +36,12 @@ describe("SourcePickerField", () => {
     const handlers = renderField();
     openMenu();
 
-    fireEvent.keyDown(await screen.findByRole("menuitem", { name: /ND2/ }), { key: "Enter" });
+    fireEvent.keyDown(await screen.findByRole("menuitem", { name: /Folder/ }), {
+      key: "ArrowDown",
+    });
+    const nd2 = screen.getByRole("menuitem", { name: /ND2/ });
+    expect(document.activeElement).toBe(nd2);
+    fireEvent.keyDown(nd2, { key: "Enter" });
     expect(handlers.onOpenNd2).toHaveBeenCalledOnce();
     expect(handlers.onOpenFolder).not.toHaveBeenCalled();
     expect(handlers.onOpenCzi).not.toHaveBeenCalled();

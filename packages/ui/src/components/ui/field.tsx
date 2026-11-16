@@ -79,7 +79,7 @@ type FieldProps = ComponentProps<"div"> &
 const Field = (props: FieldProps) => {
   const [local, others] = splitProps(props, ["class", "orientation"]);
   return (
-    // biome-ignore lint/a11y/useSemanticElements: role="group" is intentional per shadcn design for accessibility
+    // biome-ignore lint/a11y/useSemanticElements: role="group" is intentional for grouped controls
     <div
       role="group"
       data-slot="field"

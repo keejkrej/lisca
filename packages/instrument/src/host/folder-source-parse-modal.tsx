@@ -28,11 +28,7 @@ export function FolderSourceParseModal(props: FolderSourceParseModalProps) {
 
   return (
     <Show when={modal.path()}>
-      <ModalScrim
-        onMouseDown={(event) => {
-          if (event.target === event.currentTarget) props.onClose();
-        }}
-      >
+      <ModalScrim onDismiss={props.onClose}>
         <DialogSurface aria-labelledby="folder-source-template-title" maxWidth="xl">
           <div class="border-b border-border px-5 py-4">
             <h2 class="font-semibold text-foreground text-lg" id="folder-source-template-title">

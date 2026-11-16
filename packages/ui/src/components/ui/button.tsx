@@ -1,8 +1,8 @@
-import { type ButtonRootProps, Root } from "@kobalte/core/button";
-import type { PolymorphicProps } from "@kobalte/core/polymorphic";
+import { button } from "@ui-sdk/core/button";
 import { cva, type VariantProps } from "class-variance-authority";
-import { type ComponentProps, splitProps, type ValidComponent } from "solid-js";
+import { type ComponentProps, mergeProps, splitProps, type ValidComponent } from "solid-js";
 import { cn } from "../../lib/utils";
+import { usePart, usePrimitive } from "../../lib/ui-sdk";
 
 const buttonVariants = cva(
   "group/button z-button inline-flex shrink-0 select-none items-center justify-center whitespace-nowrap outline-none transition-[color,background-color,border-color,box-shadow,opacity,transform] active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0",
@@ -34,18 +34,48 @@ const buttonVariants = cva(
   },
 );
 
-type ButtonProps<T extends ValidComponent = "button"> = PolymorphicProps<T, ButtonRootProps<T>> &
-  VariantProps<typeof buttonVariants> &
-  Pick<ComponentProps<T>, "class">;
+type ButtonProps<T extends ValidComponent = "button"> = Omit<ComponentProps<T>, "type"> &
+  VariantProps<typeof buttonVariants> & {
+    as?: T;
+    disabled?: boolean;
+    focusableWhenDisabled?: boolean;
+    pendingAnnouncement?: string;
+    type?: "button" | "submit" | "reset";
+  };
 
 const Button = <T extends ValidComponent = "button">(props: ButtonProps<T>) => {
-  const [local, others] = splitProps(props as ButtonProps, ["variant", "size", "class"]);
-  return (
-    <Root
-      class={cn(buttonVariants({ variant: local.variant, size: local.size }), local.class)}
-      data-slot="button"
-      {...others}
-    />
+  const [local, others] = splitProps(props as ButtonProps, [
+    "variant",
+    "size",
+    "class",
+    "disabled",
+    "focusableWhenDisabled",
+    "type",
+    "pendingAnnouncement",
+    "onClick",
+  ]);
+  const handle = usePrimitive(button, () => ({
+    disabled: local.disabled,
+    focusableWhenDisabled: local.focusableWhenDisabled,
+    type: local.type,
+    pendingAnnouncement: local.pendingAnnouncement,
+    action: (event) => {
+      const handler = local.onClick;
+      const click = event as MouseEvent & { currentTarget: HTMLButtonElement; target: Element };
+      if (typeof handler === "function") return handler(click);
+      if (handler) return handler[0](handler[1], click);
+    },
+  }));
+  return usePart(
+    handle,
+    "root",
+    undefined,
+    mergeProps(others, {
+      get class() {
+        return cn(buttonVariants({ variant: local.variant, size: local.size }), local.class);
+      },
+    }),
+    "button",
   );
 };
 

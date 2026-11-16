@@ -215,7 +215,7 @@ Every instrument surface is square: radius is 0px on sheets, dialogs, cards, inp
 
 ## Components
 
-Use the installed Zaidan Lyra catalog through `@lisca/ui/primitives` or a focused path such as `@lisca/ui/button` before creating a new primitive. Product code must not deep-import registry files or hand-roll a control already covered by the catalog. Keep product workflows in `@lisca/instrument` and shared presentation in `@lisca/ui/patterns` or `@lisca/ui/shell`. Refresh registry-owned primitives through `packages/ui/components.json` instead of editing their generated implementation ad hoc.
+Use LiSCA-owned controls through `@lisca/ui/primitives` or a focused path such as `@lisca/ui/button`. Maintain these controls directly, using native HTML semantics and UI SDK core for interaction behavior. Product code must not deep-import implementation files or duplicate an existing control. Keep product workflows in `@lisca/instrument` and shared presentation in `@lisca/ui/patterns` or `@lisca/ui/shell`. Validate control changes visually and with keyboard, focus, and pointer interaction checks.
 
 State controls and actions must be distinguishable before interaction. **Show** and **Edit** are toggles: always render a persistent state indicator, set `aria-pressed`, and use the brand fill only when on. Save, Reset, Auto, Undo, and exclusion commands are momentary actions: never leave them looking selected.
 
@@ -252,7 +252,7 @@ Action is the final rail section. Output-path and included/excluded count labels
 - Do keep image navigation, overlays, and hit testing on the same viewport transform.
 - Do use each app's icon color only on primary CTAs, focus, selected nav/tool, and pressed toggles.
 - Don't use fallback or mixed font families inside the application interface.
-- Don't hand-roll or deep-import a control already provided by the installed Zaidan Lyra catalog.
+- Don't duplicate or deep-import an existing shared control; extend its owned implementation in `@lisca/ui`.
 - Don't pair controls with unrelated scope, mismatched emphasis, user-authored text, or labels that cannot scan comfortably in 96px.
 - Don't style a momentary action as selected, or a toggle as an ordinary outline action.
 - Don't use ad hoc shadows, text-glyph arrows, invisible slider thumbs, or app-specific control geometry.

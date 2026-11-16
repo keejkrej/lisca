@@ -6,6 +6,7 @@ export default defineConfig({
   plugins: [solid({ hot: false })],
   test: {
     environment: "jsdom",
+    setupFiles: ["../ui/test/browser-setup.ts"],
     server: {
       deps: {
         inline: [/phosphor-icons-solid/],

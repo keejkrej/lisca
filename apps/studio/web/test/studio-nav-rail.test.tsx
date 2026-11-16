@@ -310,7 +310,8 @@ describe("StudioNavRail Task Center", () => {
     expectStudioState(router.state.location.href, edit, routeState, workspaceState);
 
     fireEvent.click(screen.getByRole("button", { name: "Close Tasks" }));
-    await waitFor(() => expect(trigger.getAttribute("aria-expanded")).toBe("false"));
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Tasks" })).toBeNull());
+    await waitFor(() => expect(document.activeElement).toBe(trigger));
     expectStudioState(router.state.location.href, edit, routeState, workspaceState);
   });
 });

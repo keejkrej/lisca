@@ -44,7 +44,7 @@ describe("per-app brand tokens", () => {
     expect(variables).not.toMatch(/\.dark\[data-lisca-app="annotator"\]/);
     expect(appBlock(variables, "annotator")).not.toMatch(/#dc2626/);
     expect(theme).toMatch(
-      /\[data-instrument-state-toggle\]\[aria-pressed="true"\] \{\n  background-color: var\(--lisca-brand/,
+      /\[data-instrument-state-toggle\]\[aria-pressed="true"\] \{\r?\n  background-color: var\(--lisca-brand/,
     );
   });
 

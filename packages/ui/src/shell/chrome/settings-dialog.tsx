@@ -194,7 +194,7 @@ export function ShellSettingsDialog(props: ShellSettingsDialogProps) {
         <IconGearRegular class="size-4" />
       </Button>
       <Show when={open()}>
-        <ModalScrim>
+        <ModalScrim onDismiss={() => setOpen(false)}>
           <DialogSurface
             aria-labelledby="shell-settings-title"
             class="gap-0 overflow-hidden p-0"

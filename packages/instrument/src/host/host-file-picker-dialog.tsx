@@ -14,7 +14,7 @@ import IconHouseRegular from "phosphor-icons-solid/IconHouseRegular";
 import IconPlusRegular from "phosphor-icons-solid/IconPlusRegular";
 import IconStarFill from "phosphor-icons-solid/IconStarFill";
 import IconXRegular from "phosphor-icons-solid/IconXRegular";
-import { For, onCleanup, onMount, Show, createSignal } from "solid-js";
+import { For, Show, createSignal } from "solid-js";
 
 import { Button } from "@lisca/ui/button";
 import { Field, FieldLabel } from "@lisca/ui/field";
@@ -55,14 +55,6 @@ export function HostFilePickerDialog(props: HostFilePickerDialogProps) {
     onPickDirectory: props.onPickDirectory,
     onPickFile: props.onPickFile,
   }));
-
-  onMount(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && props.open) props.onOpenChange(false);
-    };
-    window.addEventListener("keydown", onKeyDown);
-    onCleanup(() => window.removeEventListener("keydown", onKeyDown));
-  });
 
   /** Recent picks share the favorites chip row; newest first, a handful at most. */
   const recent = () => (props.onPickRecent ? (props.recentItems ?? []).slice(0, 5) : []);
@@ -112,11 +104,7 @@ export function HostFilePickerDialog(props: HostFilePickerDialogProps) {
 
   return (
     <Show when={props.open}>
-      <ModalScrim
-        onMouseDown={(event) => {
-          if (event.target === event.currentTarget) props.onOpenChange(false);
-        }}
-      >
+      <ModalScrim onDismiss={() => props.onOpenChange(false)}>
         <DialogSurface aria-labelledby="host-file-picker-title" maxWidth="2xl">
           <div class="flex items-start justify-between gap-4 border-b border-border px-5 py-4">
             <div class="min-w-0">
@@ -405,12 +393,7 @@ export function HostFilePickerDialog(props: HostFilePickerDialogProps) {
       </ModalScrim>
 
       <Show when={showNewFolder()}>
-        <ModalScrim
-          zIndex="z-50"
-          onMouseDown={(event) => {
-            if (event.target === event.currentTarget && !creating()) cancelNewFolder();
-          }}
-        >
+        <ModalScrim zIndex="z-50" dismissible={!creating()} onDismiss={cancelNewFolder}>
           <DialogSurface aria-labelledby="new-folder-title" maxWidth="sm">
             <div class="flex items-start justify-between gap-4 border-b border-border px-5 py-4">
               <div>
