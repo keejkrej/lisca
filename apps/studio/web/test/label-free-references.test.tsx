@@ -1,7 +1,8 @@
+import { LabelFreeReferencesPanel } from "@lisca/instrument";
 import { cleanup, fireEvent, render, screen } from "@solidjs/testing-library";
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
-import { LabelFreeReferences } from "../src/components/label-free-references";
+import { studioLabelFreeClient } from "../src/components/label-free-references";
 
 const unconfiguredHealth = {
   apiVersion: 1,
@@ -22,11 +23,13 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-describe("LabelFreeReferences", () => {
+describe("LabelFreeReferencesPanel with the Studio client", () => {
   it("prompts for an OpenRouter API key in Settings when unconfigured", async () => {
     fetchHandler = async () => Response.json(unconfiguredHealth);
     vi.stubGlobal("fetch", fetchImpl);
-    render(() => <LabelFreeReferences workspacePath="C:/assay" />);
+    render(() => (
+      <LabelFreeReferencesPanel client={studioLabelFreeClient} workspacePath="C:/assay" />
+    ));
     expect(await screen.findByText(/Add an OpenRouter API key in Settings/i)).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Build from annotations" })).toBeNull();
   });
@@ -68,7 +71,9 @@ describe("LabelFreeReferences", () => {
     });
     fetchHandler = transport;
     vi.stubGlobal("fetch", fetchImpl);
-    render(() => <LabelFreeReferences workspacePath="C:/assay" />);
+    render(() => (
+      <LabelFreeReferencesPanel client={studioLabelFreeClient} workspacePath="C:/assay" />
+    ));
     const build = await screen.findByRole("button", { name: "Build from annotations" });
     fireEvent.click(build);
     expect(await screen.findByText(/Saved 2 reference frames/i)).toBeTruthy();
