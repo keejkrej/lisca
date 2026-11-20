@@ -42,3 +42,4 @@ Why a shipped choice looks the way it does. Agents write these during the change
 | [0029](0029-optional-research-guide-without-personalization.md) | accepted   | The research guide is optional browsing without personalization                 |
 | [0030](0030-webmcp-contract-adapter.md)                         | accepted   | WebMCP shares the product contract and transport                                |
 | [0031](0031-ui-sdk-owned-controls.md)                           | accepted   | LiSCA owns controls built with UI SDK                                           |
+| [0032](0032-label-free-setup-outside-analysis.md)               | accepted   | Studio keeps label-free inference setup out of Analysis                         |

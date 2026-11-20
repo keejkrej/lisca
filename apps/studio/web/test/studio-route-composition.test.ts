@@ -40,6 +40,13 @@ describe("Studio workflow route composition", () => {
     expect(source).toMatch(/<StudioTopBar\s+showExpert\s*\/>/);
   });
 
+  it("keeps label-free reference setup out of Analysis", () => {
+    const source = readSource("../src/analysis/analysis-page.tsx");
+
+    expect(source).not.toMatch(/label-free-references|LabelFreeReferences/);
+    expect(source).toMatch(/saveLabel="Save PDF"/);
+  });
+
   it("uses the Metadata label and one picker-field treatment for source and workspace", () => {
     const navSource = readSource("../src/components/studio-nav-rail.tsx");
     const pagesSource = readSource("../src/navigation/studio-page-shortcuts.ts");

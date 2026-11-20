@@ -1,5 +1,5 @@
 import { runClientEffect } from "@lisca/client/runtime";
-import { LabelFreeReferencesPanel, type LabelFreeClient } from "@lisca/instrument";
+import type { LabelFreeClient } from "@lisca/instrument";
 
 import { studioClient, toErrorMessage } from "../api/studio-port";
 
@@ -14,9 +14,3 @@ export const studioLabelFreeClient: LabelFreeClient = {
     runClientEffect(studioClient.classifyLabelFree(workspacePath, name, limit)),
   formatError: toErrorMessage,
 };
-
-export function LabelFreeReferences(props: { workspacePath: string | null }) {
-  return (
-    <LabelFreeReferencesPanel client={studioLabelFreeClient} workspacePath={props.workspacePath} />
-  );
-}
