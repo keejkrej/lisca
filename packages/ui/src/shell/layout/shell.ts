@@ -1,5 +1,6 @@
-import type { View } from "@effect/ui";
-import type { Html } from "@effect/ui/html";
+import { Command, Component, UiSchema, type View } from "@effect/ui";
+import { Html } from "@effect/ui/html";
+import { Effect, Schema } from "effect";
 
 import { ScrollArea } from "../../components/ui/scroll-area";
 import { cn } from "../../lib/utils";
@@ -14,13 +15,42 @@ const shellSheetSurface =
 /** Fixed-height dock strip (`11rem`); scrolls inside if content overflows. */
 const shellDockFixed = "flex h-[11rem] shrink-0 flex-col overflow-hidden";
 
+const SkipToMainMessage = UiSchema.TaggedEnum({
+  FocusMain: {},
+});
+
+const FocusMainContentCmd = Command.make("LiscaFocusMainContent", { args: {} }, () =>
+  Effect.sync(() => {
+    const main = typeof document === "undefined" ? null : document.getElementById("main-content");
+    if (main instanceof HTMLElement) {
+      main.focus();
+    }
+    return Component.noop;
+  }),
+);
+
+const SkipToMainLinkComponent = Html.component({
+  name: "LiscaSkipToMainLink",
+  props: Schema.Struct({}),
+  model: Schema.Struct({}),
+  message: SkipToMainMessage,
+}).make({
+  init: () => ({}),
+  update: {
+    FocusMain: ($) => $.run(FocusMainContentCmd.make()),
+  },
+  view: (h) =>
+    h.a
+      .class(
+        "sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-background focus:px-3 focus:py-2 focus:text-sm focus:font-medium focus:text-foreground focus:shadow-md focus:outline-none focus:ring-2 focus:ring-ring",
+      )
+      .attr("href", "#main-content")
+      .on("click", () => SkipToMainMessage.FocusMain(), { preventDefault: true })
+      .children("Skip to main content"),
+});
+
 function SkipToMainLink<M>(h: Html.H<M>) {
-  return h.a
-    .class(
-      "sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-background focus:px-3 focus:py-2 focus:text-sm focus:font-medium focus:text-foreground focus:shadow-md focus:outline-none focus:ring-2 focus:ring-ring",
-    )
-    .attr("href", "#main-content")
-    .children("Skip to main content");
+  return SkipToMainLinkComponent(h, { props: {} });
 }
 
 function renderSidebarInner<M, R = never>(
@@ -213,7 +243,13 @@ export function AppShellMain<M, R = never>(
 ) {
   return h.main
     .attr("id", "main-content")
-    .class(cn("relative flex min-h-0 min-w-0 flex-1 flex-col overflow-clip", shellSheetSurface))
+    .attr("tabindex", "-1")
+    .class(
+      cn(
+        "relative flex min-h-0 min-w-0 flex-1 flex-col overflow-clip focus:outline-none",
+        shellSheetSurface,
+      ),
+    )
     .children(
       options.children,
       ShellPortraitPanelControls(h, { key: "portrait-controls", props: { placement: "top" } }),

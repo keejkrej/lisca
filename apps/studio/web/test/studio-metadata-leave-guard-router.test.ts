@@ -122,7 +122,8 @@ function findButton(root: ParentNode, label: string): HTMLButtonElement | undefi
 
 async function mountWithRouter(initialWizard: WizardState, initialPath = "/metadata") {
   studioRegistry.set(studioWizardAtom, initialWizard);
-  const routerLayer = Router.memory({ routes: StudioRoute, url: initialPath });
+  const history = Router.memoryHistory(initialPath);
+  const routerLayer = Router.memory({ routes: StudioRoute, history });
   const mounted = await mountTest(RouterHost, { initialPath }, { layer: routerLayer });
   const pathname = () =>
     mounted.container.querySelector('[data-testid="pathname"]')?.textContent ?? "";
@@ -132,7 +133,7 @@ async function mountWithRouter(initialWizard: WizardState, initialPath = "/metad
     if (!btn) throw new Error(`Button ${selector} not found`);
     clickElement(btn);
   };
-  return { ...mounted, pathname, navigateTo };
+  return { ...mounted, history, pathname, navigateTo };
 }
 
 beforeEach(() => {
@@ -208,6 +209,37 @@ describe("StudioMetadataLeaveGuard real-router integration", () => {
     await waitForCondition(() => container.textContent?.includes("Metadata page"));
     expect(pathname()).toBe("/metadata");
     expect(findDialogByTitle("Metadata changed")).toBeUndefined();
+  });
+
+  it("guards browser history back navigation when Metadata has unsaved edits", async () => {
+    const { container, history, pathname, navigateTo } = await mountWithRouter(
+      createInitialStudioWizardState(),
+      "/align",
+    );
+
+    await waitForCondition(() => container.textContent?.includes("Align page"));
+    navigateTo("/metadata");
+    await waitForCondition(() => pathname() === "/metadata" && history.index() === 1);
+
+    studioRegistry.set(studioWizardAtom, dirtyWizard({ workspacePath: "/ws/run-1" }));
+    history.go(-1);
+
+    await waitForCondition(() => findDialogByTitle("Metadata changed"));
+    expect(pathname()).toBe("/metadata");
+    expect(history.current().url).toBe("/metadata");
+    expect(history.entries()).toEqual(["/align", "/metadata"]);
+    expect(history.index()).toBe(1);
+
+    clickElement(findButton(document, "Cancel")!);
+    await waitForCondition(() => findDialogByTitle("Metadata changed") === undefined);
+    expect(pathname()).toBe("/metadata");
+
+    // A second browser Back navigation while dirty still prompts and honors Skip Save.
+    history.go(-1);
+    await waitForCondition(() => findDialogByTitle("Metadata changed"));
+    clickElement(findButton(document, "Skip Save")!);
+    await waitForCondition(() => pathname() === "/align");
+    expect(history.current().url).toBe("/align");
   });
 });
 

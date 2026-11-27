@@ -124,13 +124,33 @@ export const StudioNavigationProvider = Html.component({
   },
   update: {
     RouteChanged: ($, { route }) => {
-      if (route._tag === "NotFound") {
-        const assay = StudioRoute.Assay();
-        return $.evolve({ route: assay, pendingLeaveTo: null }).run(
-          Router.replace(StudioRoute, assay).pipe(Command.asNoop),
+      const resolvedRoute = route._tag === "NotFound" ? StudioRoute.Assay() : route;
+      const currentPath = studioPathForRoute($.model.route);
+      const nextPath = studioPathForRoute(resolvedRoute);
+      if (nextPath === currentPath) {
+        return route._tag === "NotFound"
+          ? $.evolve({ route: resolvedRoute }).run(
+              Router.replace(StudioRoute, resolvedRoute).pipe(Command.asNoop),
+            )
+          : $.evolve({ route: resolvedRoute });
+      }
+      if (
+        shouldGuardMetadataLeave(
+          currentPath,
+          nextPath,
+          isBasicInfoDirty(studioRegistry.get(studioWizardAtom)),
+        )
+      ) {
+        return $.evolve({ pendingLeaveTo: nextPath }).run(
+          Router.push(StudioRoute, $.model.route).pipe(Command.asNoop),
         );
       }
-      return $.evolve({ route, pendingLeaveTo: null });
+      if (route._tag === "NotFound") {
+        return $.evolve({ route: resolvedRoute, pendingLeaveTo: null }).run(
+          Router.replace(StudioRoute, resolvedRoute).pipe(Command.asNoop),
+        );
+      }
+      return $.evolve({ route: resolvedRoute, pendingLeaveTo: null });
     },
     Navigate: ($, { to, replace, force }) => {
       const currentPath = studioPathForRoute($.model.route);

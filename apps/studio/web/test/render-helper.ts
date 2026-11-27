@@ -52,7 +52,9 @@ export async function mountTest<
   );
 
   const provided = options?.layer
-    ? effect.pipe(Effect.provide(options.layer as Layer.Layer<any>))
+    ? Layer.build(options.layer as Layer.Layer<any>).pipe(
+        Effect.flatMap((ctx) => effect.pipe(Effect.provide(ctx))),
+      )
     : (effect as Effect.Effect<Renderer.Root<Model, Msg>, never, Scope.Scope>);
 
   const root = await Effect.runPromise(Scope.provide(scope)(provided));

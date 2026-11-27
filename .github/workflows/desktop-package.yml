@@ -50,7 +50,9 @@ jobs:
           node-version: 24
           cache: pnpm
 
-      - uses: dtolnay/rust-toolchain@stable
+      # Pin Rust 1.99.1 until lisca-killing upgrades past ort =2.0.0-rc.11:
+      # Cargo 1.100's new build-dir layout breaks ort-sys's Windows copy-dylibs path traversal.
+      - uses: dtolnay/rust-toolchain@1.99.1
 
       - uses: Swatinem/rust-cache@v2
 
@@ -75,6 +77,8 @@ jobs:
           fi
 
       - name: Install JavaScript dependencies
+        env:
+          ONNXRUNTIME_NODE_INSTALL_CUDA: skip
         run: pnpm install --frozen-lockfile
 
       # Without these, Tauri leaves only the linker's ad-hoc signature on the executable and

@@ -290,6 +290,41 @@ describe("AppShell paper pane", () => {
     ).toBe(false);
     expect(view.container.querySelector('[aria-label="Open left panel"]')).toBeNull();
   });
+
+  it("focuses main content from the skip link without changing the URL hash", async () => {
+    stubViewport(1440, 900);
+    window.history.replaceState(null, "", "#/metadata");
+    const Host = Html.component({
+      name: "AppShellSkipLinkHost",
+      model: Schema.Struct({}),
+      message: Schema.Never,
+    }).make({
+      init: () => ({}),
+      update: ($) => $.model,
+      view: (h) =>
+        AppShell(h, {
+          main: h.div.children("Main content"),
+        }),
+    });
+
+    try {
+      const view = await mountTest(Host, {});
+      const skipLink = view.container.querySelector<HTMLAnchorElement>('a[href="#main-content"]');
+      const main = view.container.querySelector<HTMLElement>("#main-content");
+      expect(skipLink).not.toBeNull();
+      expect(main).not.toBeNull();
+
+      const event = new MouseEvent("click", { bubbles: true, cancelable: true });
+      skipLink!.dispatchEvent(event);
+      await flushMicrotasks();
+
+      expect(event.defaultPrevented).toBe(true);
+      expect(window.location.hash).toBe("#/metadata");
+      expect(document.activeElement).toBe(main);
+    } finally {
+      window.history.replaceState(null, "", window.location.pathname + window.location.search);
+    }
+  });
 });
 
 describe("ViewportCard paper pane", () => {
