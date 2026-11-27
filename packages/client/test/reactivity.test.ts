@@ -1,4 +1,4 @@
-import { Reactivity } from "effect/unstable/reactivity";
+﻿import { Reactivity } from "effect/reactivity";
 import { Effect } from "effect";
 import { describe, expect, it } from "vite-plus/test";
 

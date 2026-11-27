@@ -1,5 +1,5 @@
-import type { AlignerSource, WorkspaceScan } from "@lisca/contracts";
-import { AsyncResult, Atom } from "effect/unstable/reactivity";
+﻿import type { AlignerSource, WorkspaceScan } from "@lisca/contracts";
+import { AsyncResult, Atom } from "effect/reactivity";
 import { Effect } from "effect";
 
 import type { ClientError } from "../infra/client-error";

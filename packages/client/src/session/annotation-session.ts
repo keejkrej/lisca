@@ -8,7 +8,6 @@ import type {
 import type { FrameResult } from "@lisca/utils";
 import { createEmptyMask, masksEqual, normalizeFrameContrast } from "@lisca/utils";
 import { Effect } from "effect";
-import { createSignal } from "solid-js";
 
 import { ClientError } from "../infra/client-error";
 import type { AnnotatorDataPort } from "../ports/types";
@@ -101,6 +100,8 @@ export type AnnotationHistoryHandle = {
   readonly dirty: boolean;
   readonly canUndo: boolean;
   readonly canRedo: boolean;
+  readonly revision: number;
+  subscribe: (listener: () => void) => () => void;
   reset: (value: AnnotationValue) => void;
   commit: (value: AnnotationValue) => void;
   undo: () => void;
@@ -109,30 +110,37 @@ export type AnnotationHistoryHandle = {
   markSaved: () => void;
 };
 
-export function useAnnotationHistory(): AnnotationHistoryHandle {
+export function createAnnotationHistoryStore(): AnnotationHistoryHandle {
   const history = new AnnotationHistory();
-  const [revision, setRevision] = createSignal(0);
-  const read = <T>(value: () => T): T => {
-    revision();
-    return value();
-  };
+  let revision = 0;
+  const listeners = new Set<() => void>();
   const mutate = (operation: () => void): void => {
     operation();
-    setRevision((value) => value + 1);
+    revision += 1;
+    for (const listener of listeners) listener();
   };
 
   return {
     get current() {
-      return read(() => history.current);
+      return history.current;
     },
     get dirty() {
-      return read(() => history.dirty);
+      return history.dirty;
     },
     get canUndo() {
-      return read(() => history.canUndo);
+      return history.canUndo;
     },
     get canRedo() {
-      return read(() => history.canRedo);
+      return history.canRedo;
+    },
+    get revision() {
+      return revision;
+    },
+    subscribe(listener) {
+      listeners.add(listener);
+      return () => {
+        listeners.delete(listener);
+      };
     },
     reset: (value) => mutate(() => history.reset(value)),
     commit: (value) => mutate(() => history.commit(value)),

@@ -11,10 +11,10 @@ export type { LiscaAppId };
 
 export type WorkSession = {
   id: string;
-  workspacePath?: string;
-  assayJsonPath?: string;
-  source?: AlignerSource | null;
-  label?: string;
+  workspacePath?: string | undefined;
+  assayJsonPath?: string | undefined;
+  source?: AlignerSource | null | undefined;
+  label?: string | undefined;
   lastOpenedAt: string;
   snapshot?: unknown;
 };
@@ -87,8 +87,8 @@ export function touchWorkSession(
   entry: {
     workspacePath?: string;
     assayJsonPath?: string;
-    source?: AlignerSource | null;
-    label?: string;
+    source?: AlignerSource | null | undefined;
+    label?: string | undefined;
     snapshot?: unknown;
   },
 ): WorkSession | null {

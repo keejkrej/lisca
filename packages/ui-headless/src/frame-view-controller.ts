@@ -6,15 +6,17 @@ import {
   type FrameViewState,
   zoomFrameViewAtPoint,
 } from "@lisca/utils";
-import { createSignal, type Accessor } from "solid-js";
 
 export type FrameViewSize = {
   width: number;
   height: number;
 };
 
+export type FrameViewListener = (view: FrameViewState) => void;
+
 export type FrameViewController = {
-  view: Accessor<FrameViewState>;
+  view: () => FrameViewState;
+  subscribe: (listener: FrameViewListener) => () => void;
   layout: (viewportWidth: number, viewportHeight: number, frame: FrameViewSize) => FrameLayout;
   reset: (frame: FrameViewSize) => void;
   syncFrame: (frame: FrameViewSize | null) => void;
@@ -35,12 +37,29 @@ export type FrameViewController = {
 
 /** Shared ephemeral controller for both assay canvases. */
 export function createFrameViewController(): FrameViewController {
-  const [view, setView] = createSignal<FrameViewState>({
+  let currentView: FrameViewState = {
     zoom: 1,
     centerX: 0,
     centerY: 0,
-  });
+  };
   let frameSizeKey: string | null = null;
+  const listeners = new Set<FrameViewListener>();
+
+  const setView = (next: FrameViewState) => {
+    currentView = next;
+    for (const listener of listeners) {
+      listener(currentView);
+    }
+  };
+
+  const view = () => currentView;
+
+  const subscribe = (listener: FrameViewListener) => {
+    listeners.add(listener);
+    return () => {
+      listeners.delete(listener);
+    };
+  };
 
   const reset = (frame: FrameViewSize) => {
     setView(createFitFrameView(frame.width, frame.height));
@@ -55,7 +74,7 @@ export function createFrameViewController(): FrameViewController {
   };
 
   const layout = (viewportWidth: number, viewportHeight: number, frame: FrameViewSize) =>
-    computeFrameViewLayout(viewportWidth, viewportHeight, frame.width, frame.height, view());
+    computeFrameViewLayout(viewportWidth, viewportHeight, frame.width, frame.height, currentView);
 
   const zoomAtFramePoint = (
     factor: number,
@@ -64,9 +83,9 @@ export function createFrameViewController(): FrameViewController {
     viewportHeight: number,
     frame: FrameViewSize,
   ) => {
-    setView((current) =>
+    setView(
       zoomFrameViewAtPoint(
-        current,
+        currentView,
         factor,
         framePoint,
         viewportWidth,
@@ -100,6 +119,7 @@ export function createFrameViewController(): FrameViewController {
   return {
     layout,
     reset,
+    subscribe,
     syncFrame,
     view,
     zoomAtCenter,

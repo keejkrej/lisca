@@ -4,7 +4,7 @@
 
 LiSCA is live-cell single-cell analysis for time-lapse microscopy on micropattern arrays. An acquisition (ND2, CZI, or a templated image folder) becomes one workspace: pattern alignment, ROI crops, annotations, and per-cell assay results.
 
-This repository is the product monorepo for Studio, Aligner, and Annotator (SolidJS web, Axum server, Tauri desktop). Studio includes the Aligner and Annotator flows. GitHub Releases ship one desktop app per tag. Assay definitions and kernels live in the sibling repositories below. This repo schedules the work, owns the workspace layout, and renders figures.
+This repository is the product monorepo for Studio, Aligner, and Annotator (Effect UI web, Axum server, Tauri desktop). Studio includes the Aligner and Annotator flows. GitHub Releases ship one desktop app per tag. Assay definitions and kernels live in the sibling repositories below. This repo schedules the work, owns the workspace layout, and renders figures.
 
 Human install and run steps are in `README.md`. Domain language is in `CONTEXT.md`. Decisions are in `docs/adr/`.
 
@@ -63,7 +63,7 @@ Transfection stage names match `lisca-transfection`. Killing commands take a wor
 
 ## Project structure
 
-Product applications live under `apps/{aligner,annotator,studio}/`, each split into SolidJS `web/`, Rust `server/`, and Tauri `desktop/`. Shared TypeScript belongs in `packages/`: contracts and schemas in `contracts`, client I/O in `client`, reusable logic in `utils` and `ui-headless`, visual tokens in `design-tokens`, LiSCA-owned controls built with UI SDK, patterns, and the app shell in `ui`, and align, annotate, and task-center UI in `instrument`. The ownership map is `docs/design/architecture.md`. Rust libraries are in `crates/`. Python utilities, ROI crop (`lisca.services.crop`), and training code are in `python/`. Canonical Jupyter notebooks for Hub and zip users live under `notebooks/` (independent SemVer; tags `notebooks-v*`). Keep documentation in the matching `docs/<domain>/` directory. The user-facing manual is `docs/manual/` (MkDocs Material, GitHub Pages); do not replace that folder with developer notes, and do not publish ADRs through `mkdocs.yml`. Product model metadata (Smart segment, downloaded on demand into the user config cache) belongs in `models/`. Shared brand assets belong in `assets/brand/`. Assay weights belong on Hugging Face or in the assay repository. See `models/README.md`.
+Product applications live under `apps/{aligner,annotator,studio}/`, each split into Effect UI `web/`, Rust `server/`, and Tauri `desktop/`. Shared TypeScript belongs in `packages/`: contracts and schemas in `contracts`, client I/O in `client`, reusable logic in `utils` and `ui-headless`, visual tokens in `design-tokens`, LiSCA-owned controls built with `@effect/ui` and `@effect/ui-kit`, patterns, and the app shell in `ui`, and align, annotate, and task-center UI in `instrument`. The ownership map is `docs/design/architecture.md`. Rust libraries are in `crates/`. Python utilities, ROI crop (`lisca.services.crop`), and training code are in `python/`. Canonical Jupyter notebooks for Hub and zip users live under `notebooks/` (independent SemVer; tags `notebooks-v*`). Keep documentation in the matching `docs/<domain>/` directory. The user-facing manual is `docs/manual/` (MkDocs Material, GitHub Pages); do not replace that folder with developer notes, and do not publish ADRs through `mkdocs.yml`. Product model metadata (Smart segment, downloaded on demand into the user config cache) belongs in `models/`. Shared brand assets belong in `assets/brand/`. Assay weights belong on Hugging Face or in the assay repository. See `models/README.md`.
 
 Wire types are Effect Schemas in `packages/contracts`. After a schema change, regenerate with `pnpm --filter @lisca/contracts generate` and run `cargo test -p lisca`.
 
@@ -105,6 +105,6 @@ Issues and specs are GitHub issues in `keejkrej/lisca`. See `docs/agents/issue-t
 
 One root `CONTEXT.md` and `docs/adr/`. See `docs/agents/domain.md`.
 
-### UI SDK
+### Effect UI
 
-Shared controls are owned source, not registry snapshots. Before changing a UI SDK control, read the pinned package documentation in packages/ui/node_modules/@ui-sdk/core/docs/llms.txt and the relevant headings in core.md. LiSCA uses Solid 1 through packages/ui/src/lib/ui-sdk.tsx; the published Solid adapter currently requires Solid 2. Use existing controls first, maintain their public interfaces, and validate behavior and appearance in the browser. See docs/adr/0031-ui-sdk-owned-controls.md.
+Shared controls and product frontends are pure TypeScript built with `@effect/ui`, `@effect/ui-kit`, and `@effect/ui-devtools` (no JSX, no SolidJS, no `@ui-sdk/core`). Before changing Effect UI components or controls, read the pinned package guide in `packages/ui/node_modules/@effect/ui/AGENTS.md`. Use `@lisca/ui/icons` (`@phosphor-icons/core` SVG paths) for icons. Use existing controls first, maintain their public interfaces, and validate behavior and appearance. See `docs/adr/0033-effect-ui-frontend.md`.

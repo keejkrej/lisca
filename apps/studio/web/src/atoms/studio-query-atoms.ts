@@ -5,7 +5,7 @@ import {
   invalidateAfter,
   ReactivityKeys,
 } from "@lisca/client/atoms";
-import { Atom, AsyncResult as Result } from "effect/unstable/reactivity";
+import { Atom, AsyncResult as Result } from "effect/reactivity";
 import { Effect } from "effect";
 
 import { studioClient } from "../api/studio-port";

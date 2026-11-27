@@ -13,8 +13,7 @@
     "useDefineForClassFields": true,
     "skipLibCheck": true,
     "strict": true,
-    "noEmit": true,
-    "jsx": "preserve",
-    "jsxImportSource": "solid-js"
+    "exactOptionalPropertyTypes": true,
+    "noEmit": true
   }
 }

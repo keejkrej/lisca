@@ -1,17 +1,10 @@
 import { describe, expect, it, vi } from "vite-plus/test";
 
-const fixture = vi.hoisted(() => ({
-  state: {} as Record<string, unknown>,
-}));
-
-vi.mock("../src/state/studio-annotate-page-context", () => ({
-  useStudioAnnotatePage: () => ({ state: fixture.state }),
-}));
-
-import { useStudioAnnotateDock } from "../src/state/studio-annotate-page-selectors";
+import { selectStudioAnnotateDock } from "../src/state/studio-annotate-page-selectors";
+import type { StudioAnnotateState } from "../src/state/use-studio-annotate-state";
 
 describe("Studio annotate page selectors", () => {
-  it("keeps navigation and analysis state live after construction", () => {
+  it("derives navigation, shortcuts, and analysis busy state from StudioAnnotateState snapshots", () => {
     let mode: "classification" | "segmentation" = "classification";
     let canEditSegmentation = false;
     let labelDialogOpen = false;
@@ -19,7 +12,7 @@ describe("Studio annotate page selectors", () => {
     let analysisProgress: { status: "queued" | "running" | "completed" } | null = null;
     let goToNextSite = vi.fn();
 
-    fixture.state = {
+    const state = {
       get mode() {
         return mode;
       },
@@ -43,35 +36,40 @@ describe("Studio annotate page selectors", () => {
       get canGoToNextSite() {
         return canGoToNextSite;
       },
+      canGoToPreviousSite: false,
       setTool: vi.fn(),
       handleSave: vi.fn(),
       get goToNextSite() {
         return goToNextSite;
       },
+      goToPreviousSite: vi.fn(),
       requestContinueToAnalysis: vi.fn(),
-    };
+    } as unknown as StudioAnnotateState;
 
-    const dock = useStudioAnnotateDock();
-    const stableGoToNextSite = dock.goToNextSite;
-
-    expect(dock.shortcutsEnabled).toBe(false);
-    expect(dock.analysisBusy).toBe(false);
-    expect(dock.canGoToNextSite).toBe(false);
+    const initialDock = selectStudioAnnotateDock(state);
+    expect(initialDock.shortcutsEnabled).toBe(false);
+    expect(initialDock.analysisBusy).toBe(false);
+    expect(initialDock.canGoToNextSite).toBe(false);
 
     mode = "segmentation";
     canEditSegmentation = true;
     analysisProgress = { status: "running" };
     canGoToNextSite = true;
-    expect(dock.shortcutsEnabled).toBe(true);
-    expect(dock.analysisBusy).toBe(true);
-    expect(dock.canGoToNextSite).toBe(true);
+    const runningDock = selectStudioAnnotateDock(state);
+    expect(runningDock.shortcutsEnabled).toBe(true);
+    expect(runningDock.analysisBusy).toBe(true);
+    expect(runningDock.canGoToNextSite).toBe(true);
+
+    labelDialogOpen = true;
+    expect(selectStudioAnnotateDock(state).shortcutsEnabled).toBe(false);
+    labelDialogOpen = false;
 
     analysisProgress = { status: "completed" };
-    expect(dock.analysisBusy).toBe(false);
+    expect(selectStudioAnnotateDock(state).analysisBusy).toBe(false);
 
     const replacement = vi.fn();
     goToNextSite = replacement;
-    stableGoToNextSite();
+    selectStudioAnnotateDock(state).goToNextSite();
     expect(replacement).toHaveBeenCalledOnce();
   });
 });

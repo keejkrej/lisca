@@ -1,15 +1,8 @@
-import solid from "vite-plugin-solid";
 import { defineConfig } from "vite-plus";
 
 export default defineConfig({
-  plugins: [solid({ hot: false })],
   test: {
-    environment: "jsdom",
+    environment: "happy-dom",
     setupFiles: ["./test/browser-setup.ts"],
-    server: {
-      deps: {
-        inline: [/phosphor-icons-solid/],
-      },
-    },
   },
 });

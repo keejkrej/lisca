@@ -1,4 +1,4 @@
-import { Reactivity } from "effect/unstable/reactivity";
+﻿import { Reactivity } from "effect/reactivity";
 import type { Effect } from "effect";
 
 /** Run an effect and invalidate related query atoms on success. */
@@ -9,7 +9,7 @@ export function invalidateAfter<A, E, R>(
   return Reactivity.mutation(effect, keys);
 }
 
-/** Stable string keys — tuple keys hash by reference and break invalidation. */
+/** Stable string keys â€” tuple keys hash by reference and break invalidation. */
 export const ReactivityKeys = {
   scanSource: (key: string) => `scan-source:${key}`,
   roiWorkspace: (path: string) => `roi-workspace:${path}`,

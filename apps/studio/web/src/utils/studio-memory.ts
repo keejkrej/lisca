@@ -5,11 +5,19 @@ import { assayDisplayLabel } from "@lisca/client/studio-assay-json";
 import { touchStudioWizardMemory } from "@lisca/client/studio/wizard-memory";
 
 export function recordStudioWorkspaceMemory(path: string, label?: string): void {
-  touchStudioWizardMemory({ kind: "workspace", path, label });
+  touchStudioWizardMemory({
+    kind: "workspace",
+    path,
+    ...(label !== undefined ? { label } : {}),
+  });
 }
 
 export function recordStudioSourceMemory(source: AlignerSource, label?: string): void {
-  touchStudioWizardMemory({ kind: "source", source, label });
+  touchStudioWizardMemory({
+    kind: "source",
+    source,
+    ...(label !== undefined ? { label } : {}),
+  });
 }
 
 /**
@@ -23,19 +31,20 @@ export function recordStudioAssayMemory(assayJsonPath: string, assayJson: Studio
     kind: "assay",
     path: assayJsonPath,
     assayLabel: label,
-    workspacePath: workspacePath || undefined,
+    ...(workspacePath ? { workspacePath } : {}),
   });
   if (workspacePath) recordStudioWorkspaceMemory(workspacePath, label);
   const source = toStudioSource({
     kind: assayJson.data.type,
     dataPath: assayJson.data.path,
-    folderTemplate:
-      assayJson.data.type === "folder"
-        ? {
+    ...(assayJson.data.type === "folder"
+      ? {
+          folderTemplate: {
             subfolder: assayJson.data.template.subfolder,
             filename: assayJson.data.template.filename,
-          }
-        : undefined,
+          },
+        }
+      : {}),
   });
   if (source) recordStudioSourceMemory(source);
 }

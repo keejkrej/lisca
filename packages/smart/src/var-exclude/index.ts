@@ -1,3 +1,8 @@
 export type { VarExcludeProvider } from "./provider";
 export type { VarExcludeInput } from "./types";
-export { useVarExclude } from "./use-var-exclude";
+export {
+  createVarExcludeController,
+  type VarExcludeContext,
+  type VarExcludeController,
+  type VarExcludeControllerOptions,
+} from "./var-exclude-controller";

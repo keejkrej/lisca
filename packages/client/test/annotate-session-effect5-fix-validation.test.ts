@@ -1,20 +1,7 @@
-import type { AnnotationLabel, RoiWorkspaceScan } from "@lisca/contracts";
+﻿import type { AnnotationLabel, RoiWorkspaceScan } from "@lisca/contracts";
 import type { FrameResult } from "@lisca/utils";
-import { AsyncResult } from "effect/unstable/reactivity";
-import { describe, expect, it, vi } from "vite-plus/test";
-
-// packages/client tests run under vitest's node environment without
-// vite-plugin-solid, so the bare "solid-js" specifier resolves to the SSR
-// build (./dist/server.js) where createEffect is a no-op. The `vi.mock`
-// below forces the re-active dev build so useAnnotateSessionCore's
-// createEffect actually fires under test — the production-identical
-// reactivity core that the bug relies on.
-vi.mock("solid-js", async () => {
-  const dev = await vi.importActual<typeof import("solid-js")>("solid-js/dist/dev.js");
-  return { ...dev };
-});
-
-import { createRoot, createSignal, type Accessor } from "solid-js";
+import { AsyncResult } from "effect/reactivity";
+import { describe, expect, it } from "vite-plus/test";
 
 import {
   createAnnotatorUiActions,
@@ -22,10 +9,7 @@ import {
   type AnnotatorUiState,
   type StateUpdater,
 } from "../src/atoms/annotator-ui";
-import {
-  useAnnotateSessionCore,
-  type AnnotateScanAtoms,
-} from "../src/session/use-annotate-session";
+import { createAnnotateSessionCore } from "../src/session/annotate-session-controller";
 
 const WORKSPACE = "/ws";
 
@@ -65,23 +49,6 @@ function makeFrame(value: number): FrameResult {
   };
 }
 
-async function flush(remaining = 20): Promise<void> {
-  if (remaining <= 0) return;
-  await Promise.resolve();
-  await flush(remaining - 1);
-}
-
-type SessionHandles = {
-  state: Accessor<AnnotatorUiState>;
-  setUi: (update: StateUpdater<AnnotatorUiState>) => void;
-  actions: ReturnType<typeof createAnnotatorUiActions>;
-  chooseTime: (timeIndex: number) => void;
-  commitFrame: (frame: FrameResult) => void;
-  setScanResult: (next: AsyncResult.AsyncResult<RoiWorkspaceScan, unknown>) => void;
-  setLabelsResult: (next: AsyncResult.AsyncResult<readonly AnnotationLabel[], unknown>) => void;
-  dispose: () => void;
-};
-
 type MountConfig = {
   scan: AsyncResult.AsyncResult<RoiWorkspaceScan, unknown>;
   labels: AsyncResult.AsyncResult<readonly AnnotationLabel[], unknown>;
@@ -89,167 +56,134 @@ type MountConfig = {
   initialTimeIndex?: "first" | "last";
 };
 
-function mountSession(config: MountConfig): SessionHandles {
+function mountSession(config: MountConfig) {
   const actions = createAnnotatorUiActions<AnnotatorUiState>({ write: () => undefined });
-  const initial: AnnotatorUiState = {
+  let state: AnnotatorUiState = {
     ...createInitialAnnotatorUiState(),
     workspacePath: WORKSPACE,
     selection: { pos: 1, roi: 1, channel: 0, timeIndex: 0, zIndex: 0 },
     frame: config.frame ?? null,
   };
-  const [ui, setUiSignal] = createSignal<AnnotatorUiState>(initial);
-  const setUi = setUiSignal as (update: StateUpdater<AnnotatorUiState>) => void;
-  const [scanResult, setScanResult] = createSignal(config.scan);
-  const [labelsResult, setLabelsResult] = createSignal(config.labels);
-  const shellWorkspacePath = (): string | null => WORKSPACE;
-  const scan: AnnotateScanAtoms = { scanResult, labelsResult, shellWorkspacePath };
+  let scanResult = config.scan;
+  let labelsResult = config.labels;
 
-  let state!: Accessor<AnnotatorUiState>;
-  let chooseTime: (timeIndex: number) => void = () => {};
-  const dispose = createRoot((rootDispose) => {
-    const session = useAnnotateSessionCore({
-      ui,
-      setUi,
-      actions,
-      workspace: { workspacePath: WORKSPACE, setWorkspacePath: () => undefined },
-      scan,
-      toErrorMessage: (cause) =>
-        typeof cause === "string" ? cause : ((cause as Error)?.message ?? String(cause)),
-      initialTimeIndex: config.initialTimeIndex,
-    });
-    state = session.state;
-    chooseTime = (timeIndex) => session.actions.setSelection({ timeIndex });
-    return rootDispose;
+  const setUi = (update: StateUpdater<AnnotatorUiState>) => {
+    state = typeof update === "function" ? update(state) : update;
+  };
+
+  const session = createAnnotateSessionCore({
+    getUi: () => state,
+    setUi,
+    actions,
+    workspace: { getWorkspacePath: () => WORKSPACE, setWorkspacePath: () => undefined },
+    getScanResult: () => scanResult,
+    getLabelsResult: () => labelsResult,
+    toErrorMessage: (cause) =>
+      typeof cause === "string" ? cause : ((cause as Error)?.message ?? String(cause)),
+    initialTimeIndex: config.initialTimeIndex,
   });
 
-  // Reproduces the production frame-load `commit` shape
-  // (use-annotate-state-core.ts: "setFrame | setContrastState | setStatus"),
-  // the UI writes that previously re-triggered the scan-error effect.
+  session.sync();
+
   const commitFrame = (frame: FrameResult): void => {
     actions.setFrame(setUi, frame);
     actions.setContrastState(setUi, frame);
-    actions.setStatus(setUi, `Loaded Pos1 Roi1`);
+    actions.setStatus(setUi, "Loaded Pos1 Roi1");
+    session.sync();
   };
 
   return {
-    state,
+    state: () => state,
     setUi,
     actions,
-    chooseTime,
+    chooseTime: (timeIndex: number) => {
+      session.actions.setSelection({ timeIndex });
+      session.sync();
+    },
     commitFrame,
-    setScanResult,
-    setLabelsResult,
-    dispose,
+    setScanResult: (next: AsyncResult.AsyncResult<RoiWorkspaceScan, unknown>) => {
+      scanResult = next;
+      session.sync();
+    },
+    setLabelsResult: (next: AsyncResult.AsyncResult<readonly AnnotationLabel[], unknown>) => {
+      labelsResult = next;
+      session.sync();
+    },
+    sync: () => session.sync(),
   };
 }
 
-describe("useAnnotateSessionCore — scan-error effect (Effect 5)", () => {
-  it("does not re-wipe a committed frame while labels fail (regression)", async () => {
+describe("createAnnotateSessionCore — scan-error sync (Effect 5 regression)", () => {
+  it("does not re-wipe a committed frame while labels fail", () => {
     const handles = mountSession({
       scan: scanSuccess(),
       labels: labelsFailure("labels boom"),
       frame: makeFrame(7),
     });
-    try {
-      // Initial labels failure wipes the previously-loaded frame and surfaces
-      // a scan-level error (unchanged React-era behaviour).
-      await flush();
-      expect(handles.state().frame).toBeNull();
-      expect(handles.state().scanError).toContain("labels boom");
 
-      // A frame-load commit (selection change / contrast nudge reload) writes
-      // a fresh frame to the UI atom — the writes that re-triggered the
-      // whole-UI-subscribed scan-error effect under the buggy source.
-      handles.commitFrame(makeFrame(9));
-      await flush();
+    expect(handles.state().frame).toBeNull();
+    expect(handles.state().scanError).toContain("labels boom");
 
-      // Patched: Effect 5 no longer subscribes to the UI atom, so the
-      // committed frame survives; the labels error toast remains.
-      expect(handles.state().frame).not.toBeNull();
-      expect(handles.state().frame).toEqual(makeFrame(9));
-      expect(handles.state().scanError).toContain("labels boom");
-    } finally {
-      handles.dispose();
-    }
+    handles.commitFrame(makeFrame(9));
+
+    expect(handles.state().frame).not.toBeNull();
+    expect(handles.state().frame).toEqual(makeFrame(9));
+    expect(handles.state().scanError).toContain("labels boom");
   });
 
-  it("restores the canvas in one commit after labels recover", async () => {
+  it("restores the canvas in one commit after labels recover", () => {
     const handles = mountSession({
       scan: scanSuccess(),
       labels: labelsFailure("labels boom"),
       frame: makeFrame(7),
     });
-    try {
-      await flush();
-      expect(handles.state().frame).toBeNull();
 
-      // Fixing the labels flips labelsResult back to Success; Effect 5
-      // re-runs (it still tracks labelsResult), sees no error, and
-      // early-returns — it does not auto-reload the frame.
-      handles.setLabelsResult(labelsSuccess());
-      await flush();
-      expect(handles.state().frame).toBeNull();
+    expect(handles.state().frame).toBeNull();
 
-      // A single user reload action (selection change / contrast nudge)
-      // commits a fresh frame; Effect 5 is dormant (no error, and it no
-      // longer subscribes to the UI atom), so the canvas stays visible.
-      handles.commitFrame(makeFrame(11));
-      await flush();
-      expect(handles.state().frame).not.toBeNull();
-      expect(handles.state().frame).toEqual(makeFrame(11));
-    } finally {
-      handles.dispose();
-    }
+    handles.setLabelsResult(labelsSuccess());
+    expect(handles.state().frame).toBeNull();
+
+    handles.commitFrame(makeFrame(11));
+    expect(handles.state().frame).not.toBeNull();
+    expect(handles.state().frame).toEqual(makeFrame(11));
   });
 
-  it("does not replace a later status when the scan is already loaded", async () => {
+  it("does not replace a later status when the scan is already loaded", () => {
     const handles = mountSession({
       scan: scanSuccess(),
       labels: labelsSuccess(),
       frame: makeFrame(7),
     });
-    try {
-      await flush();
-      expect(handles.state().status).toBe("ROI workspace loaded");
 
-      handles.commitFrame(makeFrame(9));
-      handles.actions.setSelection(handles.setUi, { timeIndex: 0 });
-      handles.actions.setStatus(handles.setUi, "Saved ROI annotation");
-      await flush();
+    expect(handles.state().status).toBe("ROI workspace loaded");
 
-      expect(handles.state().status).toBe("Saved ROI annotation");
-      expect(handles.state().frame).toEqual(makeFrame(9));
-    } finally {
-      handles.dispose();
-    }
+    handles.commitFrame(makeFrame(9));
+    handles.actions.setSelection(handles.setUi, { timeIndex: 0 });
+    handles.actions.setStatus(handles.setUi, "Saved ROI annotation");
+    handles.sync();
+
+    expect(handles.state().status).toBe("Saved ROI annotation");
+    expect(handles.state().frame).toEqual(makeFrame(9));
   });
 
-  it("still wipes the frame and sets scanError on a genuine scan failure", async () => {
+  it("still wipes the frame and sets scanError on a genuine scan failure", () => {
     const handles = mountSession({
       scan: scanSuccess(),
       labels: labelsSuccess(),
       frame: makeFrame(7),
     });
-    try {
-      // A frame is committed while both scan and labels succeed.
-      handles.commitFrame(makeFrame(12));
-      await flush();
-      expect(handles.state().frame).not.toBeNull();
-      expect(handles.state().scanError).toBeNull();
 
-      // The scan fails (frame source is gone): Effect 5 still tracks
-      // scanResult, so it wipes the frame and surfaces a scan-level error.
-      handles.setScanResult(scanFailure("scan boom"));
-      await flush();
-      expect(handles.state().frame).toBeNull();
-      expect(handles.state().scanError).toContain("scan boom");
-    } finally {
-      handles.dispose();
-    }
+    handles.commitFrame(makeFrame(12));
+    expect(handles.state().frame).not.toBeNull();
+    expect(handles.state().scanError).toBeNull();
+
+    handles.setScanResult(scanFailure("scan boom"));
+    expect(handles.state().frame).toBeNull();
+    expect(handles.state().scanError).toContain("scan boom");
   });
 });
 
-describe("useAnnotateSessionCore — initial time", () => {
+describe("createAnnotateSessionCore — initial time", () => {
   const timedScan: RoiWorkspaceScan = {
     positions: [
       {
@@ -262,20 +196,15 @@ describe("useAnnotateSessionCore — initial time", () => {
     ],
   };
 
-  it("opens on the last frame when asked and keeps an explicit frame 0", async () => {
+  it("opens on the last frame when asked and keeps an explicit frame 0", () => {
     const handles = mountSession({
       scan: AsyncResult.success(timedScan),
       labels: labelsSuccess(),
       initialTimeIndex: "last",
     });
-    try {
-      await flush();
-      expect(handles.state().selection.timeIndex).toBe(2);
-      handles.chooseTime(0);
-      await flush();
-      expect(handles.state().selection.timeIndex).toBe(0);
-    } finally {
-      handles.dispose();
-    }
+
+    expect(handles.state().selection.timeIndex).toBe(2);
+    handles.chooseTime(0);
+    expect(handles.state().selection.timeIndex).toBe(0);
   });
 });

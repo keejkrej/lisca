@@ -13,22 +13,18 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
+    "@effect/ui": "catalog:",
+    "@effect/ui-kit": "catalog:",
     "@lisca/contracts": "workspace:*",
     "@lisca/ui": "workspace:*",
     "@lisca/ui-headless": "workspace:*",
     "@lisca/utils": "workspace:*",
-    "lucide-solid": "^1.31.0",
-    "phosphor-icons-solid": "catalog:"
+    "effect": "catalog:"
   },
   "devDependencies": {
-    "@solidjs/testing-library": "catalog:",
-    "jsdom": "^26.1.0",
-    "solid-js": "catalog:",
+    "@effect/vitest": "catalog:",
+    "happy-dom": "catalog:",
     "typescript": "catalog:",
-    "vite-plugin-solid": "catalog:",
     "vitest": "catalog:"
-  },
-  "peerDependencies": {
-    "solid-js": "^1.9.0"
   }
 }

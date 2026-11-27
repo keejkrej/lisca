@@ -1,6 +1,6 @@
-import { describe, expect, it } from "vite-plus/test";
+﻿import { describe, expect, it } from "vite-plus/test";
 import { Effect } from "effect";
-import { Atom, AtomRegistry } from "effect/unstable/reactivity";
+import { Atom, AtomRegistry } from "effect/reactivity";
 
 import {
   createAppRuntime,

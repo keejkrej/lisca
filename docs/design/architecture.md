@@ -2,26 +2,27 @@
 
 LiSCA keeps one visual language and three product apps. This is the ownership map for that split. The visual rules are in [language.md](./language.md) and [`DESIGN.md`](../../DESIGN.md).
 
-LiSCA owns its components and uses [UI SDK](https://github.com/vercel-labs/ui) for interaction behavior. Use native HTML for simple presentation and `@ui-sdk/core` primitives for focus, selection, popups, and keyboard interaction. Components are maintained directly in this repository; there is no component registry to refresh. See [ADR-0031](../adr/0031-ui-sdk-owned-controls.md). There is no React Native, Vue, or Svelte app in this repo, so there is no `ui-native`, `ui-vue`, or `ui-svelte` package. There is no runtime generative UI catalog.
+LiSCA owns its components and uses [Effect UI](https://ui.effect.website/) (`@effect/ui` and `@effect/ui-kit`) for rendering, state, routing, and interaction behavior. Use `@effect/ui/html` builders for presentation and `@effect/ui-kit` primitives for focus, selection, popups, dialogs, sliders, and keyboard interaction. Icons live in `@lisca/ui/icons` backed by `@phosphor-icons/core` SVG paths. Components are maintained directly in this repository; there is no JSX compiler and no component registry to refresh. See [ADR-0033](../adr/0033-effect-ui-frontend.md). There is no React Native, Vue, or Svelte app in this repo, so there is no `ui-native`, `ui-vue`, or `ui-svelte` package. There is no runtime generative UI catalog.
 
 ## Layers
 
 | Layer      | Package                              | Owns                                                                         | Does not own                     |
 | ---------- | ------------------------------------ | ---------------------------------------------------------------------------- | -------------------------------- |
 | Tokens     | `@lisca/design-tokens`               | Reference colors, semantic roles, app brands, radius, type, stage geometry   | Components, product workflows    |
-| Behavior   | `@lisca/ui-headless`, `@lisca/utils` | Solid interaction state, and framework-free models                           | DOM, brand styling               |
-| Primitives | `@lisca/ui` `src/components/ui`      | LiSCA-owned controls and UI SDK behaviors                                    | Fetching, routing, assay rules   |
+| Behavior   | `@lisca/ui-headless`, `@lisca/utils` | Framework-free interaction state and domain models                           | DOM, brand styling               |
+| Primitives | `@lisca/ui` `src/components/ui`      | LiSCA-owned controls wrapping `@effect/ui-kit` and `@effect/ui/html`         | Fetching, routing, assay rules   |
 | Patterns   | `@lisca/ui/patterns`                 | Recurring presentation: rails, sections, dialogs, path fields, state toggles | Workspace data                   |
 | Shell      | `@lisca/ui/shell`                    | `AppShell`, stage frame, navbar, theme, server and workspace providers       | Align or annotate workflows      |
 | Feature UI | `@lisca/instrument`                  | Align, annotate, contrast, navigation, host pickers, task center             | A second button or spacing scale |
 
-The primitives live in `packages/ui/src/components/ui`. Maintain them directly and test the behavior their public interfaces promise. `src/lib/ui-sdk.tsx` connects UI SDK core to Solid 1. The published `@ui-sdk/solid` adapter requires Solid 2, so it is not used. Keep core pinned: the binding uses its renderer interface and must be tested against any upgrade.
+The primitives live in `packages/ui/src/components/ui`. Maintain them directly and test the behavior their public interfaces promise. Read `packages/ui/node_modules/@effect/ui/AGENTS.md` before changing Effect UI components or controls. `@effect/ui-devtools` is wired in development builds via `@lisca/web-app`.
 
 ## Public imports
 
-```tsx
+```ts
 import { Button } from "@lisca/ui/button";
 import { cn } from "@lisca/ui/cn";
+import { Icon } from "@lisca/ui/icons";
 import { Button, Field } from "@lisca/ui/primitives";
 import { PanelSection, RailSidebar, StateToggleIndicator } from "@lisca/ui/patterns";
 import { AppShell, ShellNavbar } from "@lisca/ui/shell";
@@ -49,7 +50,7 @@ Stage geometry utilities are `w-rail`, `h-topbar`, `w-rail-content`, and `ml-rai
 1. Reuse a primitive, pattern, or instrument component.
 2. Compose approved controls in the app.
 3. Add a shared pattern only when the same presentation rule already appears in more than one product surface.
-4. Extend the owned primitive or compose UI SDK behaviors, with a short note in `docs/design/language.md` when the variant is new. Verify keyboard, focus, dismissal, and visual states in the browser.
+4. Extend the owned primitive or compose `@effect/ui-kit` behaviors, with a short note in `docs/design/language.md` when the variant is new. Verify keyboard, focus, dismissal, and visual states.
 
 ## Checks
 

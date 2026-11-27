@@ -3,7 +3,6 @@
   "compilerOptions": {
     "module": "Preserve",
     "moduleResolution": "Bundler",
-    "jsx": "react-jsx",
     "types": ["vite/client"]
   },
   "include": ["src", "vite.config.ts"]

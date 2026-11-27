@@ -1,12 +1,11 @@
 import tailwindcss from "@tailwindcss/vite";
-import solid from "vite-plugin-solid";
 import { copyFileSync, createReadStream, existsSync, statSync } from "node:fs";
-import { join, normalize, resolve } from "node:path";
 import { createRequire } from "node:module";
+import { join, normalize, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
-  defineConfig,
   createLogger,
+  defineConfig,
   type Logger,
   type PluginOption,
   type ProxyOptions,
@@ -25,11 +24,6 @@ const {
 } = require("../../scripts/lisca-dev-proxy-shared.cjs");
 
 export { liscaDevBackendPort, LISCA_DEV_BACKEND_PORT_OFFSET };
-
-/** Solid plugin for all Lisca web apps. Replaces the former React + React Compiler plugin. */
-export function liscaSolidPlugin(): PluginOption {
-  return solid() as unknown as PluginOption;
-}
 
 const brandPublicDir = resolve(fileURLToPath(new URL(".", import.meta.url)), "../../assets/brand");
 const modelsDir = resolve(fileURLToPath(new URL(".", import.meta.url)), "../../models");
@@ -200,18 +194,15 @@ export function createLiscaViteConfig(options: {
     base: options.base ?? (process.env.VITE_DESKTOP === "1" ? "./" : "/"),
     publicDir: brandPublicDir,
     customLogger: createLiscaDevLogger(),
-    resolve: {
-      dedupe: ["solid-js"],
-    },
-    // UI SDK's primitive and renderer entrypoints must share one core instance.
-    optimizeDeps: { exclude: ["@ui-sdk/core"] },
     build: {
-      // Shared UI SDK chunks can otherwise run app modules before Solid initializes.
-      rolldownOptions: { output: { strictExecutionOrder: true } },
+      rolldownOptions: {
+        output: {
+          strictExecutionOrder: true,
+        },
+      },
     },
     plugins: [
       ...extraPlugins,
-      liscaSolidPlugin(),
       tailwindPlugin,
       liscaModelsPlugin(),
       ...(productFavicon ? [productFavicon] : []),
@@ -219,10 +210,6 @@ export function createLiscaViteConfig(options: {
     server: {
       host: true,
       port: options.port,
-      // Ordinary dev lets Vite auto-increment when the preferred port is taken
-      // (another local app, a stale dev process). The desktop shell probes for
-      // the actual port — see `resolve_dev_url` in crates/lisca-tauri.
-      // Browser mock pins the port so the URL in the script output is the UI.
       strictPort: options.strictPort ?? false,
       open: options.open ?? false,
       proxy: liscaDevProxy(backendPort),

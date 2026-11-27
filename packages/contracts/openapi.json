@@ -16,14 +16,7 @@
             "name": "path",
             "in": "query",
             "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ]
+              "type": "string"
             },
             "required": false
           }
@@ -601,6 +594,8 @@
                   "type": "array",
                   "items": {
                     "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991,
                     "allOf": [
                       {
                         "minimum": 0,
@@ -2474,60 +2469,22 @@
   },
   "components": {
     "schemas": {
-      "HostFsEntry": {
+      "UnauthorizedEncoded": {
         "type": "object",
         "properties": {
-          "name": {
-            "type": "string"
+          "_tag": {
+            "type": "string",
+            "enum": [
+              "Unauthorized"
+            ]
           },
-          "path": {
+          "message": {
             "type": "string"
-          },
-          "isDirectory": {
-            "type": "boolean"
           }
         },
         "required": [
-          "name",
-          "path",
-          "isDirectory"
-        ],
-        "additionalProperties": false
-      },
-      "HostListDirectoryResult": {
-        "type": "object",
-        "properties": {
-          "path": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "parent": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "entries": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/HostFsEntry"
-            }
-          }
-        },
-        "required": [
-          "path",
-          "parent",
-          "entries"
+          "_tag",
+          "message"
         ],
         "additionalProperties": false
       },
@@ -2550,313 +2507,30 @@
         ],
         "additionalProperties": false
       },
-      "UnauthorizedEncoded": {
-        "type": "object",
-        "properties": {
-          "_tag": {
-            "type": "string",
-            "enum": [
-              "Unauthorized"
-            ]
-          },
-          "message": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "_tag",
-          "message"
-        ],
-        "additionalProperties": false
+      "LabelFreeClassificationList": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/LabelFreeClassification"
+        }
       },
-      "HomeDirectoryResponse": {
-        "type": "object",
-        "properties": {
-          "path": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "path"
-        ],
-        "additionalProperties": false
-      },
-      "HostDrive": {
-        "type": "object",
-        "properties": {
-          "letter": {
-            "type": "string"
-          },
-          "path": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "letter",
-          "path"
-        ],
-        "additionalProperties": false
-      },
-      "HostWindowsDrivesResponse": {
-        "type": "object",
-        "properties": {
-          "windows": {
-            "type": "boolean"
-          },
-          "drives": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/HostDrive"
-            }
-          }
-        },
-        "required": [
-          "windows",
-          "drives"
-        ],
-        "additionalProperties": false
-      },
-      "ReadTextFileResponse": {
-        "type": "object",
-        "properties": {
-          "contents": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "contents"
-        ],
-        "additionalProperties": false
-      },
-      "CreateDirectoryRequest": {
-        "type": "object",
-        "properties": {
-          "parentPath": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "parentPath",
-          "name"
-        ],
-        "additionalProperties": false
-      },
-      "CreateDirectoryResponse": {
-        "type": "object",
-        "properties": {
-          "path": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "path"
-        ],
-        "additionalProperties": false
-      },
-      "FolderSource": {
-        "type": "object",
-        "properties": {
-          "kind": {
-            "type": "string",
-            "enum": [
-              "folder"
-            ]
-          },
-          "path": {
-            "type": "string"
-          },
-          "subfolderTemplate": {
-            "type": "string"
-          },
-          "filenameTemplate": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "kind",
-          "path",
-          "subfolderTemplate",
-          "filenameTemplate"
-        ],
-        "additionalProperties": false
-      },
-      "AlignerSource": {
-        "anyOf": [
-          {
-            "$ref": "#/components/schemas/FolderSource"
-          },
-          {
-            "type": "object",
-            "properties": {
-              "kind": {
-                "type": "string",
-                "enum": [
-                  "nd2"
-                ]
-              },
-              "path": {
-                "type": "string"
-              }
-            },
-            "required": [
-              "kind",
-              "path"
-            ],
-            "additionalProperties": false
-          },
-          {
-            "type": "object",
-            "properties": {
-              "kind": {
-                "type": "string",
-                "enum": [
-                  "czi"
-                ]
-              },
-              "path": {
-                "type": "string"
-              }
-            },
-            "required": [
-              "kind",
-              "path"
-            ],
-            "additionalProperties": false
-          }
-        ]
-      },
-      "ScanSourceRequest": {
-        "type": "object",
-        "properties": {
-          "source": {
-            "$ref": "#/components/schemas/AlignerSource"
-          }
-        },
-        "required": [
-          "source"
-        ],
-        "additionalProperties": false
-      },
-      "WorkspaceScan": {
-        "type": "object",
-        "properties": {
-          "positions": {
-            "type": "array",
-            "items": {
-              "type": "integer",
-              "allOf": [
-                {
-                  "minimum": 0,
-                  "format": "uint32"
-                }
-              ]
-            }
-          },
-          "channels": {
-            "type": "array",
-            "items": {
-              "type": "integer",
-              "allOf": [
-                {
-                  "minimum": 0,
-                  "format": "uint32"
-                }
-              ]
-            }
-          },
-          "times": {
-            "type": "array",
-            "items": {
-              "type": "integer",
-              "allOf": [
-                {
-                  "minimum": 0,
-                  "format": "uint32"
-                }
-              ]
-            }
-          },
-          "zSlices": {
-            "type": "array",
-            "items": {
-              "type": "integer",
-              "allOf": [
-                {
-                  "minimum": 0,
-                  "format": "uint32"
-                }
-              ]
-            }
-          },
-          "positionLabels": {
-            "anyOf": [
-              {
-                "type": "array",
-                "items": {
-                  "type": "string"
-                }
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "channelLabels": {
-            "anyOf": [
-              {
-                "type": "array",
-                "items": {
-                  "type": "string"
-                }
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "timeLabels": {
-            "anyOf": [
-              {
-                "type": "array",
-                "items": {
-                  "type": "string"
-                }
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "zSliceLabels": {
-            "anyOf": [
-              {
-                "type": "array",
-                "items": {
-                  "type": "string"
-                }
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "required": [
-          "positions",
-          "channels",
-          "times",
-          "zSlices"
-        ],
-        "additionalProperties": false
-      },
-      "FrameRequest": {
+      "LabelFreeClassification": {
         "type": "object",
         "properties": {
           "pos": {
             "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          },
+          "roi": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
             "allOf": [
               {
                 "minimum": 0,
@@ -2866,6 +2540,8 @@
           },
           "channel": {
             "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
             "allOf": [
               {
                 "minimum": 0,
@@ -2875,6 +2551,8 @@
           },
           "time": {
             "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
             "allOf": [
               {
                 "minimum": 0,
@@ -2884,773 +2562,66 @@
           },
           "z": {
             "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
             "allOf": [
               {
                 "minimum": 0,
                 "format": "uint32"
               }
             ]
+          },
+          "labelId": {
+            "type": "string"
+          },
+          "support": {
+            "type": "number",
+            "allOf": [
+              {
+                "format": "double"
+              }
+            ]
           }
         },
         "required": [
           "pos",
+          "roi",
           "channel",
           "time",
-          "z"
+          "z",
+          "labelId",
+          "support"
         ],
         "additionalProperties": false
       },
-      "ContrastWindow": {
-        "type": "object",
-        "properties": {
-          "min": {
-            "type": "integer",
-            "allOf": [
-              {
-                "minimum": 0,
-                "format": "uint32"
-              }
-            ]
-          },
-          "max": {
-            "type": "integer",
-            "allOf": [
-              {
-                "minimum": 0,
-                "format": "uint32"
-              }
-            ]
-          }
-        },
-        "required": [
-          "min",
-          "max"
-        ],
-        "additionalProperties": false
-      },
-      "LoadFrameRequest": {
-        "type": "object",
-        "properties": {
-          "source": {
-            "$ref": "#/components/schemas/AlignerSource"
-          },
-          "request": {
-            "$ref": "#/components/schemas/FrameRequest"
-          },
-          "contrast": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/ContrastWindow"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "required": [
-          "source",
-          "request",
-          "contrast"
-        ],
-        "additionalProperties": false
-      },
-      "PixelType": {
-        "type": "string",
-        "enum": [
-          "uint8",
-          "uint8clamped",
-          "int8",
-          "uint16",
-          "int16",
-          "uint32",
-          "int32"
-        ]
-      },
-      "FramePayload": {
-        "type": "object",
-        "properties": {
-          "width": {
-            "type": "integer",
-            "allOf": [
-              {
-                "minimum": 0,
-                "format": "uint32"
-              }
-            ]
-          },
-          "height": {
-            "type": "integer",
-            "allOf": [
-              {
-                "minimum": 0,
-                "format": "uint32"
-              }
-            ]
-          },
-          "dataBase64": {
-            "type": "string"
-          },
-          "pixelType": {
-            "$ref": "#/components/schemas/PixelType"
-          },
-          "contrastDomain": {
-            "$ref": "#/components/schemas/ContrastWindow"
-          },
-          "suggestedContrast": {
-            "$ref": "#/components/schemas/ContrastWindow"
-          },
-          "appliedContrast": {
-            "$ref": "#/components/schemas/ContrastWindow"
-          }
-        },
-        "required": [
-          "width",
-          "height",
-          "dataBase64",
-          "pixelType",
-          "contrastDomain",
-          "suggestedContrast",
-          "appliedContrast"
-        ],
-        "additionalProperties": false
-      },
-      "AlignGridShape": {
-        "type": "string",
-        "enum": [
-          "rect",
-          "square",
-          "hex"
-        ]
-      },
-      "AlignGridState": {
-        "type": "object",
-        "properties": {
-          "enabled": {
-            "type": "boolean"
-          },
-          "shape": {
-            "$ref": "#/components/schemas/AlignGridShape"
-          },
-          "tx": {
-            "type": "number",
-            "allOf": [
-              {
-                "format": "double"
-              }
-            ]
-          },
-          "ty": {
-            "type": "number",
-            "allOf": [
-              {
-                "format": "double"
-              }
-            ]
-          },
-          "rotation": {
-            "type": "number",
-            "allOf": [
-              {
-                "format": "double"
-              }
-            ]
-          },
-          "spacingA": {
-            "type": "number",
-            "allOf": [
-              {
-                "format": "double"
-              }
-            ]
-          },
-          "spacingB": {
-            "type": "number",
-            "allOf": [
-              {
-                "format": "double"
-              }
-            ]
-          },
-          "patternWidth": {
-            "type": "number",
-            "allOf": [
-              {
-                "format": "double"
-              }
-            ]
-          },
-          "patternHeight": {
-            "type": "number",
-            "allOf": [
-              {
-                "format": "double"
-              }
-            ]
-          },
-          "opacity": {
-            "type": "number",
-            "allOf": [
-              {
-                "format": "double"
-              }
-            ]
-          }
-        },
-        "required": [
-          "enabled",
-          "shape",
-          "tx",
-          "ty",
-          "rotation",
-          "spacingA",
-          "spacingB",
-          "patternWidth",
-          "patternHeight",
-          "opacity"
-        ],
-        "additionalProperties": false
-      },
-      "AlignGridPatternCoord": {
-        "type": "object",
-        "properties": {
-          "i": {
-            "type": "integer",
-            "allOf": [
-              {
-                "format": "int32"
-              }
-            ]
-          },
-          "j": {
-            "type": "integer",
-            "allOf": [
-              {
-                "format": "int32"
-              }
-            ]
-          }
-        },
-        "required": [
-          "i",
-          "j"
-        ],
-        "additionalProperties": false
-      },
-      "DriftKeyframe": {
-        "type": "object",
-        "properties": {
-          "time": {
-            "type": "integer",
-            "allOf": [
-              {
-                "minimum": 0,
-                "format": "uint32"
-              }
-            ]
-          },
-          "dx": {
-            "type": "number",
-            "allOf": [
-              {
-                "format": "double"
-              }
-            ]
-          },
-          "dy": {
-            "type": "number",
-            "allOf": [
-              {
-                "format": "double"
-              }
-            ]
-          }
-        },
-        "required": [
-          "time",
-          "dx",
-          "dy"
-        ],
-        "additionalProperties": false
-      },
-      "AlignDrift": {
-        "type": "object",
-        "properties": {
-          "referenceTime": {
-            "type": "integer",
-            "allOf": [
-              {
-                "minimum": 0,
-                "format": "uint32"
-              }
-            ]
-          },
-          "interpolation": {
-            "type": "string",
-            "enum": [
-              "linear"
-            ]
-          },
-          "keyframes": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/DriftKeyframe"
-            }
-          }
-        },
-        "required": [
-          "referenceTime",
-          "interpolation",
-          "keyframes"
-        ],
-        "additionalProperties": false
-      },
-      "SavedAlignState": {
-        "type": "object",
-        "properties": {
-          "grid": {
-            "$ref": "#/components/schemas/AlignGridState"
-          },
-          "excludedPatterns": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/AlignGridPatternCoord"
-            }
-          },
-          "drift": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/AlignDrift"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "required": [
-          "grid",
-          "excludedPatterns"
-        ],
-        "additionalProperties": false
-      },
-      "SaveBboxRequest": {
+      "LabelFreeClassifyRequest": {
         "type": "object",
         "properties": {
           "workspacePath": {
             "type": "string"
           },
-          "pos": {
+          "name": {
+            "type": "string"
+          },
+          "limit": {
             "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
             "allOf": [
               {
                 "minimum": 0,
                 "format": "uint32"
               }
             ]
-          },
-          "csv": {
-            "type": "string"
-          },
-          "alignState": {
-            "$ref": "#/components/schemas/SavedAlignState"
-          }
-        },
-        "required": [
-          "workspacePath",
-          "pos",
-          "csv",
-          "alignState"
-        ],
-        "additionalProperties": false
-      },
-      "SaveBboxResponse": {
-        "type": "object",
-        "properties": {
-          "ok": {
-            "type": "boolean"
-          },
-          "error": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "required": [
-          "ok",
-          "error"
-        ],
-        "additionalProperties": false
-      },
-      "DetectGridRequest": {
-        "type": "object",
-        "properties": {
-          "source": {
-            "$ref": "#/components/schemas/AlignerSource"
-          },
-          "request": {
-            "$ref": "#/components/schemas/FrameRequest"
-          },
-          "shape": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/AlignGridShape"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "patternWidth": {
-            "anyOf": [
-              {
-                "type": "number",
-                "allOf": [
-                  {
-                    "format": "double"
-                  }
-                ]
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "patternHeight": {
-            "anyOf": [
-              {
-                "type": "number",
-                "allOf": [
-                  {
-                    "format": "double"
-                  }
-                ]
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "minSpacing": {
-            "anyOf": [
-              {
-                "type": "number",
-                "allOf": [
-                  {
-                    "format": "double"
-                  }
-                ]
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "maxSpacing": {
-            "anyOf": [
-              {
-                "type": "number",
-                "allOf": [
-                  {
-                    "format": "double"
-                  }
-                ]
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "required": [
-          "source",
-          "request"
-        ],
-        "additionalProperties": false
-      },
-      "DetectGridResponse": {
-        "type": "object",
-        "properties": {
-          "grid": {
-            "$ref": "#/components/schemas/AlignGridState"
-          },
-          "count": {
-            "type": "integer",
-            "allOf": [
-              {
-                "minimum": 0,
-                "format": "uint32"
-              }
-            ]
-          },
-          "islands": {
-            "type": "integer",
-            "allOf": [
-              {
-                "minimum": 0,
-                "format": "uint32"
-              }
-            ]
-          },
-          "confidence": {
-            "type": "number",
-            "allOf": [
-              {
-                "format": "double"
-              }
-            ]
-          },
-          "residualPx": {
-            "type": "number",
-            "allOf": [
-              {
-                "format": "double"
-              }
-            ]
-          }
-        },
-        "required": [
-          "grid",
-          "count",
-          "islands",
-          "confidence",
-          "residualPx"
-        ],
-        "additionalProperties": false
-      },
-      "AlignOutputPaths": {
-        "type": "object",
-        "properties": {
-          "bbox": {
-            "type": "string"
-          },
-          "align": {
-            "type": "string"
-          },
-          "roi": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "bbox",
-          "align",
-          "roi"
-        ],
-        "additionalProperties": false
-      },
-      "RoiPosExistsResponse": {
-        "type": "object",
-        "properties": {
-          "exists": {
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "exists"
-        ],
-        "additionalProperties": false
-      },
-      "CropOutputFormat": {
-        "type": "string",
-        "enum": [
-          "tiff"
-        ]
-      },
-      "CropRoiRequest": {
-        "type": "object",
-        "properties": {
-          "requestId": {
-            "type": "string"
-          },
-          "workspacePath": {
-            "type": "string"
-          },
-          "source": {
-            "$ref": "#/components/schemas/AlignerSource"
           },
           "positions": {
-            "type": "array",
-            "items": {
-              "type": "integer",
-              "allOf": [
-                {
-                  "minimum": 0,
-                  "format": "uint32"
-                }
-              ]
-            }
-          },
-          "overwrite": {
-            "type": "boolean"
-          },
-          "outputFormat": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/CropOutputFormat"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "required": [
-          "requestId",
-          "workspacePath",
-          "source",
-          "positions",
-          "overwrite"
-        ],
-        "additionalProperties": false
-      },
-      "CropRoiStatus": {
-        "type": "string",
-        "enum": [
-          "queued",
-          "running",
-          "completed",
-          "cancelled",
-          "error"
-        ]
-      },
-      "CropRoiDisposition": {
-        "type": "string",
-        "enum": [
-          "started",
-          "attached"
-        ]
-      },
-      "CropRoiResponse": {
-        "type": "object",
-        "properties": {
-          "requestId": {
-            "type": "string"
-          },
-          "status": {
-            "$ref": "#/components/schemas/CropRoiStatus"
-          },
-          "disposition": {
-            "$ref": "#/components/schemas/CropRoiDisposition"
-          }
-        },
-        "required": [
-          "requestId",
-          "status",
-          "disposition"
-        ],
-        "additionalProperties": false
-      },
-      "CancelCropRoiRequest": {
-        "type": "object",
-        "properties": {
-          "requestId": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "requestId"
-        ],
-        "additionalProperties": false
-      },
-      "CropRoiProgress": {
-        "type": "object",
-        "properties": {
-          "requestId": {
-            "type": "string"
-          },
-          "status": {
-            "$ref": "#/components/schemas/CropRoiStatus"
-          },
-          "position": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "allOf": [
-                  {
-                    "minimum": 0,
-                    "format": "uint32"
-                  }
-                ]
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "completedPositions": {
-            "type": "integer",
-            "allOf": [
-              {
-                "minimum": 0,
-                "format": "uint32"
-              }
-            ]
-          },
-          "totalPositions": {
-            "type": "integer",
-            "allOf": [
-              {
-                "minimum": 0,
-                "format": "uint32"
-              }
-            ]
-          },
-          "completedRois": {
-            "type": "integer",
-            "allOf": [
-              {
-                "minimum": 0,
-                "format": "uint32"
-              }
-            ]
-          },
-          "totalRois": {
-            "type": "integer",
-            "allOf": [
-              {
-                "minimum": 0,
-                "format": "uint32"
-              }
-            ]
-          },
-          "message": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "error": {
-            "anyOf": [
-              {
-                "anyOf": [
-                  {
-                    "type": "string"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ]
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "skippedPositions": {
             "anyOf": [
               {
                 "type": "array",
                 "items": {
                   "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991,
                   "allOf": [
                     {
                       "minimum": 0,
@@ -3666,559 +2637,570 @@
           }
         },
         "required": [
-          "requestId",
-          "status",
-          "position",
-          "completedPositions",
-          "totalPositions",
-          "completedRois",
-          "totalRois",
-          "message"
+          "workspacePath",
+          "name",
+          "limit"
         ],
         "additionalProperties": false
       },
-      "NullableCropRoiProgress": {
-        "anyOf": [
-          {
-            "$ref": "#/components/schemas/CropRoiProgress"
-          },
-          {
-            "type": "null"
-          }
-        ]
-      },
-      "ScanRoiWorkspaceRequest": {
+      "LabelFreeReferenceSet": {
         "type": "object",
         "properties": {
-          "workspacePath": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "workspacePath"
-        ],
-        "additionalProperties": false
-      },
-      "RoiBbox": {
-        "type": "object",
-        "properties": {
-          "roi": {
-            "type": "integer",
-            "allOf": [
-              {
-                "minimum": 0,
-                "format": "uint32"
-              }
-            ]
-          },
-          "x": {
-            "type": "integer",
-            "allOf": [
-              {
-                "minimum": 0,
-                "format": "uint32"
-              }
-            ]
-          },
-          "y": {
-            "type": "integer",
-            "allOf": [
-              {
-                "minimum": 0,
-                "format": "uint32"
-              }
-            ]
-          },
-          "w": {
-            "type": "integer",
-            "allOf": [
-              {
-                "minimum": 0,
-                "format": "uint32"
-              }
-            ]
-          },
-          "h": {
-            "type": "integer",
-            "allOf": [
-              {
-                "minimum": 0,
-                "format": "uint32"
-              }
-            ]
-          }
-        },
-        "required": [
-          "roi",
-          "x",
-          "y",
-          "w",
-          "h"
-        ],
-        "additionalProperties": false
-      },
-      "RoiIndexEntry": {
-        "type": "object",
-        "properties": {
-          "roi": {
-            "type": "integer",
-            "allOf": [
-              {
-                "minimum": 0,
-                "format": "uint32"
-              }
-            ]
-          },
-          "fileName": {
-            "type": "string"
-          },
-          "bbox": {
-            "$ref": "#/components/schemas/RoiBbox"
-          }
-        },
-        "required": [
-          "roi",
-          "fileName",
-          "bbox"
-        ],
-        "additionalProperties": false
-      },
-      "RoiPositionScan": {
-        "type": "object",
-        "properties": {
-          "pos": {
-            "type": "integer",
-            "allOf": [
-              {
-                "minimum": 0,
-                "format": "uint32"
-              }
-            ]
-          },
-          "channels": {
-            "type": "array",
-            "items": {
-              "type": "integer",
-              "allOf": [
-                {
-                  "minimum": 0,
-                  "format": "uint32"
-                }
-              ]
-            }
-          },
-          "times": {
-            "type": "array",
-            "items": {
-              "type": "integer",
-              "allOf": [
-                {
-                  "minimum": 0,
-                  "format": "uint32"
-                }
-              ]
-            }
-          },
-          "zSlices": {
-            "type": "array",
-            "items": {
-              "type": "integer",
-              "allOf": [
-                {
-                  "minimum": 0,
-                  "format": "uint32"
-                }
-              ]
-            }
-          },
-          "rois": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/RoiIndexEntry"
-            }
-          }
-        },
-        "required": [
-          "pos",
-          "channels",
-          "times",
-          "zSlices",
-          "rois"
-        ],
-        "additionalProperties": false
-      },
-      "RoiWorkspaceScan": {
-        "type": "object",
-        "properties": {
-          "positions": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/RoiPositionScan"
-            }
-          }
-        },
-        "required": [
-          "positions"
-        ],
-        "additionalProperties": false
-      },
-      "LoadAnnotationLabelsRequest": {
-        "type": "object",
-        "properties": {
-          "workspacePath": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "workspacePath"
-        ],
-        "additionalProperties": false
-      },
-      "AnnotationLabel": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
           "name": {
             "type": "string"
           },
-          "color": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "name",
-          "color"
-        ],
-        "additionalProperties": false
-      },
-      "SaveAnnotationLabelsRequest": {
-        "type": "object",
-        "properties": {
-          "workspacePath": {
-            "type": "string"
+          "count": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
           },
           "labels": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/AnnotationLabel"
+              "$ref": "#/components/schemas/LabelFreeLabelCount"
             }
-          }
-        },
-        "required": [
-          "workspacePath",
-          "labels"
-        ],
-        "additionalProperties": false
-      },
-      "RoiFrameRequest": {
-        "type": "object",
-        "properties": {
-          "pos": {
-            "type": "integer",
-            "allOf": [
-              {
-                "minimum": 0,
-                "format": "uint32"
-              }
-            ]
           },
-          "roi": {
-            "type": "integer",
-            "allOf": [
-              {
-                "minimum": 0,
-                "format": "uint32"
-              }
-            ]
-          },
-          "channel": {
-            "type": "integer",
-            "allOf": [
-              {
-                "minimum": 0,
-                "format": "uint32"
-              }
-            ]
-          },
-          "time": {
-            "type": "integer",
-            "allOf": [
-              {
-                "minimum": 0,
-                "format": "uint32"
-              }
-            ]
-          },
-          "z": {
-            "type": "integer",
-            "allOf": [
-              {
-                "minimum": 0,
-                "format": "uint32"
-              }
-            ]
-          }
-        },
-        "required": [
-          "pos",
-          "roi",
-          "channel",
-          "time",
-          "z"
-        ],
-        "additionalProperties": false
-      },
-      "LoadRoiFrameRequest": {
-        "type": "object",
-        "properties": {
-          "workspacePath": {
+          "modelId": {
             "type": "string"
           },
-          "request": {
-            "$ref": "#/components/schemas/RoiFrameRequest"
-          },
-          "contrast": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/ContrastWindow"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "required": [
-          "workspacePath",
-          "request",
-          "contrast"
-        ],
-        "additionalProperties": false
-      },
-      "LoadRoiFrameAnnotationRequest": {
-        "type": "object",
-        "properties": {
-          "workspacePath": {
+          "revision": {
             "type": "string"
           },
-          "request": {
-            "$ref": "#/components/schemas/RoiFrameRequest"
-          }
-        },
-        "required": [
-          "workspacePath",
-          "request"
-        ],
-        "additionalProperties": false
-      },
-      "RoiFrameAnnotation": {
-        "type": "object",
-        "properties": {
-          "classificationLabelId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "maskPath": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "updatedAt": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "required": [
-          "classificationLabelId",
-          "maskPath",
-          "updatedAt"
-        ],
-        "additionalProperties": false
-      },
-      "LoadedRoiFrameAnnotation": {
-        "type": "object",
-        "properties": {
-          "annotation": {
-            "$ref": "#/components/schemas/RoiFrameAnnotation"
-          },
-          "maskBase64Png": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "required": [
-          "annotation",
-          "maskBase64Png"
-        ],
-        "additionalProperties": false
-      },
-      "RoiFrameAnnotationPayload": {
-        "type": "object",
-        "properties": {
-          "classificationLabelId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "maskBase64Png": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "required": [
-          "classificationLabelId",
-          "maskBase64Png"
-        ],
-        "additionalProperties": false
-      },
-      "SaveRoiFrameAnnotationRequest": {
-        "type": "object",
-        "properties": {
-          "workspacePath": {
+          "encoderId": {
             "type": "string"
-          },
-          "request": {
-            "$ref": "#/components/schemas/RoiFrameRequest"
-          },
-          "annotation": {
-            "$ref": "#/components/schemas/RoiFrameAnnotationPayload"
           }
         },
         "required": [
-          "workspacePath",
-          "request",
-          "annotation"
+          "name",
+          "count",
+          "labels",
+          "modelId",
+          "revision",
+          "encoderId"
         ],
         "additionalProperties": false
       },
-      "SmartSegmentPoint": {
+      "LabelFreeLabelCount": {
         "type": "object",
         "properties": {
-          "x": {
-            "type": "number"
-          },
-          "y": {
-            "type": "number"
-          },
           "label": {
-            "type": "number",
-            "enum": [
-              0,
-              1
+            "type": "string"
+          },
+          "count": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
             ]
           }
         },
         "required": [
-          "x",
-          "y",
-          "label"
+          "label",
+          "count"
         ],
         "additionalProperties": false
       },
-      "SmartSegmentRequest": {
+      "LabelFreeReferenceRequest": {
         "type": "object",
         "properties": {
           "workspacePath": {
             "type": "string"
           },
-          "request": {
-            "$ref": "#/components/schemas/RoiFrameRequest"
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "workspacePath",
+          "name"
+        ],
+        "additionalProperties": false
+      },
+      "LabelFreeReferenceSetList": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/LabelFreeReferenceSet"
+        }
+      },
+      "LabelFreeHealth": {
+        "type": "object",
+        "properties": {
+          "apiVersion": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
           },
-          "contrast": {
+          "provider": {
+            "$ref": "#/components/schemas/LabelFreeProvider"
+          },
+          "configured": {
+            "type": "boolean"
+          },
+          "modelId": {
+            "type": "string"
+          },
+          "revision": {
+            "type": "string"
+          },
+          "dimensions": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          },
+          "batchSize": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          },
+          "cacheCap": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          }
+        },
+        "required": [
+          "apiVersion",
+          "provider",
+          "configured",
+          "modelId",
+          "revision",
+          "dimensions",
+          "batchSize",
+          "cacheCap"
+        ],
+        "additionalProperties": false
+      },
+      "LabelFreeProvider": {
+        "type": "string",
+        "enum": [
+          "openrouter",
+          "ollama"
+        ]
+      },
+      "LabelFreeKeyRequest": {
+        "type": "object",
+        "properties": {
+          "apiKey": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/ContrastWindow"
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ]
           },
-          "points": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/SmartSegmentPoint"
-            }
+          "provider": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LabelFreeProvider"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "AnalysisProgress": {
+        "type": "object",
+        "properties": {
+          "requestId": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/AnalysisStatus"
+          },
+          "stage": {
+            "$ref": "#/components/schemas/AnalysisStage"
+          },
+          "progress": {
+            "type": "number",
+            "allOf": [
+              {
+                "format": "double"
+              }
+            ]
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "resultFiles": {
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/AnalysisCsvFile"
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "requestId",
+          "status",
+          "stage",
+          "progress",
+          "message",
+          "error"
+        ],
+        "additionalProperties": false
+      },
+      "AnalysisCsvFile": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string"
+          },
+          "fileName": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "csv": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "fileName",
+          "path",
+          "csv"
+        ],
+        "additionalProperties": false
+      },
+      "AnalysisStage": {
+        "type": "string",
+        "enum": [
+          "queued",
+          "preparing",
+          "segment",
+          "traces",
+          "auc",
+          "fit",
+          "completed"
+        ]
+      },
+      "AnalysisStatus": {
+        "type": "string",
+        "enum": [
+          "queued",
+          "running",
+          "completed",
+          "error"
+        ]
+      },
+      "AnalysisStartRequest": {
+        "type": "object",
+        "properties": {
+          "workspacePath": {
+            "type": "string"
+          },
+          "requestId": {
+            "type": "string"
           }
         },
         "required": [
           "workspacePath",
-          "request",
-          "contrast",
-          "points"
+          "requestId"
         ],
         "additionalProperties": false
       },
-      "SmartSegmentResponse": {
+      "SaveAssayJsonResponse": {
         "type": "object",
         "properties": {
-          "mask": {
-            "type": "array",
-            "items": {
-              "type": "integer",
-              "allOf": [
-                {
-                  "minimum": 0,
-                  "format": "uint32"
-                }
-              ]
-            }
+          "ok": {
+            "type": "boolean"
+          },
+          "path": {
+            "type": "string"
           }
         },
         "required": [
-          "mask"
+          "ok",
+          "path"
         ],
         "additionalProperties": false
       },
-      "ProfileSummary": {
+      "SaveAssayJsonRequest": {
         "type": "object",
         "properties": {
+          "saveTo": {
+            "type": "string"
+          },
+          "contents": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "saveTo",
+          "contents"
+        ],
+        "additionalProperties": false
+      },
+      "TaskCommandErrorEncoded": {
+        "type": "object",
+        "properties": {
+          "_tag": {
+            "type": "string",
+            "enum": [
+              "TaskCommandError"
+            ]
+          },
+          "code": {
+            "type": "string",
+            "enum": [
+              "not-found",
+              "invalid-transition"
+            ]
+          },
+          "entity": {
+            "type": "string",
+            "enum": [
+              "task",
+              "step"
+            ]
+          },
           "id": {
             "type": "string"
           },
-          "displayName": {
+          "currentStatus": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "_tag",
+          "code",
+          "entity",
+          "id",
+          "currentStatus",
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "TaskDetail": {
+        "type": "object",
+        "properties": {
+          "task": {
+            "$ref": "#/components/schemas/TaskSummary"
+          },
+          "steps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StepDetail"
+            }
+          }
+        },
+        "required": [
+          "task",
+          "steps"
+        ],
+        "additionalProperties": false
+      },
+      "StepDetail": {
+        "type": "object",
+        "properties": {
+          "stepId": {
             "type": "string"
           },
-          "createdAt": {
+          "taskId": {
+            "type": "string"
+          },
+          "stepKind": {
+            "type": "string"
+          },
+          "workspaceId": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/StepStatus"
+          },
+          "weight": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          },
+          "enqueueOrder": {
             "type": "integer",
             "minimum": 0,
+            "maximum": 9007199254740991,
+            "allOf": [
+              {
+                "maximum": 9007199254740991,
+                "format": "uint64"
+              }
+            ]
+          },
+          "dependencies": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "blockedBy": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StepDependencyBlock"
+            }
+          },
+          "attempts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StepAttempt"
+            }
+          },
+          "workProgress": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StepWorkProgress"
+              },
+              {
+                "type": "null"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "stepId",
+          "taskId",
+          "stepKind",
+          "workspaceId",
+          "status",
+          "weight",
+          "enqueueOrder",
+          "dependencies",
+          "blockedBy",
+          "attempts"
+        ],
+        "additionalProperties": false
+      },
+      "StepWorkProgress": {
+        "type": "object",
+        "properties": {
+          "unit": {
+            "type": "string"
+          },
+          "completed": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          },
+          "total": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          },
+          "phase": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "updatedAtMs": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991,
             "allOf": [
               {
                 "maximum": 9007199254740991,
@@ -4228,246 +3210,412 @@
           }
         },
         "required": [
-          "id",
-          "displayName",
-          "createdAt"
+          "unit",
+          "completed",
+          "total",
+          "phase",
+          "message",
+          "updatedAtMs"
         ],
         "additionalProperties": false
       },
-      "ProfileListResponse": {
+      "StepAttempt": {
         "type": "object",
         "properties": {
-          "profiles": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ProfileSummary"
-            }
-          }
-        },
-        "required": [
-          "profiles"
-        ],
-        "additionalProperties": false
-      },
-      "ProfileCreateRequest": {
-        "type": "object",
-        "properties": {
-          "displayName": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "displayName"
-        ],
-        "additionalProperties": false
-      },
-      "ProfileSessionResponse": {
-        "type": "object",
-        "properties": {
-          "profileId": {
+          "attemptId": {
             "type": "string"
           },
-          "displayName": {
+          "taskId": {
             "type": "string"
           },
-          "accessToken": {
+          "stepId": {
             "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/StepStatus"
+          },
+          "startedAtMs": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991,
+                "allOf": [
+                  {
+                    "maximum": 9007199254740991,
+                    "format": "uint64"
+                  }
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "finishedAtMs": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991,
+                "allOf": [
+                  {
+                    "maximum": 9007199254740991,
+                    "format": "uint64"
+                  }
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StepError"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
-          "profileId",
-          "displayName",
-          "accessToken"
+          "attemptId",
+          "taskId",
+          "stepId",
+          "status",
+          "startedAtMs",
+          "finishedAtMs",
+          "error"
         ],
         "additionalProperties": false
       },
-      "ProfileSignInRequest": {
+      "StepError": {
         "type": "object",
         "properties": {
-          "displayName": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
             "type": "string"
           }
         },
         "required": [
-          "displayName"
+          "code",
+          "message"
         ],
         "additionalProperties": false
       },
-      "ProfileSignOutResponse": {
+      "StepStatus": {
+        "type": "string",
+        "enum": [
+          "queued",
+          "blocked",
+          "running",
+          "completed",
+          "failed",
+          "cancelled",
+          "cancellation-requested"
+        ]
+      },
+      "StepDependencyBlock": {
+        "type": "object",
+        "properties": {
+          "stepId": {
+            "type": "string"
+          },
+          "stepKind": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/StepStatus"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StepError"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "stepId",
+          "stepKind",
+          "status",
+          "error"
+        ],
+        "additionalProperties": false
+      },
+      "TaskSummary": {
+        "type": "object",
+        "properties": {
+          "taskId": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "workspaceId": {
+            "type": "string"
+          },
+          "workspacePath": {
+            "type": "string"
+          },
+          "mutating": {
+            "type": "boolean"
+          },
+          "status": {
+            "$ref": "#/components/schemas/TaskStatus"
+          },
+          "attention": {
+            "$ref": "#/components/schemas/TaskAttention"
+          },
+          "progress": {
+            "$ref": "#/components/schemas/TaskProgress"
+          },
+          "activeStepKind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "workProgress": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StepWorkProgress"
+              },
+              {
+                "type": "null"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "createdAtMs": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991,
+            "allOf": [
+              {
+                "maximum": 9007199254740991,
+                "format": "uint64"
+              }
+            ]
+          },
+          "updatedAtMs": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991,
+            "allOf": [
+              {
+                "maximum": 9007199254740991,
+                "format": "uint64"
+              }
+            ]
+          }
+        },
+        "required": [
+          "taskId",
+          "kind",
+          "workspaceId",
+          "workspacePath",
+          "mutating",
+          "status",
+          "attention",
+          "progress",
+          "createdAtMs",
+          "updatedAtMs"
+        ],
+        "additionalProperties": false
+      },
+      "TaskProgress": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          },
+          "queued": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          },
+          "blocked": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          },
+          "running": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          },
+          "completed": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          },
+          "failed": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          },
+          "cancelled": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          },
+          "cancellationRequested": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          }
+        },
+        "required": [
+          "total",
+          "queued",
+          "blocked",
+          "running",
+          "completed",
+          "failed",
+          "cancelled",
+          "cancellationRequested"
+        ],
+        "additionalProperties": false
+      },
+      "TaskAttention": {
+        "type": "string",
+        "enum": [
+          "none",
+          "error"
+        ]
+      },
+      "TaskStatus": {
+        "type": "string",
+        "enum": [
+          "queued",
+          "running",
+          "partially-complete",
+          "completed",
+          "failed",
+          "cancelled",
+          "cancellation-requested"
+        ]
+      },
+      "TaskCancelRequest": {
+        "type": "object",
+        "properties": {
+          "taskId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "taskId"
+        ],
+        "additionalProperties": false
+      },
+      "StepRetryRequest": {
+        "type": "object",
+        "properties": {
+          "stepId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "stepId"
+        ],
+        "additionalProperties": false
+      },
+      "StepCancelRequest": {
+        "type": "object",
+        "properties": {
+          "stepId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "stepId"
+        ],
+        "additionalProperties": false
+      },
+      "TaskList": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/TaskSummary"
+        }
+      },
+      "MemoryTouchResponse": {
         "type": "object",
         "properties": {
           "ok": {
-            "type": "boolean",
-            "enum": [
-              true
-            ]
+            "type": "boolean"
           }
         },
         "required": [
           "ok"
         ],
-        "additionalProperties": false
-      },
-      "MemoryKind": {
-        "type": "string",
-        "enum": [
-          "workspace",
-          "source",
-          "assay"
-        ]
-      },
-      "MemoryWorkspaceEntry": {
-        "type": "object",
-        "properties": {
-          "path": {
-            "type": "string"
-          },
-          "label": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "lastUsedAt": {
-            "type": "integer",
-            "minimum": 0,
-            "allOf": [
-              {
-                "maximum": 9007199254740991,
-                "format": "uint64"
-              }
-            ]
-          }
-        },
-        "required": [
-          "path",
-          "lastUsedAt"
-        ],
-        "additionalProperties": false
-      },
-      "MemorySourceEntry": {
-        "type": "object",
-        "properties": {
-          "source": {
-            "$ref": "#/components/schemas/AlignerSource"
-          },
-          "label": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "lastUsedAt": {
-            "type": "integer",
-            "minimum": 0,
-            "allOf": [
-              {
-                "maximum": 9007199254740991,
-                "format": "uint64"
-              }
-            ]
-          }
-        },
-        "required": [
-          "source",
-          "lastUsedAt"
-        ],
-        "additionalProperties": false
-      },
-      "MemoryAssayEntry": {
-        "type": "object",
-        "properties": {
-          "path": {
-            "type": "string"
-          },
-          "assayLabel": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "workspacePath": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "lastUsedAt": {
-            "type": "integer",
-            "minimum": 0,
-            "allOf": [
-              {
-                "maximum": 9007199254740991,
-                "format": "uint64"
-              }
-            ]
-          }
-        },
-        "required": [
-          "path",
-          "lastUsedAt"
-        ],
-        "additionalProperties": false
-      },
-      "MemoryRecentResponse": {
-        "type": "object",
-        "properties": {
-          "workspaces": {
-            "anyOf": [
-              {
-                "type": "array",
-                "items": {
-                  "$ref": "#/components/schemas/MemoryWorkspaceEntry"
-                }
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "sources": {
-            "anyOf": [
-              {
-                "type": "array",
-                "items": {
-                  "$ref": "#/components/schemas/MemorySourceEntry"
-                }
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "assays": {
-            "anyOf": [
-              {
-                "type": "array",
-                "items": {
-                  "$ref": "#/components/schemas/MemoryAssayEntry"
-                }
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
         "additionalProperties": false
       },
       "MemoryTouchRequest": {
@@ -4571,743 +3719,87 @@
           }
         ]
       },
-      "MemoryTouchResponse": {
-        "type": "object",
-        "properties": {
-          "ok": {
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "ok"
-        ],
-        "additionalProperties": false
-      },
-      "TaskStatus": {
-        "type": "string",
-        "enum": [
-          "queued",
-          "running",
-          "partially-complete",
-          "completed",
-          "failed",
-          "cancelled",
-          "cancellation-requested"
-        ]
-      },
-      "TaskAttention": {
-        "type": "string",
-        "enum": [
-          "none",
-          "error"
-        ]
-      },
-      "TaskProgress": {
-        "type": "object",
-        "properties": {
-          "total": {
-            "type": "integer",
-            "allOf": [
-              {
-                "minimum": 0,
-                "format": "uint32"
-              }
-            ]
+      "AlignerSource": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/FolderSource"
           },
-          "queued": {
-            "type": "integer",
-            "allOf": [
-              {
-                "minimum": 0,
-                "format": "uint32"
-              }
-            ]
-          },
-          "blocked": {
-            "type": "integer",
-            "allOf": [
-              {
-                "minimum": 0,
-                "format": "uint32"
-              }
-            ]
-          },
-          "running": {
-            "type": "integer",
-            "allOf": [
-              {
-                "minimum": 0,
-                "format": "uint32"
-              }
-            ]
-          },
-          "completed": {
-            "type": "integer",
-            "allOf": [
-              {
-                "minimum": 0,
-                "format": "uint32"
-              }
-            ]
-          },
-          "failed": {
-            "type": "integer",
-            "allOf": [
-              {
-                "minimum": 0,
-                "format": "uint32"
-              }
-            ]
-          },
-          "cancelled": {
-            "type": "integer",
-            "allOf": [
-              {
-                "minimum": 0,
-                "format": "uint32"
-              }
-            ]
-          },
-          "cancellationRequested": {
-            "type": "integer",
-            "allOf": [
-              {
-                "minimum": 0,
-                "format": "uint32"
-              }
-            ]
-          }
-        },
-        "required": [
-          "total",
-          "queued",
-          "blocked",
-          "running",
-          "completed",
-          "failed",
-          "cancelled",
-          "cancellationRequested"
-        ],
-        "additionalProperties": false
-      },
-      "StepWorkProgress": {
-        "type": "object",
-        "properties": {
-          "unit": {
-            "type": "string"
-          },
-          "completed": {
-            "type": "integer",
-            "allOf": [
-              {
-                "minimum": 0,
-                "format": "uint32"
-              }
-            ]
-          },
-          "total": {
-            "type": "integer",
-            "allOf": [
-              {
-                "minimum": 0,
-                "format": "uint32"
-              }
-            ]
-          },
-          "phase": {
-            "anyOf": [
-              {
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "nd2"
+                ]
+              },
+              "path": {
                 "type": "string"
-              },
-              {
-                "type": "null"
               }
-            ]
+            },
+            "required": [
+              "kind",
+              "path"
+            ],
+            "additionalProperties": false
           },
-          "message": {
-            "anyOf": [
-              {
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "czi"
+                ]
+              },
+              "path": {
                 "type": "string"
-              },
-              {
-                "type": "null"
               }
-            ]
-          },
-          "updatedAtMs": {
-            "type": "integer",
-            "minimum": 0,
-            "allOf": [
-              {
-                "maximum": 9007199254740991,
-                "format": "uint64"
-              }
-            ]
+            },
+            "required": [
+              "kind",
+              "path"
+            ],
+            "additionalProperties": false
           }
-        },
-        "required": [
-          "unit",
-          "completed",
-          "total",
-          "phase",
-          "message",
-          "updatedAtMs"
-        ],
-        "additionalProperties": false
-      },
-      "TaskSummary": {
-        "type": "object",
-        "properties": {
-          "taskId": {
-            "type": "string"
-          },
-          "kind": {
-            "type": "string"
-          },
-          "workspaceId": {
-            "type": "string"
-          },
-          "workspacePath": {
-            "type": "string"
-          },
-          "mutating": {
-            "type": "boolean"
-          },
-          "status": {
-            "$ref": "#/components/schemas/TaskStatus"
-          },
-          "attention": {
-            "$ref": "#/components/schemas/TaskAttention"
-          },
-          "progress": {
-            "$ref": "#/components/schemas/TaskProgress"
-          },
-          "activeStepKind": {
-            "anyOf": [
-              {
-                "anyOf": [
-                  {
-                    "type": "string"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ]
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "workProgress": {
-            "anyOf": [
-              {
-                "anyOf": [
-                  {
-                    "$ref": "#/components/schemas/StepWorkProgress"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ]
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "createdAtMs": {
-            "type": "integer",
-            "minimum": 0,
-            "allOf": [
-              {
-                "maximum": 9007199254740991,
-                "format": "uint64"
-              }
-            ]
-          },
-          "updatedAtMs": {
-            "type": "integer",
-            "minimum": 0,
-            "allOf": [
-              {
-                "maximum": 9007199254740991,
-                "format": "uint64"
-              }
-            ]
-          }
-        },
-        "required": [
-          "taskId",
-          "kind",
-          "workspaceId",
-          "workspacePath",
-          "mutating",
-          "status",
-          "attention",
-          "progress",
-          "createdAtMs",
-          "updatedAtMs"
-        ],
-        "additionalProperties": false
-      },
-      "TaskList": {
-        "type": "array",
-        "items": {
-          "$ref": "#/components/schemas/TaskSummary"
-        }
-      },
-      "StepStatus": {
-        "type": "string",
-        "enum": [
-          "queued",
-          "blocked",
-          "running",
-          "completed",
-          "failed",
-          "cancelled",
-          "cancellation-requested"
         ]
       },
-      "StepError": {
-        "type": "object",
-        "properties": {
-          "code": {
-            "type": "string"
-          },
-          "message": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "code",
-          "message"
-        ],
-        "additionalProperties": false
-      },
-      "StepDependencyBlock": {
-        "type": "object",
-        "properties": {
-          "stepId": {
-            "type": "string"
-          },
-          "stepKind": {
-            "type": "string"
-          },
-          "status": {
-            "$ref": "#/components/schemas/StepStatus"
-          },
-          "error": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/StepError"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "required": [
-          "stepId",
-          "stepKind",
-          "status",
-          "error"
-        ],
-        "additionalProperties": false
-      },
-      "StepAttempt": {
-        "type": "object",
-        "properties": {
-          "attemptId": {
-            "type": "string"
-          },
-          "taskId": {
-            "type": "string"
-          },
-          "stepId": {
-            "type": "string"
-          },
-          "status": {
-            "$ref": "#/components/schemas/StepStatus"
-          },
-          "startedAtMs": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "minimum": 0,
-                "allOf": [
-                  {
-                    "maximum": 9007199254740991,
-                    "format": "uint64"
-                  }
-                ]
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "finishedAtMs": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "minimum": 0,
-                "allOf": [
-                  {
-                    "maximum": 9007199254740991,
-                    "format": "uint64"
-                  }
-                ]
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "error": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/StepError"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "required": [
-          "attemptId",
-          "taskId",
-          "stepId",
-          "status",
-          "startedAtMs",
-          "finishedAtMs",
-          "error"
-        ],
-        "additionalProperties": false
-      },
-      "StepDetail": {
-        "type": "object",
-        "properties": {
-          "stepId": {
-            "type": "string"
-          },
-          "taskId": {
-            "type": "string"
-          },
-          "stepKind": {
-            "type": "string"
-          },
-          "workspaceId": {
-            "type": "string"
-          },
-          "status": {
-            "$ref": "#/components/schemas/StepStatus"
-          },
-          "weight": {
-            "type": "integer",
-            "allOf": [
-              {
-                "minimum": 0,
-                "format": "uint32"
-              }
-            ]
-          },
-          "enqueueOrder": {
-            "type": "integer",
-            "minimum": 0,
-            "allOf": [
-              {
-                "maximum": 9007199254740991,
-                "format": "uint64"
-              }
-            ]
-          },
-          "dependencies": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "blockedBy": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/StepDependencyBlock"
-            }
-          },
-          "attempts": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/StepAttempt"
-            }
-          },
-          "workProgress": {
-            "anyOf": [
-              {
-                "anyOf": [
-                  {
-                    "$ref": "#/components/schemas/StepWorkProgress"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ]
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "required": [
-          "stepId",
-          "taskId",
-          "stepKind",
-          "workspaceId",
-          "status",
-          "weight",
-          "enqueueOrder",
-          "dependencies",
-          "blockedBy",
-          "attempts"
-        ],
-        "additionalProperties": false
-      },
-      "TaskDetail": {
-        "type": "object",
-        "properties": {
-          "task": {
-            "$ref": "#/components/schemas/TaskSummary"
-          },
-          "steps": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/StepDetail"
-            }
-          }
-        },
-        "required": [
-          "task",
-          "steps"
-        ],
-        "additionalProperties": false
-      },
-      "TaskCancelRequest": {
-        "type": "object",
-        "properties": {
-          "taskId": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "taskId"
-        ],
-        "additionalProperties": false
-      },
-      "TaskCommandErrorEncoded": {
-        "type": "object",
-        "properties": {
-          "_tag": {
-            "type": "string",
-            "enum": [
-              "TaskCommandError"
-            ]
-          },
-          "code": {
-            "type": "string",
-            "enum": [
-              "not-found",
-              "invalid-transition"
-            ]
-          },
-          "entity": {
-            "type": "string",
-            "enum": [
-              "task",
-              "step"
-            ]
-          },
-          "id": {
-            "type": "string"
-          },
-          "currentStatus": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "message": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "_tag",
-          "code",
-          "entity",
-          "id",
-          "currentStatus",
-          "message"
-        ],
-        "additionalProperties": false
-      },
-      "StepCancelRequest": {
-        "type": "object",
-        "properties": {
-          "stepId": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "stepId"
-        ],
-        "additionalProperties": false
-      },
-      "StepRetryRequest": {
-        "type": "object",
-        "properties": {
-          "stepId": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "stepId"
-        ],
-        "additionalProperties": false
-      },
-      "SaveAssayJsonRequest": {
-        "type": "object",
-        "properties": {
-          "saveTo": {
-            "type": "string"
-          },
-          "contents": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "saveTo",
-          "contents"
-        ],
-        "additionalProperties": false
-      },
-      "SaveAssayJsonResponse": {
-        "type": "object",
-        "properties": {
-          "ok": {
-            "type": "boolean"
-          },
-          "path": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "ok",
-          "path"
-        ],
-        "additionalProperties": false
-      },
-      "AnalysisStartRequest": {
-        "type": "object",
-        "properties": {
-          "workspacePath": {
-            "type": "string"
-          },
-          "requestId": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "workspacePath",
-          "requestId"
-        ],
-        "additionalProperties": false
-      },
-      "AnalysisStatus": {
-        "type": "string",
-        "enum": [
-          "queued",
-          "running",
-          "completed",
-          "error"
-        ]
-      },
-      "AnalysisStage": {
-        "type": "string",
-        "enum": [
-          "queued",
-          "preparing",
-          "segment",
-          "traces",
-          "auc",
-          "fit",
-          "completed"
-        ]
-      },
-      "AnalysisCsvFile": {
+      "FolderSource": {
         "type": "object",
         "properties": {
           "kind": {
-            "type": "string"
-          },
-          "fileName": {
-            "type": "string"
+            "type": "string",
+            "enum": [
+              "folder"
+            ]
           },
           "path": {
             "type": "string"
           },
-          "csv": {
+          "subfolderTemplate": {
+            "type": "string"
+          },
+          "filenameTemplate": {
             "type": "string"
           }
         },
         "required": [
           "kind",
-          "fileName",
           "path",
-          "csv"
+          "subfolderTemplate",
+          "filenameTemplate"
         ],
         "additionalProperties": false
       },
-      "AnalysisProgress": {
+      "MemoryRecentResponse": {
         "type": "object",
         "properties": {
-          "requestId": {
-            "type": "string"
-          },
-          "status": {
-            "$ref": "#/components/schemas/AnalysisStatus"
-          },
-          "stage": {
-            "$ref": "#/components/schemas/AnalysisStage"
-          },
-          "progress": {
-            "type": "number",
-            "allOf": [
-              {
-                "format": "double"
-              }
-            ]
-          },
-          "message": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "resultFiles": {
+          "workspaces": {
             "anyOf": [
               {
                 "type": "array",
                 "items": {
-                  "$ref": "#/components/schemas/AnalysisCsvFile"
+                  "$ref": "#/components/schemas/MemoryWorkspaceEntry"
                 }
               },
               {
@@ -5315,6 +3807,996 @@
               }
             ]
           },
+          "sources": {
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/MemorySourceEntry"
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "assays": {
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/MemoryAssayEntry"
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "MemoryAssayEntry": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "assayLabel": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "workspacePath": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "lastUsedAt": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991,
+            "allOf": [
+              {
+                "maximum": 9007199254740991,
+                "format": "uint64"
+              }
+            ]
+          }
+        },
+        "required": [
+          "path",
+          "lastUsedAt"
+        ],
+        "additionalProperties": false
+      },
+      "MemorySourceEntry": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "$ref": "#/components/schemas/AlignerSource"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "lastUsedAt": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991,
+            "allOf": [
+              {
+                "maximum": 9007199254740991,
+                "format": "uint64"
+              }
+            ]
+          }
+        },
+        "required": [
+          "source",
+          "lastUsedAt"
+        ],
+        "additionalProperties": false
+      },
+      "MemoryWorkspaceEntry": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "lastUsedAt": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991,
+            "allOf": [
+              {
+                "maximum": 9007199254740991,
+                "format": "uint64"
+              }
+            ]
+          }
+        },
+        "required": [
+          "path",
+          "lastUsedAt"
+        ],
+        "additionalProperties": false
+      },
+      "MemoryKind": {
+        "type": "string",
+        "enum": [
+          "workspace",
+          "source",
+          "assay"
+        ]
+      },
+      "ProfileSignOutResponse": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          }
+        },
+        "required": [
+          "ok"
+        ],
+        "additionalProperties": false
+      },
+      "ProfileSessionResponse": {
+        "type": "object",
+        "properties": {
+          "profileId": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "accessToken": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "profileId",
+          "displayName",
+          "accessToken"
+        ],
+        "additionalProperties": false
+      },
+      "ProfileSignInRequest": {
+        "type": "object",
+        "properties": {
+          "displayName": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "displayName"
+        ],
+        "additionalProperties": false
+      },
+      "ProfileCreateRequest": {
+        "type": "object",
+        "properties": {
+          "displayName": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "displayName"
+        ],
+        "additionalProperties": false
+      },
+      "ProfileListResponse": {
+        "type": "object",
+        "properties": {
+          "profiles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProfileSummary"
+            }
+          }
+        },
+        "required": [
+          "profiles"
+        ],
+        "additionalProperties": false
+      },
+      "ProfileSummary": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991,
+            "allOf": [
+              {
+                "maximum": 9007199254740991,
+                "format": "uint64"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "displayName",
+          "createdAt"
+        ],
+        "additionalProperties": false
+      },
+      "SmartSegmentResponse": {
+        "type": "object",
+        "properties": {
+          "mask": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991,
+              "allOf": [
+                {
+                  "minimum": 0,
+                  "format": "uint32"
+                }
+              ]
+            }
+          }
+        },
+        "required": [
+          "mask"
+        ],
+        "additionalProperties": false
+      },
+      "SmartSegmentRequest": {
+        "type": "object",
+        "properties": {
+          "workspacePath": {
+            "type": "string"
+          },
+          "request": {
+            "$ref": "#/components/schemas/RoiFrameRequest"
+          },
+          "contrast": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ContrastWindow"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "points": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SmartSegmentPoint"
+            }
+          }
+        },
+        "required": [
+          "workspacePath",
+          "request",
+          "contrast",
+          "points"
+        ],
+        "additionalProperties": false
+      },
+      "SmartSegmentPoint": {
+        "type": "object",
+        "properties": {
+          "x": {
+            "type": "number"
+          },
+          "y": {
+            "type": "number"
+          },
+          "label": {
+            "type": "number",
+            "enum": [
+              0,
+              1
+            ]
+          }
+        },
+        "required": [
+          "x",
+          "y",
+          "label"
+        ],
+        "additionalProperties": false
+      },
+      "ContrastWindow": {
+        "type": "object",
+        "properties": {
+          "min": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          },
+          "max": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          }
+        },
+        "required": [
+          "min",
+          "max"
+        ],
+        "additionalProperties": false
+      },
+      "RoiFrameRequest": {
+        "type": "object",
+        "properties": {
+          "pos": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          },
+          "roi": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          },
+          "channel": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          },
+          "time": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          },
+          "z": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          }
+        },
+        "required": [
+          "pos",
+          "roi",
+          "channel",
+          "time",
+          "z"
+        ],
+        "additionalProperties": false
+      },
+      "RoiFrameAnnotation": {
+        "type": "object",
+        "properties": {
+          "classificationLabelId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "maskPath": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "updatedAt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "classificationLabelId",
+          "maskPath",
+          "updatedAt"
+        ],
+        "additionalProperties": false
+      },
+      "SaveRoiFrameAnnotationRequest": {
+        "type": "object",
+        "properties": {
+          "workspacePath": {
+            "type": "string"
+          },
+          "request": {
+            "$ref": "#/components/schemas/RoiFrameRequest"
+          },
+          "annotation": {
+            "$ref": "#/components/schemas/RoiFrameAnnotationPayload"
+          }
+        },
+        "required": [
+          "workspacePath",
+          "request",
+          "annotation"
+        ],
+        "additionalProperties": false
+      },
+      "RoiFrameAnnotationPayload": {
+        "type": "object",
+        "properties": {
+          "classificationLabelId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "maskBase64Png": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "classificationLabelId",
+          "maskBase64Png"
+        ],
+        "additionalProperties": false
+      },
+      "LoadedRoiFrameAnnotation": {
+        "type": "object",
+        "properties": {
+          "annotation": {
+            "$ref": "#/components/schemas/RoiFrameAnnotation"
+          },
+          "maskBase64Png": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "annotation",
+          "maskBase64Png"
+        ],
+        "additionalProperties": false
+      },
+      "LoadRoiFrameAnnotationRequest": {
+        "type": "object",
+        "properties": {
+          "workspacePath": {
+            "type": "string"
+          },
+          "request": {
+            "$ref": "#/components/schemas/RoiFrameRequest"
+          }
+        },
+        "required": [
+          "workspacePath",
+          "request"
+        ],
+        "additionalProperties": false
+      },
+      "FramePayload": {
+        "type": "object",
+        "properties": {
+          "width": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          },
+          "height": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          },
+          "dataBase64": {
+            "type": "string"
+          },
+          "pixelType": {
+            "$ref": "#/components/schemas/PixelType"
+          },
+          "contrastDomain": {
+            "$ref": "#/components/schemas/ContrastWindow"
+          },
+          "suggestedContrast": {
+            "$ref": "#/components/schemas/ContrastWindow"
+          },
+          "appliedContrast": {
+            "$ref": "#/components/schemas/ContrastWindow"
+          }
+        },
+        "required": [
+          "width",
+          "height",
+          "dataBase64",
+          "pixelType",
+          "contrastDomain",
+          "suggestedContrast",
+          "appliedContrast"
+        ],
+        "additionalProperties": false
+      },
+      "PixelType": {
+        "type": "string",
+        "enum": [
+          "uint8",
+          "uint8clamped",
+          "int8",
+          "uint16",
+          "int16",
+          "uint32",
+          "int32"
+        ]
+      },
+      "LoadRoiFrameRequest": {
+        "type": "object",
+        "properties": {
+          "workspacePath": {
+            "type": "string"
+          },
+          "request": {
+            "$ref": "#/components/schemas/RoiFrameRequest"
+          },
+          "contrast": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ContrastWindow"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "workspacePath",
+          "request",
+          "contrast"
+        ],
+        "additionalProperties": false
+      },
+      "AnnotationLabel": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "color": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "color"
+        ],
+        "additionalProperties": false
+      },
+      "SaveAnnotationLabelsRequest": {
+        "type": "object",
+        "properties": {
+          "workspacePath": {
+            "type": "string"
+          },
+          "labels": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AnnotationLabel"
+            }
+          }
+        },
+        "required": [
+          "workspacePath",
+          "labels"
+        ],
+        "additionalProperties": false
+      },
+      "LoadAnnotationLabelsRequest": {
+        "type": "object",
+        "properties": {
+          "workspacePath": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "workspacePath"
+        ],
+        "additionalProperties": false
+      },
+      "RoiWorkspaceScan": {
+        "type": "object",
+        "properties": {
+          "positions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RoiPositionScan"
+            }
+          }
+        },
+        "required": [
+          "positions"
+        ],
+        "additionalProperties": false
+      },
+      "RoiPositionScan": {
+        "type": "object",
+        "properties": {
+          "pos": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          },
+          "channels": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991,
+              "allOf": [
+                {
+                  "minimum": 0,
+                  "format": "uint32"
+                }
+              ]
+            }
+          },
+          "times": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991,
+              "allOf": [
+                {
+                  "minimum": 0,
+                  "format": "uint32"
+                }
+              ]
+            }
+          },
+          "zSlices": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991,
+              "allOf": [
+                {
+                  "minimum": 0,
+                  "format": "uint32"
+                }
+              ]
+            }
+          },
+          "rois": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RoiIndexEntry"
+            }
+          }
+        },
+        "required": [
+          "pos",
+          "channels",
+          "times",
+          "zSlices",
+          "rois"
+        ],
+        "additionalProperties": false
+      },
+      "RoiIndexEntry": {
+        "type": "object",
+        "properties": {
+          "roi": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          },
+          "fileName": {
+            "type": "string"
+          },
+          "bbox": {
+            "$ref": "#/components/schemas/RoiBbox"
+          }
+        },
+        "required": [
+          "roi",
+          "fileName",
+          "bbox"
+        ],
+        "additionalProperties": false
+      },
+      "RoiBbox": {
+        "type": "object",
+        "properties": {
+          "roi": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          },
+          "x": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          },
+          "y": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          },
+          "w": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          },
+          "h": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          }
+        },
+        "required": [
+          "roi",
+          "x",
+          "y",
+          "w",
+          "h"
+        ],
+        "additionalProperties": false
+      },
+      "ScanRoiWorkspaceRequest": {
+        "type": "object",
+        "properties": {
+          "workspacePath": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "workspacePath"
+        ],
+        "additionalProperties": false
+      },
+      "NullableCropRoiProgress": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/CropRoiProgress"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "CropRoiProgress": {
+        "type": "object",
+        "properties": {
+          "requestId": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/CropRoiStatus"
+          },
+          "position": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991,
+                "allOf": [
+                  {
+                    "minimum": 0,
+                    "format": "uint32"
+                  }
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "completedPositions": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          },
+          "totalPositions": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          },
+          "completedRois": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          },
+          "totalRois": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "error": {
             "anyOf": [
               {
@@ -5322,226 +4804,20 @@
               },
               {
                 "type": "null"
-              }
-            ]
-          }
-        },
-        "required": [
-          "requestId",
-          "status",
-          "stage",
-          "progress",
-          "message",
-          "error"
-        ],
-        "additionalProperties": false
-      },
-      "LabelFreeProvider": {
-        "type": "string",
-        "enum": [
-          "openrouter",
-          "ollama"
-        ]
-      },
-      "LabelFreeHealth": {
-        "type": "object",
-        "properties": {
-          "apiVersion": {
-            "type": "integer",
-            "allOf": [
-              {
-                "minimum": 0,
-                "format": "uint32"
-              }
-            ]
-          },
-          "provider": {
-            "$ref": "#/components/schemas/LabelFreeProvider"
-          },
-          "configured": {
-            "type": "boolean"
-          },
-          "modelId": {
-            "type": "string"
-          },
-          "revision": {
-            "type": "string"
-          },
-          "dimensions": {
-            "type": "integer",
-            "allOf": [
-              {
-                "minimum": 0,
-                "format": "uint32"
-              }
-            ]
-          },
-          "batchSize": {
-            "type": "integer",
-            "allOf": [
-              {
-                "minimum": 0,
-                "format": "uint32"
-              }
-            ]
-          },
-          "cacheCap": {
-            "type": "integer",
-            "allOf": [
-              {
-                "minimum": 0,
-                "format": "uint32"
-              }
-            ]
-          }
-        },
-        "required": [
-          "apiVersion",
-          "provider",
-          "configured",
-          "modelId",
-          "revision",
-          "dimensions",
-          "batchSize",
-          "cacheCap"
-        ],
-        "additionalProperties": false
-      },
-      "LabelFreeKeyRequest": {
-        "type": "object",
-        "properties": {
-          "apiKey": {
-            "anyOf": [
-              {
-                "type": "string"
               },
               {
                 "type": "null"
               }
             ]
           },
-          "provider": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/LabelFreeProvider"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "additionalProperties": false
-      },
-      "LabelFreeLabelCount": {
-        "type": "object",
-        "properties": {
-          "label": {
-            "type": "string"
-          },
-          "count": {
-            "type": "integer",
-            "allOf": [
-              {
-                "minimum": 0,
-                "format": "uint32"
-              }
-            ]
-          }
-        },
-        "required": [
-          "label",
-          "count"
-        ],
-        "additionalProperties": false
-      },
-      "LabelFreeReferenceSet": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string"
-          },
-          "count": {
-            "type": "integer",
-            "allOf": [
-              {
-                "minimum": 0,
-                "format": "uint32"
-              }
-            ]
-          },
-          "labels": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/LabelFreeLabelCount"
-            }
-          },
-          "modelId": {
-            "type": "string"
-          },
-          "revision": {
-            "type": "string"
-          },
-          "encoderId": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "name",
-          "count",
-          "labels",
-          "modelId",
-          "revision",
-          "encoderId"
-        ],
-        "additionalProperties": false
-      },
-      "LabelFreeReferenceSetList": {
-        "type": "array",
-        "items": {
-          "$ref": "#/components/schemas/LabelFreeReferenceSet"
-        }
-      },
-      "LabelFreeReferenceRequest": {
-        "type": "object",
-        "properties": {
-          "workspacePath": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "workspacePath",
-          "name"
-        ],
-        "additionalProperties": false
-      },
-      "LabelFreeClassifyRequest": {
-        "type": "object",
-        "properties": {
-          "workspacePath": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "limit": {
-            "type": "integer",
-            "allOf": [
-              {
-                "minimum": 0,
-                "format": "uint32"
-              }
-            ]
-          },
-          "positions": {
+          "skippedPositions": {
             "anyOf": [
               {
                 "type": "array",
                 "items": {
                   "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991,
                   "allOf": [
                     {
                       "minimum": 0,
@@ -5557,64 +4833,239 @@
           }
         },
         "required": [
-          "workspacePath",
-          "name",
-          "limit"
+          "requestId",
+          "status",
+          "position",
+          "completedPositions",
+          "totalPositions",
+          "completedRois",
+          "totalRois",
+          "message"
         ],
         "additionalProperties": false
       },
-      "LabelFreeClassification": {
+      "CropRoiStatus": {
+        "type": "string",
+        "enum": [
+          "queued",
+          "running",
+          "completed",
+          "cancelled",
+          "error"
+        ]
+      },
+      "CancelCropRoiRequest": {
         "type": "object",
         "properties": {
-          "pos": {
-            "type": "integer",
-            "allOf": [
-              {
-                "minimum": 0,
-                "format": "uint32"
-              }
-            ]
-          },
-          "roi": {
-            "type": "integer",
-            "allOf": [
-              {
-                "minimum": 0,
-                "format": "uint32"
-              }
-            ]
-          },
-          "channel": {
-            "type": "integer",
-            "allOf": [
-              {
-                "minimum": 0,
-                "format": "uint32"
-              }
-            ]
-          },
-          "time": {
-            "type": "integer",
-            "allOf": [
-              {
-                "minimum": 0,
-                "format": "uint32"
-              }
-            ]
-          },
-          "z": {
-            "type": "integer",
-            "allOf": [
-              {
-                "minimum": 0,
-                "format": "uint32"
-              }
-            ]
-          },
-          "labelId": {
+          "requestId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "requestId"
+        ],
+        "additionalProperties": false
+      },
+      "CropRoiResponse": {
+        "type": "object",
+        "properties": {
+          "requestId": {
             "type": "string"
           },
-          "support": {
+          "status": {
+            "$ref": "#/components/schemas/CropRoiStatus"
+          },
+          "disposition": {
+            "$ref": "#/components/schemas/CropRoiDisposition"
+          }
+        },
+        "required": [
+          "requestId",
+          "status",
+          "disposition"
+        ],
+        "additionalProperties": false
+      },
+      "CropRoiDisposition": {
+        "type": "string",
+        "enum": [
+          "started",
+          "attached"
+        ]
+      },
+      "CropRoiRequest": {
+        "type": "object",
+        "properties": {
+          "requestId": {
+            "type": "string"
+          },
+          "workspacePath": {
+            "type": "string"
+          },
+          "source": {
+            "$ref": "#/components/schemas/AlignerSource"
+          },
+          "positions": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991,
+              "allOf": [
+                {
+                  "minimum": 0,
+                  "format": "uint32"
+                }
+              ]
+            }
+          },
+          "overwrite": {
+            "type": "boolean"
+          },
+          "outputFormat": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CropOutputFormat"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "requestId",
+          "workspacePath",
+          "source",
+          "positions",
+          "overwrite"
+        ],
+        "additionalProperties": false
+      },
+      "CropOutputFormat": {
+        "type": "string",
+        "enum": [
+          "tiff"
+        ]
+      },
+      "RoiPosExistsResponse": {
+        "type": "object",
+        "properties": {
+          "exists": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "exists"
+        ],
+        "additionalProperties": false
+      },
+      "AlignOutputPaths": {
+        "type": "object",
+        "properties": {
+          "bbox": {
+            "type": "string"
+          },
+          "align": {
+            "type": "string"
+          },
+          "roi": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "bbox",
+          "align",
+          "roi"
+        ],
+        "additionalProperties": false
+      },
+      "SavedAlignState": {
+        "type": "object",
+        "properties": {
+          "grid": {
+            "$ref": "#/components/schemas/AlignGridState"
+          },
+          "excludedPatterns": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AlignGridPatternCoord"
+            }
+          },
+          "drift": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AlignDrift"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "grid",
+          "excludedPatterns"
+        ],
+        "additionalProperties": false
+      },
+      "AlignDrift": {
+        "type": "object",
+        "properties": {
+          "referenceTime": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          },
+          "interpolation": {
+            "type": "string",
+            "enum": [
+              "linear"
+            ]
+          },
+          "keyframes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DriftKeyframe"
+            }
+          }
+        },
+        "required": [
+          "referenceTime",
+          "interpolation",
+          "keyframes"
+        ],
+        "additionalProperties": false
+      },
+      "DriftKeyframe": {
+        "type": "object",
+        "properties": {
+          "time": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          },
+          "dx": {
+            "type": "number",
+            "allOf": [
+              {
+                "format": "double"
+              }
+            ]
+          },
+          "dy": {
             "type": "number",
             "allOf": [
               {
@@ -5624,21 +5075,691 @@
           }
         },
         "required": [
-          "pos",
-          "roi",
-          "channel",
           "time",
-          "z",
-          "labelId",
-          "support"
+          "dx",
+          "dy"
         ],
         "additionalProperties": false
       },
-      "LabelFreeClassificationList": {
-        "type": "array",
-        "items": {
-          "$ref": "#/components/schemas/LabelFreeClassification"
-        }
+      "AlignGridPatternCoord": {
+        "type": "object",
+        "properties": {
+          "i": {
+            "type": "integer",
+            "allOf": [
+              {
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991,
+                "format": "int32"
+              }
+            ]
+          },
+          "j": {
+            "type": "integer",
+            "allOf": [
+              {
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991,
+                "format": "int32"
+              }
+            ]
+          }
+        },
+        "required": [
+          "i",
+          "j"
+        ],
+        "additionalProperties": false
+      },
+      "AlignGridState": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "shape": {
+            "$ref": "#/components/schemas/AlignGridShape"
+          },
+          "tx": {
+            "type": "number",
+            "allOf": [
+              {
+                "format": "double"
+              }
+            ]
+          },
+          "ty": {
+            "type": "number",
+            "allOf": [
+              {
+                "format": "double"
+              }
+            ]
+          },
+          "rotation": {
+            "type": "number",
+            "allOf": [
+              {
+                "format": "double"
+              }
+            ]
+          },
+          "spacingA": {
+            "type": "number",
+            "allOf": [
+              {
+                "format": "double"
+              }
+            ]
+          },
+          "spacingB": {
+            "type": "number",
+            "allOf": [
+              {
+                "format": "double"
+              }
+            ]
+          },
+          "patternWidth": {
+            "type": "number",
+            "allOf": [
+              {
+                "format": "double"
+              }
+            ]
+          },
+          "patternHeight": {
+            "type": "number",
+            "allOf": [
+              {
+                "format": "double"
+              }
+            ]
+          },
+          "opacity": {
+            "type": "number",
+            "allOf": [
+              {
+                "format": "double"
+              }
+            ]
+          }
+        },
+        "required": [
+          "enabled",
+          "shape",
+          "tx",
+          "ty",
+          "rotation",
+          "spacingA",
+          "spacingB",
+          "patternWidth",
+          "patternHeight",
+          "opacity"
+        ],
+        "additionalProperties": false
+      },
+      "AlignGridShape": {
+        "type": "string",
+        "enum": [
+          "rect",
+          "square",
+          "hex"
+        ]
+      },
+      "DetectGridResponse": {
+        "type": "object",
+        "properties": {
+          "grid": {
+            "$ref": "#/components/schemas/AlignGridState"
+          },
+          "count": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          },
+          "islands": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          },
+          "confidence": {
+            "type": "number",
+            "allOf": [
+              {
+                "format": "double"
+              }
+            ]
+          },
+          "residualPx": {
+            "type": "number",
+            "allOf": [
+              {
+                "format": "double"
+              }
+            ]
+          }
+        },
+        "required": [
+          "grid",
+          "count",
+          "islands",
+          "confidence",
+          "residualPx"
+        ],
+        "additionalProperties": false
+      },
+      "DetectGridRequest": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "$ref": "#/components/schemas/AlignerSource"
+          },
+          "request": {
+            "$ref": "#/components/schemas/FrameRequest"
+          },
+          "shape": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AlignGridShape"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "patternWidth": {
+            "anyOf": [
+              {
+                "type": "number",
+                "allOf": [
+                  {
+                    "format": "double"
+                  }
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "patternHeight": {
+            "anyOf": [
+              {
+                "type": "number",
+                "allOf": [
+                  {
+                    "format": "double"
+                  }
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "minSpacing": {
+            "anyOf": [
+              {
+                "type": "number",
+                "allOf": [
+                  {
+                    "format": "double"
+                  }
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "maxSpacing": {
+            "anyOf": [
+              {
+                "type": "number",
+                "allOf": [
+                  {
+                    "format": "double"
+                  }
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "source",
+          "request"
+        ],
+        "additionalProperties": false
+      },
+      "FrameRequest": {
+        "type": "object",
+        "properties": {
+          "pos": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          },
+          "channel": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          },
+          "time": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          },
+          "z": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          }
+        },
+        "required": [
+          "pos",
+          "channel",
+          "time",
+          "z"
+        ],
+        "additionalProperties": false
+      },
+      "SaveBboxResponse": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "ok",
+          "error"
+        ],
+        "additionalProperties": false
+      },
+      "SaveBboxRequest": {
+        "type": "object",
+        "properties": {
+          "workspacePath": {
+            "type": "string"
+          },
+          "pos": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "allOf": [
+              {
+                "minimum": 0,
+                "format": "uint32"
+              }
+            ]
+          },
+          "csv": {
+            "type": "string"
+          },
+          "alignState": {
+            "$ref": "#/components/schemas/SavedAlignState"
+          }
+        },
+        "required": [
+          "workspacePath",
+          "pos",
+          "csv",
+          "alignState"
+        ],
+        "additionalProperties": false
+      },
+      "LoadFrameRequest": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "$ref": "#/components/schemas/AlignerSource"
+          },
+          "request": {
+            "$ref": "#/components/schemas/FrameRequest"
+          },
+          "contrast": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ContrastWindow"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "source",
+          "request",
+          "contrast"
+        ],
+        "additionalProperties": false
+      },
+      "WorkspaceScan": {
+        "type": "object",
+        "properties": {
+          "positions": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991,
+              "allOf": [
+                {
+                  "minimum": 0,
+                  "format": "uint32"
+                }
+              ]
+            }
+          },
+          "channels": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991,
+              "allOf": [
+                {
+                  "minimum": 0,
+                  "format": "uint32"
+                }
+              ]
+            }
+          },
+          "times": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991,
+              "allOf": [
+                {
+                  "minimum": 0,
+                  "format": "uint32"
+                }
+              ]
+            }
+          },
+          "zSlices": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991,
+              "allOf": [
+                {
+                  "minimum": 0,
+                  "format": "uint32"
+                }
+              ]
+            }
+          },
+          "positionLabels": {
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "channelLabels": {
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "timeLabels": {
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "zSliceLabels": {
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "positions",
+          "channels",
+          "times",
+          "zSlices"
+        ],
+        "additionalProperties": false
+      },
+      "ScanSourceRequest": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "$ref": "#/components/schemas/AlignerSource"
+          }
+        },
+        "required": [
+          "source"
+        ],
+        "additionalProperties": false
+      },
+      "CreateDirectoryResponse": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "path"
+        ],
+        "additionalProperties": false
+      },
+      "CreateDirectoryRequest": {
+        "type": "object",
+        "properties": {
+          "parentPath": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "parentPath",
+          "name"
+        ],
+        "additionalProperties": false
+      },
+      "ReadTextFileResponse": {
+        "type": "object",
+        "properties": {
+          "contents": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "contents"
+        ],
+        "additionalProperties": false
+      },
+      "HostWindowsDrivesResponse": {
+        "type": "object",
+        "properties": {
+          "windows": {
+            "type": "boolean"
+          },
+          "drives": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HostDrive"
+            }
+          }
+        },
+        "required": [
+          "windows",
+          "drives"
+        ],
+        "additionalProperties": false
+      },
+      "HostDrive": {
+        "type": "object",
+        "properties": {
+          "letter": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "letter",
+          "path"
+        ],
+        "additionalProperties": false
+      },
+      "HomeDirectoryResponse": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "path"
+        ],
+        "additionalProperties": false
+      },
+      "HostListDirectoryResult": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "parent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HostFsEntry"
+            }
+          }
+        },
+        "required": [
+          "path",
+          "parent",
+          "entries"
+        ],
+        "additionalProperties": false
+      },
+      "HostFsEntry": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "isDirectory": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "name",
+          "path",
+          "isDirectory"
+        ],
+        "additionalProperties": false
       }
     },
     "securitySchemes": {}

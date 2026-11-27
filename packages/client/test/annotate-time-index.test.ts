@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vite-plus/test";
 
-import { resolveAnnotateTimeIndex } from "../src/session/use-annotate-session";
+import { resolveAnnotateTimeIndex } from "../src/session/annotate-session-controller";
 
 describe("resolveAnnotateTimeIndex", () => {
   it("stays on the first frame unless the host asks for the last", () => {

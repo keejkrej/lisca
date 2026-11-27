@@ -1,10 +1,8 @@
 import type { HostListDirectoryResult } from "@lisca/contracts";
 import type { HostFilePickerOperations } from "@lisca/utils";
-import { render, cleanup } from "@solidjs/testing-library";
-import { createSignal } from "solid-js";
-import { afterEach, describe, expect, it, vi } from "vite-plus/test";
+import { describe, expect, it, vi } from "vite-plus/test";
 
-import { useHostFilePickerState } from "../src/host-file-picker-state";
+import { createHostFilePickerController } from "../src/host-file-picker-state";
 
 const homeListing: HostListDirectoryResult = {
   path: "/home/user",
@@ -27,25 +25,17 @@ function makeHostPort(overrides: Partial<HostFilePickerOperations> = {}): HostFi
 const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 function mountPicker(hostPort: HostFilePickerOperations) {
-  const [open] = createSignal(true);
-  let result!: ReturnType<typeof useHostFilePickerState>;
-  render(() => {
-    result = useHostFilePickerState(() => ({
-      open: open(),
-      mode: "workspace",
-      hostPort,
-      onOpenChange: vi.fn(),
-      onPickDirectory: vi.fn(),
-      onPickFile: vi.fn(),
-    }));
-    return null;
+  return createHostFilePickerController({
+    open: true,
+    mode: "workspace",
+    hostPort,
+    onOpenChange: vi.fn(),
+    onPickDirectory: vi.fn(),
+    onPickFile: vi.fn(),
   });
-  return () => result;
 }
 
-afterEach(cleanup);
-
-describe("useHostFilePickerState.createDirectory contract", () => {
+describe("createHostFilePickerController.createDirectory contract", () => {
   it("rejects with the backend message when hostPort.createDirectory rejects", async () => {
     const hostPort = makeHostPort({
       createDirectory: vi.fn(async () => {
@@ -55,11 +45,11 @@ describe("useHostFilePickerState.createDirectory contract", () => {
     const picker = mountPicker(hostPort);
     await flush();
 
-    expect(picker().list()?.path).toBe("/home/user");
+    expect(picker.getState().list?.path).toBe("/home/user");
 
     let caught: unknown = null;
     try {
-      await picker().createDirectory("dupe-name");
+      await picker.createDirectory("dupe-name");
     } catch (cause) {
       caught = cause;
     }
@@ -67,11 +57,13 @@ describe("useHostFilePickerState.createDirectory contract", () => {
     expect(caught).toBeInstanceOf(Error);
     expect((caught as Error).message).toBe("failed to create directory: File exists (os error 17)");
     // The create failure must NOT leak into the shared main-listing error surface.
-    expect(picker().error()).toBeNull();
+    expect(picker.getState().error).toBeNull();
     // hostPort.createDirectory was attempted with the current path and the requested name.
     expect(hostPort.createDirectory).toHaveBeenCalledWith("/home/user", "dupe-name");
     // The listing stays intact (it is not replaced by an error block).
-    expect(picker().list()?.entries ?? []).toHaveLength(1);
+    expect(picker.getState().list?.entries ?? []).toHaveLength(1);
+
+    picker.dispose();
   });
 
   it("normalizes JSON parse failures into the friendly backend-down message", async () => {
@@ -85,7 +77,7 @@ describe("useHostFilePickerState.createDirectory contract", () => {
 
     let caught: unknown = null;
     try {
-      await picker().createDirectory("anything");
+      await picker.createDirectory("anything");
     } catch (cause) {
       caught = cause;
     }
@@ -94,7 +86,9 @@ describe("useHostFilePickerState.createDirectory contract", () => {
     expect((caught as Error).message).toBe(
       "Could not reach the API server. Ensure the Rust backend is running.",
     );
-    expect(picker().error()).toBeNull();
+    expect(picker.getState().error).toBeNull();
+
+    picker.dispose();
   });
 
   it("reloads the listing and resolves on a successful create", async () => {
@@ -117,14 +111,16 @@ describe("useHostFilePickerState.createDirectory contract", () => {
     const picker = mountPicker(hostPort);
     await flush();
 
-    expect(picker().list()?.entries ?? []).toHaveLength(1);
+    expect(picker.getState().list?.entries ?? []).toHaveLength(1);
 
     // Resolves normally on success (does not throw).
-    await picker().createDirectory("new-folder");
+    await picker.createDirectory("new-folder");
 
-    const entries = picker().list()?.entries ?? [];
+    const entries = picker.getState().list?.entries ?? [];
     expect(entries.some((entry) => entry.name === "new-folder")).toBe(true);
-    expect(picker().error()).toBeNull();
+    expect(picker.getState().error).toBeNull();
+
+    picker.dispose();
   });
 
   it("relays a post-create relisting failure through the main listing surface, not the create promise", async () => {
@@ -145,8 +141,10 @@ describe("useHostFilePickerState.createDirectory contract", () => {
 
     // createDirectory resolves (the create itself succeeded), but the subsequent
     // reload failure lands in loadPath's own main-listing error surface.
-    await expect(picker().createDirectory("new-folder")).resolves.toBeUndefined();
-    expect(picker().error()).toBe("failed to list directory: Not a directory (os error 20)");
-    expect(picker().list()).toBeNull();
+    await expect(picker.createDirectory("new-folder")).resolves.toBeUndefined();
+    expect(picker.getState().error).toBe("failed to list directory: Not a directory (os error 20)");
+    expect(picker.getState().list).toBeNull();
+
+    picker.dispose();
   });
 });

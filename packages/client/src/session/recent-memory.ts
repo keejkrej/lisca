@@ -106,7 +106,7 @@ function sourceKindForPickerMode(mode: HostFilePickerMode) {
 export function recentSourcePickerItems(
   sources: readonly RecentSourceRef[],
   mode: HostFilePickerMode,
-): Array<{ path: string; label?: string }> {
+): Array<{ path: string; label?: string | undefined }> {
   const kind = sourceKindForPickerMode(mode);
   if (!kind) return [];
   return sources

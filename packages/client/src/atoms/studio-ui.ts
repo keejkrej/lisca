@@ -1,4 +1,4 @@
-import type {
+﻿import type {
   AssayAnalysisConfig,
   StudioAssayId as AssayId,
   StudioAssayJson,
@@ -14,7 +14,7 @@ import {
   POSITION_INDEX_VERSION,
 } from "@lisca/contracts/assay";
 import { liscaSessionStorage, readStorageJson, writeStorageJson } from "@lisca/utils";
-import { Atom } from "effect/unstable/reactivity";
+import { Atom } from "effect/reactivity";
 
 import {
   ASSAY_CHOICE_LABEL,
@@ -113,9 +113,9 @@ export function buildStudioAssayJson({
   intervalValue: number | null;
   intervalUnit: IntervalUnit;
   samples: BasicInfoSampleRow[];
-  analysis?: AssayAnalysisConfig | null;
+  analysis?: AssayAnalysisConfig | null | undefined;
   channelDefaults: { segmentation: string; signal: string };
-  positionIndexVersion?: number | null;
+  positionIndexVersion?: number | null | undefined;
 }): StudioAssayJson {
   return buildStudioAssayJsonCore({
     assayId,
@@ -487,7 +487,7 @@ export const studioWizardActions = {
       ),
     });
   },
-  /** Start a blank assay of `assayId`, dropping the current document (like File → New). */
+  /** Start a blank assay of `assayId`, dropping the current document (like File â†’ New). */
   newAssay(set: (update: StateUpdater<StudioWizardState>) => void, assayId: AssayId | null) {
     patchStudioWizard(set, () => createBlankWizardData(assayId));
   },

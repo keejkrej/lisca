@@ -4,53 +4,108 @@ import {
   formatAxisValueLabel,
   formatNavigationOptionDisplayLabel,
 } from "@lisca/utils";
-import { createEffect, createSignal, type Accessor } from "solid-js";
 
-export type UseSliderStepperFieldOptions = {
-  value: number;
-  axisValues?: readonly number[];
-  axisLabels?: readonly string[];
-  valueLabel?: string;
+export type SliderStepperFieldFormatOptions = {
+  axisValues?: readonly number[] | undefined;
+  axisLabels?: readonly string[] | undefined;
+  valueLabel?: string | undefined;
 };
 
-export function useSliderStepperField(options: () => UseSliderStepperFieldOptions) {
-  const [draftValue, setDraftValue] = createSignal(options().value);
+export type SliderStepperFieldOptions = SliderStepperFieldFormatOptions & {
+  value: number;
+};
 
-  createEffect(() => {
-    setDraftValue(options().value);
-  });
+export type UseSliderStepperFieldOptions = SliderStepperFieldOptions;
 
-  const displayLabel = () => {
-    const { axisValues, axisLabels, valueLabel } = options();
-    const draft = draftValue();
-    return axisValues
-      ? formatAxisValueLabel(axisValues, draft, displayAxisLabels(axisLabels))
-      : valueLabel
-        ? formatNavigationOptionDisplayLabel(valueLabel)
-        : undefined;
+export type SliderStepperFieldListener = (draftValue: number) => void;
+
+export type SliderStepperFieldController = {
+  getDraftValue: () => number;
+  setDraftValue: (nextValue: number) => void;
+  syncValue: (nextValue?: number) => void;
+  commitDraftValue: (nextValue: number, commit?: (value: number) => void) => void;
+  displayLabel: () => string | undefined;
+  ariaValueText: () => string | undefined;
+  subscribe: (listener: SliderStepperFieldListener) => () => void;
+};
+
+export function sliderStepperDisplayLabel(
+  options: SliderStepperFieldFormatOptions,
+  draftValue: number,
+): string | undefined {
+  const { axisValues, axisLabels, valueLabel } = options;
+  return axisValues
+    ? formatAxisValueLabel(axisValues, draftValue, displayAxisLabels(axisLabels))
+    : valueLabel
+      ? formatNavigationOptionDisplayLabel(valueLabel)
+      : undefined;
+}
+
+export function sliderStepperAriaValueText(
+  options: SliderStepperFieldFormatOptions,
+  draftValue: number,
+): string | undefined {
+  const { axisValues, axisLabels } = options;
+  const label = sliderStepperDisplayLabel(options, draftValue);
+  return axisValues
+    ? formatAxisAriaValueText(axisValues, draftValue, displayAxisLabels(axisLabels))
+    : label;
+}
+
+export function createSliderStepperField(
+  options: SliderStepperFieldOptions | (() => SliderStepperFieldOptions),
+): SliderStepperFieldController {
+  const readOptions = (): SliderStepperFieldOptions =>
+    typeof options === "function" ? options() : options;
+
+  let syncedValue = readOptions().value;
+  let draftValue = syncedValue;
+  const listeners = new Set<SliderStepperFieldListener>();
+
+  const emit = () => {
+    for (const listener of listeners) {
+      listener(draftValue);
+    }
   };
-  const ariaValueText = () => {
-    const { axisValues, axisLabels } = options();
-    const draft = draftValue();
-    const label = displayLabel();
-    return axisValues
-      ? formatAxisAriaValueText(axisValues, draft, displayAxisLabels(axisLabels))
-      : label;
+
+  const setDraftValue = (nextValue: number) => {
+    if (draftValue === nextValue) return;
+    draftValue = nextValue;
+    emit();
   };
+
+  const syncValue = (nextValue?: number) => {
+    const resolved = nextValue !== undefined ? nextValue : readOptions().value;
+    syncedValue = resolved;
+    setDraftValue(resolved);
+  };
+
+  const displayLabel = () => sliderStepperDisplayLabel(readOptions(), draftValue);
+
+  const ariaValueText = () => sliderStepperAriaValueText(readOptions(), draftValue);
 
   const commitDraftValue = (nextValue: number, commit?: (value: number) => void) => {
     setDraftValue(nextValue);
     commit?.(nextValue);
     queueMicrotask(() => {
-      setDraftValue(options().value);
+      const committedValue = typeof options === "function" ? options().value : syncedValue;
+      syncedValue = committedValue;
+      setDraftValue(committedValue);
     });
   };
 
   return {
-    draftValue: draftValue as Accessor<number>,
+    getDraftValue: () => draftValue,
     setDraftValue,
+    syncValue,
     commitDraftValue,
     displayLabel,
     ariaValueText,
+    subscribe: (listener) => {
+      listeners.add(listener);
+      return () => {
+        listeners.delete(listener);
+      };
+    },
   };
 }

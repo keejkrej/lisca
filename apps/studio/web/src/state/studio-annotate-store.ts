@@ -14,8 +14,9 @@ import {
 } from "@lisca/client/atoms/annotator-ui";
 import type { AnalysisProgress, StudioAnalysisCsvFile } from "@lisca/contracts";
 import { liscaSessionStorage, readStorageJson, writeStorageJson } from "@lisca/utils";
-import { Atom } from "effect/unstable/reactivity";
-import { useAtom } from "@effect/atom-solid";
+import { Atom } from "effect/reactivity";
+
+import { setStudioAtom, studioRegistry } from "./studio-registry";
 
 export type StudioAnnotateSelection = RoiSelection;
 
@@ -126,22 +127,18 @@ export type StudioAnnotateStore = Pick<
   StudioAnnotateStoreState,
   "workspacePath" | "analysisProgress" | "analysisResultFiles"
 > & {
-  setAnalysisProgress: (progress: AnalysisProgress | null) => void;
-  setAnalysisResultFiles: (files: StudioAnalysisCsvFile[]) => void;
+  readonly setAnalysisProgress: (progress: AnalysisProgress | null) => void;
+  readonly setAnalysisResultFiles: (files: StudioAnalysisCsvFile[]) => void;
 };
 
-export function useStudioAnnotateStore(): StudioAnnotateStore {
-  const [ui, setUi] = useAtom(() => studioAnnotateUiAtom);
+export function getStudioAnnotateStore(): StudioAnnotateStore {
+  const ui = studioRegistry.get(studioAnnotateUiAtom);
+  const setUi = (update: StateUpdater<StudioAnnotateStoreState>) =>
+    setStudioAtom(studioAnnotateUiAtom, update);
   return {
-    get workspacePath() {
-      return ui().workspacePath;
-    },
-    get analysisProgress() {
-      return ui().analysisProgress;
-    },
-    get analysisResultFiles() {
-      return ui().analysisResultFiles;
-    },
+    workspacePath: ui.workspacePath,
+    analysisProgress: ui.analysisProgress,
+    analysisResultFiles: ui.analysisResultFiles,
     setAnalysisProgress: (progress) => studioAnnotateUiActions.setAnalysisProgress(setUi, progress),
     setAnalysisResultFiles: (files) => studioAnnotateUiActions.setAnalysisResultFiles(setUi, files),
   };

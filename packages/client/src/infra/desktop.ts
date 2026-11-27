@@ -2,7 +2,7 @@ export type LiscaIpcRequest = {
   method: string;
   uri: string;
   headers: Record<string, string>;
-  body?: string;
+  body?: string | undefined;
 };
 
 export type LiscaIpcResponse = {
@@ -231,7 +231,7 @@ export async function saveLiscaFile(options: LiscaSaveFileOptions): Promise<stri
   if (bridge?.saveFile) {
     return bridge.saveFile({
       fileName: options.fileName,
-      directory: options.directory,
+      ...(options.directory !== undefined ? { directory: options.directory } : {}),
       filterName: options.filterName,
       extensions: options.extensions,
       contentsBase64: bytesToBase64(options.bytes),

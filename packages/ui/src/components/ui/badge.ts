@@ -1,0 +1,44 @@
+import type { Html } from "@effect/ui/html";
+import { cva, type VariantProps } from "class-variance-authority";
+
+import { cn } from "../../lib/utils";
+
+export const badgeVariants = cva(
+  "group/badge z-badge inline-flex w-fit shrink-0 items-center justify-center overflow-hidden whitespace-nowrap focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&>svg]:pointer-events-none",
+  {
+    variants: {
+      variant: {
+        default: "z-badge-variant-default",
+        secondary: "z-badge-variant-secondary",
+        destructive: "z-badge-variant-destructive",
+        outline: "z-badge-variant-outline",
+        ghost: "z-badge-variant-ghost",
+        link: "z-badge-variant-link",
+        "primary-light": "z-badge-variant-primary-light",
+        "destructive-light": "z-badge-variant-destructive-light",
+        "success-light": "z-badge-variant-success-light",
+        "warning-light": "z-badge-variant-warning-light",
+        "info-light": "z-badge-variant-info-light",
+        "primary-outline": "z-badge-variant-primary-outline",
+        "destructive-outline": "z-badge-variant-destructive-outline",
+        "success-outline": "z-badge-variant-success-outline",
+        "warning-outline": "z-badge-variant-warning-outline",
+        "info-outline": "z-badge-variant-info-outline",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+    },
+  },
+);
+
+export type BadgeOptions = VariantProps<typeof badgeVariants> & {
+  readonly class?: string | undefined;
+};
+
+export function Badge<M>(h: Html.H<M>, options: BadgeOptions = {}) {
+  return h.span
+    .attr("data-slot", "badge")
+    .attr("data-variant", options.variant ?? "default")
+    .class(cn(badgeVariants({ variant: options.variant }), options.class));
+}

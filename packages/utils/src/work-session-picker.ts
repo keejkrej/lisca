@@ -5,7 +5,7 @@ export type WorkSessionPickerItem = {
   id: string;
   label: string;
   path: string;
-  sourcePath?: string;
+  sourcePath?: string | undefined;
   lastOpenedAt: string;
 };
 

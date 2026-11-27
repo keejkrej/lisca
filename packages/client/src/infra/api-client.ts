@@ -1,5 +1,5 @@
-import { FetchHttpClient } from "effect/unstable/http";
-import { HttpApiClient } from "effect/unstable/httpapi";
+import { FetchHttpClient } from "effect/http";
+import { HttpApiClient } from "effect/http-api";
 import { liscaApi } from "@lisca/contracts/http-api";
 import { Effect, Layer } from "effect";
 

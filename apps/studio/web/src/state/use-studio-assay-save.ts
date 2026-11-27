@@ -3,85 +3,141 @@ import {
   studioAssayJsonPathForSaveTo,
   touchStudioWorkSessionFromAssayPath,
 } from "@lisca/client/session/work-session";
-import { useAtomSet, useAtomValue } from "@effect/atom-solid";
-import { createMemo, createSignal } from "solid-js";
 
 import { assayJsonExists, writeStudioAssayJson } from "../utils/save-studio-assay";
 import { recordStudioAssayMemory } from "../utils/studio-memory";
+import { studioRegistry } from "./studio-registry";
 import {
   assayDisplayLabel,
   buildStudioAssayJsonFromWizard,
   isBasicInfoDirty,
   serializeBasicInfoSnapshot,
-  studioWizardActions,
+  studioStoreActions,
   studioWizardAtom,
 } from "./studio-store";
 
+export type StudioAssaySaveOutcome =
+  | { readonly kind: "saved" }
+  | { readonly kind: "needs_overwrite"; readonly saveTo: string }
+  | { readonly kind: "error"; readonly message: string }
+  | { readonly kind: "skipped" };
+
+export function isStudioAssayDirty(): boolean {
+  return isBasicInfoDirty(studioRegistry.get(studioWizardAtom));
+}
+
+export function getStudioAssayWorkspacePath(): string {
+  return studioRegistry.get(studioWizardAtom).workspacePath.trim();
+}
+
 /**
- * Save the Metadata wizard to `<workspace>/assay.json`.
- *
- * Two guards use this: the overwrite guard (`overwriteOpen`) whenever an assay.json already
- * exists there, and the route-leave guard for unsaved changes (`dirty`).
+ * Save the current Metadata wizard state to `<workspace>/assay.json`.
+ * Returns a structured outcome so callers can open the overwrite modal or show errors.
  */
-export function useStudioAssaySave() {
-  const wizard = useAtomValue(() => studioWizardAtom);
-  const setWizard = useAtomSet(() => studioWizardAtom);
-
-  const [saving, setSaving] = createSignal(false);
-  const [saveError, setSaveError] = createSignal<string | null>(null);
-  const [saveNotice, setSaveNotice] = createSignal<string | null>(null);
-  const [overwriteOpen, setOverwriteOpen] = createSignal(false);
-
-  const dirty = createMemo(() => isBasicInfoDirty(wizard()));
-  const workspacePath = createMemo(() => wizard().workspacePath.trim());
-
-  /** Resolves true once written; false when blocked, failed, or waiting on overwrite. */
-  const saveAssay = async (overwrite: boolean) => {
-    const current = wizard();
-    if (!workspacePath()) {
-      setSaveError("Pick a workspace folder before saving.");
-      return false;
+export async function saveStudioAssay(overwrite: boolean): Promise<StudioAssaySaveOutcome> {
+  const current = studioRegistry.get(studioWizardAtom);
+  const workspacePath = current.workspacePath.trim();
+  if (!workspacePath) {
+    return { kind: "error", message: "Pick a workspace folder before saving." };
+  }
+  if (!current.assayId) {
+    return { kind: "skipped" };
+  }
+  try {
+    if (!overwrite && (await assayJsonExists(workspacePath))) {
+      return { kind: "needs_overwrite", saveTo: workspacePath };
     }
-    if (!current.assayId || saving()) return false;
-    setSaving(true);
-    setSaveError(null);
-    setSaveNotice(null);
-    try {
-      if (!overwrite && (await assayJsonExists(workspacePath()))) {
-        setOverwriteOpen(true);
-        return false;
-      }
-      const assayJson = buildStudioAssayJsonFromWizard(current);
-      const label = assayDisplayLabel(assayJson);
-      await writeStudioAssayJson(workspacePath(), assayJson);
-      const assayJsonPath = studioAssayJsonPathForSaveTo(workspacePath());
-      touchStudioWorkSessionFromAssayPath(assayJsonPath, label);
-      recordStudioAssayMemory(assayJsonPath, assayJson);
-      studioWizardActions.setBasicInfoSavedSnapshot(setWizard, serializeBasicInfoSnapshot(current));
-      setSaveNotice("Saved assay");
-      logClientEvent(`saved assay ${workspacePath()}`);
-      return true;
-    } catch (cause) {
-      setSaveError(
+    const assayJson = buildStudioAssayJsonFromWizard(current);
+    const label = assayDisplayLabel(assayJson);
+    await writeStudioAssayJson(workspacePath, assayJson);
+    const assayJsonPath = studioAssayJsonPathForSaveTo(workspacePath);
+    touchStudioWorkSessionFromAssayPath(assayJsonPath, label);
+    recordStudioAssayMemory(assayJsonPath, assayJson);
+    studioStoreActions.setBasicInfoSavedSnapshot(serializeBasicInfoSnapshot(current));
+    logClientEvent(`saved assay ${workspacePath}`);
+    return { kind: "saved" };
+  } catch (cause) {
+    return {
+      kind: "error",
+      message:
         cause instanceof Error
           ? cause.message
           : "Could not save assay.json. Check the save path and try again.",
-      );
-      return false;
+    };
+  }
+}
+
+export type StudioAssaySaveState = {
+  readonly saving: boolean;
+  readonly saveError: string | null;
+  readonly saveNotice: string | null;
+  readonly overwriteOpen: boolean;
+};
+
+export type StudioAssaySaveController = {
+  readonly dirty: () => boolean;
+  readonly workspacePath: () => string;
+  readonly getState: () => StudioAssaySaveState;
+  readonly subscribe: (listener: (state: StudioAssaySaveState) => void) => () => void;
+  readonly setSaveError: (error: string | null) => void;
+  readonly setOverwriteOpen: (open: boolean) => void;
+  readonly saveAssay: (overwrite: boolean) => Promise<boolean>;
+};
+
+/**
+ * Framework-free controller for saving the Metadata wizard to `<workspace>/assay.json`.
+ */
+export function createStudioAssaySaveController(): StudioAssaySaveController {
+  let state: StudioAssaySaveState = {
+    saving: false,
+    saveError: null,
+    saveNotice: null,
+    overwriteOpen: false,
+  };
+  const listeners = new Set<(next: StudioAssaySaveState) => void>();
+
+  const update = (patch: Partial<StudioAssaySaveState>) => {
+    state = { ...state, ...patch };
+    for (const listener of listeners) {
+      listener(state);
+    }
+  };
+
+  const saveAssay = async (overwrite: boolean): Promise<boolean> => {
+    if (state.saving) return false;
+    update({ saving: true, saveError: null, saveNotice: null });
+    try {
+      const outcome = await saveStudioAssay(overwrite);
+      switch (outcome.kind) {
+        case "saved":
+          update({ saveNotice: "Saved assay", overwriteOpen: false });
+          return true;
+        case "needs_overwrite":
+          update({ overwriteOpen: true });
+          return false;
+        case "error":
+          update({ saveError: outcome.message });
+          return false;
+        case "skipped":
+          return false;
+      }
     } finally {
-      setSaving(false);
+      update({ saving: false });
     }
   };
 
   return {
-    dirty,
-    workspacePath,
-    saving,
-    saveError,
-    saveNotice,
-    setSaveError,
-    overwriteOpen,
-    setOverwriteOpen,
+    dirty: isStudioAssayDirty,
+    workspacePath: getStudioAssayWorkspacePath,
+    getState: () => state,
+    subscribe: (listener) => {
+      listeners.add(listener);
+      return () => {
+        listeners.delete(listener);
+      };
+    },
+    setSaveError: (saveError) => update({ saveError }),
+    setOverwriteOpen: (overwriteOpen) => update({ overwriteOpen }),
     saveAssay,
   };
 }

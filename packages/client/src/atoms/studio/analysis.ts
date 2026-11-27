@@ -1,5 +1,5 @@
-import type { AnalysisProgress } from "@lisca/contracts";
-import { AsyncResult, Atom } from "effect/unstable/reactivity";
+﻿import type { AnalysisProgress } from "@lisca/contracts";
+import { AsyncResult, Atom } from "effect/reactivity";
 import { Effect } from "effect";
 
 import type { StudioDataPort } from "../../ports/types";

@@ -1,11 +1,11 @@
-import type {
+﻿import type {
   AnnotationLabel,
   RoiFrameAnnotation,
   RoiFrameAnnotationPayload,
   RoiFrameRequest,
   RoiWorkspaceScan,
 } from "@lisca/contracts";
-import { AsyncResult, Atom } from "effect/unstable/reactivity";
+import { AsyncResult, Atom } from "effect/reactivity";
 import { Effect } from "effect";
 
 import type { ClientError } from "../infra/client-error";

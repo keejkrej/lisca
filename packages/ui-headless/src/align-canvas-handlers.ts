@@ -7,7 +7,6 @@ import {
   type AlignGridToolMode,
   type AlignGridWheelViewport,
 } from "@lisca/utils";
-import { createSignal, type Accessor } from "solid-js";
 
 export type AlignCanvasFramePoint = {
   x: number;
@@ -19,7 +18,7 @@ export type AlignCanvasPointerEvent = {
   pointerType: string;
   button: number;
   buttons: number;
-  altKey?: boolean;
+  altKey?: boolean | undefined;
   clientX: number;
   clientY: number;
   framePoint: AlignCanvasFramePoint | null;
@@ -29,7 +28,7 @@ export type AlignCanvasPointerEvent = {
   releasePointer: () => void;
 };
 
-export type UseAlignCanvasGridHandlersOptions = {
+export type AlignCanvasGridHandlersOptions = {
   grid: AlignGridState;
   onCommit: (
     preview: AlignGridState,
@@ -37,31 +36,43 @@ export type UseAlignCanvasGridHandlersOptions = {
     startGrid: AlignGridState,
   ) => void;
   toolMode: AlignGridToolMode;
-  spacingZoomLocked?: boolean;
-  patternZoomLocked?: boolean;
-  disabled?: boolean;
+  spacingZoomLocked?: boolean | undefined;
+  patternZoomLocked?: boolean | undefined;
+  disabled?: boolean | undefined;
   /** Called when the in-flight preview grid changes; canvas should redraw locally. */
-  onPreviewGridChange?: () => void;
+  onPreviewGridChange?: (() => void) | undefined;
+  /** Called when the dragging state changes. */
+  onDraggingChange?: ((dragging: boolean) => void) | undefined;
 };
+
+export type UseAlignCanvasGridHandlersOptions = AlignCanvasGridHandlersOptions;
 
 export type AlignCanvasGridHandlers = {
   previewGridRef: { current: AlignGridState | null };
-  dragging: Accessor<boolean>;
+  dragging: () => boolean;
   handlePointerDown: (event: AlignCanvasPointerEvent) => void;
   handlePointerMove: (event: AlignCanvasPointerEvent) => void;
   handlePointerEnd: (event: AlignCanvasPointerEvent) => void;
   handlePointerCancel: (event: AlignCanvasPointerEvent) => void;
 };
 
-export function useAlignCanvasGridHandlers(
-  options: () => UseAlignCanvasGridHandlersOptions,
+export function createAlignCanvasGridHandlers(
+  options: () => AlignCanvasGridHandlersOptions,
 ): AlignCanvasGridHandlers {
   const gestureRef = { current: null as AlignGridPointerGestureSession | null };
   const previewGridRef = { current: null as AlignGridState | null };
-  const [dragging, setDragging] = createSignal(false);
+  let isDragging = false;
+
+  const setDragging = (next: boolean) => {
+    if (isDragging === next) return;
+    isDragging = next;
+    options().onDraggingChange?.(next);
+  };
+
   const notifyPreviewChange = () => {
     options().onPreviewGridChange?.();
   };
+
   const handlePointerDown = (event: AlignCanvasPointerEvent) => {
     const {
       disabled = false,
@@ -86,6 +97,7 @@ export function useAlignCanvasGridHandlers(
     previewGridRef.current = null;
     setDragging(true);
   };
+
   const handlePointerMove = (event: AlignCanvasPointerEvent) => {
     const gesture = gestureRef.current;
     if (!gesture || !event.viewport || gesture.pointerId !== event.pointerId) return;
@@ -93,6 +105,7 @@ export function useAlignCanvasGridHandlers(
     previewGridRef.current = applyAlignGridPointerGesture(gesture, event, event.viewport);
     notifyPreviewChange();
   };
+
   const handlePointerEnd = (event: AlignCanvasPointerEvent) => {
     const gesture = gestureRef.current;
     if (gesture?.pointerId !== event.pointerId) return;
@@ -107,6 +120,7 @@ export function useAlignCanvasGridHandlers(
     notifyPreviewChange();
     event.releasePointer();
   };
+
   const handlePointerCancel = (event: AlignCanvasPointerEvent) => {
     if (gestureRef.current?.pointerId !== event.pointerId) return;
     gestureRef.current = null;
@@ -115,15 +129,18 @@ export function useAlignCanvasGridHandlers(
     notifyPreviewChange();
     event.releasePointer();
   };
+
   return {
     previewGridRef,
-    dragging,
+    dragging: () => isDragging,
     handlePointerDown,
     handlePointerMove,
     handlePointerEnd,
     handlePointerCancel,
   };
 }
+
+export const useAlignCanvasGridHandlers = createAlignCanvasGridHandlers;
 
 export function cursorForAlignTool(
   toolMode: AlignGridToolMode,

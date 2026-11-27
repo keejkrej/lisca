@@ -73,7 +73,7 @@ export function installWebMcp(
                 // Desktop ControlCenter must see an agent, rather than a human IPC write.
                 "x-lisca-agent": "WebMCP agent",
               },
-              body: tool.method === "GET" ? undefined : JSON.stringify(body),
+              ...(tool.method === "GET" ? {} : { body: JSON.stringify(body) }),
               signal: AbortSignal.any([signal, controller.signal]),
             });
             if (!response.ok) throw new Error(`HTTP ${response.status}: ${await response.text()}`);

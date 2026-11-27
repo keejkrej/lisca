@@ -1,4 +1,3 @@
-import { createMemo, createSignal, type Accessor, type JSX } from "solid-js";
 import { readWorkSessions, type LiscaAppId, type WorkSession } from "./work-session";
 
 export type { WorkSession } from "./work-session";
@@ -7,55 +6,56 @@ export type WorkSessionGateState = {
   ready: boolean;
   open: boolean;
   sessions: WorkSession[];
-  restoreSession: (session: WorkSession) => void;
-  startNewSession: () => void;
 };
 
 export type WorkSessionGateOptions = {
   /** Skip the resume picker when the app already restored workspace/source (e.g. sessionStorage). */
-  skipResumePicker?: boolean;
+  skipResumePicker?: boolean | undefined;
 };
 
-export function useWorkSessionGate(
+export type WorkSessionGateController = {
+  getState: () => WorkSessionGateState;
+  subscribe: (listener: (state: WorkSessionGateState) => void) => () => void;
+  restoreSession: (session: WorkSession) => void;
+  startNewSession: () => void;
+};
+
+export function createWorkSessionGate(
   appId: LiscaAppId,
   onRestore: (session: WorkSession) => void | Promise<void>,
   options?: WorkSessionGateOptions,
-) {
+): WorkSessionGateController {
   const skipResumePicker = options?.skipResumePicker ?? false;
   const sessions = readWorkSessions(appId);
-  const [ready, setReady] = createSignal(sessions.length === 0 || skipResumePicker);
-  const [open, setOpen] = createSignal(sessions.length > 0 && !skipResumePicker);
+  let state: WorkSessionGateState = {
+    ready: sessions.length === 0 || skipResumePicker,
+    open: sessions.length > 0 && !skipResumePicker,
+    sessions,
+  };
   let restored = false;
+  const listeners = new Set<(next: WorkSessionGateState) => void>();
 
   const finish = () => {
-    setOpen(false);
-    setReady(true);
+    state = { ...state, open: false, ready: true };
+    for (const listener of listeners) listener(state);
   };
 
-  return createMemo<WorkSessionGateState>(() => ({
-    ready: ready(),
-    open: open(),
-    sessions,
-    restoreSession: (session) => {
+  return {
+    getState: () => state,
+    subscribe(listener) {
+      listeners.add(listener);
+      return () => {
+        listeners.delete(listener);
+      };
+    },
+    restoreSession(session) {
       if (restored) return;
       restored = true;
       void Promise.resolve(onRestore(session)).finally(finish);
     },
-    startNewSession: () => {
+    startNewSession() {
       restored = true;
       finish();
     },
-  }));
-}
-
-export type WorkSessionBootstrapProps = {
-  appId: LiscaAppId;
-  onRestore: (session: WorkSession) => void | Promise<void>;
-  gateOptions?: WorkSessionGateOptions;
-  children: (gate: Accessor<WorkSessionGateState>) => JSX.Element;
-};
-
-export function WorkSessionBootstrap(props: WorkSessionBootstrapProps) {
-  const gate = useWorkSessionGate(props.appId, props.onRestore, props.gateOptions);
-  return props.children(gate);
+  };
 }

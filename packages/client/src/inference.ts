@@ -66,7 +66,7 @@ export function createInferenceClient(
 
   return {
     async health(signal?: AbortSignal) {
-      const value = await request<InferenceHealth>("/v1/health", { signal }, 15_000);
+      const value = await request<InferenceHealth>("/v1/health", signal ? { signal } : {}, 15_000);
       if (
         value.api_version !== 1 ||
         value.dimensions !== 768 ||
@@ -77,7 +77,7 @@ export function createInferenceClient(
       return value;
     },
     references: (signal?: AbortSignal) =>
-      request<ReferenceSet[]>("/v1/references", { signal }, 15_000),
+      request<ReferenceSet[]>("/v1/references", signal ? { signal } : {}, 15_000),
     async addReferences(
       name: string,
       contrast: "frame" | "baseline",
@@ -98,7 +98,7 @@ export function createInferenceClient(
       );
       return request<ReferenceSet>("/v1/references", {
         method: "POST",
-        signal,
+        ...(signal ? { signal } : {}),
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, contrast, examples: encoded }),
       });
@@ -127,7 +127,7 @@ export function createInferenceClient(
       const result = await request<ViabilityResult>("/v1/viability", {
         method: "POST",
         body,
-        signal,
+        ...(signal ? { signal } : {}),
       });
       const length = result.frames?.length;
       if (

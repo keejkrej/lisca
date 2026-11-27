@@ -1,23 +1,25 @@
-import { batch } from "solid-js";
-
 export type CanvasResourceTransactionOptions<T> = {
-  start?: () => void;
+  start?: (() => void) | undefined;
   load: (signal: AbortSignal) => Promise<T>;
   commit: (value: T) => void;
   reject: (cause: unknown) => void;
-  settle?: () => void;
+  settle?: (() => void) | undefined;
 };
 
-export function useCanvasResourceTransaction() {
+export type CanvasResourceTransactionRunner = <T>(
+  transactionOptions: CanvasResourceTransactionOptions<T>,
+) => () => void;
+
+export function createCanvasResourceTransaction(): CanvasResourceTransactionRunner {
   const transactionIdRef = { current: 0 };
-  const run = <T>(transactionOptions: CanvasResourceTransactionOptions<T>) => {
+  const run: CanvasResourceTransactionRunner = (transactionOptions) => {
     transactionIdRef.current += 1;
     const transactionId = transactionIdRef.current;
     const abortController = new AbortController();
     const isCurrent = () =>
       transactionIdRef.current === transactionId && !abortController.signal.aborted;
     const applyIfCurrent = (apply: () => void) => {
-      if (isCurrent()) batch(apply);
+      if (isCurrent()) apply();
     };
     transactionOptions.start?.();
     void transactionOptions
@@ -29,3 +31,5 @@ export function useCanvasResourceTransaction() {
   };
   return run;
 }
+
+export const useCanvasResourceTransaction = createCanvasResourceTransaction;

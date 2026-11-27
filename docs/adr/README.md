@@ -41,5 +41,6 @@ Why a shipped choice looks the way it does. Agents write these during the change
 | [0028](0028-research-area-onboarding-and-assay-discovery.md)    | superseded | Research-area onboarding, two-level assay discovery, and local feedback         |
 | [0029](0029-optional-research-guide-without-personalization.md) | accepted   | The research guide is optional browsing without personalization                 |
 | [0030](0030-webmcp-contract-adapter.md)                         | accepted   | WebMCP shares the product contract and transport                                |
-| [0031](0031-ui-sdk-owned-controls.md)                           | accepted   | LiSCA owns controls built with UI SDK                                           |
+| [0031](0031-ui-sdk-owned-controls.md)                           | superseded | LiSCA owns controls built with UI SDK                                           |
 | [0032](0032-label-free-setup-outside-analysis.md)               | accepted   | Studio keeps label-free inference setup out of Analysis                         |
+| [0033](0033-effect-ui-frontend.md)                              | accepted   | LiSCA frontends use Effect UI and Effect UI Kit instead of SolidJS and UI SDK   |

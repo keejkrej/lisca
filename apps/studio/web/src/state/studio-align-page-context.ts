@@ -1,27 +1,50 @@
-import { createContext, useContext } from "solid-js";
-
-import type { useVarExclude } from "@lisca/smart/var-exclude";
+import type { createAlignCanvasPointerHandlers } from "@lisca/instrument";
+import type { VarExcludeController } from "@lisca/smart/var-exclude";
 
 import type { StudioAlignState } from "./use-studio-align-state";
 
-export type StudioVarExclude = ReturnType<typeof useVarExclude>;
+export type StudioAlignPointerHandlers = ReturnType<typeof createAlignCanvasPointerHandlers>;
+export type StudioVarExclude = VarExcludeController;
 
 export type StudioAlignPageContextValue = {
-  state: StudioAlignState;
-  varExclude: StudioVarExclude;
-  excludeActive: () => boolean;
+  readonly state: StudioAlignState;
+  readonly varExclude: StudioVarExclude;
+  readonly pointer: StudioAlignPointerHandlers;
+  readonly visibleStatus: string | null;
+  readonly excludeActive: () => boolean;
   /** Selection var exclude — additive on current exclusions; applying also excludes edge patterns. */
-  requestVarExclude: () => Promise<void>;
-  applyExcludePreview: () => void;
-  cancelExcludePreview: () => void;
+  readonly requestVarExclude: () => Promise<void>;
+  readonly applyExcludePreview: () => void;
+  readonly cancelExcludePreview: () => void;
 };
 
-export const StudioAlignPageContext = createContext<StudioAlignPageContextValue | null>(null);
+export type StudioAlignPageController = {
+  readonly getContext: () => StudioAlignPageContextValue;
+  readonly getState: () => StudioAlignState;
+  readonly setNavigate: (navigate: (to: string) => void) => void;
+  readonly subscribe: (listener: () => void) => () => void;
+  readonly dispose: () => void;
+};
 
-export function useStudioAlignPage(): StudioAlignPageContextValue {
-  const value = useContext(StudioAlignPageContext);
-  if (!value) {
-    throw new Error("useStudioAlignPage must be used within StudioAlignPageProvider");
-  }
-  return value;
+const alignControllers = new Map<string, StudioAlignPageController>();
+
+export function registerStudioAlignPageController(
+  instanceId: string,
+  controller: StudioAlignPageController,
+): StudioAlignPageController {
+  alignControllers.set(instanceId, controller);
+  return controller;
+}
+
+export function getStudioAlignPageController(
+  instanceId: string,
+): StudioAlignPageController | undefined {
+  return alignControllers.get(instanceId);
+}
+
+export function disposeStudioAlignPageController(instanceId: string): void {
+  const controller = alignControllers.get(instanceId);
+  if (!controller) return;
+  alignControllers.delete(instanceId);
+  controller.dispose();
 }

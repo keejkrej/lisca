@@ -1,5 +1,5 @@
 import type { AnalysisProgress, AnalysisStartRequest } from "@lisca/contracts";
-import { Atom, AsyncResult as Result } from "effect/unstable/reactivity";
+import { Atom, AsyncResult as Result } from "effect/reactivity";
 
 import { createStudioAnalysisAtoms, invalidateAfter, ReactivityKeys } from "@lisca/client/atoms";
 import { studioClient } from "../api/studio-port";

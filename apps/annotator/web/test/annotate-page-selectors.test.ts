@@ -1,14 +1,7 @@
 import { describe, expect, it, vi } from "vite-plus/test";
 
-const fixture = vi.hoisted(() => ({
-  state: {} as Record<string, unknown>,
-}));
-
-vi.mock("../src/state/annotate-page-context", () => ({
-  useAnnotatePage: () => ({ state: fixture.state }),
-}));
-
-import { useAnnotateDock } from "../src/state/annotate-page-selectors";
+import { selectAnnotateDock } from "../src/state/annotate-page-selectors";
+import type { AnnotateState } from "../src/state/use-annotate-state";
 
 describe("annotate page selectors", () => {
   it("keeps state values and callback targets live after construction", () => {
@@ -18,7 +11,7 @@ describe("annotate page selectors", () => {
     let filePickerOpen = false;
     let setTool = vi.fn();
 
-    fixture.state = {
+    const state = {
       get mode() {
         return mode;
       },
@@ -26,6 +19,8 @@ describe("annotate page selectors", () => {
       request: null,
       canSave: false,
       saving: false,
+      canGoBack: false,
+      canGoNext: false,
       get canEditSegmentation() {
         return canEditSegmentation;
       },
@@ -39,9 +34,11 @@ describe("annotate page selectors", () => {
         return setTool;
       },
       handleSave: vi.fn(),
-    };
+      goBack: vi.fn(),
+      goNext: vi.fn(),
+    } as unknown as AnnotateState;
 
-    const dock = useAnnotateDock();
+    const dock = selectAnnotateDock(() => state);
     const stableSetTool = dock.setTool;
 
     expect(dock.mode).toBe("classification");
