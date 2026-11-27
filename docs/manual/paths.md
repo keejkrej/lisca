@@ -28,3 +28,9 @@ Open the same output folder.
 3. `results.ipynb` writes the tables and plots for the samples already in `assay.json`.
 
 Change a sample or a channel on Metadata, save, and re-run from crop when the position list changed. Re-run `results.ipynb` Plots on their own when only the figures should change.
+
+### If the notebooks report incomplete trace coverage
+
+AUC, Fit, and Results check for one trace CSV per configured position and signal channel. If Traces stopped early, finish the crop and rerun Traces before continuing. For an intentional subset, assign only those positions on Studio Metadata. Move any old trace CSVs outside the new scope out of `analysis/` before continuing.
+
+If Excel export fails (for example, Windows denies access to a temporary file), the analysis CSVs are still available. You can run Plots separately and retry Tables later.
