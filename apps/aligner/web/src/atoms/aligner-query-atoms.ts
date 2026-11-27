@@ -1,5 +1,5 @@
 import type { WorkspaceScan } from "@lisca/contracts";
-import { Atom, AsyncResult as Result } from "effect/unstable/reactivity";
+import { Atom, AsyncResult as Result } from "effect/reactivity";
 
 import { createAlignerQueryAtoms, createAppRuntime } from "@lisca/client/atoms";
 

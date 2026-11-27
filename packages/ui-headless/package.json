@@ -93,14 +93,7 @@
     "@lisca/utils": "workspace:*"
   },
   "devDependencies": {
-    "@solidjs/testing-library": "catalog:",
-    "jsdom": "^26.1.0",
-    "solid-js": "catalog:",
     "typescript": "catalog:",
-    "vite-plugin-solid": "catalog:",
     "vitest": "catalog:"
-  },
-  "peerDependencies": {
-    "solid-js": "^1.9.0"
   }
 }

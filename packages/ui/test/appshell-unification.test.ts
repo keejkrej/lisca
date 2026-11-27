@@ -6,7 +6,7 @@ import { describe, expect, it } from "vite-plus/test";
 describe("AppShell unification", () => {
   it("does not expose a variant API", () => {
     const source = readFileSync(
-      fileURLToPath(new URL("../src/shell/layout/shell.tsx", import.meta.url)),
+      fileURLToPath(new URL("../src/shell/layout/shell.ts", import.meta.url)),
       "utf8",
     );
     expect(source).not.toMatch(/AppShellVariant/);

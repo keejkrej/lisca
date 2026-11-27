@@ -1,6 +1,3 @@
-export { cn } from "../../lib/utils";
-
-// LiSCA-owned controls: native semantics and UI SDK behaviors.
 export * from "./alert";
 export * from "./badge";
 export * from "./button";

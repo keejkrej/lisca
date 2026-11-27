@@ -1,12 +1,22 @@
-import { createSignal } from "solid-js";
+import { Subscription } from "@effect/ui";
+import { Effect, Queue, Stream } from "effect";
 
 import { studioPageShortcutPlatform } from "./studio-page-shortcuts";
 
-const [held, setHeld] = createSignal(false);
+let held = false;
 let listening = false;
+const listeners = new Set<(value: boolean) => void>();
 
 function platformModifierDown(event: KeyboardEvent): boolean {
   return studioPageShortcutPlatform() === "mac" ? event.metaKey : event.ctrlKey;
+}
+
+function setHeld(next: boolean): void {
+  if (held === next) return;
+  held = next;
+  for (const listener of listeners) {
+    listener(held);
+  }
 }
 
 function ensureCommandModifierListener(): void {
@@ -21,5 +31,26 @@ function ensureCommandModifierListener(): void {
 /** True while Command (macOS) or Control (elsewhere) is held. */
 export function commandModifierHeld(): boolean {
   ensureCommandModifierListener();
-  return held();
+  return held;
+}
+
+/** Subscribes to Command/Control held state changes. */
+export function subscribeCommandModifierHeld(listener: (value: boolean) => void): () => void {
+  ensureCommandModifierListener();
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
+}
+
+/** Effect UI subscription that emits `toMessage(held)` on Command/Control press/release. */
+export function commandModifierHeldSubscription<M>(key: string, toMessage: (held: boolean) => M) {
+  return Subscription.make(key, "cmd-modifier", () =>
+    Stream.callback<M>((queue) => {
+      const stop = subscribeCommandModifierHeld((next) => {
+        Queue.offerUnsafe(queue, toMessage(next));
+      });
+      return Effect.addFinalizer(() => Effect.sync(stop));
+    }),
+  );
 }

@@ -1,4 +1,4 @@
-import type {
+﻿import type {
   AlignDrift,
   AlignGridPatternCoord,
   AlignGridState,
@@ -19,7 +19,7 @@ import {
   type AlignGridToolMode,
 } from "@lisca/utils";
 import { liscaSessionStorage, readStorageJson, writeStorageJson } from "@lisca/utils";
-import { Atom } from "effect/unstable/reactivity";
+import { Atom } from "effect/reactivity";
 import { touchAlignerWorkSessionFromState } from "../session/work-session";
 
 export type ExcludedByPosition = Record<number, AlignGridPatternCoord[]>;

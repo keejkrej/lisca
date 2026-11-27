@@ -1,8 +1,11 @@
-import { useAtomSet } from "@effect/atom-solid";
-import { clearRoiFrameCache, useAnnotateStateCore } from "@lisca/client/use-annotate-state-core";
-import { useCanvasResourceTransaction, useCanvasTransientStatus } from "@lisca/instrument";
-import { useShellWorkspace } from "@lisca/ui/shell";
-import { createMemo } from "solid-js";
+import type { RoiWorkspaceScan } from "@lisca/contracts";
+import {
+  clearRoiFrameCache,
+  createAnnotateSessionController,
+  type AnnotateState as CoreAnnotateState,
+  type AnnotateWorkspaceSync,
+} from "@lisca/client/annotate-session/controller";
+import type { Atom, AtomRegistry } from "effect/reactivity";
 
 import { annotatorClient, toErrorMessage } from "../api/annotator-port";
 import {
@@ -16,7 +19,7 @@ import {
 } from "../atoms/annotator-query-atoms";
 import { annotatorUiActions, annotatorUiAtom } from "../atoms/annotator-ui-atoms";
 
-export type CoreAnnotateState = ReturnType<ReturnType<typeof useAnnotateStateCore>>;
+export type { CoreAnnotateState };
 
 export type AnnotateState = CoreAnnotateState & {
   canGoBack: boolean;
@@ -26,11 +29,57 @@ export type AnnotateState = CoreAnnotateState & {
   refreshAgentWorkspace: (workspacePath: string) => Promise<void>;
 };
 
-export function useAnnotateState(): AnnotateState {
-  const invalidateWorkspace = useAtomSet(() => invalidateAnnotatorWorkspaceAtom, {
-    mode: "promise",
+export type AnnotateStateController = {
+  getState: () => AnnotateState;
+  subscribe: (listener: () => void) => () => void;
+  syncExternal: () => void;
+  dispose: () => void;
+};
+
+export type AnnotateStateControllerOptions = {
+  registry: AtomRegistry.AtomRegistry;
+  workspace: AnnotateWorkspaceSync;
+};
+
+function buildSites(scan: RoiWorkspaceScan | null): Array<{ pos: number; roi: number }> {
+  if (!scan) return [];
+  const list: Array<{ pos: number; roi: number }> = [];
+  for (const position of scan.positions) {
+    for (const roiEntry of position.rois) {
+      list.push({ pos: position.pos, roi: roiEntry.roi });
+    }
+  }
+  return list;
+}
+
+function runAtomFn<Arg, Value>(
+  registry: AtomRegistry.AtomRegistry,
+  atom: Atom.AtomResultFn<Arg, Value, unknown>,
+  arg: Arg,
+): Promise<Value> {
+  return new Promise<Value>((resolve, reject) => {
+    let settled = false;
+    const unsub = registry.subscribe(atom, (result) => {
+      if (settled || result._tag === "Initial" || result.waiting) return;
+      settled = true;
+      unsub();
+      if (result._tag === "Success") {
+        resolve(result.value);
+      } else {
+        reject(result.cause);
+      }
+    });
+    registry.set(atom, arg);
   });
-  const annotate = useAnnotateStateCore({
+}
+
+export function createAnnotateStateController(
+  options: AnnotateStateControllerOptions,
+): AnnotateStateController {
+  const { registry, workspace } = options;
+
+  const core = createAnnotateSessionController({
+    registry,
     annotatorClient,
     toErrorMessage,
     annotatorUiAtom,
@@ -41,217 +90,72 @@ export function useAnnotateState(): AnnotateState {
     labelsIdleAtom,
     saveAnnotationLabelsAtom,
     saveRoiFrameAnnotationAtom,
-    useShellWorkspace,
-    useCanvasResourceTransaction,
-    useCanvasTransientStatus: (status) => useCanvasTransientStatus(status),
+    workspace,
     guardDirtySelection: (dirty, selectionChanging) => {
       if (!dirty || selectionChanging) return true;
-      return window.confirm("Discard unsaved annotation changes?");
+      return typeof window === "undefined"
+        ? true
+        : window.confirm("Discard unsaved annotation changes?");
     },
-  });
-
-  const sites = createMemo(() => {
-    const scan = annotate().scan;
-    if (!scan) return [];
-    const list: Array<{ pos: number; roi: number }> = [];
-    for (const position of scan.positions) {
-      for (const roiEntry of position.rois) {
-        list.push({ pos: position.pos, roi: roiEntry.roi });
-      }
-    }
-    return list;
-  });
-
-  const currentSiteIndex = createMemo(() => {
-    const sel = annotate().selection;
-    return sites().findIndex((site) => site.pos === sel.pos && site.roi === sel.roi);
   });
 
   const refreshAgentWorkspace = async (agentWorkspacePath: string) => {
     const trimmed = agentWorkspacePath.trim();
     if (!trimmed) return;
-    if ((annotate().workspacePath?.trim() ?? "") !== trimmed) {
-      annotate().pickWorkspace(trimmed);
+    const currentState = core.getState();
+    if ((currentState.workspacePath?.trim() ?? "") !== trimmed) {
+      currentState.pickWorkspace(trimmed);
       return;
     }
     clearRoiFrameCache();
-    await invalidateWorkspace(trimmed);
-    const current = annotate().selection;
-    annotate().setSelection({ ...current });
+    await runAtomFn(registry, invalidateAnnotatorWorkspaceAtom, trimmed);
+    const nextState = core.getState();
+    nextState.setSelection({ ...nextState.selection });
+    core.syncExternal();
+  };
+
+  const goBack = () => {
+    const current = core.getState();
+    const list = buildSites(current.scan);
+    const index = list.findIndex(
+      (site) => site.pos === current.selection.pos && site.roi === current.selection.roi,
+    );
+    if (index <= 0) return;
+    const target = list[index - 1]!;
+    current.changeSelection(() => current.setSelection({ pos: target.pos, roi: target.roi }));
+  };
+
+  const goNext = () => {
+    const current = core.getState();
+    const list = buildSites(current.scan);
+    const index = list.findIndex(
+      (site) => site.pos === current.selection.pos && site.roi === current.selection.roi,
+    );
+    if (index < 0 || index >= list.length - 1) return;
+    const target = list[index + 1]!;
+    current.changeSelection(() => current.setSelection({ pos: target.pos, roi: target.roi }));
+  };
+
+  const getState = (): AnnotateState => {
+    const base = core.getState();
+    const list = buildSites(base.scan);
+    const index = list.findIndex(
+      (site) => site.pos === base.selection.pos && site.roi === base.selection.roi,
+    );
+    return {
+      ...base,
+      canGoBack: index > 0,
+      canGoNext: index >= 0 && index < list.length - 1,
+      goBack,
+      goNext,
+      refreshAgentWorkspace,
+    };
   };
 
   return {
-    get workspacePath() {
-      return annotate().workspacePath;
-    },
-    get scan() {
-      return annotate().scan;
-    },
-    get labels() {
-      return annotate().labels;
-    },
-    get selection() {
-      return annotate().selection;
-    },
-    get activeLabelId() {
-      return annotate().activeLabelId;
-    },
-    get mode() {
-      return annotate().mode;
-    },
-    get tool() {
-      return annotate().tool;
-    },
-    get brushSize() {
-      return annotate().brushSize;
-    },
-    get overlayOpacity() {
-      return annotate().overlayOpacity;
-    },
-    get frame() {
-      return annotate().frame;
-    },
-    get contrast() {
-      return annotate().contrast;
-    },
-    get contrastLocked() {
-      return annotate().contrastLocked;
-    },
-    get contrastDomain() {
-      return annotate().contrastDomain;
-    },
-    get contrastMin() {
-      return annotate().contrastMin;
-    },
-    get contrastMax() {
-      return annotate().contrastMax;
-    },
-    get scanLoading() {
-      return annotate().scanLoading;
-    },
-    get frameLoading() {
-      return annotate().frameLoading;
-    },
-    get annotationLoading() {
-      return annotate().annotationLoading;
-    },
-    get saving() {
-      return annotate().saving;
-    },
-    get scanError() {
-      return annotate().scanError;
-    },
-    get frameError() {
-      return annotate().frameError;
-    },
-    get annotationError() {
-      return annotate().annotationError;
-    },
-    get saveError() {
-      return annotate().saveError;
-    },
-    get labelError() {
-      return annotate().labelError;
-    },
-    get labelDialogOpen() {
-      return annotate().labelDialogOpen;
-    },
-    get filePickerOpen() {
-      return annotate().filePickerOpen;
-    },
-    get position() {
-      return annotate().position;
-    },
-    get request() {
-      return annotate().request;
-    },
-    get annotation() {
-      return annotate().annotation;
-    },
-    get canEdit() {
-      return annotate().canEdit;
-    },
-    get canEditSegmentation() {
-      return annotate().canEditSegmentation;
-    },
-    get canSave() {
-      return annotate().canSave;
-    },
-    get canvasToasts() {
-      return annotate().canvasToasts;
-    },
-    get setFilePickerOpen() {
-      return annotate().setFilePickerOpen;
-    },
-    get setLabelDialogOpen() {
-      return annotate().setLabelDialogOpen;
-    },
-    get setLabelError() {
-      return annotate().setLabelError;
-    },
-    get setSelection() {
-      return annotate().setSelection;
-    },
-    get setContrast() {
-      return annotate().setContrast;
-    },
-    get setContrastLocked() {
-      return annotate().setContrastLocked;
-    },
-    get setMode() {
-      return annotate().setMode;
-    },
-    get setTool() {
-      return annotate().setTool;
-    },
-    get setBrushSize() {
-      return annotate().setBrushSize;
-    },
-    get setOverlayOpacity() {
-      return annotate().setOverlayOpacity;
-    },
-    get setActiveLabelId() {
-      return annotate().setActiveLabelId;
-    },
-    get changeSelection() {
-      return annotate().changeSelection;
-    },
-    get handleSave() {
-      return annotate().handleSave;
-    },
-    get handleSaveLabels() {
-      return annotate().handleSaveLabels;
-    },
-    get saveLabelsPending() {
-      return annotate().saveLabelsPending;
-    },
-    get pickWorkspace() {
-      return annotate().pickWorkspace;
-    },
-    get canGoBack() {
-      return currentSiteIndex() > 0;
-    },
-    get canGoNext() {
-      const index = currentSiteIndex();
-      return index >= 0 && index < sites().length - 1;
-    },
-    goBack: () => {
-      const index = currentSiteIndex();
-      if (index <= 0) return;
-      const target = sites()[index - 1]!;
-      annotate().changeSelection(() =>
-        annotate().setSelection({ pos: target.pos, roi: target.roi }),
-      );
-    },
-    goNext: () => {
-      const index = currentSiteIndex();
-      const list = sites();
-      if (index < 0 || index >= list.length - 1) return;
-      const target = list[index + 1]!;
-      annotate().changeSelection(() =>
-        annotate().setSelection({ pos: target.pos, roi: target.roi }),
-      );
-    },
-    refreshAgentWorkspace,
+    getState,
+    subscribe: core.subscribe,
+    syncExternal: core.syncExternal,
+    dispose: core.dispose,
   };
 }

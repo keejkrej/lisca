@@ -1,47 +1,88 @@
-import { createEffect, createSignal, onCleanup, type Accessor } from "solid-js";
-
-export type UseCanvasTransientStatusOptions = {
-  hideAfterMs?: number;
-  persistentStatuses?: readonly string[];
+export type CanvasTransientStatusOptions = {
+  hideAfterMs?: number | undefined;
+  persistentStatuses?: readonly string[] | undefined;
+  initialStatus?: string | null | undefined;
 };
 
-export function useCanvasTransientStatus(
-  status: Accessor<string | null>,
-  options?: UseCanvasTransientStatusOptions | number | Accessor<UseCanvasTransientStatusOptions>,
-): Accessor<string | null> {
-  const [visibleStatus, setVisibleStatus] = createSignal<string | null>(status());
-  const timerRef = { current: null as ReturnType<typeof setTimeout> | null };
+export type UseCanvasTransientStatusOptions = CanvasTransientStatusOptions;
 
-  createEffect(() => {
-    const currentStatus = status();
-    const hideAfterMs =
-      typeof options === "number"
-        ? options
-        : typeof options === "function"
-          ? (options().hideAfterMs ?? 2500)
-          : (options?.hideAfterMs ?? 2500);
-    const persistentStatuses =
-      typeof options === "number"
-        ? undefined
-        : typeof options === "function"
-          ? options().persistentStatuses
-          : options?.persistentStatuses;
+export type CanvasTransientStatusListener = (visibleStatus: string | null) => void;
 
-    if (timerRef.current) clearTimeout(timerRef.current);
-    if (!currentStatus) {
-      setVisibleStatus(null);
+export type CanvasTransientStatusController = {
+  setStatus: (status: string | null, overrides?: CanvasTransientStatusOptions) => void;
+  getVisibleStatus: () => string | null;
+  subscribe: (listener: CanvasTransientStatusListener) => () => void;
+  dispose: () => void;
+};
+
+export function createCanvasTransientStatus(
+  options?: CanvasTransientStatusOptions | number,
+): CanvasTransientStatusController {
+  const defaultHideAfterMs = typeof options === "number" ? options : (options?.hideAfterMs ?? 2500);
+  const defaultPersistentStatuses =
+    typeof options === "number" ? undefined : options?.persistentStatuses;
+  const initialStatus = typeof options === "number" ? null : (options?.initialStatus ?? null);
+
+  let visibleStatus: string | null = null;
+  let timer: ReturnType<typeof setTimeout> | null = null;
+  let disposed = false;
+  const listeners = new Set<CanvasTransientStatusListener>();
+
+  const clearTimer = () => {
+    if (timer !== null) {
+      clearTimeout(timer);
+      timer = null;
+    }
+  };
+
+  const emit = () => {
+    for (const listener of listeners) {
+      listener(visibleStatus);
+    }
+  };
+
+  const setStatus = (status: string | null, overrides?: CanvasTransientStatusOptions) => {
+    if (disposed) return;
+    clearTimer();
+    if (!status) {
+      if (visibleStatus !== null) {
+        visibleStatus = null;
+        emit();
+      }
       return;
     }
-    setVisibleStatus(currentStatus);
-    if (persistentStatuses?.includes(currentStatus)) return;
+    const hideAfterMs = overrides?.hideAfterMs ?? defaultHideAfterMs;
+    const persistentStatuses = overrides?.persistentStatuses ?? defaultPersistentStatuses;
+    const changed = visibleStatus !== status;
+    visibleStatus = status;
+    if (changed) emit();
+    if (persistentStatuses?.includes(status)) return;
 
-    timerRef.current = setTimeout(() => {
-      setVisibleStatus((current) => (current === currentStatus ? null : current));
+    timer = setTimeout(() => {
+      timer = null;
+      if (disposed || visibleStatus !== status) return;
+      visibleStatus = null;
+      emit();
     }, hideAfterMs);
-    onCleanup(() => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-    });
-  });
+  };
 
-  return visibleStatus;
+  if (initialStatus !== null) {
+    setStatus(initialStatus);
+  }
+
+  return {
+    setStatus,
+    getVisibleStatus: () => visibleStatus,
+    subscribe: (listener) => {
+      listeners.add(listener);
+      return () => {
+        listeners.delete(listener);
+      };
+    },
+    dispose: () => {
+      disposed = true;
+      clearTimer();
+      listeners.clear();
+    },
+  };
 }

@@ -1,5 +1,4 @@
 import type { AnnotationLabel } from "@lisca/contracts";
-import { createEffect, createMemo, createSignal, type Accessor } from "solid-js";
 
 function generateId(): string {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
@@ -66,10 +65,25 @@ export function labelDraftsToLabels(drafts: LabelDraft[]): AnnotationLabel[] {
   }));
 }
 
+export type LabelCreationFormExternalState = {
+  open: boolean;
+  labels: AnnotationLabel[];
+  error: string | null;
+};
+
 export type LabelCreationFormState = {
-  drafts: Accessor<LabelDraft[]>;
-  localError: Accessor<string | null>;
-  activeError: Accessor<string | null>;
+  drafts: LabelDraft[];
+  localError: string | null;
+  externalError: string | null;
+  activeError: string | null;
+};
+
+export type LabelCreationFormListener = (state: LabelCreationFormState) => void;
+
+export type LabelCreationFormController = {
+  getState: () => LabelCreationFormState;
+  subscribe: (listener: LabelCreationFormListener) => () => void;
+  syncExternal: (next: LabelCreationFormExternalState) => void;
   updateDraft: (index: number, patch: Partial<Omit<LabelDraft, "draftKey">>) => void;
   addDraft: () => void;
   removeDraft: (index: number) => void;
@@ -77,66 +91,105 @@ export type LabelCreationFormState = {
   resetFromLabels: (labels: AnnotationLabel[]) => void;
 };
 
-export function useLabelCreationForm(
-  args: () => {
-    open: boolean;
-    labels: AnnotationLabel[];
-    error: string | null;
-  },
-): LabelCreationFormState {
-  const [drafts, setDrafts] = createSignal<LabelDraft[]>(labelDraftsFrom(args().labels));
-  const [localError, setLocalError] = createSignal<string | null>(null);
+export function createLabelCreationForm(
+  initial: LabelCreationFormExternalState,
+): LabelCreationFormController {
+  let drafts: LabelDraft[] = labelDraftsFrom(initial.labels);
+  let localError: string | null = null;
+  let externalError: string | null = initial.error;
+  let wasOpen = initial.open;
+  let prevLabels = initial.labels;
+  const listeners = new Set<LabelCreationFormListener>();
 
-  createEffect(() => {
-    if (args().open) {
-      setDrafts(labelDraftsFrom(args().labels));
-      setLocalError(null);
-    }
+  const buildSnapshot = (): LabelCreationFormState => ({
+    drafts,
+    localError,
+    externalError,
+    activeError: localError ?? externalError,
   });
 
+  let snapshot = buildSnapshot();
+
+  const emit = () => {
+    snapshot = buildSnapshot();
+    for (const listener of listeners) {
+      listener(snapshot);
+    }
+  };
+
+  const syncExternal = (next: LabelCreationFormExternalState) => {
+    const shouldReset = next.open && (!wasOpen || next.labels !== prevLabels);
+    const errorChanged = externalError !== next.error;
+    wasOpen = next.open;
+    prevLabels = next.labels;
+    externalError = next.error;
+
+    if (shouldReset) {
+      drafts = labelDraftsFrom(next.labels);
+      localError = null;
+      emit();
+      return;
+    }
+
+    if (errorChanged) {
+      emit();
+    }
+  };
+
   const updateDraft = (index: number, patch: Partial<Omit<LabelDraft, "draftKey">>) => {
-    setDrafts((current) =>
-      current.map((draft, draftIndex) => (draftIndex === index ? { ...draft, ...patch } : draft)),
+    drafts = drafts.map((draft, draftIndex) =>
+      draftIndex === index ? { ...draft, ...patch } : draft,
     );
+    emit();
   };
 
   const addDraft = () => {
-    setDrafts((current) => [
-      ...current,
+    drafts = [
+      ...drafts,
       {
         draftKey: generateId(),
-        id: `class-${current.length + 1}`,
-        name: `Class ${current.length + 1}`,
+        id: `class-${drafts.length + 1}`,
+        name: `Class ${drafts.length + 1}`,
         color: "#a855f7",
       },
-    ]);
+    ];
+    emit();
   };
 
   const removeDraft = (index: number) => {
-    setDrafts((current) => current.filter((_, draftIndex) => draftIndex !== index));
+    drafts = drafts.filter((_, draftIndex) => draftIndex !== index);
+    emit();
   };
 
   const resetFromLabels = (labels: AnnotationLabel[]) => {
-    setDrafts(labelDraftsFrom(labels));
-    setLocalError(null);
+    drafts = labelDraftsFrom(labels);
+    localError = null;
+    emit();
   };
 
   const submit = (): AnnotationLabel[] | null => {
-    const validationError = validateLabelDrafts(drafts());
+    const validationError = validateLabelDrafts(drafts);
     if (validationError) {
-      setLocalError(validationError);
+      localError = validationError;
+      emit();
       return null;
     }
-    setLocalError(null);
-    return labelDraftsToLabels(drafts());
+    if (localError !== null) {
+      localError = null;
+      emit();
+    }
+    return labelDraftsToLabels(drafts);
   };
 
-  const activeError = createMemo(() => localError() ?? args().error);
-
   return {
-    drafts,
-    localError,
-    activeError,
+    getState: () => snapshot,
+    subscribe: (listener) => {
+      listeners.add(listener);
+      return () => {
+        listeners.delete(listener);
+      };
+    },
+    syncExternal,
     updateDraft,
     addDraft,
     removeDraft,

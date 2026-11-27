@@ -1,7 +1,6 @@
 import { createRequire } from "node:module";
 
 import { createLiscaViteConfig } from "@lisca/web-app/vite";
-import { tanstackRouter } from "@tanstack/router-plugin/vite";
 
 const require = createRequire(import.meta.url);
 const { LISCA_APP_PORTS } = require("../../../scripts/lisca-dev-ports.cjs") as {
@@ -21,6 +20,5 @@ export default ({ mode }: { mode: string }) => {
     backendPort: ports.backendPort,
     strictPort: mock,
     open: mock,
-    plugins: [tanstackRouter({ target: "solid", autoCodeSplitting: true })],
   });
 };

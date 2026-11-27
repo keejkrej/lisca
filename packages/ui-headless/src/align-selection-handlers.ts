@@ -5,7 +5,6 @@ import {
   toggleExcludedAlignGridPatterns,
   type AlignGridFrameBounds,
 } from "@lisca/utils";
-import { createSignal, type Accessor } from "solid-js";
 
 import type { AlignCanvasPointerEvent } from "./align-canvas-handlers";
 
@@ -15,21 +14,38 @@ type StrokeSession = {
   toggledPatterns: AlignGridPatternCoord[];
 };
 
-export type UseAlignCanvasSelectionHandlersOptions = {
-  disabled?: boolean;
-  enabled?: boolean;
+export type AlignCanvasSelectionHandlersOptions = {
+  disabled?: boolean | undefined;
+  enabled?: boolean | undefined;
   frame: AlignGridFrameBounds | null;
   grid: AlignGridState;
   excludedPatterns: AlignGridPatternCoord[];
   onExcludedPatternsChange: (patterns: AlignGridPatternCoord[]) => void;
+  onSelectingChange?: ((selecting: boolean) => void) | undefined;
 };
 
-export function useAlignCanvasSelectionHandlers(
-  options: () => UseAlignCanvasSelectionHandlersOptions,
-) {
+export type UseAlignCanvasSelectionHandlersOptions = AlignCanvasSelectionHandlersOptions;
+
+export type AlignCanvasSelectionHandlers = {
+  handlePointerDown: (event: AlignCanvasPointerEvent) => boolean;
+  handlePointerMove: (event: AlignCanvasPointerEvent) => boolean;
+  handlePointerEnd: (event: AlignCanvasPointerEvent) => boolean;
+  handlePointerCancel: (event: AlignCanvasPointerEvent) => boolean;
+  selecting: () => boolean;
+};
+
+export function createAlignCanvasSelectionHandlers(
+  options: () => AlignCanvasSelectionHandlersOptions,
+): AlignCanvasSelectionHandlers {
   const strokeRef = { current: null as StrokeSession | null };
   const excludedRef = { current: options().excludedPatterns };
-  const [selecting, setSelecting] = createSignal(false);
+  let isSelecting = false;
+
+  const setSelecting = (next: boolean) => {
+    if (isSelecting === next) return;
+    isSelecting = next;
+    options().onSelectingChange?.(next);
+  };
 
   const applyStroke = (point: { x: number; y: number }) => {
     const session = strokeRef.current;
@@ -100,6 +116,8 @@ export function useAlignCanvasSelectionHandlers(
     handlePointerMove,
     handlePointerEnd: endStroke,
     handlePointerCancel: endStroke,
-    selecting: selecting as Accessor<boolean>,
+    selecting: () => isSelecting,
   };
 }
+
+export const useAlignCanvasSelectionHandlers = createAlignCanvasSelectionHandlers;

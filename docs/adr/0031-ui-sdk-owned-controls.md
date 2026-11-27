@@ -1,6 +1,6 @@
 # ADR-0031: LiSCA owns controls built with UI SDK
 
-- **Status:** accepted
+- **Status:** superseded by [ADR-0033](0033-effect-ui-frontend.md)
 - **Date:** 2026-11-16
 
 ## Decision

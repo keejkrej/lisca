@@ -95,13 +95,13 @@
       "types": "./src/atoms/annotator-ui.ts",
       "import": "./src/atoms/annotator-ui.ts"
     },
-    "./align-session/solid": {
-      "types": "./src/session/use-align-session.ts",
-      "import": "./src/session/use-align-session.ts"
+    "./align-session/controller": {
+      "types": "./src/session/align-session-controller.ts",
+      "import": "./src/session/align-session-controller.ts"
     },
-    "./annotate-session/solid": {
-      "types": "./src/session/use-annotate-session.ts",
-      "import": "./src/session/use-annotate-session.ts"
+    "./annotate-session/controller": {
+      "types": "./src/session/annotate-session-controller.ts",
+      "import": "./src/session/annotate-session-controller.ts"
     },
     "./session/work-session": {
       "types": "./src/session/work-session.ts",
@@ -110,10 +110,6 @@
     "./session/work-session-gate": {
       "types": "./src/session/work-session-gate.ts",
       "import": "./src/session/work-session-gate.ts"
-    },
-    "./session/work-session-app-gate": {
-      "types": "./src/session/work-session-app-gate.tsx",
-      "import": "./src/session/work-session-app-gate.tsx"
     },
     "./session/aligner-work-session-restore": {
       "types": "./src/session/aligner-work-session-restore.ts",
@@ -143,13 +139,9 @@
       "types": "./src/session/subscription-owner.ts",
       "import": "./src/session/subscription-owner.ts"
     },
-    "./use-align-state-core": {
-      "types": "./src/hooks/use-align-state-core.ts",
-      "import": "./src/hooks/use-align-state-core.ts"
-    },
-    "./use-annotate-state-core": {
-      "types": "./src/hooks/use-annotate-state-core.ts",
-      "import": "./src/hooks/use-annotate-state-core.ts"
+    "./hooks/annotate-selection-guard": {
+      "types": "./src/hooks/annotate-selection-guard.ts",
+      "import": "./src/hooks/annotate-selection-guard.ts"
     },
     "./atoms/studio-ui": {
       "types": "./src/atoms/studio-ui.ts",
@@ -196,7 +188,6 @@
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@effect/atom-solid": "catalog:",
     "@lisca/contracts": "workspace:*",
     "@lisca/utils": "workspace:*",
     "effect": "catalog:"
@@ -204,8 +195,5 @@
   "devDependencies": {
     "typescript": "catalog:",
     "vitest": "catalog:"
-  },
-  "peerDependencies": {
-    "solid-js": "^1.9.0"
   }
 }

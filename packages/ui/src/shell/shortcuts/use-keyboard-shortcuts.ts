@@ -1,38 +1,57 @@
-import { resolveKeyboardShortcut, type KeyboardShortcut } from "@lisca/utils";
-import { createEffect, onCleanup } from "solid-js";
+import { HtmlSubscription } from "@effect/ui/html";
+import {
+  resolveKeyboardShortcut,
+  type KeyboardShortcut,
+  type ShortcutModifiers,
+} from "@lisca/utils";
 
-export type { KeyboardShortcut, ShortcutModifiers } from "@lisca/utils";
+export type { KeyboardShortcut, ShortcutModifiers };
 
-function isEditableTarget(target: EventTarget | null): boolean {
-  if (!(target instanceof HTMLElement)) return false;
-  return Boolean(target.closest("input, textarea, select, [contenteditable='true']"));
-}
+export type KeyboardShortcutBinding<M> = {
+  readonly id?: string | undefined;
+  readonly key: string;
+  readonly modifiers?: ShortcutModifiers | undefined;
+  readonly allowInInput?: boolean | undefined;
+  readonly message: M;
+};
 
-export function useKeyboardShortcuts(
-  shortcuts: readonly KeyboardShortcut[],
-  options?: { enabled?: boolean },
-): void {
-  const enabled = () => options?.enabled ?? true;
+/**
+ * Effect UI Subscription that listens for document `keydown` events via `HtmlSubscription.onDocument`
+ * and dispatches the matching shortcut's message while cancelling the browser default.
+ */
+export function keyboardShortcutsSubscription<M>(
+  shortcuts: readonly KeyboardShortcutBinding<M>[],
+  options?: { readonly enabled?: boolean | undefined },
+) {
+  if (options?.enabled === false) {
+    return false as const;
+  }
 
-  createEffect(() => {
-    if (!enabled()) return;
+  const normalized: readonly (KeyboardShortcut & { readonly message: M })[] = shortcuts.map(
+    (entry, index) => ({
+      id: entry.id ?? `shortcut-${index}`,
+      key: entry.key,
+      ...(entry.modifiers !== undefined ? { modifiers: entry.modifiers } : {}),
+      ...(entry.allowInInput !== undefined ? { allowInInput: entry.allowInInput } : {}),
+      onTrigger: () => {},
+      message: entry.message,
+    }),
+  );
 
-    const onKeyDown = (event: KeyboardEvent) => {
-      const shortcut = resolveKeyboardShortcut(shortcuts, {
+  return HtmlSubscription.onDocument(
+    "keydown",
+    (event) => {
+      const matched = resolveKeyboardShortcut(normalized, {
         key: event.key,
-        editableTarget: isEditableTarget(event.target),
-        metaKey: event.metaKey,
-        ctrlKey: event.ctrlKey,
-        shiftKey: event.shiftKey,
-        altKey: event.altKey,
+        editableTarget: event.editable,
+        metaKey: event.meta,
+        ctrlKey: event.ctrl,
+        shiftKey: event.shift,
+        altKey: event.alt,
       });
-      if (!shortcut) return;
-
-      event.preventDefault();
-      shortcut.onTrigger();
-    };
-
-    window.addEventListener("keydown", onKeyDown);
-    onCleanup(() => window.removeEventListener("keydown", onKeyDown));
-  });
+      if (!matched) return undefined;
+      return (matched as KeyboardShortcut & { readonly message: M }).message;
+    },
+    { preventDefault: true },
+  );
 }

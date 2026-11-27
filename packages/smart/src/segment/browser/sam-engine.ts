@@ -134,29 +134,32 @@ export class BrowserSamEngine implements SmartSegmentEngine {
     this.loadPromise = (async () => {
       const { SamModel, AutoProcessor } = await loadTransformers();
       const progress_callback = createProgressCallback(onProgress);
+      const progressOption = progress_callback ? { progress_callback } : {};
       const loadOptions = {
         dtype: this.device === "webgpu" ? ("fp16" as const) : ("q8" as const),
         device: this.device,
-        progress_callback,
+        ...progressOption,
       };
       try {
         this.model = (await SamModel.from_pretrained(
           this.modelId,
           loadOptions,
         )) as unknown as SamModelInstance;
-        this.processor = (await AutoProcessor.from_pretrained(this.modelId, {
-          progress_callback,
-        })) as unknown as SamProcessorInstance;
+        this.processor = (await AutoProcessor.from_pretrained(
+          this.modelId,
+          progressOption,
+        )) as unknown as SamProcessorInstance;
       } catch (cause) {
         if (this.device !== "webgpu") throw cause;
         this.model = (await SamModel.from_pretrained(this.modelId, {
           dtype: "q8",
           device: "wasm",
-          progress_callback,
+          ...progressOption,
         })) as unknown as SamModelInstance;
-        this.processor = (await AutoProcessor.from_pretrained(this.modelId, {
-          progress_callback,
-        })) as unknown as SamProcessorInstance;
+        this.processor = (await AutoProcessor.from_pretrained(
+          this.modelId,
+          progressOption,
+        )) as unknown as SamProcessorInstance;
       }
     })();
 

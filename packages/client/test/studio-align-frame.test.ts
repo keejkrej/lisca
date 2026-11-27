@@ -117,16 +117,18 @@ describe("studio align frame", () => {
     rememberStudioAlignZ(killing, 61, 1);
     expect(recallStudioAlignZ(killing, 61)).toBe(1);
     expect(recallStudioAlignZ(killing, 62)).toBeUndefined();
+    const z61 = recallStudioAlignZ(killing, 61);
+    const z62 = recallStudioAlignZ(killing, 62);
     expect(
       lockedStudioSelection(scan, current, scan.positions, {
         frameDefault: "first",
-        rememberedZ: recallStudioAlignZ(killing, 61),
+        ...(z61 !== undefined ? { rememberedZ: z61 } : {}),
       }).z,
     ).toBe(1);
     expect(
       lockedStudioSelection(scan, { ...current, pos: 62 }, scan.positions, {
         frameDefault: "first",
-        rememberedZ: recallStudioAlignZ(killing, 62),
+        ...(z62 !== undefined ? { rememberedZ: z62 } : {}),
       }).z,
     ).toBe(0);
   });

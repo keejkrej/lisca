@@ -1,4 +1,4 @@
-import { AsyncResult } from "effect/unstable/reactivity";
+﻿import { AsyncResult } from "effect/reactivity";
 import { Cause } from "effect";
 
 export function resultData<A>(

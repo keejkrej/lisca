@@ -1,11 +1,11 @@
 // @vitest-environment node
-import { resolve } from "node:path";
 import { execFile } from "node:child_process";
+import { resolve } from "node:path";
 import { promisify } from "node:util";
 import { describe, expect, it } from "vite-plus/test";
 
 describe("Studio route development transforms", () => {
-  it("splits page components without reading hot-reload bindings before initialization", async () => {
+  it("transforms Effect UI route modules cleanly without runtime or import errors", async () => {
     const root = resolve(import.meta.dirname, "..");
     // A separate Node process keeps Vitest's dependency transforms out of Vite's plugins.
     const { stdout } = await promisify(execFile)(
@@ -23,12 +23,19 @@ describe("Studio route development transforms", () => {
       });
       try {
         await server.listen();
+        const routes = [
+          { route: "help-us", exportName: "HelpUsPage" },
+          { route: "onboarding", exportName: "OnboardingPage" },
+        ];
         const results = [];
-        for (const route of ["help-us", "onboarding"]) {
-          const transformed = await server.transformRequest("/src/routes/" + route + ".tsx");
-          results.push({ route,
-            split: /component:\\s*lazyRouteComponent\\(/.test(transformed?.code ?? ""),
-            warning: transformed?.code.includes("will not be code-split") ?? false,
+        for (const { route, exportName } of routes) {
+          const transformed = await server.transformRequest("/src/routes/" + route + ".ts");
+          const code = transformed?.code ?? "";
+          results.push({
+            route,
+            transformed: code.length > 0,
+            exportsPage: new RegExp("export\\\\s+const\\\\s+" + exportName + "\\\\b").test(code),
+            hasSolidArtifacts: /solid-js|@tanstack\\/solid-router|will not be code-split/.test(code),
           });
         }
         console.log("ROUTE_RESULTS=" + JSON.stringify(results));
@@ -44,8 +51,8 @@ describe("Studio route development transforms", () => {
     const resultLine = stdout.split("\n").find((line) => line.startsWith("ROUTE_RESULTS="));
     expect(resultLine).toBeDefined();
     expect(JSON.parse(resultLine!.slice("ROUTE_RESULTS=".length))).toEqual([
-      { route: "help-us", split: true, warning: false },
-      { route: "onboarding", split: true, warning: false },
+      { route: "help-us", transformed: true, exportsPage: true, hasSolidArtifacts: false },
+      { route: "onboarding", transformed: true, exportsPage: true, hasSolidArtifacts: false },
     ]);
   }, 30_000);
 });

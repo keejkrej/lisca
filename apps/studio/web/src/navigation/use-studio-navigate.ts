@@ -1,20 +1,7 @@
-import { useNavigate } from "@tanstack/solid-router";
+import type { StudioAnyRouteTo, StudioRouteTo } from "./studio-router";
 
-export type StudioRouteTo = "/assay" | "/metadata" | "/align" | "/annotate" | "/analysis";
+export type { StudioAnyRouteTo, StudioRouteTo };
 
-export function studioNavigate(navigate: ReturnType<typeof useNavigate>, to: StudioRouteTo): void {
-  void navigate({
-    to,
-  });
-}
-
-export function useStudioNavigate() {
-  const navigate = useNavigate();
-  const navigateTo = (to: StudioRouteTo) => {
-    studioNavigate(navigate, to);
-  };
-  return {
-    navigate,
-    navigateTo,
-  };
+export function studioNavigate(navigate: (to: StudioAnyRouteTo) => void, to: StudioRouteTo): void {
+  navigate(to);
 }

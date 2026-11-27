@@ -29,9 +29,13 @@ export function forgetStudioSource(mode: HostFilePickerMode, path: string): void
 }
 
 export function readStudioWizardMemoryRecent(kind: MemoryKind): {
-  workspaces: Array<{ path: string; label?: string }>;
-  sources: Array<{ source: AlignerSource; label?: string }>;
-  assays: Array<{ path: string; assayLabel?: string; workspacePath?: string }>;
+  workspaces: Array<{ path: string; label?: string | undefined }>;
+  sources: Array<{ source: AlignerSource; label?: string | undefined }>;
+  assays: Array<{
+    path: string;
+    assayLabel?: string | undefined;
+    workspacePath?: string | undefined;
+  }>;
 } {
   const memory = readRecentMemory("studio");
 

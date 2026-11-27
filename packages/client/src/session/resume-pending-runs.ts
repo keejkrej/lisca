@@ -14,7 +14,7 @@ export type ResumeCropPendingRunsOptions = {
   client: Pick<AlignerDataPort, "getLatestCropProgress" | "onCropRoiProgress">;
   workspacePath: string;
   onProgress: (progress: CropRoiProgress) => void;
-  onTerminal?: (progress: CropRoiProgress) => void;
+  onTerminal?: ((progress: CropRoiProgress) => void) | undefined;
 };
 
 export type ResumedCropRun =

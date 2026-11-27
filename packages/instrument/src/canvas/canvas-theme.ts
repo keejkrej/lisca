@@ -1,5 +1,5 @@
-import { createEffect, onCleanup, onMount } from "solid-js";
-import { useShellTheme } from "@lisca/ui/shell";
+import { Subscription } from "@effect/ui";
+import { Effect, Queue, Stream } from "effect";
 
 /**
  * Background color for canvas 2D fills. Inside the instrument shell this is the
@@ -32,37 +32,54 @@ export function resolvedCanvasBackground(element?: HTMLElement | null): string {
 }
 
 /**
- * Redraw when the shell light/dark mode changes. Subscribes to `ShellThemeProvider`
- * (class toggle runs in a parent effect first) and keeps a MutationObserver backup.
+ * Redraws a canvas when the document theme class/style changes.
+ * Schedules an initial animation frame, coalesces MutationObserver callbacks
+ * onto a single pending animation frame, and cancels any queued frames on cleanup.
  */
-export function useCanvasThemeRerender(rerender: () => void) {
-  const theme = useShellTheme();
+export function observeCanvasThemeRerender(rerender: () => void): () => void {
+  let initialFrame: number | null = window.requestAnimationFrame(() => {
+    initialFrame = null;
+    rerender();
+  });
 
-  createEffect(() => {
-    const mode = theme.mode;
-    const id = window.requestAnimationFrame(() => {
-      void mode;
+  let observerFrame: number | null = null;
+  const observer = new MutationObserver(() => {
+    if (observerFrame !== null) return;
+    observerFrame = window.requestAnimationFrame(() => {
+      observerFrame = null;
       rerender();
     });
-    onCleanup(() => window.cancelAnimationFrame(id));
   });
 
-  onMount(() => {
-    let observerFrame: number | null = null;
-    const observer = new MutationObserver(() => {
-      if (observerFrame !== null) return;
-      observerFrame = window.requestAnimationFrame(() => {
-        observerFrame = null;
-        rerender();
-      });
-    });
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ["class", "style"],
-    });
-    onCleanup(() => {
-      observer.disconnect();
-      if (observerFrame !== null) window.cancelAnimationFrame(observerFrame);
-    });
+  observer.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ["class", "style"],
   });
+
+  return () => {
+    observer.disconnect();
+    if (initialFrame !== null) {
+      window.cancelAnimationFrame(initialFrame);
+      initialFrame = null;
+    }
+    if (observerFrame !== null) {
+      window.cancelAnimationFrame(observerFrame);
+      observerFrame = null;
+    }
+  };
+}
+
+/**
+ * Effect UI subscription that emits `message` whenever the document theme
+ * updates (coalesced per animation frame) and cancels queued work on unmount.
+ */
+export function canvasThemeRerenderSubscription<M>(key: string, themeMode: string, message: M) {
+  return Subscription.make(key, themeMode, () =>
+    Stream.callback<M>((queue) => {
+      const stop = observeCanvasThemeRerender(() => {
+        Queue.offerUnsafe(queue, message);
+      });
+      return Effect.addFinalizer(() => Effect.sync(stop));
+    }),
+  );
 }

@@ -1,862 +1,254 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "definitions": {
-    "HostFsEntry": {
-      "type": "object",
-      "properties": {
-        "name": {
-          "type": "string"
-        },
-        "path": {
-          "type": "string"
-        },
-        "isDirectory": {
-          "type": "boolean"
-        }
-      },
-      "required": [
-        "name",
-        "path",
-        "isDirectory"
-      ]
+    "LabelFreeClassificationList": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/LabelFreeClassification"
+      }
     },
-    "HostListDirectoryResult": {
-      "type": "object",
-      "properties": {
-        "path": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "parent": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "entries": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/HostFsEntry"
-          }
-        }
-      },
-      "required": [
-        "path",
-        "parent",
-        "entries"
-      ]
-    },
-    "HomeDirectoryResponse": {
-      "type": "object",
-      "properties": {
-        "path": {
-          "type": "string"
-        }
-      },
-      "required": [
-        "path"
-      ]
-    },
-    "HostDrive": {
-      "type": "object",
-      "properties": {
-        "letter": {
-          "type": "string"
-        },
-        "path": {
-          "type": "string"
-        }
-      },
-      "required": [
-        "letter",
-        "path"
-      ]
-    },
-    "HostWindowsDrivesResponse": {
-      "type": "object",
-      "properties": {
-        "windows": {
-          "type": "boolean"
-        },
-        "drives": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/HostDrive"
-          }
-        }
-      },
-      "required": [
-        "windows",
-        "drives"
-      ]
-    },
-    "ReadTextFileResponse": {
-      "type": "object",
-      "properties": {
-        "contents": {
-          "type": "string"
-        }
-      },
-      "required": [
-        "contents"
-      ]
-    },
-    "CreateDirectoryRequest": {
-      "type": "object",
-      "properties": {
-        "parentPath": {
-          "type": "string"
-        },
-        "name": {
-          "type": "string"
-        }
-      },
-      "required": [
-        "parentPath",
-        "name"
-      ]
-    },
-    "CreateDirectoryResponse": {
-      "type": "object",
-      "properties": {
-        "path": {
-          "type": "string"
-        }
-      },
-      "required": [
-        "path"
-      ]
-    },
-    "FolderSource": {
-      "type": "object",
-      "properties": {
-        "kind": {
-          "type": "string",
-          "enum": [
-            "folder"
-          ]
-        },
-        "path": {
-          "type": "string"
-        },
-        "subfolderTemplate": {
-          "type": "string"
-        },
-        "filenameTemplate": {
-          "type": "string"
-        }
-      },
-      "required": [
-        "kind",
-        "path",
-        "subfolderTemplate",
-        "filenameTemplate"
-      ]
-    },
-    "AlignerSource": {
-      "oneOf": [
-        {
-          "type": "object",
-          "properties": {
-            "kind": {
-              "type": "string",
-              "enum": [
-                "folder"
-              ]
-            },
-            "path": {
-              "type": "string"
-            },
-            "subfolderTemplate": {
-              "type": "string"
-            },
-            "filenameTemplate": {
-              "type": "string"
-            }
-          },
-          "required": [
-            "kind",
-            "path",
-            "subfolderTemplate",
-            "filenameTemplate"
-          ]
-        },
-        {
-          "type": "object",
-          "properties": {
-            "kind": {
-              "type": "string",
-              "enum": [
-                "nd2"
-              ]
-            },
-            "path": {
-              "type": "string"
-            }
-          },
-          "required": [
-            "kind",
-            "path"
-          ]
-        },
-        {
-          "type": "object",
-          "properties": {
-            "kind": {
-              "type": "string",
-              "enum": [
-                "czi"
-              ]
-            },
-            "path": {
-              "type": "string"
-            }
-          },
-          "required": [
-            "kind",
-            "path"
-          ]
-        }
-      ]
-    },
-    "ScanSourceRequest": {
-      "type": "object",
-      "properties": {
-        "source": {
-          "$ref": "#/definitions/AlignerSource"
-        }
-      },
-      "required": [
-        "source"
-      ]
-    },
-    "WorkspaceScan": {
-      "type": "object",
-      "properties": {
-        "positions": {
-          "type": "array",
-          "items": {
-            "type": "integer",
-            "minimum": 0,
-            "format": "uint32"
-          }
-        },
-        "channels": {
-          "type": "array",
-          "items": {
-            "type": "integer",
-            "minimum": 0,
-            "format": "uint32"
-          }
-        },
-        "times": {
-          "type": "array",
-          "items": {
-            "type": "integer",
-            "minimum": 0,
-            "format": "uint32"
-          }
-        },
-        "zSlices": {
-          "type": "array",
-          "items": {
-            "type": "integer",
-            "minimum": 0,
-            "format": "uint32"
-          }
-        },
-        "positionLabels": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "channelLabels": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "timeLabels": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "zSliceLabels": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        }
-      },
-      "required": [
-        "positions",
-        "channels",
-        "times",
-        "zSlices"
-      ]
-    },
-    "FrameRequest": {
+    "LabelFreeClassification": {
       "type": "object",
       "properties": {
         "pos": {
           "type": "integer",
           "minimum": 0,
+          "maximum": 9007199254740991,
+          "format": "uint32"
+        },
+        "roi": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
           "format": "uint32"
         },
         "channel": {
           "type": "integer",
           "minimum": 0,
+          "maximum": 9007199254740991,
           "format": "uint32"
         },
         "time": {
           "type": "integer",
           "minimum": 0,
+          "maximum": 9007199254740991,
           "format": "uint32"
         },
         "z": {
           "type": "integer",
           "minimum": 0,
+          "maximum": 9007199254740991,
           "format": "uint32"
+        },
+        "labelId": {
+          "type": "string"
+        },
+        "support": {
+          "type": "number",
+          "format": "double"
         }
       },
       "required": [
         "pos",
+        "roi",
         "channel",
         "time",
-        "z"
+        "z",
+        "labelId",
+        "support"
       ]
     },
-    "ContrastWindow": {
-      "type": "object",
-      "properties": {
-        "min": {
-          "type": "integer",
-          "minimum": 0,
-          "format": "uint32"
-        },
-        "max": {
-          "type": "integer",
-          "minimum": 0,
-          "format": "uint32"
-        }
-      },
-      "required": [
-        "min",
-        "max"
-      ]
-    },
-    "LoadFrameRequest": {
-      "type": "object",
-      "properties": {
-        "source": {
-          "$ref": "#/definitions/AlignerSource"
-        },
-        "request": {
-          "$ref": "#/definitions/FrameRequest"
-        },
-        "contrast": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/ContrastWindow"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        }
-      },
-      "required": [
-        "source",
-        "request",
-        "contrast"
-      ]
-    },
-    "PixelType": {
-      "type": "string",
-      "enum": [
-        "uint8",
-        "uint8clamped",
-        "int8",
-        "uint16",
-        "int16",
-        "uint32",
-        "int32"
-      ]
-    },
-    "FramePayload": {
-      "type": "object",
-      "properties": {
-        "width": {
-          "type": "integer",
-          "minimum": 0,
-          "format": "uint32"
-        },
-        "height": {
-          "type": "integer",
-          "minimum": 0,
-          "format": "uint32"
-        },
-        "dataBase64": {
-          "type": "string"
-        },
-        "pixelType": {
-          "$ref": "#/definitions/PixelType"
-        },
-        "contrastDomain": {
-          "$ref": "#/definitions/ContrastWindow"
-        },
-        "suggestedContrast": {
-          "$ref": "#/definitions/ContrastWindow"
-        },
-        "appliedContrast": {
-          "$ref": "#/definitions/ContrastWindow"
-        }
-      },
-      "required": [
-        "width",
-        "height",
-        "dataBase64",
-        "pixelType",
-        "contrastDomain",
-        "suggestedContrast",
-        "appliedContrast"
-      ]
-    },
-    "AlignGridShape": {
-      "type": "string",
-      "enum": [
-        "rect",
-        "square",
-        "hex"
-      ]
-    },
-    "AlignGridState": {
-      "type": "object",
-      "properties": {
-        "enabled": {
-          "type": "boolean"
-        },
-        "shape": {
-          "$ref": "#/definitions/AlignGridShape"
-        },
-        "tx": {
-          "type": "number",
-          "format": "double"
-        },
-        "ty": {
-          "type": "number",
-          "format": "double"
-        },
-        "rotation": {
-          "type": "number",
-          "format": "double"
-        },
-        "spacingA": {
-          "type": "number",
-          "format": "double"
-        },
-        "spacingB": {
-          "type": "number",
-          "format": "double"
-        },
-        "patternWidth": {
-          "type": "number",
-          "format": "double"
-        },
-        "patternHeight": {
-          "type": "number",
-          "format": "double"
-        },
-        "opacity": {
-          "type": "number",
-          "format": "double"
-        }
-      },
-      "required": [
-        "enabled",
-        "shape",
-        "tx",
-        "ty",
-        "rotation",
-        "spacingA",
-        "spacingB",
-        "patternWidth",
-        "patternHeight",
-        "opacity"
-      ]
-    },
-    "AlignGridPatternCoord": {
-      "type": "object",
-      "properties": {
-        "i": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "j": {
-          "type": "integer",
-          "format": "int32"
-        }
-      },
-      "required": [
-        "i",
-        "j"
-      ]
-    },
-    "DriftKeyframe": {
-      "type": "object",
-      "properties": {
-        "time": {
-          "type": "integer",
-          "minimum": 0,
-          "format": "uint32"
-        },
-        "dx": {
-          "type": "number",
-          "format": "double"
-        },
-        "dy": {
-          "type": "number",
-          "format": "double"
-        }
-      },
-      "required": [
-        "time",
-        "dx",
-        "dy"
-      ]
-    },
-    "AlignDrift": {
-      "type": "object",
-      "properties": {
-        "referenceTime": {
-          "type": "integer",
-          "minimum": 0,
-          "format": "uint32"
-        },
-        "interpolation": {
-          "type": "string",
-          "enum": [
-            "linear"
-          ]
-        },
-        "keyframes": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/DriftKeyframe"
-          }
-        }
-      },
-      "required": [
-        "referenceTime",
-        "interpolation",
-        "keyframes"
-      ]
-    },
-    "SavedAlignState": {
-      "type": "object",
-      "properties": {
-        "grid": {
-          "$ref": "#/definitions/AlignGridState"
-        },
-        "excludedPatterns": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/AlignGridPatternCoord"
-          }
-        },
-        "drift": {
-          "$ref": "#/definitions/AlignDrift"
-        }
-      },
-      "required": [
-        "grid",
-        "excludedPatterns"
-      ]
-    },
-    "SaveBboxRequest": {
+    "LabelFreeClassifyRequest": {
       "type": "object",
       "properties": {
         "workspacePath": {
           "type": "string"
         },
-        "pos": {
+        "name": {
+          "type": "string"
+        },
+        "limit": {
           "type": "integer",
           "minimum": 0,
+          "maximum": 9007199254740991,
           "format": "uint32"
-        },
-        "csv": {
-          "type": "string"
-        },
-        "alignState": {
-          "$ref": "#/definitions/SavedAlignState"
-        }
-      },
-      "required": [
-        "workspacePath",
-        "pos",
-        "csv",
-        "alignState"
-      ]
-    },
-    "SaveBboxResponse": {
-      "type": "object",
-      "properties": {
-        "ok": {
-          "type": "boolean"
-        },
-        "error": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        }
-      },
-      "required": [
-        "ok",
-        "error"
-      ]
-    },
-    "DetectGridRequest": {
-      "type": "object",
-      "properties": {
-        "source": {
-          "$ref": "#/definitions/AlignerSource"
-        },
-        "request": {
-          "$ref": "#/definitions/FrameRequest"
-        },
-        "shape": {
-          "$ref": "#/definitions/AlignGridShape"
-        },
-        "patternWidth": {
-          "type": "number",
-          "format": "double"
-        },
-        "patternHeight": {
-          "type": "number",
-          "format": "double"
-        },
-        "minSpacing": {
-          "type": "number",
-          "format": "double"
-        },
-        "maxSpacing": {
-          "type": "number",
-          "format": "double"
-        }
-      },
-      "required": [
-        "source",
-        "request"
-      ]
-    },
-    "DetectGridResponse": {
-      "type": "object",
-      "properties": {
-        "grid": {
-          "$ref": "#/definitions/AlignGridState"
-        },
-        "count": {
-          "type": "integer",
-          "minimum": 0,
-          "format": "uint32"
-        },
-        "islands": {
-          "type": "integer",
-          "minimum": 0,
-          "format": "uint32"
-        },
-        "confidence": {
-          "type": "number",
-          "format": "double"
-        },
-        "residualPx": {
-          "type": "number",
-          "format": "double"
-        }
-      },
-      "required": [
-        "grid",
-        "count",
-        "islands",
-        "confidence",
-        "residualPx"
-      ]
-    },
-    "AlignOutputPaths": {
-      "type": "object",
-      "properties": {
-        "bbox": {
-          "type": "string"
-        },
-        "align": {
-          "type": "string"
-        },
-        "roi": {
-          "type": "string"
-        }
-      },
-      "required": [
-        "bbox",
-        "align",
-        "roi"
-      ]
-    },
-    "RoiPosExistsResponse": {
-      "type": "object",
-      "properties": {
-        "exists": {
-          "type": "boolean"
-        }
-      },
-      "required": [
-        "exists"
-      ]
-    },
-    "CropOutputFormat": {
-      "type": "string",
-      "enum": [
-        "tiff"
-      ]
-    },
-    "CropRoiRequest": {
-      "type": "object",
-      "properties": {
-        "requestId": {
-          "type": "string"
-        },
-        "workspacePath": {
-          "type": "string"
-        },
-        "source": {
-          "$ref": "#/definitions/AlignerSource"
         },
         "positions": {
           "type": "array",
           "items": {
             "type": "integer",
             "minimum": 0,
+            "maximum": 9007199254740991,
             "format": "uint32"
           }
+        }
+      },
+      "required": [
+        "workspacePath",
+        "name",
+        "limit"
+      ]
+    },
+    "LabelFreeReferenceSet": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
         },
-        "overwrite": {
+        "count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "format": "uint32"
+        },
+        "labels": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/LabelFreeLabelCount"
+          }
+        },
+        "modelId": {
+          "type": "string"
+        },
+        "revision": {
+          "type": "string"
+        },
+        "encoderId": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "count",
+        "labels",
+        "modelId",
+        "revision",
+        "encoderId"
+      ]
+    },
+    "LabelFreeLabelCount": {
+      "type": "object",
+      "properties": {
+        "label": {
+          "type": "string"
+        },
+        "count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "format": "uint32"
+        }
+      },
+      "required": [
+        "label",
+        "count"
+      ]
+    },
+    "LabelFreeReferenceRequest": {
+      "type": "object",
+      "properties": {
+        "workspacePath": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "workspacePath",
+        "name"
+      ]
+    },
+    "LabelFreeReferenceSetList": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/LabelFreeReferenceSet"
+      }
+    },
+    "LabelFreeHealth": {
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "format": "uint32"
+        },
+        "provider": {
+          "$ref": "#/definitions/LabelFreeProvider"
+        },
+        "configured": {
           "type": "boolean"
         },
-        "outputFormat": {
-          "$ref": "#/definitions/CropOutputFormat"
+        "modelId": {
+          "type": "string"
+        },
+        "revision": {
+          "type": "string"
+        },
+        "dimensions": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "format": "uint32"
+        },
+        "batchSize": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "format": "uint32"
+        },
+        "cacheCap": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "format": "uint32"
         }
       },
       "required": [
-        "requestId",
-        "workspacePath",
-        "source",
-        "positions",
-        "overwrite"
+        "apiVersion",
+        "provider",
+        "configured",
+        "modelId",
+        "revision",
+        "dimensions",
+        "batchSize",
+        "cacheCap"
       ]
     },
-    "CropRoiStatus": {
+    "LabelFreeProvider": {
       "type": "string",
       "enum": [
-        "queued",
-        "running",
-        "completed",
-        "cancelled",
-        "error"
+        "openrouter",
+        "ollama"
       ]
     },
-    "CropRoiDisposition": {
-      "type": "string",
-      "enum": [
-        "started",
-        "attached"
-      ]
+    "LabelFreeKeyRequest": {
+      "type": "object",
+      "properties": {
+        "apiKey": {
+          "type": "string"
+        },
+        "provider": {
+          "$ref": "#/definitions/LabelFreeProvider"
+        }
+      }
     },
-    "CropRoiResponse": {
+    "AnalysisProgress": {
       "type": "object",
       "properties": {
         "requestId": {
           "type": "string"
         },
         "status": {
-          "$ref": "#/definitions/CropRoiStatus"
+          "$ref": "#/definitions/AnalysisStatus"
         },
-        "disposition": {
-          "$ref": "#/definitions/CropRoiDisposition"
-        }
-      },
-      "required": [
-        "requestId",
-        "status",
-        "disposition"
-      ]
-    },
-    "CancelCropRoiRequest": {
-      "type": "object",
-      "properties": {
-        "requestId": {
-          "type": "string"
-        }
-      },
-      "required": [
-        "requestId"
-      ]
-    },
-    "CropRoiProgress": {
-      "type": "object",
-      "properties": {
-        "requestId": {
-          "type": "string"
+        "stage": {
+          "$ref": "#/definitions/AnalysisStage"
         },
-        "status": {
-          "$ref": "#/definitions/CropRoiStatus"
-        },
-        "position": {
-          "anyOf": [
-            {
-              "type": "integer",
-              "minimum": 0,
-              "format": "uint32"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "completedPositions": {
-          "type": "integer",
-          "minimum": 0,
-          "format": "uint32"
-        },
-        "totalPositions": {
-          "type": "integer",
-          "minimum": 0,
-          "format": "uint32"
-        },
-        "completedRois": {
-          "type": "integer",
-          "minimum": 0,
-          "format": "uint32"
-        },
-        "totalRois": {
-          "type": "integer",
-          "minimum": 0,
-          "format": "uint32"
+        "progress": {
+          "type": "number",
+          "format": "double"
         },
         "message": {
           "anyOf": [
@@ -868,6 +260,12 @@
             }
           ]
         },
+        "resultFiles": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AnalysisCsvFile"
+          }
+        },
         "error": {
           "anyOf": [
             {
@@ -877,816 +275,187 @@
               "type": "null"
             }
           ]
-        },
-        "skippedPositions": {
-          "type": "array",
-          "items": {
-            "type": "integer",
-            "minimum": 0,
-            "format": "uint32"
-          }
         }
       },
       "required": [
         "requestId",
         "status",
-        "position",
-        "completedPositions",
-        "totalPositions",
-        "completedRois",
-        "totalRois",
-        "message"
+        "stage",
+        "progress",
+        "message",
+        "error"
       ]
     },
-    "NullableCropRoiProgress": {
-      "anyOf": [
-        {
-          "$ref": "#/definitions/CropRoiProgress"
-        },
-        {
-          "type": "null"
-        }
-      ]
-    },
-    "ScanRoiWorkspaceRequest": {
+    "AnalysisCsvFile": {
       "type": "object",
       "properties": {
-        "workspacePath": {
+        "kind": {
           "type": "string"
-        }
-      },
-      "required": [
-        "workspacePath"
-      ]
-    },
-    "RoiBbox": {
-      "type": "object",
-      "properties": {
-        "roi": {
-          "type": "integer",
-          "minimum": 0,
-          "format": "uint32"
-        },
-        "x": {
-          "type": "integer",
-          "minimum": 0,
-          "format": "uint32"
-        },
-        "y": {
-          "type": "integer",
-          "minimum": 0,
-          "format": "uint32"
-        },
-        "w": {
-          "type": "integer",
-          "minimum": 0,
-          "format": "uint32"
-        },
-        "h": {
-          "type": "integer",
-          "minimum": 0,
-          "format": "uint32"
-        }
-      },
-      "required": [
-        "roi",
-        "x",
-        "y",
-        "w",
-        "h"
-      ]
-    },
-    "RoiIndexEntry": {
-      "type": "object",
-      "properties": {
-        "roi": {
-          "type": "integer",
-          "minimum": 0,
-          "format": "uint32"
         },
         "fileName": {
           "type": "string"
         },
-        "bbox": {
-          "$ref": "#/definitions/RoiBbox"
+        "path": {
+          "type": "string"
+        },
+        "csv": {
+          "type": "string"
         }
       },
       "required": [
-        "roi",
+        "kind",
         "fileName",
-        "bbox"
+        "path",
+        "csv"
       ]
     },
-    "RoiPositionScan": {
-      "type": "object",
-      "properties": {
-        "pos": {
-          "type": "integer",
-          "minimum": 0,
-          "format": "uint32"
-        },
-        "channels": {
-          "type": "array",
-          "items": {
-            "type": "integer",
-            "minimum": 0,
-            "format": "uint32"
-          }
-        },
-        "times": {
-          "type": "array",
-          "items": {
-            "type": "integer",
-            "minimum": 0,
-            "format": "uint32"
-          }
-        },
-        "zSlices": {
-          "type": "array",
-          "items": {
-            "type": "integer",
-            "minimum": 0,
-            "format": "uint32"
-          }
-        },
-        "rois": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/RoiIndexEntry"
-          }
-        }
-      },
-      "required": [
-        "pos",
-        "channels",
-        "times",
-        "zSlices",
-        "rois"
-      ]
-    },
-    "RoiWorkspaceScan": {
-      "type": "object",
-      "properties": {
-        "positions": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/RoiPositionScan"
-          }
-        }
-      },
-      "required": [
-        "positions"
-      ]
-    },
-    "LoadAnnotationLabelsRequest": {
-      "type": "object",
-      "properties": {
-        "workspacePath": {
-          "type": "string"
-        }
-      },
-      "required": [
-        "workspacePath"
-      ]
-    },
-    "AnnotationLabel": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string"
-        },
-        "name": {
-          "type": "string"
-        },
-        "color": {
-          "type": "string"
-        }
-      },
-      "required": [
-        "id",
-        "name",
-        "color"
-      ]
-    },
-    "SaveAnnotationLabelsRequest": {
-      "type": "object",
-      "properties": {
-        "workspacePath": {
-          "type": "string"
-        },
-        "labels": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/AnnotationLabel"
-          }
-        }
-      },
-      "required": [
-        "workspacePath",
-        "labels"
-      ]
-    },
-    "RoiFrameRequest": {
-      "type": "object",
-      "properties": {
-        "pos": {
-          "type": "integer",
-          "minimum": 0,
-          "format": "uint32"
-        },
-        "roi": {
-          "type": "integer",
-          "minimum": 0,
-          "format": "uint32"
-        },
-        "channel": {
-          "type": "integer",
-          "minimum": 0,
-          "format": "uint32"
-        },
-        "time": {
-          "type": "integer",
-          "minimum": 0,
-          "format": "uint32"
-        },
-        "z": {
-          "type": "integer",
-          "minimum": 0,
-          "format": "uint32"
-        }
-      },
-      "required": [
-        "pos",
-        "roi",
-        "channel",
-        "time",
-        "z"
-      ]
-    },
-    "LoadRoiFrameRequest": {
-      "type": "object",
-      "properties": {
-        "workspacePath": {
-          "type": "string"
-        },
-        "request": {
-          "$ref": "#/definitions/RoiFrameRequest"
-        },
-        "contrast": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/ContrastWindow"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        }
-      },
-      "required": [
-        "workspacePath",
-        "request",
-        "contrast"
-      ]
-    },
-    "LoadRoiFrameAnnotationRequest": {
-      "type": "object",
-      "properties": {
-        "workspacePath": {
-          "type": "string"
-        },
-        "request": {
-          "$ref": "#/definitions/RoiFrameRequest"
-        }
-      },
-      "required": [
-        "workspacePath",
-        "request"
-      ]
-    },
-    "RoiFrameAnnotation": {
-      "type": "object",
-      "properties": {
-        "classificationLabelId": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "maskPath": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "updatedAt": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        }
-      },
-      "required": [
-        "classificationLabelId",
-        "maskPath",
-        "updatedAt"
-      ]
-    },
-    "LoadedRoiFrameAnnotation": {
-      "type": "object",
-      "properties": {
-        "annotation": {
-          "$ref": "#/definitions/RoiFrameAnnotation"
-        },
-        "maskBase64Png": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        }
-      },
-      "required": [
-        "annotation",
-        "maskBase64Png"
-      ]
-    },
-    "RoiFrameAnnotationPayload": {
-      "type": "object",
-      "properties": {
-        "classificationLabelId": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "maskBase64Png": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        }
-      },
-      "required": [
-        "classificationLabelId",
-        "maskBase64Png"
-      ]
-    },
-    "SaveRoiFrameAnnotationRequest": {
-      "type": "object",
-      "properties": {
-        "workspacePath": {
-          "type": "string"
-        },
-        "request": {
-          "$ref": "#/definitions/RoiFrameRequest"
-        },
-        "annotation": {
-          "$ref": "#/definitions/RoiFrameAnnotationPayload"
-        }
-      },
-      "required": [
-        "workspacePath",
-        "request",
-        "annotation"
-      ]
-    },
-    "SmartSegmentPoint": {
-      "type": "object",
-      "properties": {
-        "x": {
-          "type": "number"
-        },
-        "y": {
-          "type": "number"
-        },
-        "label": {
-          "type": "number",
-          "enum": [
-            0,
-            1
-          ]
-        }
-      },
-      "required": [
-        "x",
-        "y",
-        "label"
-      ]
-    },
-    "SmartSegmentRequest": {
-      "type": "object",
-      "properties": {
-        "workspacePath": {
-          "type": "string"
-        },
-        "request": {
-          "$ref": "#/definitions/RoiFrameRequest"
-        },
-        "contrast": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/ContrastWindow"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "points": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/SmartSegmentPoint"
-          }
-        }
-      },
-      "required": [
-        "workspacePath",
-        "request",
-        "contrast",
-        "points"
-      ]
-    },
-    "SmartSegmentResponse": {
-      "type": "object",
-      "properties": {
-        "mask": {
-          "type": "array",
-          "items": {
-            "type": "integer",
-            "minimum": 0,
-            "format": "uint32"
-          }
-        }
-      },
-      "required": [
-        "mask"
-      ]
-    },
-    "ProfileSummary": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string"
-        },
-        "displayName": {
-          "type": "string"
-        },
-        "createdAt": {
-          "type": "integer",
-          "minimum": 0,
-          "maximum": 9007199254740991,
-          "format": "uint64"
-        }
-      },
-      "required": [
-        "id",
-        "displayName",
-        "createdAt"
-      ]
-    },
-    "ProfileListResponse": {
-      "type": "object",
-      "properties": {
-        "profiles": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/ProfileSummary"
-          }
-        }
-      },
-      "required": [
-        "profiles"
-      ]
-    },
-    "ProfileCreateRequest": {
-      "type": "object",
-      "properties": {
-        "displayName": {
-          "type": "string"
-        }
-      },
-      "required": [
-        "displayName"
-      ]
-    },
-    "ProfileSessionResponse": {
-      "type": "object",
-      "properties": {
-        "profileId": {
-          "type": "string"
-        },
-        "displayName": {
-          "type": "string"
-        },
-        "accessToken": {
-          "type": "string"
-        }
-      },
-      "required": [
-        "profileId",
-        "displayName",
-        "accessToken"
-      ]
-    },
-    "ProfileSignInRequest": {
-      "type": "object",
-      "properties": {
-        "displayName": {
-          "type": "string"
-        }
-      },
-      "required": [
-        "displayName"
-      ]
-    },
-    "ProfileSignOutResponse": {
-      "type": "object",
-      "properties": {
-        "ok": {
-          "type": "boolean",
-          "enum": [
-            true
-          ]
-        }
-      },
-      "required": [
-        "ok"
-      ]
-    },
-    "MemoryKind": {
+    "AnalysisStage": {
       "type": "string",
       "enum": [
-        "workspace",
-        "source",
-        "assay"
+        "queued",
+        "preparing",
+        "segment",
+        "traces",
+        "auc",
+        "fit",
+        "completed"
       ]
     },
-    "MemoryWorkspaceEntry": {
-      "type": "object",
-      "properties": {
-        "path": {
-          "type": "string"
-        },
-        "label": {
-          "type": "string"
-        },
-        "lastUsedAt": {
-          "type": "integer",
-          "minimum": 0,
-          "maximum": 9007199254740991,
-          "format": "uint64"
-        }
-      },
-      "required": [
-        "path",
-        "lastUsedAt"
+    "AnalysisStatus": {
+      "type": "string",
+      "enum": [
+        "queued",
+        "running",
+        "completed",
+        "error"
       ]
     },
-    "MemorySourceEntry": {
+    "AnalysisStartRequest": {
       "type": "object",
       "properties": {
-        "source": {
-          "$ref": "#/definitions/AlignerSource"
-        },
-        "label": {
-          "type": "string"
-        },
-        "lastUsedAt": {
-          "type": "integer",
-          "minimum": 0,
-          "maximum": 9007199254740991,
-          "format": "uint64"
-        }
-      },
-      "required": [
-        "source",
-        "lastUsedAt"
-      ]
-    },
-    "MemoryAssayEntry": {
-      "type": "object",
-      "properties": {
-        "path": {
-          "type": "string"
-        },
-        "assayLabel": {
-          "type": "string"
-        },
         "workspacePath": {
           "type": "string"
         },
-        "lastUsedAt": {
-          "type": "integer",
-          "minimum": 0,
-          "maximum": 9007199254740991,
-          "format": "uint64"
+        "requestId": {
+          "type": "string"
         }
       },
       "required": [
-        "path",
-        "lastUsedAt"
+        "workspacePath",
+        "requestId"
       ]
     },
-    "MemoryRecentResponse": {
-      "type": "object",
-      "properties": {
-        "workspaces": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/MemoryWorkspaceEntry"
-          }
-        },
-        "sources": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/MemorySourceEntry"
-          }
-        },
-        "assays": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/MemoryAssayEntry"
-          }
-        }
-      }
-    },
-    "MemoryTouchRequest": {
-      "oneOf": [
-        {
-          "type": "object",
-          "properties": {
-            "kind": {
-              "type": "string",
-              "enum": [
-                "workspace"
-              ]
-            },
-            "path": {
-              "type": "string"
-            },
-            "label": {
-              "type": "string"
-            }
-          },
-          "required": [
-            "kind",
-            "path"
-          ]
-        },
-        {
-          "type": "object",
-          "properties": {
-            "kind": {
-              "type": "string",
-              "enum": [
-                "source"
-              ]
-            },
-            "source": {
-              "$ref": "#/definitions/AlignerSource"
-            },
-            "label": {
-              "type": "string"
-            }
-          },
-          "required": [
-            "kind",
-            "source"
-          ]
-        },
-        {
-          "type": "object",
-          "properties": {
-            "kind": {
-              "type": "string",
-              "enum": [
-                "assay"
-              ]
-            },
-            "path": {
-              "type": "string"
-            },
-            "assayLabel": {
-              "type": "string"
-            },
-            "workspacePath": {
-              "type": "string"
-            }
-          },
-          "required": [
-            "kind",
-            "path"
-          ]
-        }
-      ]
-    },
-    "MemoryTouchResponse": {
+    "SaveAssayJsonResponse": {
       "type": "object",
       "properties": {
         "ok": {
           "type": "boolean"
+        },
+        "path": {
+          "type": "string"
         }
       },
       "required": [
-        "ok"
+        "ok",
+        "path"
       ]
     },
-    "TaskStatus": {
-      "type": "string",
-      "enum": [
-        "queued",
-        "running",
-        "partially-complete",
-        "completed",
-        "failed",
-        "cancelled",
-        "cancellation-requested"
-      ]
-    },
-    "TaskAttention": {
-      "type": "string",
-      "enum": [
-        "none",
-        "error"
-      ]
-    },
-    "TaskProgress": {
+    "SaveAssayJsonRequest": {
       "type": "object",
       "properties": {
-        "total": {
-          "type": "integer",
-          "minimum": 0,
-          "format": "uint32"
+        "saveTo": {
+          "type": "string"
         },
-        "queued": {
-          "type": "integer",
-          "minimum": 0,
-          "format": "uint32"
-        },
-        "blocked": {
-          "type": "integer",
-          "minimum": 0,
-          "format": "uint32"
-        },
-        "running": {
-          "type": "integer",
-          "minimum": 0,
-          "format": "uint32"
-        },
-        "completed": {
-          "type": "integer",
-          "minimum": 0,
-          "format": "uint32"
-        },
-        "failed": {
-          "type": "integer",
-          "minimum": 0,
-          "format": "uint32"
-        },
-        "cancelled": {
-          "type": "integer",
-          "minimum": 0,
-          "format": "uint32"
-        },
-        "cancellationRequested": {
-          "type": "integer",
-          "minimum": 0,
-          "format": "uint32"
+        "contents": {
+          "type": "string"
         }
       },
       "required": [
-        "total",
-        "queued",
-        "blocked",
-        "running",
-        "completed",
-        "failed",
-        "cancelled",
-        "cancellationRequested"
+        "saveTo",
+        "contents"
+      ]
+    },
+    "TaskDetail": {
+      "type": "object",
+      "properties": {
+        "task": {
+          "$ref": "#/definitions/TaskSummary"
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/StepDetail"
+          }
+        }
+      },
+      "required": [
+        "task",
+        "steps"
+      ]
+    },
+    "StepDetail": {
+      "type": "object",
+      "properties": {
+        "stepId": {
+          "type": "string"
+        },
+        "taskId": {
+          "type": "string"
+        },
+        "stepKind": {
+          "type": "string"
+        },
+        "workspaceId": {
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/definitions/StepStatus"
+        },
+        "weight": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "format": "uint32"
+        },
+        "enqueueOrder": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "format": "uint64"
+        },
+        "dependencies": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "blockedBy": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/StepDependencyBlock"
+          }
+        },
+        "attempts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/StepAttempt"
+          }
+        },
+        "workProgress": {
+          "$ref": "#/definitions/StepWorkProgress"
+        }
+      },
+      "required": [
+        "stepId",
+        "taskId",
+        "stepKind",
+        "workspaceId",
+        "status",
+        "weight",
+        "enqueueOrder",
+        "dependencies",
+        "blockedBy",
+        "attempts"
       ]
     },
     "StepWorkProgress": {
@@ -1698,11 +467,13 @@
         "completed": {
           "type": "integer",
           "minimum": 0,
+          "maximum": 9007199254740991,
           "format": "uint32"
         },
         "total": {
           "type": "integer",
           "minimum": 0,
+          "maximum": 9007199254740991,
           "format": "uint32"
         },
         "phase": {
@@ -1739,142 +510,6 @@
         "phase",
         "message",
         "updatedAtMs"
-      ]
-    },
-    "TaskSummary": {
-      "type": "object",
-      "properties": {
-        "taskId": {
-          "type": "string"
-        },
-        "kind": {
-          "type": "string"
-        },
-        "workspaceId": {
-          "type": "string"
-        },
-        "workspacePath": {
-          "type": "string"
-        },
-        "mutating": {
-          "type": "boolean"
-        },
-        "status": {
-          "$ref": "#/definitions/TaskStatus"
-        },
-        "attention": {
-          "$ref": "#/definitions/TaskAttention"
-        },
-        "progress": {
-          "$ref": "#/definitions/TaskProgress"
-        },
-        "activeStepKind": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "workProgress": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/StepWorkProgress"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "createdAtMs": {
-          "type": "integer",
-          "minimum": 0,
-          "maximum": 9007199254740991,
-          "format": "uint64"
-        },
-        "updatedAtMs": {
-          "type": "integer",
-          "minimum": 0,
-          "maximum": 9007199254740991,
-          "format": "uint64"
-        }
-      },
-      "required": [
-        "taskId",
-        "kind",
-        "workspaceId",
-        "workspacePath",
-        "mutating",
-        "status",
-        "attention",
-        "progress",
-        "createdAtMs",
-        "updatedAtMs"
-      ]
-    },
-    "TaskList": {
-      "type": "array",
-      "items": {
-        "$ref": "#/definitions/TaskSummary"
-      }
-    },
-    "StepStatus": {
-      "type": "string",
-      "enum": [
-        "queued",
-        "blocked",
-        "running",
-        "completed",
-        "failed",
-        "cancelled",
-        "cancellation-requested"
-      ]
-    },
-    "StepError": {
-      "type": "object",
-      "properties": {
-        "code": {
-          "type": "string"
-        },
-        "message": {
-          "type": "string"
-        }
-      },
-      "required": [
-        "code",
-        "message"
-      ]
-    },
-    "StepDependencyBlock": {
-      "type": "object",
-      "properties": {
-        "stepId": {
-          "type": "string"
-        },
-        "stepKind": {
-          "type": "string"
-        },
-        "status": {
-          "$ref": "#/definitions/StepStatus"
-        },
-        "error": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/StepError"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        }
-      },
-      "required": [
-        "stepId",
-        "stepKind",
-        "status",
-        "error"
       ]
     },
     "StepAttempt": {
@@ -1939,57 +574,49 @@
         "error"
       ]
     },
-    "StepDetail": {
+    "StepError": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "code",
+        "message"
+      ]
+    },
+    "StepStatus": {
+      "type": "string",
+      "enum": [
+        "queued",
+        "blocked",
+        "running",
+        "completed",
+        "failed",
+        "cancelled",
+        "cancellation-requested"
+      ]
+    },
+    "StepDependencyBlock": {
       "type": "object",
       "properties": {
         "stepId": {
           "type": "string"
         },
-        "taskId": {
-          "type": "string"
-        },
         "stepKind": {
-          "type": "string"
-        },
-        "workspaceId": {
           "type": "string"
         },
         "status": {
           "$ref": "#/definitions/StepStatus"
         },
-        "weight": {
-          "type": "integer",
-          "minimum": 0,
-          "format": "uint32"
-        },
-        "enqueueOrder": {
-          "type": "integer",
-          "minimum": 0,
-          "maximum": 9007199254740991,
-          "format": "uint64"
-        },
-        "dependencies": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "blockedBy": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/StepDependencyBlock"
-          }
-        },
-        "attempts": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/StepAttempt"
-          }
-        },
-        "workProgress": {
+        "error": {
           "anyOf": [
             {
-              "$ref": "#/definitions/StepWorkProgress"
+              "$ref": "#/definitions/StepError"
             },
             {
               "type": "null"
@@ -1999,33 +626,150 @@
       },
       "required": [
         "stepId",
-        "taskId",
         "stepKind",
-        "workspaceId",
         "status",
-        "weight",
-        "enqueueOrder",
-        "dependencies",
-        "blockedBy",
-        "attempts"
+        "error"
       ]
     },
-    "TaskDetail": {
+    "TaskSummary": {
       "type": "object",
       "properties": {
-        "task": {
-          "$ref": "#/definitions/TaskSummary"
+        "taskId": {
+          "type": "string"
         },
-        "steps": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/StepDetail"
-          }
+        "kind": {
+          "type": "string"
+        },
+        "workspaceId": {
+          "type": "string"
+        },
+        "workspacePath": {
+          "type": "string"
+        },
+        "mutating": {
+          "type": "boolean"
+        },
+        "status": {
+          "$ref": "#/definitions/TaskStatus"
+        },
+        "attention": {
+          "$ref": "#/definitions/TaskAttention"
+        },
+        "progress": {
+          "$ref": "#/definitions/TaskProgress"
+        },
+        "activeStepKind": {
+          "type": "string"
+        },
+        "workProgress": {
+          "$ref": "#/definitions/StepWorkProgress"
+        },
+        "createdAtMs": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "format": "uint64"
+        },
+        "updatedAtMs": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "format": "uint64"
         }
       },
       "required": [
-        "task",
-        "steps"
+        "taskId",
+        "kind",
+        "workspaceId",
+        "workspacePath",
+        "mutating",
+        "status",
+        "attention",
+        "progress",
+        "createdAtMs",
+        "updatedAtMs"
+      ]
+    },
+    "TaskProgress": {
+      "type": "object",
+      "properties": {
+        "total": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "format": "uint32"
+        },
+        "queued": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "format": "uint32"
+        },
+        "blocked": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "format": "uint32"
+        },
+        "running": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "format": "uint32"
+        },
+        "completed": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "format": "uint32"
+        },
+        "failed": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "format": "uint32"
+        },
+        "cancelled": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "format": "uint32"
+        },
+        "cancellationRequested": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "format": "uint32"
+        }
+      },
+      "required": [
+        "total",
+        "queued",
+        "blocked",
+        "running",
+        "completed",
+        "failed",
+        "cancelled",
+        "cancellationRequested"
+      ]
+    },
+    "TaskAttention": {
+      "type": "string",
+      "enum": [
+        "none",
+        "error"
+      ]
+    },
+    "TaskStatus": {
+      "type": "string",
+      "enum": [
+        "queued",
+        "running",
+        "partially-complete",
+        "completed",
+        "failed",
+        "cancelled",
+        "cancellation-requested"
       ]
     },
     "TaskCancelRequest": {
@@ -2039,17 +783,6 @@
         "taskId"
       ]
     },
-    "StepCancelRequest": {
-      "type": "object",
-      "properties": {
-        "stepId": {
-          "type": "string"
-        }
-      },
-      "required": [
-        "stepId"
-      ]
-    },
     "StepRetryRequest": {
       "type": "object",
       "properties": {
@@ -2061,110 +794,976 @@
         "stepId"
       ]
     },
-    "SaveAssayJsonRequest": {
+    "StepCancelRequest": {
       "type": "object",
       "properties": {
-        "saveTo": {
-          "type": "string"
-        },
-        "contents": {
+        "stepId": {
           "type": "string"
         }
       },
       "required": [
-        "saveTo",
-        "contents"
+        "stepId"
       ]
     },
-    "SaveAssayJsonResponse": {
+    "TaskList": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/TaskSummary"
+      }
+    },
+    "MemoryTouchResponse": {
       "type": "object",
       "properties": {
         "ok": {
           "type": "boolean"
-        },
-        "path": {
-          "type": "string"
         }
       },
       "required": [
-        "ok",
-        "path"
+        "ok"
       ]
     },
-    "AnalysisStartRequest": {
-      "type": "object",
-      "properties": {
-        "workspacePath": {
-          "type": "string"
+    "MemoryTouchRequest": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "workspace"
+              ]
+            },
+            "path": {
+              "type": "string"
+            },
+            "label": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "path"
+          ],
+          "additionalProperties": true
         },
-        "requestId": {
-          "type": "string"
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "source"
+              ]
+            },
+            "source": {
+              "$ref": "#/definitions/AlignerSource"
+            },
+            "label": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "source"
+          ],
+          "additionalProperties": true
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "assay"
+              ]
+            },
+            "path": {
+              "type": "string"
+            },
+            "assayLabel": {
+              "type": "string"
+            },
+            "workspacePath": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "path"
+          ],
+          "additionalProperties": true
         }
-      },
-      "required": [
-        "workspacePath",
-        "requestId"
       ]
     },
-    "AnalysisStatus": {
-      "type": "string",
-      "enum": [
-        "queued",
-        "running",
-        "completed",
-        "error"
+    "AlignerSource": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "folder"
+              ]
+            },
+            "path": {
+              "type": "string"
+            },
+            "subfolderTemplate": {
+              "type": "string"
+            },
+            "filenameTemplate": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "path",
+            "subfolderTemplate",
+            "filenameTemplate"
+          ],
+          "additionalProperties": true
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "nd2"
+              ]
+            },
+            "path": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "path"
+          ],
+          "additionalProperties": true
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "czi"
+              ]
+            },
+            "path": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "path"
+          ],
+          "additionalProperties": true
+        }
       ]
     },
-    "AnalysisStage": {
-      "type": "string",
-      "enum": [
-        "queued",
-        "preparing",
-        "segment",
-        "traces",
-        "auc",
-        "fit",
-        "completed"
-      ]
-    },
-    "AnalysisCsvFile": {
+    "FolderSource": {
       "type": "object",
       "properties": {
         "kind": {
-          "type": "string"
-        },
-        "fileName": {
-          "type": "string"
+          "type": "string",
+          "enum": [
+            "folder"
+          ]
         },
         "path": {
           "type": "string"
         },
-        "csv": {
+        "subfolderTemplate": {
+          "type": "string"
+        },
+        "filenameTemplate": {
           "type": "string"
         }
       },
       "required": [
         "kind",
-        "fileName",
         "path",
-        "csv"
+        "subfolderTemplate",
+        "filenameTemplate"
+      ],
+      "additionalProperties": true
+    },
+    "MemoryRecentResponse": {
+      "type": "object",
+      "properties": {
+        "workspaces": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/MemoryWorkspaceEntry"
+          }
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/MemorySourceEntry"
+          }
+        },
+        "assays": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/MemoryAssayEntry"
+          }
+        }
+      }
+    },
+    "MemoryAssayEntry": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "assayLabel": {
+          "type": "string"
+        },
+        "workspacePath": {
+          "type": "string"
+        },
+        "lastUsedAt": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "format": "uint64"
+        }
+      },
+      "required": [
+        "path",
+        "lastUsedAt"
       ]
     },
-    "AnalysisProgress": {
+    "MemorySourceEntry": {
+      "type": "object",
+      "properties": {
+        "source": {
+          "$ref": "#/definitions/AlignerSource"
+        },
+        "label": {
+          "type": "string"
+        },
+        "lastUsedAt": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "format": "uint64"
+        }
+      },
+      "required": [
+        "source",
+        "lastUsedAt"
+      ]
+    },
+    "MemoryWorkspaceEntry": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string"
+        },
+        "lastUsedAt": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "format": "uint64"
+        }
+      },
+      "required": [
+        "path",
+        "lastUsedAt"
+      ]
+    },
+    "MemoryKind": {
+      "type": "string",
+      "enum": [
+        "workspace",
+        "source",
+        "assay"
+      ]
+    },
+    "ProfileSignOutResponse": {
+      "type": "object",
+      "properties": {
+        "ok": {
+          "type": "boolean",
+          "enum": [
+            true
+          ]
+        }
+      },
+      "required": [
+        "ok"
+      ]
+    },
+    "ProfileSessionResponse": {
+      "type": "object",
+      "properties": {
+        "profileId": {
+          "type": "string"
+        },
+        "displayName": {
+          "type": "string"
+        },
+        "accessToken": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "profileId",
+        "displayName",
+        "accessToken"
+      ]
+    },
+    "ProfileSignInRequest": {
+      "type": "object",
+      "properties": {
+        "displayName": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "displayName"
+      ]
+    },
+    "ProfileCreateRequest": {
+      "type": "object",
+      "properties": {
+        "displayName": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "displayName"
+      ]
+    },
+    "ProfileListResponse": {
+      "type": "object",
+      "properties": {
+        "profiles": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ProfileSummary"
+          }
+        }
+      },
+      "required": [
+        "profiles"
+      ]
+    },
+    "ProfileSummary": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "displayName": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "format": "uint64"
+        }
+      },
+      "required": [
+        "id",
+        "displayName",
+        "createdAt"
+      ]
+    },
+    "SmartSegmentResponse": {
+      "type": "object",
+      "properties": {
+        "mask": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991,
+            "format": "uint32"
+          }
+        }
+      },
+      "required": [
+        "mask"
+      ]
+    },
+    "SmartSegmentRequest": {
+      "type": "object",
+      "properties": {
+        "workspacePath": {
+          "type": "string"
+        },
+        "request": {
+          "$ref": "#/definitions/RoiFrameRequest"
+        },
+        "contrast": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ContrastWindow"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "points": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/SmartSegmentPoint"
+          }
+        }
+      },
+      "required": [
+        "workspacePath",
+        "request",
+        "contrast",
+        "points"
+      ]
+    },
+    "SmartSegmentPoint": {
+      "type": "object",
+      "properties": {
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        },
+        "label": {
+          "type": "number",
+          "enum": [
+            0,
+            1
+          ]
+        }
+      },
+      "required": [
+        "x",
+        "y",
+        "label"
+      ]
+    },
+    "ContrastWindow": {
+      "type": "object",
+      "properties": {
+        "min": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "format": "uint32"
+        },
+        "max": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "format": "uint32"
+        }
+      },
+      "required": [
+        "min",
+        "max"
+      ]
+    },
+    "RoiFrameRequest": {
+      "type": "object",
+      "properties": {
+        "pos": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "format": "uint32"
+        },
+        "roi": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "format": "uint32"
+        },
+        "channel": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "format": "uint32"
+        },
+        "time": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "format": "uint32"
+        },
+        "z": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "format": "uint32"
+        }
+      },
+      "required": [
+        "pos",
+        "roi",
+        "channel",
+        "time",
+        "z"
+      ]
+    },
+    "RoiFrameAnnotation": {
+      "type": "object",
+      "properties": {
+        "classificationLabelId": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "maskPath": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "updatedAt": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "classificationLabelId",
+        "maskPath",
+        "updatedAt"
+      ]
+    },
+    "SaveRoiFrameAnnotationRequest": {
+      "type": "object",
+      "properties": {
+        "workspacePath": {
+          "type": "string"
+        },
+        "request": {
+          "$ref": "#/definitions/RoiFrameRequest"
+        },
+        "annotation": {
+          "$ref": "#/definitions/RoiFrameAnnotationPayload"
+        }
+      },
+      "required": [
+        "workspacePath",
+        "request",
+        "annotation"
+      ]
+    },
+    "RoiFrameAnnotationPayload": {
+      "type": "object",
+      "properties": {
+        "classificationLabelId": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "maskBase64Png": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "classificationLabelId",
+        "maskBase64Png"
+      ]
+    },
+    "LoadedRoiFrameAnnotation": {
+      "type": "object",
+      "properties": {
+        "annotation": {
+          "$ref": "#/definitions/RoiFrameAnnotation"
+        },
+        "maskBase64Png": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "annotation",
+        "maskBase64Png"
+      ]
+    },
+    "LoadRoiFrameAnnotationRequest": {
+      "type": "object",
+      "properties": {
+        "workspacePath": {
+          "type": "string"
+        },
+        "request": {
+          "$ref": "#/definitions/RoiFrameRequest"
+        }
+      },
+      "required": [
+        "workspacePath",
+        "request"
+      ]
+    },
+    "FramePayload": {
+      "type": "object",
+      "properties": {
+        "width": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "format": "uint32"
+        },
+        "height": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "format": "uint32"
+        },
+        "dataBase64": {
+          "type": "string"
+        },
+        "pixelType": {
+          "$ref": "#/definitions/PixelType"
+        },
+        "contrastDomain": {
+          "$ref": "#/definitions/ContrastWindow"
+        },
+        "suggestedContrast": {
+          "$ref": "#/definitions/ContrastWindow"
+        },
+        "appliedContrast": {
+          "$ref": "#/definitions/ContrastWindow"
+        }
+      },
+      "required": [
+        "width",
+        "height",
+        "dataBase64",
+        "pixelType",
+        "contrastDomain",
+        "suggestedContrast",
+        "appliedContrast"
+      ]
+    },
+    "PixelType": {
+      "type": "string",
+      "enum": [
+        "uint8",
+        "uint8clamped",
+        "int8",
+        "uint16",
+        "int16",
+        "uint32",
+        "int32"
+      ]
+    },
+    "LoadRoiFrameRequest": {
+      "type": "object",
+      "properties": {
+        "workspacePath": {
+          "type": "string"
+        },
+        "request": {
+          "$ref": "#/definitions/RoiFrameRequest"
+        },
+        "contrast": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ContrastWindow"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "workspacePath",
+        "request",
+        "contrast"
+      ]
+    },
+    "AnnotationLabel": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "color": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "color"
+      ]
+    },
+    "SaveAnnotationLabelsRequest": {
+      "type": "object",
+      "properties": {
+        "workspacePath": {
+          "type": "string"
+        },
+        "labels": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AnnotationLabel"
+          }
+        }
+      },
+      "required": [
+        "workspacePath",
+        "labels"
+      ]
+    },
+    "LoadAnnotationLabelsRequest": {
+      "type": "object",
+      "properties": {
+        "workspacePath": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "workspacePath"
+      ]
+    },
+    "RoiWorkspaceScan": {
+      "type": "object",
+      "properties": {
+        "positions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/RoiPositionScan"
+          }
+        }
+      },
+      "required": [
+        "positions"
+      ]
+    },
+    "RoiPositionScan": {
+      "type": "object",
+      "properties": {
+        "pos": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "format": "uint32"
+        },
+        "channels": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991,
+            "format": "uint32"
+          }
+        },
+        "times": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991,
+            "format": "uint32"
+          }
+        },
+        "zSlices": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991,
+            "format": "uint32"
+          }
+        },
+        "rois": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/RoiIndexEntry"
+          }
+        }
+      },
+      "required": [
+        "pos",
+        "channels",
+        "times",
+        "zSlices",
+        "rois"
+      ]
+    },
+    "RoiIndexEntry": {
+      "type": "object",
+      "properties": {
+        "roi": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "format": "uint32"
+        },
+        "fileName": {
+          "type": "string"
+        },
+        "bbox": {
+          "$ref": "#/definitions/RoiBbox"
+        }
+      },
+      "required": [
+        "roi",
+        "fileName",
+        "bbox"
+      ],
+      "additionalProperties": true
+    },
+    "RoiBbox": {
+      "type": "object",
+      "properties": {
+        "roi": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "format": "uint32"
+        },
+        "x": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "format": "uint32"
+        },
+        "y": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "format": "uint32"
+        },
+        "w": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "format": "uint32"
+        },
+        "h": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "format": "uint32"
+        }
+      },
+      "required": [
+        "roi",
+        "x",
+        "y",
+        "w",
+        "h"
+      ],
+      "additionalProperties": true
+    },
+    "ScanRoiWorkspaceRequest": {
+      "type": "object",
+      "properties": {
+        "workspacePath": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "workspacePath"
+      ]
+    },
+    "NullableCropRoiProgress": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/CropRoiProgress"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "CropRoiProgress": {
       "type": "object",
       "properties": {
         "requestId": {
           "type": "string"
         },
         "status": {
-          "$ref": "#/definitions/AnalysisStatus"
+          "$ref": "#/definitions/CropRoiStatus"
         },
-        "stage": {
-          "$ref": "#/definitions/AnalysisStage"
+        "position": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991,
+              "format": "uint32"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
-        "progress": {
-          "type": "number",
-          "format": "double"
+        "completedPositions": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "format": "uint32"
+        },
+        "totalPositions": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "format": "uint32"
+        },
+        "completedRois": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "format": "uint32"
+        },
+        "totalRois": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "format": "uint32"
         },
         "message": {
           "anyOf": [
@@ -2176,11 +1775,415 @@
             }
           ]
         },
-        "resultFiles": {
+        "error": {
+          "type": "string"
+        },
+        "skippedPositions": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/AnalysisCsvFile"
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991,
+            "format": "uint32"
           }
+        }
+      },
+      "required": [
+        "requestId",
+        "status",
+        "position",
+        "completedPositions",
+        "totalPositions",
+        "completedRois",
+        "totalRois",
+        "message"
+      ]
+    },
+    "CropRoiStatus": {
+      "type": "string",
+      "enum": [
+        "queued",
+        "running",
+        "completed",
+        "cancelled",
+        "error"
+      ]
+    },
+    "CancelCropRoiRequest": {
+      "type": "object",
+      "properties": {
+        "requestId": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "requestId"
+      ]
+    },
+    "CropRoiResponse": {
+      "type": "object",
+      "properties": {
+        "requestId": {
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/definitions/CropRoiStatus"
+        },
+        "disposition": {
+          "$ref": "#/definitions/CropRoiDisposition"
+        }
+      },
+      "required": [
+        "requestId",
+        "status",
+        "disposition"
+      ]
+    },
+    "CropRoiDisposition": {
+      "type": "string",
+      "enum": [
+        "started",
+        "attached"
+      ]
+    },
+    "CropRoiRequest": {
+      "type": "object",
+      "properties": {
+        "requestId": {
+          "type": "string"
+        },
+        "workspacePath": {
+          "type": "string"
+        },
+        "source": {
+          "$ref": "#/definitions/AlignerSource"
+        },
+        "positions": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991,
+            "format": "uint32"
+          }
+        },
+        "overwrite": {
+          "type": "boolean"
+        },
+        "outputFormat": {
+          "$ref": "#/definitions/CropOutputFormat"
+        }
+      },
+      "required": [
+        "requestId",
+        "workspacePath",
+        "source",
+        "positions",
+        "overwrite"
+      ]
+    },
+    "CropOutputFormat": {
+      "type": "string",
+      "enum": [
+        "tiff"
+      ]
+    },
+    "RoiPosExistsResponse": {
+      "type": "object",
+      "properties": {
+        "exists": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "exists"
+      ]
+    },
+    "AlignOutputPaths": {
+      "type": "object",
+      "properties": {
+        "bbox": {
+          "type": "string"
+        },
+        "align": {
+          "type": "string"
+        },
+        "roi": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "bbox",
+        "align",
+        "roi"
+      ]
+    },
+    "SavedAlignState": {
+      "type": "object",
+      "properties": {
+        "grid": {
+          "$ref": "#/definitions/AlignGridState"
+        },
+        "excludedPatterns": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AlignGridPatternCoord"
+          }
+        },
+        "drift": {
+          "$ref": "#/definitions/AlignDrift"
+        }
+      },
+      "required": [
+        "grid",
+        "excludedPatterns"
+      ]
+    },
+    "AlignDrift": {
+      "type": "object",
+      "properties": {
+        "referenceTime": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "format": "uint32"
+        },
+        "interpolation": {
+          "type": "string",
+          "enum": [
+            "linear"
+          ]
+        },
+        "keyframes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/DriftKeyframe"
+          }
+        }
+      },
+      "required": [
+        "referenceTime",
+        "interpolation",
+        "keyframes"
+      ]
+    },
+    "DriftKeyframe": {
+      "type": "object",
+      "properties": {
+        "time": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "format": "uint32"
+        },
+        "dx": {
+          "type": "number",
+          "format": "double"
+        },
+        "dy": {
+          "type": "number",
+          "format": "double"
+        }
+      },
+      "required": [
+        "time",
+        "dx",
+        "dy"
+      ]
+    },
+    "AlignGridPatternCoord": {
+      "type": "object",
+      "properties": {
+        "i": {
+          "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991,
+          "format": "int32"
+        },
+        "j": {
+          "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991,
+          "format": "int32"
+        }
+      },
+      "required": [
+        "i",
+        "j"
+      ]
+    },
+    "AlignGridState": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "shape": {
+          "$ref": "#/definitions/AlignGridShape"
+        },
+        "tx": {
+          "type": "number",
+          "format": "double"
+        },
+        "ty": {
+          "type": "number",
+          "format": "double"
+        },
+        "rotation": {
+          "type": "number",
+          "format": "double"
+        },
+        "spacingA": {
+          "type": "number",
+          "format": "double"
+        },
+        "spacingB": {
+          "type": "number",
+          "format": "double"
+        },
+        "patternWidth": {
+          "type": "number",
+          "format": "double"
+        },
+        "patternHeight": {
+          "type": "number",
+          "format": "double"
+        },
+        "opacity": {
+          "type": "number",
+          "format": "double"
+        }
+      },
+      "required": [
+        "enabled",
+        "shape",
+        "tx",
+        "ty",
+        "rotation",
+        "spacingA",
+        "spacingB",
+        "patternWidth",
+        "patternHeight",
+        "opacity"
+      ]
+    },
+    "AlignGridShape": {
+      "type": "string",
+      "enum": [
+        "rect",
+        "square",
+        "hex"
+      ]
+    },
+    "DetectGridResponse": {
+      "type": "object",
+      "properties": {
+        "grid": {
+          "$ref": "#/definitions/AlignGridState"
+        },
+        "count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "format": "uint32"
+        },
+        "islands": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "format": "uint32"
+        },
+        "confidence": {
+          "type": "number",
+          "format": "double"
+        },
+        "residualPx": {
+          "type": "number",
+          "format": "double"
+        }
+      },
+      "required": [
+        "grid",
+        "count",
+        "islands",
+        "confidence",
+        "residualPx"
+      ]
+    },
+    "DetectGridRequest": {
+      "type": "object",
+      "properties": {
+        "source": {
+          "$ref": "#/definitions/AlignerSource"
+        },
+        "request": {
+          "$ref": "#/definitions/FrameRequest"
+        },
+        "shape": {
+          "$ref": "#/definitions/AlignGridShape"
+        },
+        "patternWidth": {
+          "type": "number",
+          "format": "double"
+        },
+        "patternHeight": {
+          "type": "number",
+          "format": "double"
+        },
+        "minSpacing": {
+          "type": "number",
+          "format": "double"
+        },
+        "maxSpacing": {
+          "type": "number",
+          "format": "double"
+        }
+      },
+      "required": [
+        "source",
+        "request"
+      ]
+    },
+    "FrameRequest": {
+      "type": "object",
+      "properties": {
+        "pos": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "format": "uint32"
+        },
+        "channel": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "format": "uint32"
+        },
+        "time": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "format": "uint32"
+        },
+        "z": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "format": "uint32"
+        }
+      },
+      "required": [
+        "pos",
+        "channel",
+        "time",
+        "z"
+      ]
+    },
+    "SaveBboxResponse": {
+      "type": "object",
+      "properties": {
+        "ok": {
+          "type": "boolean"
         },
         "error": {
           "anyOf": [
@@ -2194,233 +2197,279 @@
         }
       },
       "required": [
-        "requestId",
-        "status",
-        "stage",
-        "progress",
-        "message",
+        "ok",
         "error"
       ]
     },
-    "LabelFreeProvider": {
-      "type": "string",
-      "enum": [
-        "openrouter",
-        "ollama"
-      ]
-    },
-    "LabelFreeHealth": {
-      "type": "object",
-      "properties": {
-        "apiVersion": {
-          "type": "integer",
-          "minimum": 0,
-          "format": "uint32"
-        },
-        "provider": {
-          "$ref": "#/definitions/LabelFreeProvider"
-        },
-        "configured": {
-          "type": "boolean"
-        },
-        "modelId": {
-          "type": "string"
-        },
-        "revision": {
-          "type": "string"
-        },
-        "dimensions": {
-          "type": "integer",
-          "minimum": 0,
-          "format": "uint32"
-        },
-        "batchSize": {
-          "type": "integer",
-          "minimum": 0,
-          "format": "uint32"
-        },
-        "cacheCap": {
-          "type": "integer",
-          "minimum": 0,
-          "format": "uint32"
-        }
-      },
-      "required": [
-        "apiVersion",
-        "provider",
-        "configured",
-        "modelId",
-        "revision",
-        "dimensions",
-        "batchSize",
-        "cacheCap"
-      ]
-    },
-    "LabelFreeKeyRequest": {
-      "type": "object",
-      "properties": {
-        "apiKey": {
-          "type": "string"
-        },
-        "provider": {
-          "$ref": "#/definitions/LabelFreeProvider"
-        }
-      }
-    },
-    "LabelFreeLabelCount": {
-      "type": "object",
-      "properties": {
-        "label": {
-          "type": "string"
-        },
-        "count": {
-          "type": "integer",
-          "minimum": 0,
-          "format": "uint32"
-        }
-      },
-      "required": [
-        "label",
-        "count"
-      ]
-    },
-    "LabelFreeReferenceSet": {
-      "type": "object",
-      "properties": {
-        "name": {
-          "type": "string"
-        },
-        "count": {
-          "type": "integer",
-          "minimum": 0,
-          "format": "uint32"
-        },
-        "labels": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/LabelFreeLabelCount"
-          }
-        },
-        "modelId": {
-          "type": "string"
-        },
-        "revision": {
-          "type": "string"
-        },
-        "encoderId": {
-          "type": "string"
-        }
-      },
-      "required": [
-        "name",
-        "count",
-        "labels",
-        "modelId",
-        "revision",
-        "encoderId"
-      ]
-    },
-    "LabelFreeReferenceSetList": {
-      "type": "array",
-      "items": {
-        "$ref": "#/definitions/LabelFreeReferenceSet"
-      }
-    },
-    "LabelFreeReferenceRequest": {
+    "SaveBboxRequest": {
       "type": "object",
       "properties": {
         "workspacePath": {
           "type": "string"
         },
-        "name": {
+        "pos": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "format": "uint32"
+        },
+        "csv": {
           "type": "string"
+        },
+        "alignState": {
+          "$ref": "#/definitions/SavedAlignState"
         }
       },
       "required": [
         "workspacePath",
-        "name"
+        "pos",
+        "csv",
+        "alignState"
       ]
     },
-    "LabelFreeClassifyRequest": {
+    "LoadFrameRequest": {
       "type": "object",
       "properties": {
-        "workspacePath": {
-          "type": "string"
+        "source": {
+          "$ref": "#/definitions/AlignerSource"
         },
-        "name": {
-          "type": "string"
+        "request": {
+          "$ref": "#/definitions/FrameRequest"
         },
-        "limit": {
-          "type": "integer",
-          "minimum": 0,
-          "format": "uint32"
-        },
+        "contrast": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ContrastWindow"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "source",
+        "request",
+        "contrast"
+      ]
+    },
+    "WorkspaceScan": {
+      "type": "object",
+      "properties": {
         "positions": {
           "type": "array",
           "items": {
             "type": "integer",
             "minimum": 0,
+            "maximum": 9007199254740991,
             "format": "uint32"
+          }
+        },
+        "channels": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991,
+            "format": "uint32"
+          }
+        },
+        "times": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991,
+            "format": "uint32"
+          }
+        },
+        "zSlices": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991,
+            "format": "uint32"
+          }
+        },
+        "positionLabels": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "channelLabels": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "timeLabels": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "zSliceLabels": {
+          "type": "array",
+          "items": {
+            "type": "string"
           }
         }
       },
       "required": [
-        "workspacePath",
-        "name",
-        "limit"
+        "positions",
+        "channels",
+        "times",
+        "zSlices"
       ]
     },
-    "LabelFreeClassification": {
+    "ScanSourceRequest": {
       "type": "object",
       "properties": {
-        "pos": {
-          "type": "integer",
-          "minimum": 0,
-          "format": "uint32"
-        },
-        "roi": {
-          "type": "integer",
-          "minimum": 0,
-          "format": "uint32"
-        },
-        "channel": {
-          "type": "integer",
-          "minimum": 0,
-          "format": "uint32"
-        },
-        "time": {
-          "type": "integer",
-          "minimum": 0,
-          "format": "uint32"
-        },
-        "z": {
-          "type": "integer",
-          "minimum": 0,
-          "format": "uint32"
-        },
-        "labelId": {
-          "type": "string"
-        },
-        "support": {
-          "type": "number",
-          "format": "double"
+        "source": {
+          "$ref": "#/definitions/AlignerSource"
         }
       },
       "required": [
-        "pos",
-        "roi",
-        "channel",
-        "time",
-        "z",
-        "labelId",
-        "support"
+        "source"
       ]
     },
-    "LabelFreeClassificationList": {
-      "type": "array",
-      "items": {
-        "$ref": "#/definitions/LabelFreeClassification"
-      }
+    "CreateDirectoryResponse": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "path"
+      ]
+    },
+    "CreateDirectoryRequest": {
+      "type": "object",
+      "properties": {
+        "parentPath": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "parentPath",
+        "name"
+      ]
+    },
+    "ReadTextFileResponse": {
+      "type": "object",
+      "properties": {
+        "contents": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "contents"
+      ]
+    },
+    "HostWindowsDrivesResponse": {
+      "type": "object",
+      "properties": {
+        "windows": {
+          "type": "boolean"
+        },
+        "drives": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/HostDrive"
+          }
+        }
+      },
+      "required": [
+        "windows",
+        "drives"
+      ]
+    },
+    "HostDrive": {
+      "type": "object",
+      "properties": {
+        "letter": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "letter",
+        "path"
+      ]
+    },
+    "HomeDirectoryResponse": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "path"
+      ]
+    },
+    "HostListDirectoryResult": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "parent": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "entries": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/HostFsEntry"
+          }
+        }
+      },
+      "required": [
+        "path",
+        "parent",
+        "entries"
+      ]
+    },
+    "HostFsEntry": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        },
+        "isDirectory": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "name",
+        "path",
+        "isDirectory"
+      ]
     },
     "AssayType": {
       "type": "string",
@@ -2444,7 +2493,8 @@
       "required": [
         "subfolder",
         "filename"
-      ]
+      ],
+      "additionalProperties": true
     },
     "AssayDataFolder": {
       "type": "object",
@@ -2466,7 +2516,8 @@
         "type",
         "path",
         "template"
-      ]
+      ],
+      "additionalProperties": true
     },
     "AssayDataNd2": {
       "type": "object",
@@ -2484,7 +2535,8 @@
       "required": [
         "type",
         "path"
-      ]
+      ],
+      "additionalProperties": true
     },
     "AssayDataCzi": {
       "type": "object",
@@ -2502,7 +2554,8 @@
       "required": [
         "type",
         "path"
-      ]
+      ],
+      "additionalProperties": true
     },
     "AssayData": {
       "oneOf": [
@@ -2526,7 +2579,8 @@
             "type",
             "path",
             "template"
-          ]
+          ],
+          "additionalProperties": true
         },
         {
           "type": "object",
@@ -2544,7 +2598,8 @@
           "required": [
             "type",
             "path"
-          ]
+          ],
+          "additionalProperties": true
         },
         {
           "type": "object",
@@ -2562,7 +2617,8 @@
           "required": [
             "type",
             "path"
-          ]
+          ],
+          "additionalProperties": true
         }
       ]
     },
@@ -2575,7 +2631,8 @@
       },
       "required": [
         "path"
-      ]
+      ],
+      "additionalProperties": true
     },
     "AssayIntervalUnit": {
       "type": "string",
@@ -2606,7 +2663,8 @@
       "required": [
         "value",
         "unit"
-      ]
+      ],
+      "additionalProperties": true
     },
     "AssaySampleRow": {
       "type": "object",
@@ -2621,7 +2679,8 @@
       "required": [
         "name",
         "positions"
-      ]
+      ],
+      "additionalProperties": true
     },
     "AssaySamples": {
       "type": "array",
@@ -2635,6 +2694,7 @@
         {
           "type": "integer",
           "minimum": 0,
+          "maximum": 9007199254740991,
           "format": "uint32"
         }
       ],
@@ -2642,6 +2702,7 @@
       "items": {
         "type": "integer",
         "minimum": 0,
+        "maximum": 9007199254740991,
         "format": "uint32"
       }
     },
@@ -2651,6 +2712,7 @@
         "segmentation": {
           "type": "integer",
           "minimum": 0,
+          "maximum": 9007199254740991,
           "format": "uint32"
         },
         "signal": {
@@ -2660,7 +2722,8 @@
       "required": [
         "segmentation",
         "signal"
-      ]
+      ],
+      "additionalProperties": true
     },
     "AssaySampleChannels": {
       "type": "object",
@@ -2671,6 +2734,7 @@
         "segmentation": {
           "type": "integer",
           "minimum": 0,
+          "maximum": 9007199254740991,
           "format": "uint32"
         },
         "signal": {
@@ -2681,7 +2745,8 @@
         "sample",
         "segmentation",
         "signal"
-      ]
+      ],
+      "additionalProperties": true
     },
     "AssayAnalysisConfig": {
       "type": "object",
@@ -2709,9 +2774,11 @@
         "boxSize": {
           "type": "integer",
           "minimum": 0,
+          "maximum": 9007199254740991,
           "format": "uint32"
         }
-      }
+      },
+      "additionalProperties": true
     },
     "AssayJsonFile": {
       "type": "object",
@@ -2740,6 +2807,7 @@
         "positionIndexVersion": {
           "type": "integer",
           "minimum": 0,
+          "maximum": 9007199254740991,
           "format": "uint32"
         }
       },
@@ -2750,7 +2818,8 @@
         "workspace",
         "interval",
         "samples"
-      ]
+      ],
+      "additionalProperties": true
     },
     "AppId": {
       "type": "string",
@@ -2766,6 +2835,7 @@
         "position": {
           "type": "integer",
           "minimum": 0,
+          "maximum": 9007199254740991,
           "format": "uint32"
         },
         "axisOrder": {
@@ -2777,16 +2847,19 @@
         "timeCount": {
           "type": "integer",
           "minimum": 0,
+          "maximum": 9007199254740991,
           "format": "uint32"
         },
         "channelCount": {
           "type": "integer",
           "minimum": 0,
+          "maximum": 9007199254740991,
           "format": "uint32"
         },
         "zCount": {
           "type": "integer",
           "minimum": 0,
+          "maximum": 9007199254740991,
           "format": "uint32"
         },
         "timeIndices": {
@@ -2794,6 +2867,7 @@
           "items": {
             "type": "integer",
             "minimum": 0,
+            "maximum": 9007199254740991,
             "format": "uint32"
           }
         },
@@ -2811,7 +2885,8 @@
         "channelCount",
         "zCount",
         "rois"
-      ]
+      ],
+      "additionalProperties": true
     },
     "AnalysisProgressQuery": {
       "type": "object",
@@ -2822,7 +2897,8 @@
       },
       "required": [
         "requestId"
-      ]
+      ],
+      "additionalProperties": true
     },
     "CropRoiProgressQuery": {
       "type": "object",
@@ -2833,7 +2909,8 @@
       },
       "required": [
         "requestId"
-      ]
+      ],
+      "additionalProperties": true
     },
     "HostListDirectoryQuery": {
       "type": "object",
@@ -2841,7 +2918,8 @@
         "path": {
           "type": "string"
         }
-      }
+      },
+      "additionalProperties": true
     },
     "LabelFreeReferenceQuery": {
       "type": "object",
@@ -2852,7 +2930,8 @@
       },
       "required": [
         "workspacePath"
-      ]
+      ],
+      "additionalProperties": true
     },
     "LatestAnalysisQuery": {
       "type": "object",
@@ -2863,7 +2942,8 @@
       },
       "required": [
         "workspacePath"
-      ]
+      ],
+      "additionalProperties": true
     },
     "LatestCropQuery": {
       "type": "object",
@@ -2874,7 +2954,8 @@
       },
       "required": [
         "workspacePath"
-      ]
+      ],
+      "additionalProperties": true
     },
     "LoadAlignStateQuery": {
       "type": "object",
@@ -2885,13 +2966,15 @@
         "pos": {
           "type": "integer",
           "minimum": 0,
+          "maximum": 9007199254740991,
           "format": "uint32"
         }
       },
       "required": [
         "workspacePath",
         "pos"
-      ]
+      ],
+      "additionalProperties": true
     },
     "MemoryRecentQuery": {
       "type": "object",
@@ -2902,7 +2985,8 @@
       },
       "required": [
         "type"
-      ]
+      ],
+      "additionalProperties": true
     },
     "TaskDetailQuery": {
       "type": "object",
@@ -2913,7 +2997,8 @@
       },
       "required": [
         "taskId"
-      ]
+      ],
+      "additionalProperties": true
     },
     "OutputPathsQuery": {
       "type": "object",
@@ -2921,12 +3006,14 @@
         "pos": {
           "type": "integer",
           "minimum": 0,
+          "maximum": 9007199254740991,
           "format": "uint32"
         }
       },
       "required": [
         "pos"
-      ]
+      ],
+      "additionalProperties": true
     },
     "ReadTextFileQuery": {
       "type": "object",
@@ -2937,7 +3024,8 @@
       },
       "required": [
         "path"
-      ]
+      ],
+      "additionalProperties": true
     },
     "RoiPosExistsQuery": {
       "type": "object",
@@ -2948,13 +3036,15 @@
         "pos": {
           "type": "integer",
           "minimum": 0,
+          "maximum": 9007199254740991,
           "format": "uint32"
         }
       },
       "required": [
         "workspacePath",
         "pos"
-      ]
+      ],
+      "additionalProperties": true
     },
     "SavedBboxPositionsQuery": {
       "type": "object",
@@ -2965,7 +3055,8 @@
       },
       "required": [
         "workspacePath"
-      ]
+      ],
+      "additionalProperties": true
     },
     "StepDetailQuery": {
       "type": "object",
@@ -2976,15 +3067,16 @@
       },
       "required": [
         "stepId"
-      ]
+      ],
+      "additionalProperties": true
     },
-    "RequestError": {
+    "Unauthorized": {
       "type": "object",
       "properties": {
         "_tag": {
           "type": "string",
           "enum": [
-            "RequestError"
+            "Unauthorized"
           ]
         },
         "message": {
@@ -2996,13 +3088,13 @@
         "message"
       ]
     },
-    "Unauthorized": {
+    "RequestError": {
       "type": "object",
       "properties": {
         "_tag": {
           "type": "string",
           "enum": [
-            "Unauthorized"
+            "RequestError"
           ]
         },
         "message": {

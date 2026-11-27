@@ -7,8 +7,8 @@ import {
 export type DockToolAction = {
   id: string;
   label: string;
-  disabled?: boolean;
-  active?: boolean;
+  disabled?: boolean | undefined;
+  active?: boolean | undefined;
   onSelect: () => void;
 };
 
@@ -21,7 +21,7 @@ export function dockToolShortcuts(actions: readonly DockToolAction[]): KeyboardS
   return actions.map((action, index) => ({
     id: action.id,
     key: String(index + 1),
-    disabled: action.disabled,
+    ...(action.disabled !== undefined ? { disabled: action.disabled } : {}),
     onTrigger: action.onSelect,
   }));
 }

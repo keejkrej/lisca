@@ -1,27 +1,24 @@
-import { useAtom } from "@effect/atom-solid";
-import { AssayJsonFileSchema, decodeJsonResult } from "@lisca/contracts";
-import type { AssayType } from "@lisca/contracts";
 import { alignSnapshotKey } from "@lisca/client/align-session";
+import {
+  createAlignSessionController,
+  type AlignState as CoreAlignState,
+  type CropConfirmState,
+  type StateUpdater,
+  type VariationExcludePreview,
+} from "@lisca/client/align-session/controller";
 import { runClientEffect } from "@lisca/client/runtime";
 import {
   defaultStudioAlignTime,
   studioAlignFrameDefault,
   toStudioSource,
 } from "@lisca/client/studio/source";
-import {
-  useAlignStateCore,
-  type AlignState as CoreAlignState,
-  type CropConfirmState,
-  type VariationExcludePreview,
-} from "@lisca/client/use-align-state-core";
-import { useCanvasResourceTransaction } from "@lisca/instrument";
-import { useShellWorkspace } from "@lisca/ui/shell";
+import { AssayJsonFileSchema, decodeJsonResult, type AssayType } from "@lisca/contracts";
 import * as Result from "effect/Result";
-import { createEffect, createMemo, createSignal, onCleanup, type Accessor } from "solid-js";
 
 import { alignerClient, toErrorMessage } from "../api/aligner-port";
 import { scanIdleAtom, scanSourceAtom } from "../atoms/aligner-query-atoms";
-import { alignerUiActions, alignerUiAtom } from "../atoms/aligner-ui-atoms";
+import { alignerRegistry } from "../atoms/aligner-registry";
+import { alignerUiActions, alignerUiAtom, type AlignerUiState } from "../atoms/aligner-ui-atoms";
 import { effectErrorMessage, loadFrameEffect } from "../effects/frame-loader";
 
 export type AlignPositionSaveState = "saved" | "unsaved" | "changed";
@@ -39,18 +36,82 @@ export type AlignState = CoreAlignState & {
 export type { CropConfirmState, VariationExcludePreview };
 export type { ExcludedByPosition } from "../atoms/aligner-ui-atoms";
 
+export type ShellWorkspaceSyncEvent =
+  | { readonly kind: "workspace"; readonly path: string | null }
+  | { readonly kind: "source"; readonly path: string | null };
+
+export type AlignerControllerOptions = {
+  readonly initialWorkspacePath: string | null;
+  readonly initialSourcePath: string | null;
+};
+
+export type AlignerController = {
+  getState: () => AlignState;
+  subscribe: (listener: () => void) => () => void;
+  subscribeShellSync: (listener: (event: ShellWorkspaceSyncEvent) => void) => () => void;
+  syncShellWorkspace: (workspacePath: string | null, sourcePath: string | null) => void;
+  dispose: () => void;
+};
+
 function workspaceAssayJsonPath(workspacePath: string): string {
   return `${workspacePath.trim().replace(/[/\\]+$/, "")}/assay.json`;
 }
 
-export function useAlignState(): Accessor<AlignState> {
-  const workspace = useShellWorkspace();
-  const [ui, setUi] = useAtom(() => alignerUiAtom);
-  const [assayType, setAssayType] = createSignal<AssayType | null>(null);
-  const [savedPositions, setSavedPositions] = createSignal<Set<number>>(new Set());
-  const [baselineByPos, setBaselineByPos] = createSignal<Map<number, string>>(new Map());
+export function createAlignerController(options: AlignerControllerOptions): AlignerController {
+  let shellWorkspacePath: string | null = options.initialWorkspacePath;
+  let shellSourcePath: string | null = options.initialSourcePath;
+  let assayType: AssayType | null = null;
+  let savedPositions = new Set<number>();
+  let baselineByPos = new Map<number, string>();
+  let lastObservedWorkspacePath: string | null = null;
+  let lastObservedBaselineKey: string | null = null;
+  let workspaceGeneration = 0;
+  let disposed = false;
 
-  const core = useAlignStateCore({
+  const listeners = new Set<() => void>();
+  const shellSyncListeners = new Set<(event: ShellWorkspaceSyncEvent) => void>();
+  const pendingShellSync: ShellWorkspaceSyncEvent[] = [];
+
+  const notify = () => {
+    if (disposed) return;
+    for (const listener of listeners) listener();
+  };
+
+  const emitShellSync = (event: ShellWorkspaceSyncEvent) => {
+    if (disposed) return;
+    if (shellSyncListeners.size === 0) {
+      pendingShellSync.push(event);
+      return;
+    }
+    for (const listener of shellSyncListeners) listener(event);
+  };
+
+  const setShellWorkspacePath = (path: string | null) => {
+    if (shellWorkspacePath === path) return;
+    shellWorkspacePath = path;
+    if (path === null) {
+      shellSourcePath = null;
+    }
+    emitShellSync({ kind: "workspace", path });
+  };
+
+  const setShellSourcePath = (path: string | null) => {
+    const effectivePath = shellWorkspacePath ? path : null;
+    if (shellSourcePath === effectivePath) return;
+    shellSourcePath = effectivePath;
+    emitShellSync({ kind: "source", path: effectivePath });
+  };
+
+  const setUi = (update: StateUpdater<AlignerUiState>) => {
+    const current = alignerRegistry.get(alignerUiAtom);
+    const next = typeof update === "function" ? update(current) : update;
+    if (next !== current) {
+      alignerRegistry.set(alignerUiAtom, next);
+    }
+  };
+
+  const core = createAlignSessionController({
+    registry: alignerRegistry,
     store: {
       atom: alignerUiAtom,
       actions: alignerUiActions,
@@ -65,136 +126,158 @@ export function useAlignState(): Accessor<AlignState> {
       forSource: scanSourceAtom,
       idle: scanIdleAtom,
     },
-    host: {
-      useWorkspace: useShellWorkspace,
-      useCanvasTransaction: useCanvasResourceTransaction,
+    workspace: {
+      getWorkspacePath: () => shellWorkspacePath,
+      setWorkspacePath: setShellWorkspacePath,
+      getSourcePath: () => shellSourcePath,
+      setSourcePath: setShellSourcePath,
     },
-    // Light shell: bbox/align only. Crop is Studio / lisca-crop / notebooks zip.
-    enableCrop: false,
+    policy: {
+      // Light shell: bbox/align only. Crop is Studio / lisca-crop / notebooks zip.
+      enableCrop: false,
+    },
     assayDefaultTime: () => {
-      const type = assayType();
-      if (type == null) return null;
-      return defaultStudioAlignTime(ui().scan?.times, studioAlignFrameDefault(type));
+      if (assayType == null) return null;
+      return defaultStudioAlignTime(
+        alignerRegistry.get(alignerUiAtom).scan?.times,
+        studioAlignFrameDefault(assayType),
+      );
     },
   });
 
-  const refreshSavedPositions = async (path: string) => {
+  const refreshSavedPositions = async (path: string, generation: number) => {
     try {
       const list = await runClientEffect(alignerClient.listSavedBboxPositions(path));
-      setSavedPositions(new Set<number>(list));
+      if (disposed || generation !== workspaceGeneration) return;
+      savedPositions = new Set<number>(list);
+      notify();
     } catch {
-      setSavedPositions(new Set<number>());
+      if (disposed || generation !== workspaceGeneration) return;
+      savedPositions = new Set<number>();
+      notify();
     }
   };
 
-  const syncPositionBaseline = async (path: string, pos: number) => {
+  const syncPositionBaseline = async (path: string, pos: number, generation: number) => {
     try {
       const saved = await runClientEffect(alignerClient.loadAlignState(path, pos));
-      if (!saved) return;
+      if (disposed || generation !== workspaceGeneration || !saved) return;
       const key = alignSnapshotKey(saved.grid, saved.excludedPatterns ?? [], saved.drift ?? null);
-      setBaselineByPos((prev) => {
-        const next = new Map(prev);
-        next.set(pos, key);
-        return next;
-      });
+      const next = new Map(baselineByPos);
+      next.set(pos, key);
+      baselineByPos = next;
+      notify();
     } catch {
       // Ignore missing or unreadable saved state.
     }
   };
 
-  createEffect(() => {
-    const path = workspace.workspacePath?.trim() ?? "";
-    if (!path) {
-      setAssayType(null);
-      setSavedPositions(new Set<number>());
-      setBaselineByPos(new Map<number, string>());
-      return;
-    }
-    void refreshSavedPositions(path);
+  const loadWorkspaceAssay = (path: string, generation: number) => {
     const assayPath = workspaceAssayJsonPath(path);
-    let cancelled = false;
     void runClientEffect(alignerClient.readTextFile(assayPath))
       .then((contents) => {
-        if (cancelled) return;
+        if (disposed || generation !== workspaceGeneration) return;
         const decoded = decodeJsonResult(AssayJsonFileSchema)(contents);
         if (!Result.isSuccess(decoded)) {
-          setAssayType(null);
+          assayType = null;
+          notify();
           return;
         }
         const assay = decoded.success;
-        setAssayType(assay.type);
-        if (ui().source == null) {
+        assayType = assay.type;
+        if (alignerRegistry.get(alignerUiAtom).source == null) {
           const autoSource = toStudioSource({
             kind: assay.data.type,
             dataPath: assay.data.path,
-            folderTemplate:
-              assay.data.type === "folder"
-                ? {
+            ...(assay.data.type === "folder"
+              ? {
+                  folderTemplate: {
                     subfolder: assay.data.template.subfolder,
                     filename: assay.data.template.filename,
-                  }
-                : undefined,
+                  },
+                }
+              : {}),
           });
           if (autoSource) {
-            workspace.setSourcePath(autoSource.path);
-            core().setSource(autoSource);
+            setShellSourcePath(autoSource.path);
+            core.getState().setSource(autoSource);
           }
         }
+        notify();
       })
       .catch(() => {
-        if (!cancelled) setAssayType(null);
+        if (disposed || generation !== workspaceGeneration) return;
+        assayType = null;
+        notify();
       });
-    onCleanup(() => {
-      cancelled = true;
-    });
-  });
+  };
 
-  createEffect(() => {
-    const path = workspace.workspacePath?.trim() ?? "";
-    const pos = core().selection.pos;
-    if (!path) return;
-    void syncPositionBaseline(path, pos);
-  });
+  const syncSideEffects = () => {
+    if (disposed) return;
+    const base = core.getState();
+    const path = (shellWorkspacePath ?? base.workspacePath)?.trim() ?? "";
 
-  const currentSnapshotKey = createMemo(() => {
-    const current = core();
-    return alignSnapshotKey(current.grid, current.currentExcludedPatterns, current.drift);
-  });
+    if (path !== lastObservedWorkspacePath) {
+      workspaceGeneration += 1;
+      const generation = workspaceGeneration;
+      lastObservedWorkspacePath = path;
+      lastObservedBaselineKey = null;
 
-  const positionSaveState = createMemo<AlignPositionSaveState>(() => {
-    const pos = core().selection.pos;
-    const isSaved = savedPositions().has(pos);
-    const baseline = baselineByPos().get(pos);
+      if (!path) {
+        assayType = null;
+        savedPositions = new Set<number>();
+        baselineByPos = new Map<number, string>();
+      } else {
+        void refreshSavedPositions(path, generation);
+        loadWorkspaceAssay(path, generation);
+      }
+    }
+
+    const baselineKey = path ? `${path}:${base.selection.pos}` : null;
+    if (baselineKey !== lastObservedBaselineKey) {
+      lastObservedBaselineKey = baselineKey;
+      if (path) {
+        void syncPositionBaseline(path, base.selection.pos, workspaceGeneration);
+      }
+    }
+  };
+
+  const computePositionSaveState = (base: CoreAlignState): AlignPositionSaveState => {
+    const pos = base.selection.pos;
+    const isSaved = savedPositions.has(pos);
     if (!isSaved) return "unsaved";
-    if (baseline && baseline !== currentSnapshotKey()) return "changed";
+    const baseline = baselineByPos.get(pos);
+    const currentSnapshotKey = alignSnapshotKey(
+      base.grid,
+      base.currentExcludedPatterns,
+      base.drift,
+    );
+    if (baseline && baseline !== currentSnapshotKey) return "changed";
     return "saved";
-  });
+  };
 
   const saveCurrent = async (): Promise<boolean> => {
-    const current = core();
+    const current = core.getState();
     const pos = current.selection.pos;
     const snap = alignSnapshotKey(current.grid, current.currentExcludedPatterns, current.drift);
     const ok = await current.saveCurrent();
-    if (ok) {
-      setSavedPositions((prev) => {
-        const next = new Set(prev);
-        next.add(pos);
-        return next;
-      });
-      setBaselineByPos((prev) => {
-        const next = new Map(prev);
-        next.set(pos, snap);
-        return next;
-      });
+    if (ok && !disposed) {
+      const nextSaved = new Set(savedPositions);
+      nextSaved.add(pos);
+      savedPositions = nextSaved;
+      const nextBaseline = new Map(baselineByPos);
+      nextBaseline.set(pos, snap);
+      baselineByPos = nextBaseline;
+      notify();
     }
     return ok;
   };
 
   const changePosition = (pos: number) => {
-    const current = core();
+    const current = core.getState();
     if (pos === current.selection.pos) return;
     if (
-      positionSaveState() === "changed" &&
+      computePositionSaveState(current) === "changed" &&
       typeof window !== "undefined" &&
       !window.confirm("Discard unsaved alignment changes for this position?")
     ) {
@@ -206,40 +289,45 @@ export function useAlignState(): Accessor<AlignState> {
   const refreshAgentWorkspace = async (agentWorkspacePath: string) => {
     const trimmed = agentWorkspacePath.trim();
     if (!trimmed) return;
-    if (workspace.workspacePath?.trim() !== trimmed) {
-      workspace.setWorkspacePath(trimmed);
-      core().setSource(null);
+    if ((shellWorkspacePath?.trim() ?? "") !== trimmed) {
+      setShellWorkspacePath(trimmed);
+      core.getState().setSource(null);
+      core.syncExternal();
       return;
     }
-    await refreshSavedPositions(trimmed);
-    const pos = core().selection.pos;
+    const generation = workspaceGeneration;
+    await refreshSavedPositions(trimmed, generation);
+    if (disposed) return;
+    const pos = core.getState().selection.pos;
     try {
       const saved = await runClientEffect(alignerClient.loadAlignState(trimmed, pos));
-      if (saved) {
-        alignerUiActions.applySavedAlignState?.(
-          setUi,
-          `${trimmed}:pos:${pos}:agent:${Date.now()}`,
-          pos,
-          saved,
-        );
-        const snap = alignSnapshotKey(
-          saved.grid,
-          saved.excludedPatterns ?? [],
-          saved.drift ?? null,
-        );
-        setBaselineByPos((prev) => {
-          const next = new Map(prev);
-          next.set(pos, snap);
-          return next;
-        });
-      }
+      if (disposed || !saved) return;
+      alignerUiActions.applySavedAlignState?.(
+        setUi,
+        `${trimmed}:pos:${pos}:agent:${Date.now()}`,
+        pos,
+        saved,
+      );
+      const snap = alignSnapshotKey(saved.grid, saved.excludedPatterns ?? [], saved.drift ?? null);
+      const nextBaseline = new Map(baselineByPos);
+      nextBaseline.set(pos, snap);
+      baselineByPos = nextBaseline;
+      notify();
     } catch {
       // Ignore transient read failure while agent writes.
     }
   };
 
-  return createMemo<AlignState>(() => {
-    const base = core();
+  const unsubscribeCore = core.subscribe(() => {
+    syncSideEffects();
+    notify();
+  });
+
+  // Trigger initial workspace/baseline effects for hydrated state.
+  syncSideEffects();
+
+  const getState = (): AlignState => {
+    const base = core.getState();
     const positions = base.scan?.positions ?? [];
     const idx = positions.indexOf(base.selection.pos);
     const canGoBack = idx > 0;
@@ -248,7 +336,7 @@ export function useAlignState(): Accessor<AlignState> {
     return {
       ...base,
       saveCurrent,
-      positionSaveState: positionSaveState(),
+      positionSaveState: computePositionSaveState(base),
       canGoBack,
       canGoNext,
       changePosition,
@@ -260,5 +348,45 @@ export function useAlignState(): Accessor<AlignState> {
       },
       refreshAgentWorkspace,
     };
-  });
+  };
+
+  return {
+    getState,
+    subscribe(listener) {
+      listeners.add(listener);
+      return () => {
+        listeners.delete(listener);
+      };
+    },
+    subscribeShellSync(listener) {
+      shellSyncListeners.add(listener);
+      if (pendingShellSync.length > 0) {
+        const queued = pendingShellSync.splice(0, pendingShellSync.length);
+        for (const event of queued) {
+          listener(event);
+        }
+      }
+      return () => {
+        shellSyncListeners.delete(listener);
+      };
+    },
+    syncShellWorkspace(workspacePath, sourcePath) {
+      if (disposed) return;
+      const changed = shellWorkspacePath !== workspacePath || shellSourcePath !== sourcePath;
+      shellWorkspacePath = workspacePath;
+      shellSourcePath = sourcePath;
+      if (changed) {
+        core.syncExternal();
+      }
+    },
+    dispose() {
+      disposed = true;
+      workspaceGeneration += 1;
+      unsubscribeCore();
+      core.dispose();
+      listeners.clear();
+      shellSyncListeners.clear();
+      pendingShellSync.length = 0;
+    },
+  };
 }

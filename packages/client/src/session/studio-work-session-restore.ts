@@ -41,7 +41,7 @@ export async function restoreStudioWorkSession({
   const source = toStudioSource({
     kind: dataSourceKind,
     dataPath: assayJson.data.path,
-    folderTemplate,
+    ...(folderTemplate !== undefined ? { folderTemplate } : {}),
   });
 
   setShellWorkspacePath(workspacePath);

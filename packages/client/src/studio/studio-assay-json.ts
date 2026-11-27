@@ -154,12 +154,12 @@ export function buildStudioAssayJson({
   intervalValue: number | null;
   intervalUnit: StudioIntervalUnit;
   samples: StudioAssaySampleRow[];
-  analysis?: AssayAnalysisConfig | null;
+  analysis?: AssayAnalysisConfig | null | undefined;
   /** Typed assay-wide segmentation and signal channels. Card fields are overrides. */
   channelDefaults: { segmentation: string; signal: string };
   sampleRowToDisk: (row: StudioAssaySampleRow) => AssaySampleRow;
   /** Omit until samples[].positions are 0-based source indices. */
-  positionIndexVersion?: number | null;
+  positionIndexVersion?: number | null | undefined;
 }): StudioAssayJson {
   const derivedChannels = analysisChannelsFromSamples(channelDefaults, samples);
   // Overrides are keyed by sample name: once channels are derived from the rows, drop any

@@ -1,9 +1,13 @@
 export type { SmartSegmentEngine, SmartSegmentPoint } from "./types";
 export type { SmartSegmentPrepareOptions, SmartSegmentProvider } from "./provider";
 export {
-  useSmartSegment,
+  createSmartSegmentController,
   type SmartEraseClick,
   type SmartSegmentClick,
+  type SmartSegmentContext,
+  type SmartSegmentController,
+  type SmartSegmentControllerOptions,
   type SmartSegmentDownloadState,
-} from "./use-smart-segment";
+  type SmartSegmentState,
+} from "./smart-segment-controller";
 export { applyBinaryMask } from "./mask";

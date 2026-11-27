@@ -1,12 +1,11 @@
 import type { AlignGridPatternCoord, AlignGridState } from "@lisca/contracts";
 import type { AlignGridFrameBounds } from "@lisca/utils";
 import { normalizeAlignGridState } from "@lisca/utils";
-import { render } from "@solidjs/testing-library";
 import { describe, expect, it, vi } from "vite-plus/test";
 
 import type { AlignCanvasPointerEvent } from "../src/align-canvas-handlers";
-import { useAlignCanvasPointerHandlers } from "../src/align-pointer-handlers";
-import { useAlignCanvasSelectionHandlers } from "../src/align-selection-handlers";
+import { createAlignCanvasPointerHandlers } from "../src/align-pointer-handlers";
+import { createAlignCanvasSelectionHandlers } from "../src/align-selection-handlers";
 
 const frame: AlignGridFrameBounds = { width: 100, height: 100 };
 const grid: AlignGridState = normalizeAlignGridState({
@@ -40,37 +39,34 @@ function makePointer(
   };
 }
 
-type SelectionHandlers = ReturnType<typeof useAlignCanvasSelectionHandlers>;
-
 function setupBrushHandlers() {
   let latest: AlignGridPatternCoord[] = [];
   const onExcludedPatternsChange = vi.fn((patterns: AlignGridPatternCoord[]) => {
     latest = patterns;
   });
-  let captured!: SelectionHandlers;
-  render(() => {
-    captured = useAlignCanvasSelectionHandlers(() => ({
-      enabled: true,
-      disabled: false,
-      frame,
-      grid,
-      excludedPatterns: latest,
-      onExcludedPatternsChange,
-    }));
-    return null;
-  });
-  return { captured, getLatest: () => latest };
+  const onSelectingChange = vi.fn();
+  const captured = createAlignCanvasSelectionHandlers(() => ({
+    enabled: true,
+    disabled: false,
+    frame,
+    grid,
+    excludedPatterns: latest,
+    onExcludedPatternsChange,
+    onSelectingChange,
+  }));
+  return { captured, getLatest: () => latest, onSelectingChange };
 }
 
-describe("useAlignCanvasSelectionHandlers", () => {
+describe("createAlignCanvasSelectionHandlers", () => {
   it("rejects a second on-grid pointer while a stroke is in flight", () => {
-    const { captured, getLatest } = setupBrushHandlers();
+    const { captured, getLatest, onSelectingChange } = setupBrushHandlers();
 
     // Pointer 1 starts the stroke and toggles (-1,0) on down, then (0,0) on move.
     expect(captured.handlePointerDown(makePointer(1, { x: 1, y: 30 }))).toBe(true);
     expect(captured.handlePointerMove(makePointer(1, { x: 60, y: 30 }))).toBe(true);
     expect(getLatest().map(patternKey).toSorted()).toEqual(["-1:0", "0:0"]);
     expect(captured.selecting()).toBe(true);
+    expect(onSelectingChange).toHaveBeenCalledWith(true);
 
     // Pointer 2 goes down on a visible pattern mid-stroke: must be rejected, not clobber.
     const before = [...getLatest()];
@@ -95,6 +91,7 @@ describe("useAlignCanvasSelectionHandlers", () => {
     expect(captured.handlePointerEnd(up1)).toBe(true);
     expect(up1.releasePointer).toHaveBeenCalledOnce();
     expect(captured.selecting()).toBe(false);
+    expect(onSelectingChange).toHaveBeenLastCalledWith(false);
 
     // Pointer 2's release is a no-op (already quiescent).
     const up2 = makePointer(2, { x: 60, y: 80 });
@@ -109,25 +106,21 @@ describe("useAlignCanvasSelectionHandlers", () => {
   });
 });
 
-describe("useAlignCanvasSelectionHandlers via useAlignCanvasPointerHandlers", () => {
+describe("createAlignCanvasSelectionHandlers via createAlignCanvasPointerHandlers", () => {
   it("rejects a second touch while a manual-exclusion brush stroke is in flight", () => {
     let latest: AlignGridPatternCoord[] = [];
     const onExcludedPatternsChange = vi.fn((patterns: AlignGridPatternCoord[]) => {
       latest = patterns;
     });
-    let handlers!: ReturnType<typeof useAlignCanvasPointerHandlers>;
-    render(() => {
-      handlers = useAlignCanvasPointerHandlers(() => ({
-        grid,
-        onCommit: vi.fn(),
-        toolMode: "pan",
-        manualExclusionEnabled: true,
-        excludedPatterns: latest,
-        frame,
-        onExcludedPatternsChange,
-      }));
-      return null;
-    });
+    const handlers = createAlignCanvasPointerHandlers(() => ({
+      grid,
+      onCommit: vi.fn(),
+      toolMode: "pan",
+      manualExclusionEnabled: true,
+      excludedPatterns: latest,
+      frame,
+      onExcludedPatternsChange,
+    }));
 
     // Pointer 1 starts the brush and drags across two patterns.
     handlers.handlePointerDown(makePointer(1, { x: 1, y: 30 }));

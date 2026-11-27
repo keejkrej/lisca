@@ -4,8 +4,8 @@
   "type": "module",
   "exports": {
     "./analysis": {
-      "types": "./src/analysis/analysis-plot-gallery.tsx",
-      "import": "./src/analysis/analysis-plot-gallery.tsx"
+      "types": "./src/analysis/analysis-plot-gallery.ts",
+      "import": "./src/analysis/analysis-plot-gallery.ts"
     }
   },
   "scripts": {
@@ -16,7 +16,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@effect/atom-solid": "catalog:",
+    "@effect/ui": "catalog:",
+    "@effect/ui-kit": "catalog:",
     "@lisca/analysis": "workspace:*",
     "@lisca/client": "workspace:*",
     "@lisca/contracts": "workspace:*",
@@ -25,21 +26,16 @@
     "@lisca/ui": "workspace:*",
     "@lisca/utils": "workspace:*",
     "@lisca/web-app": "workspace:*",
-    "@tanstack/solid-router": "catalog:",
     "effect": "catalog:",
-    "jspdf": "^4.2.1",
-    "phosphor-icons-solid": "catalog:",
-    "solid-js": "catalog:"
+    "jspdf": "^4.2.1"
   },
   "devDependencies": {
-    "@solidjs/testing-library": "catalog:",
+    "@effect/vitest": "catalog:",
     "@tailwindcss/vite": "catalog:",
-    "@tanstack/router-plugin": "catalog:",
-    "jsdom": "^26.1.0",
+    "happy-dom": "catalog:",
     "tailwindcss": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:",
-    "vite-plugin-solid": "catalog:",
     "vitest": "catalog:"
   }
 }

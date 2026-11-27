@@ -1,15 +1,14 @@
 import type { AlignGridPatternCoord, AlignGridState } from "@lisca/contracts";
 import type { AlignGridFrameBounds, AlignGridPointerIntent, AlignGridToolMode } from "@lisca/utils";
-import { createMemo, type Accessor } from "solid-js";
 
 import {
+  createAlignCanvasGridHandlers,
   cursorForAlignTool,
-  useAlignCanvasGridHandlers,
   type AlignCanvasPointerEvent,
 } from "./align-canvas-handlers";
-import { useAlignCanvasSelectionHandlers } from "./align-selection-handlers";
+import { createAlignCanvasSelectionHandlers } from "./align-selection-handlers";
 
-export type UseAlignCanvasPointerHandlersOptions = {
+export type AlignCanvasPointerHandlersOptions = {
   grid: AlignGridState;
   onCommit: (
     preview: AlignGridState,
@@ -17,19 +16,37 @@ export type UseAlignCanvasPointerHandlersOptions = {
     startGrid: AlignGridState,
   ) => void;
   toolMode: AlignGridToolMode;
-  spacingZoomLocked?: boolean;
-  patternZoomLocked?: boolean;
-  disabled?: boolean;
-  onPreviewGridChange?: () => void;
+  spacingZoomLocked?: boolean | undefined;
+  patternZoomLocked?: boolean | undefined;
+  disabled?: boolean | undefined;
+  onPreviewGridChange?: (() => void) | undefined;
+  onDraggingChange?: ((dragging: boolean) => void) | undefined;
+  onSelectingChange?: ((selecting: boolean) => void) | undefined;
   manualExclusionEnabled: boolean;
   excludedPatterns: AlignGridPatternCoord[];
   frame: AlignGridFrameBounds | null;
   onExcludedPatternsChange: (patterns: AlignGridPatternCoord[]) => void;
 };
 
-export function useAlignCanvasPointerHandlers(options: () => UseAlignCanvasPointerHandlersOptions) {
+export type UseAlignCanvasPointerHandlersOptions = AlignCanvasPointerHandlersOptions;
+
+export type AlignCanvasPointerHandlers = {
+  handlePointerDown: (event: AlignCanvasPointerEvent) => void;
+  handlePointerMove: (event: AlignCanvasPointerEvent) => void;
+  handlePointerEnd: (event: AlignCanvasPointerEvent) => void;
+  handlePointerCancel: (event: AlignCanvasPointerEvent) => void;
+  previewGridRef: { current: AlignGridState | null };
+  previewRedrawRef: { current: (() => void) | null };
+  dragging: () => boolean;
+  selecting: () => boolean;
+  cursor: () => string;
+};
+
+export function createAlignCanvasPointerHandlers(
+  options: () => AlignCanvasPointerHandlersOptions,
+): AlignCanvasPointerHandlers {
   const previewRedrawRef = { current: null as (() => void) | null };
-  const gridHandlers = useAlignCanvasGridHandlers(() => {
+  const gridHandlers = createAlignCanvasGridHandlers(() => {
     const {
       disabled,
       grid,
@@ -38,6 +55,7 @@ export function useAlignCanvasPointerHandlers(options: () => UseAlignCanvasPoint
       onCommit,
       toolMode,
       onPreviewGridChange,
+      onDraggingChange,
     } = options();
     return {
       disabled,
@@ -46,13 +64,14 @@ export function useAlignCanvasPointerHandlers(options: () => UseAlignCanvasPoint
       patternZoomLocked,
       onCommit,
       toolMode,
+      onDraggingChange,
       onPreviewGridChange: () => {
         onPreviewGridChange?.();
         previewRedrawRef.current?.();
       },
     };
   });
-  const selectionHandlers = useAlignCanvasSelectionHandlers(() => {
+  const selectionHandlers = createAlignCanvasSelectionHandlers(() => {
     const {
       disabled,
       manualExclusionEnabled,
@@ -60,6 +79,7 @@ export function useAlignCanvasPointerHandlers(options: () => UseAlignCanvasPoint
       frame,
       grid,
       onExcludedPatternsChange,
+      onSelectingChange,
     } = options();
     return {
       disabled,
@@ -68,6 +88,7 @@ export function useAlignCanvasPointerHandlers(options: () => UseAlignCanvasPoint
       frame,
       grid,
       onExcludedPatternsChange,
+      onSelectingChange,
     };
   });
 
@@ -91,12 +112,12 @@ export function useAlignCanvasPointerHandlers(options: () => UseAlignCanvasPoint
     gridHandlers.handlePointerCancel(event);
   };
 
-  const cursor = createMemo(() => {
+  const cursor = (): string => {
     const { toolMode, manualExclusionEnabled, grid } = options();
     if (toolMode === "magnifier") return "zoom-in";
     if (manualExclusionEnabled || selectionHandlers.selecting()) return "crosshair";
     return cursorForAlignTool(toolMode, grid.enabled, gridHandlers.dragging());
-  });
+  };
 
   return {
     handlePointerDown,
@@ -107,6 +128,8 @@ export function useAlignCanvasPointerHandlers(options: () => UseAlignCanvasPoint
     previewRedrawRef,
     dragging: gridHandlers.dragging,
     selecting: selectionHandlers.selecting,
-    cursor: cursor as Accessor<string>,
+    cursor,
   };
 }
+
+export const useAlignCanvasPointerHandlers = createAlignCanvasPointerHandlers;

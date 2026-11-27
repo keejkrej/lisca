@@ -3,18 +3,17 @@ packages:
   - "packages/*"
 
 catalog:
-  effect: "4.0.0-rc.112"
-  "@effect/atom-solid": "4.0.0-rc.112"
+  effect: "4.1.6"
+  "@effect/ui": "https://pkg.pr.new/Effect-TS/ui/@effect/ui@33dbab6"
+  "@effect/ui-kit": "https://pkg.pr.new/Effect-TS/ui/@effect/ui-kit@33dbab6"
+  "@effect/ui-devtools": "https://pkg.pr.new/Effect-TS/ui/@effect/ui-devtools@33dbab6"
+  "@effect/vitest": "4.1.6"
+  "@phosphor-icons/core": "^2.1.1"
+  happy-dom: "^21.0.4"
   "@types/node": "^24.19.0"
   typescript: "^5.9.2"
   vitest: 4.1.11
-  "@tanstack/solid-router": "^1.169.2"
-  "@tanstack/router-plugin": "^1.167.35"
   "@tailwindcss/vite": "^4.1.8"
-  "vite-plugin-solid": "^2.11.0"
-  "solid-js": "^1.9.0"
-  "@solidjs/testing-library": "^0.8.10"
-  "phosphor-icons-solid": "^1.0.0"
   tailwindcss: "^4.1.8"
   vite: npm:@voidzero-dev/vite-plus-core@0.3.3
   "@tauri-apps/cli": "^2.0.0"
@@ -22,9 +21,15 @@ catalog:
 
 overrides:
   effect: "catalog:"
-  solid-js: "^1.9.0"
+  "@effect/ui": "catalog:"
+  "@effect/ui-kit": "catalog:"
+  "@effect/ui-devtools": "catalog:"
   vite@*: "catalog:"
   vitest@*: "catalog:"
+
+minimumReleaseAgeExclude:
+  - "effect@4.1.6"
+  - "@effect/vitest@4.1.6"
 
 # pnpm 12: allow lifecycle scripts only for packages that need native builds.
 allowBuilds:

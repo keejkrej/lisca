@@ -9,7 +9,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@effect/atom-solid": "catalog:",
+    "@effect/ui": "catalog:",
+    "@effect/ui-kit": "catalog:",
     "@lisca/client": "workspace:*",
     "@lisca/contracts": "workspace:*",
     "@lisca/instrument": "workspace:*",
@@ -17,15 +18,12 @@
     "@lisca/ui": "workspace:*",
     "@lisca/utils": "workspace:*",
     "@lisca/web-app": "workspace:*",
-    "effect": "catalog:",
-    "phosphor-icons-solid": "catalog:",
-    "solid-js": "catalog:"
+    "effect": "catalog:"
   },
   "devDependencies": {
     "@tailwindcss/vite": "catalog:",
     "tailwindcss": "catalog:",
     "typescript": "catalog:",
-    "vite": "catalog:",
-    "vite-plugin-solid": "catalog:"
+    "vite": "catalog:"
   }
 }

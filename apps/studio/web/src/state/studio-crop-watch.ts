@@ -1,6 +1,6 @@
 import type { CropRoiProgress } from "@lisca/contracts";
 import { logClientEvent } from "@lisca/client/client-log";
-import { clearRoiFrameCache } from "@lisca/client/use-annotate-state-core";
+import { clearRoiFrameCache } from "@lisca/client/annotate-session/controller";
 import { isDoneCropStatus } from "@lisca/utils";
 
 import { studioClient } from "../api/studio-port";
