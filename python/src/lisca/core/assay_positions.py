@@ -38,10 +38,14 @@ class AssayPositions:
         return ordered
 
 
-def load_assay_positions(workspace: Path) -> AssayPositions:
-    """Read ``assay.json`` and map each sample onto ``Pos{n}`` file ids."""
+def load_assay_positions(workspace: Path, *, migrate: bool = True) -> AssayPositions:
+    """Read ``assay.json`` and map each sample onto ``Pos{n}`` file ids.
+
+    Use ``migrate=False`` when reading a finished workspace without modifying it.
+    """
     workspace = Path(workspace).expanduser().resolve()
-    migrate_workspace(workspace)
+    if migrate:
+        migrate_workspace(workspace)
     path = workspace / "assay.json"
     if not path.is_file():
         raise FileNotFoundError(

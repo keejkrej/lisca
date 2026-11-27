@@ -102,6 +102,27 @@ and `analysis/transfection/traces/Pos{n}` (one Step per Position; Rust entry poi
 `auc`, `plot-auc`, `fit`, and `plot-fit`. The `traces` stage writes the per-Position
 `analysis/Pos{n}/ch{m}.csv` files (`AnalysisCsvFile.kind` `"traces"`).
 
+### Compare matched transfection samples
+
+Run the offline plotting script from `python/` after analysis. Each invocation reads one workspace and writes PNGs to a separate directory. It does not rerun trace extraction or fitting.
+
+```sh
+uv run --python 3.12 --extra analysis --extra crop python scripts/plot_paired_transfection.py \
+  /path/to/workspace pairs.csv --out ./comparison --hours 5
+```
+
+In `pairs.csv`, use the exact sample names from `assay.json`. Give each panel (`pair`) in a figure (`group`) the same two series. Row order determines the display order. The optional `note` appears with the trace or fit count. Each sample must have one signal channel.
+
+```csv
+sample,group,pair,series,note
+CellsControlLow,Cells,Low,Control,
+CellsVariantLow,Cells,Low,Variant,
+CellsControlHigh,Cells,High,Control,
+CellsVariantHigh,Cells,High,Variant,
+```
+
+The script writes a paired trace figure (median and IQR across individual traces), an onset-versus-expression-rate scatter, and separate onset and expression-rate boxplots for each group. `--hours` zooms the trace plots and scales each group's shared y-axis to the displayed interval. Omit it for the full acquisition, or use `--plots traces` or `--plots kinetics` to render only those figures. Onset plots keep zero-minute fits. The expression-rate boxplots use a log axis zoomed around the IQRs; whiskers may be clipped and outlier dots are hidden.
+
 ## Killing pipeline
 
 Death reporter (`assayId` `killing-death-reporter`) measures fluorescence in each existing ROI crop. It does not segment, detect cells, fit a curve, or run a classifier. The signal channel comes from `analysis.channels.signal`. Each crop plane at z=0 uses the same full-frame reduction as transfection `analysis.skipSegment`: area is the pixel count, background is the 10th percentile, and corrected fluorescence is the sum minus area times background.
